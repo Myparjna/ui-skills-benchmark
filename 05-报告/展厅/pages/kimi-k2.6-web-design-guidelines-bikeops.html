@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <title>智行运营 - 共享两轮城市运营管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: '#1677FF',
+            success: '#52C41A',
+            warning: '#FAAD14',
+            danger: '#F5222D',
+            info: '#13C2C2',
+            sidebar: '#0f172a',
+            'sidebar-hover': '#1e293b',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      background: #f0f2f5;
+      color: #1f2937;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Focus states */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid #1677FF;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: #0f172a;
+      transition: width 0.2s ease;
+    }
+
+    .nav-item {
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background: #1e293b;
+    }
+
+    .nav-item.active {
+      background: #1677FF;
+      color: #fff;
+    }
+
+    .nav-item.active:hover {
+      background: #1677FF;
+    }
+
+    /* KPI Card */
+    .kpi-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    .kpi-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    /* Chart bars animation */
+    @keyframes barGrow {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+
+    .chart-bar {
+      transform-origin: bottom;
+      animation: barGrow 0.6s ease-out forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chart-bar { animation: none; }
+    }
+
+    /* Alert row */
+    .alert-row {
+      transition: background-color 0.1s ease;
+    }
+
+    .alert-row:hover {
+      background-color: #f8fafc;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Table */
+    .data-table th {
+      font-weight: 500;
+      color: #64748b;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .data-table td {
+      font-size: 13px;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-success { background: #f0fdf4; color: #15803d; }
+    .badge-warning { background: #fffbeb; color: #b45309; }
+    .badge-danger { background: #fef2f2; color: #b91c1c; }
+    .badge-info { background: #ecfeff; color: #0e7490; }
+
+    /* Donut chart */
+    .donut-segment {
+      transition: stroke-width 0.15s ease;
+    }
+
+    .donut-segment:hover {
+      stroke-width: 10;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+      background: #1f2937;
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside class="sidebar w-60 flex-shrink-0 flex flex-col" role="navigation" aria-label="主导航">
+      <!-- Logo -->
+      <div class="h-16 flex items-center px-5 border-b border-slate-700/50">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+        </div>
+        <div>
+          <h1 class="text-white font-semibold text-sm leading-tight">智行运营</h1>
+          <p class="text-slate-400 text-[10px]">城市运营管理后台</p>
+        </div>
+      </div>
+
+      <!-- Nav Items -->
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <a href="#" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-white text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          运营总览
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          地图调度中心
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+          车队资产
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>
+          电池与能源
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+          运维工单
+          <span class="ml-auto bg-danger text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">12</span>
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+          规则与区域
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          合规监管
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          数据报表
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          组织与权限
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          系统配置
+        </a>
+      </nav>
+
+      <!-- User -->
+      <div class="border-t border-slate-700/50 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-info flex items-center justify-center text-white text-sm font-semibold">
+            张
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-medium truncate">张运营</p>
+            <p class="text-slate-400 text-xs truncate">城市运营经理</p>
+          </div>
+          <button aria-label="退出登录" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Header -->
+      <header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 flex-shrink-0">
+        <div class="flex items-center gap-4">
+          <h2 class="text-lg font-semibold text-gray-900">运营总览</h2>
+          <div class="flex items-center gap-2">
+            <select aria-label="时间范围" class="h-8 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:border-primary focus:ring-1 focus:ring-primary">
+              <option>今日</option>
+              <option>昨日</option>
+              <option>本周</option>
+              <option>本月</option>
+            </select>
+            <select aria-label="城市范围" class="h-8 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:border-primary focus:ring-1 focus:ring-primary">
+              <option>北京市</option>
+              <option>上海市</option>
+              <option>深圳市</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <label for="header-search" class="sr-only">搜索</label>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="header-search" type="text" placeholder="搜索车辆、工单、站点…" class="h-9 w-64 pl-9 pr-4 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-primary focus:bg-white transition-colors" />
+          </div>
+          <button aria-label="通知" class="relative p-2 rounded-lg hover:bg-gray-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="kpi-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-gray-500 font-medium">今日订单</span>
+              <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+            </div>
+            <div class="flex items-end gap-2">
+              <span class="text-2xl font-bold text-gray-900" style="font-variant-numeric: tabular-nums;">28,456</span>
+              <span class="text-xs font-medium text-success mb-1 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+                12.5%
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">较昨日 +3,142</p>
+          </div>
+
+          <div class="kpi-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-gray-500 font-medium">今日营收</span>
+              <div class="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+              </div>
+            </div>
+            <div class="flex items-end gap-2">
+              <span class="text-2xl font-bold text-gray-900">¥142,380</span>
+              <span class="text-xs font-medium text-success mb-1 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+                8.3%
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">较昨日 +¥10,920</p>
+          </div>
+
+          <div class="kpi-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-gray-500 font-medium">车辆可用率</span>
+              <div class="w-9 h-9 rounded-lg bg-info/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>
+              </div>
+            </div>
+            <div class="flex items-end gap-2">
+              <span class="text-2xl font-bold text-gray-900">87.2%</span>
+              <span class="text-xs font-medium text-danger mb-1 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                2.1%
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">目标 ≥ 90%</p>
+          </div>
+
+          <div class="kpi-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-gray-500 font-medium">活跃用户数</span>
+              <div class="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+            <div class="flex items-end gap-2">
+              <span class="text-2xl font-bold text-gray-900" style="font-variant-numeric: tabular-nums;">15,832</span>
+              <span class="text-xs font-medium text-success mb-1 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+                5.7%
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">较昨日 +856</p>
+          </div>
+        </div>
+
+        <!-- Middle Section: Charts + Alerts -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <!-- Orders Chart -->
+          <div class="kpi-card p-5 col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-gray-900">今日订单趋势</h3>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                  <span class="text-xs text-gray-500">今日</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-gray-200"></span>
+                  <span class="text-xs text-gray-500">昨日</span>
+                </div>
+              </div>
+            </div>
+            <div class="h-48 flex items-end gap-3">
+              <!-- Chart bars -->
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 45%; animation-delay: 0ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 60%; animation-delay: 50ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">06:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 55%; animation-delay: 100ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 70%; animation-delay: 150ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">08:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 75%; animation-delay: 200ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 85%; animation-delay: 250ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">10:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 60%; animation-delay: 300ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 65%; animation-delay: 350ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">12:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 50%; animation-delay: 400ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 55%; animation-delay: 450ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">14:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 80%; animation-delay: 500ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 95%; animation-delay: 550ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">16:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 90%; animation-delay: 600ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary rounded-t" style="height: 100%; animation-delay: 650ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">18:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-1 h-40">
+                  <div class="chart-bar flex-1 bg-gray-100 rounded-t" style="height: 70%; animation-delay: 700ms;"></div>
+                  <div class="chart-bar flex-1 bg-primary/80 rounded-t" style="height: 80%; animation-delay: 750ms;"></div>
+                </div>
+                <span class="text-[10px] text-gray-400">20:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle Status Donut -->
+          <div class="kpi-card p-5">
+            <h3 class="text-sm font-semibold text-gray-900 mb-4">车辆状态分布</h3>
+            <div class="flex items-center justify-center">
+              <svg width="160" height="160" viewBox="0 0 160 160" aria-label="车辆状态分布图">
+                <!-- Background circle -->
+                <circle cx="80" cy="80" r="60" fill="none" stroke="#f1f5f9" stroke-width="12"/>
+                <!-- Available: 55% -->
+                <circle class="donut-segment" cx="80" cy="80" r="60" fill="none" stroke="#52C41A" stroke-width="12"
+                  stroke-dasharray="207.35 169.65" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+                <!-- In use: 25% -->
+                <circle class="donut-segment" cx="80" cy="80" r="60" fill="none" stroke="#1677FF" stroke-width="12"
+                  stroke-dasharray="94.25 282.75" stroke-dashoffset="-207.35" transform="rotate(-90 80 80)"/>
+                <!-- Low battery: 12% -->
+                <circle class="donut-segment" cx="80" cy="80" r="60" fill="none" stroke="#FAAD14" stroke-width="12"
+                  stroke-dasharray="45.24 331.76" stroke-dashoffset="-301.6" transform="rotate(-90 80 80)"/>
+                <!-- Offline: 8% -->
+                <circle class="donut-segment" cx="80" cy="80" r="60" fill="none" stroke="#94a3b8" stroke-width="12"
+                  stroke-dasharray="30.16 346.84" stroke-dashoffset="-346.84" transform="rotate(-90 80 80)"/>
+                <!-- Center text -->
+                <text x="80" y="74" text-anchor="middle" class="text-xl font-bold" fill="#1f2937" style="font-size: 20px; font-weight: 700;">25,000</text>
+                <text x="80" y="92" text-anchor="middle" fill="#64748b" style="font-size: 11px;">总车辆</text>
+              </svg>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-success"></span>
+                <span class="text-xs text-gray-600">可用 55%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                <span class="text-xs text-gray-600">使用中 25%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-warning"></span>
+                <span class="text-xs text-gray-600">低电 12%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                <span class="text-xs text-gray-600">离线 8%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Alerts + Work Orders -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Alert List -->
+          <div class="kpi-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-gray-900">实时告警</h3>
+              <div class="flex gap-2">
+                <span class="badge badge-danger"><span class="w-1.5 h-1.5 rounded-full bg-danger"></span>P0: 3</span>
+                <span class="badge badge-warning"><span class="w-1.5 h-1.5 rounded-full bg-warning"></span>P1: 8</span>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="alert-row flex items-center gap-3 p-3 rounded-lg border border-red-100 bg-red-50/50">
+                <div class="w-8 h-8 rounded-lg bg-danger/10 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">越界告警 · 车辆 EV-20240891</p>
+                  <p class="text-xs text-gray-500">海淀区中关村大街 → 超出服务区边界 320m</p>
+                </div>
+                <span class="text-[10px] text-gray-400 whitespace-nowrap">2分钟前</span>
+              </div>
+              <div class="alert-row flex items-center gap-3 p-3 rounded-lg border border-red-100 bg-red-50/50">
+                <div class="w-8 h-8 rounded-lg bg-danger/10 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">低电告警 · 车辆 EV-20241023</p>
+                  <p class="text-xs text-gray-500">朝阳区国贸桥 · SOC 8% · 已影响用户骑行</p>
+                </div>
+                <span class="text-[10px] text-gray-400 whitespace-nowrap">5分钟前</span>
+              </div>
+              <div class="alert-row flex items-center gap-3 p-3 rounded-lg border border-orange-100 bg-orange-50/50">
+                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">禁停告警 · 聚集堆车</p>
+                  <p class="text-xs text-gray-500">东城区王府井地铁站A口 · 堆积车辆 47 辆</p>
+                </div>
+                <span class="text-[10px] text-gray-400 whitespace-nowrap">12分钟前</span>
+              </div>
+              <div class="alert-row flex items-center gap-3 p-3 rounded-lg border border-orange-100 bg-orange-50/50">
+                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">离线告警 · 设备 EV-20239561</p>
+                  <p class="text-xs text-gray-500">丰台区总部基地 · 离线时长 45 分钟</p>
+                </div>
+                <span class="text-[10px] text-gray-400 whitespace-nowrap">18分钟前</span>
+              </div>
+              <div class="alert-row flex items-center gap-3 p-3 rounded-lg border border-orange-100 bg-orange-50/50">
+                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">倒地告警 · 车辆 EV-20241105</p>
+                  <p class="text-xs text-gray-500">西城区西单北大街 · 持续 23 分钟未恢复</p>
+                </div>
+                <span class="text-[10px] text-gray-400 whitespace-nowrap">25分钟前</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Work Orders & Battery -->
+          <div class="space-y-4">
+            <!-- Battery Status -->
+            <div class="kpi-card p-5">
+              <h3 class="text-sm font-semibold text-gray-900 mb-4">电池与能源态势</h3>
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-gray-500">低电车辆 (SOC &lt; 20%)</span>
+                    <span class="font-medium text-danger">1,248 辆</span>
+                  </div>
+                  <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-danger rounded-full" style="width: 18%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-gray-500">待换电任务</span>
+                    <span class="font-medium text-warning">86 个</span>
+                  </div>
+                  <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-warning rounded-full" style="width: 35%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-gray-500">今日已完成换电</span>
+                    <span class="font-medium text-success">1,542 次</span>
+                  </div>
+                  <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-success rounded-full" style="width: 72%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-gray-500">平均换电耗时</span>
+                    <span class="font-medium text-primary">4.2 分钟</span>
+                  </div>
+                  <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full" style="width: 60%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Work Orders -->
+            <div class="kpi-card p-5">
+              <h3 class="text-sm font-semibold text-gray-900 mb-4">工单概览</h3>
+              <div class="grid grid-cols-4 gap-3 mb-4">
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                  <p class="text-lg font-bold text-gray-900" style="font-variant-numeric: tabular-nums;">24</p>
+                  <p class="text-[10px] text-gray-500 mt-0.5">待派单</p>
+                </div>
+                <div class="text-center p-3 bg-primary/5 rounded-lg">
+                  <p class="text-lg font-bold text-primary" style="font-variant-numeric: tabular-nums;">38</p>
+                  <p class="text-[10px] text-gray-500 mt-0.5">执行中</p>
+                </div>
+                <div class="text-center p-3 bg-warning/5 rounded-lg">
+                  <p class="text-lg font-bold text-warning" style="font-variant-numeric: tabular-nums;">12</p>
+                  <p class="text-[10px] text-gray-500 mt-0.5">超时</p>
+                </div>
+                <div class="text-center p-3 bg-success/5 rounded-lg">
+                  <p class="text-lg font-bold text-success" style="font-variant-numeric: tabular-nums;">156</p>
+                  <p class="text-[10px] text-gray-500 mt-0.5">已完成</p>
+                </div>
+              </div>
+              <table class="data-table w-full">
+                <thead>
+                  <tr class="border-b border-gray-100">
+                    <th class="text-left py-2 pr-2">工单类型</th>
+                    <th class="text-left py-2 pr-2">区域</th>
+                    <th class="text-left py-2 pr-2">状态</th>
+                    <th class="text-right py-2">耗时</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="alert-row border-b border-gray-50">
+                    <td class="py-2 pr-2 text-gray-700">换电任务</td>
+                    <td class="py-2 pr-2 text-gray-500">朝阳区国贸</td>
+                    <td class="py-2 pr-2"><span class="badge badge-info">执行中</span></td>
+                    <td class="py-2 text-right text-gray-500">12分钟</td>
+                  </tr>
+                  <tr class="alert-row border-b border-gray-50">
+                    <td class="py-2 pr-2 text-gray-700">故障维修</td>
+                    <td class="py-2 pr-2 text-gray-500">海淀区中关村</td>
+                    <td class="py-2 pr-2"><span class="badge badge-warning">待接单</span></td>
+                    <td class="py-2 text-right text-gray-500">--</td>
+                  </tr>
+                  <tr class="alert-row border-b border-gray-50">
+                    <td class="py-2 pr-2 text-gray-700">调度搬运</td>
+                    <td class="py-2 pr-2 text-gray-500">东城区王府井</td>
+                    <td class="py-2 pr-2"><span class="badge badge-danger">超时</span></td>
+                    <td class="py-2 text-right text-danger">68分钟</td>
+                  </tr>
+                  <tr class="alert-row">
+                    <td class="py-2 pr-2 text-gray-700">违停处置</td>
+                    <td class="py-2 pr-2 text-gray-500">西城区西单</td>
+                    <td class="py-2 pr-2"><span class="badge badge-success">已完成</span></td>
+                    <td class="py-2 text-right text-gray-500">32分钟</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-xs text-gray-400 pb-4">
+          智行运营后台 v2.1.0 · 数据更新于 2026-06-06 14:32:18
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Simple nav item active toggle
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    // KPI card number animation
+    document.querySelectorAll('.kpi-card .text-2xl').forEach(el => {
+      const text = el.textContent;
+      const isCurrency = text.includes('¥');
+      const isPercent = text.includes('%');
+      const num = parseFloat(text.replace(/[^0-9.]/g, ''));
+      if (!isNaN(num)) {
+        let current = 0;
+        const duration = 800;
+        const start = performance.now();
+        function animate(now) {
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          current = num * eased;
+          if (isCurrency) {
+            el.textContent = '¥' + Math.floor(current).toLocaleString();
+          } else if (isPercent) {
+            el.textContent = current.toFixed(1) + '%';
+          } else {
+            el.textContent = Math.floor(current).toLocaleString();
+          }
+          if (progress < 1) requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+      }
+    });
+  </script>
+</body>
+</html>

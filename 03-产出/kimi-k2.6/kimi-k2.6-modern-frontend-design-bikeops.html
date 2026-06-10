@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>两轮智运 — 城市级运营管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════
+       两轮智运运营后台 — Design Tokens (OKLCH)
+       ═══════════════════════════════════════════════════ */
+    :root {
+      --bg:           oklch(8% 0.02 265);
+      --surface:      oklch(13% 0.03 265);
+      --surface-up:   oklch(17% 0.04 265);
+      --surface-2:    oklch(11% 0.02 265);
+      --fg:           oklch(96% 0.01 95);
+      --fg-muted:     oklch(68% 0.02 265);
+      --fg-dim:       oklch(48% 0.02 265);
+      --primary:      oklch(62% 0.18 255);
+      --primary-up:   oklch(68% 0.18 255);
+      --accent:       oklch(65% 0.16 155);
+      --accent-soft:  oklch(20% 0.08 155 / 0.35);
+      --warn:         oklch(75% 0.17 65);
+      --warn-soft:    oklch(20% 0.08 65 / 0.35);
+      --err:          oklch(62% 0.20 25);
+      --err-soft:     oklch(18% 0.08 25 / 0.40);
+      --info:         oklch(65% 0.14 195);
+      --border:       oklch(22% 0.02 265);
+      --border-faint: oklch(16% 0.015 265);
+      --font:         'Noto Sans SC', 'Inter', system-ui, sans-serif;
+      --font-display: 'Noto Sans SC', 'Inter', sans-serif;
+      --r-xs: 0.25rem; --r-sm: 0.375rem; --r: 0.625rem; --r-lg: 0.875rem; --r-xl: 1.25rem; --r-full: 9999px;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --dur-fast: 150ms; --dur-base: 250ms; --dur-slow: 500ms;
+      --sidebar-w: 248px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-family: var(--font); background: var(--bg); color: var(--fg); font-size: 15px; }
+    body { min-height: 100vh; display: flex; overflow-x: hidden; }
+
+    .liquid-glass {
+      background: linear-gradient(135deg, oklch(100% 0 0 / 0.08) 0%, oklch(100% 0 0 / 0.02) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid oklch(100% 0 0 / 0.10);
+      box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.12), 0 8px 32px oklch(0% 0 0 / 0.25);
+      border-radius: var(--r-lg);
+    }
+
+    .reveal { animation: fade-up linear both; animation-timeline: view(); animation-range: entry 0% cover 20%; }
+    @keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w); min-height: 100vh;
+      background: linear-gradient(180deg, oklch(10% 0.02 265) 0%, oklch(7% 0.015 265) 100%);
+      border-right: 1px solid var(--border-faint);
+      display: flex; flex-direction: column;
+      padding: 1.25rem 0.875rem;
+      position: fixed; inset: 0 auto 0 0; z-index: 50;
+    }
+    .sidebar-brand { display: flex; align-items: center; gap: 0.625rem; padding: 0 0.5rem 1.25rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-faint); }
+    .sidebar-brand .logo { width: 2rem; height: 2rem; border-radius: var(--r); background: linear-gradient(135deg, var(--primary), oklch(55% 0.14 275)); display: grid; place-items: center; box-shadow: 0 0 16px oklch(62% 0.18 255 / 0.30); }
+    .sidebar-brand .name { font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; }
+    .sidebar-brand .sub { font-size: 0.6875rem; color: var(--fg-dim); margin-top: -2px; }
+    .sidebar-nav { flex: 1; overflow-y: auto; scrollbar-width: none; }
+    .sidebar-nav::-webkit-scrollbar { display: none; }
+    .nav-group { margin-bottom: 1.25rem; }
+    .nav-group-label { font-size: 0.6875rem; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 0.5rem; margin-bottom: 0.375rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.625rem; border-radius: var(--r); color: var(--fg-muted); text-decoration: none; font-size: 0.8125rem; font-weight: 500; transition: all var(--dur-fast) var(--ease-out); cursor: pointer; border: none; background: transparent; width: 100%; font-family: inherit; }
+    .nav-item:hover { background: oklch(100% 0 0 / 0.04); color: var(--fg); }
+    .nav-item.active { background: linear-gradient(135deg, oklch(100% 0 0 / 0.08), oklch(100% 0 0 / 0.03)); color: var(--fg); border: 1px solid oklch(100% 0 0 / 0.10); }
+    .nav-item .nav-icon { width: 1.25rem; height: 1.25rem; display: grid; place-items: center; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; padding: 0.125rem 0.5rem; border-radius: var(--r-full); font-size: 0.6875rem; font-weight: 600; background: var(--err-soft); color: oklch(75% 0.12 25); }
+    .sidebar-footer { padding-top: 0.75rem; border-top: 1px solid var(--border-faint); margin-top: auto; }
+    .user-mini { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem; }
+    .user-avatar { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary), oklch(55% 0.14 285)); display: grid; place-items: center; font-size: 0.75rem; font-weight: 600; color: oklch(100% 0 0); }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 0.8125rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 0.6875rem; color: var(--fg-dim); }
+
+    /* Main */
+    .main { flex: 1; margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Topbar */
+    .topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; padding: 0.875rem 2rem; background: linear-gradient(180deg, oklch(8% 0.02 265 / 0.92) 0%, oklch(8% 0.02 265 / 0.85) 100%); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); border-bottom: 1px solid var(--border-faint); }
+    .topbar-left { display: flex; align-items: center; gap: 1.5rem; }
+    .breadcrumb { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--fg-muted); }
+    .breadcrumb .current { color: var(--fg); font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .topbar-btn { width: 2.25rem; height: 2.25rem; border-radius: var(--r); border: 1px solid var(--border-faint); background: oklch(100% 0 0 / 0.04); color: var(--fg-muted); display: grid; place-items: center; cursor: pointer; transition: all var(--dur-fast) var(--ease-out); position: relative; }
+    .topbar-btn:hover { background: oklch(100% 0 0 / 0.08); color: var(--fg); }
+    .topbar-btn .dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--err); border: 2px solid oklch(8% 0.02 265); }
+    .city-select { display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.875rem; border-radius: var(--r); border: 1px solid var(--border-faint); background: oklch(100% 0 0 / 0.04); color: var(--fg); font-size: 0.8125rem; font-weight: 500; cursor: pointer; font-family: inherit; }
+
+    /* Dashboard */
+    .dashboard { padding: 1.5rem 2rem 2rem; flex: 1; }
+    .dash-header { margin-bottom: 1.5rem; }
+    .dash-header h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+    .dash-header .subtitle { font-size: 0.875rem; color: var(--fg-muted); }
+
+    /* KPI Bento */
+    .kpi-bento { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi-card { padding: 1.125rem; border-radius: var(--r-lg); background: linear-gradient(145deg, oklch(15% 0.03 265) 0%, oklch(11% 0.02 265) 100%); border: 1px solid oklch(100% 0 0 / 0.06); transition: all var(--dur-base) var(--ease-out); position: relative; overflow: hidden; }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--line-color, var(--primary)), transparent); opacity: 0.6; }
+    .kpi-card:hover { transform: translateY(-2px); border-color: oklch(100% 0 0 / 0.12); box-shadow: 0 8px 24px oklch(0% 0 0 / 0.25); }
+    .kpi-card .kpi-label { font-size: 0.75rem; color: var(--fg-dim); font-weight: 500; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.375rem; }
+    .kpi-card .kpi-value { font-size: 1.625rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.375rem; font-variant-numeric: tabular-nums; }
+    .kpi-card .kpi-change { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: var(--r-full); }
+    .kpi-change.up { background: var(--accent-soft); color: oklch(70% 0.12 155); }
+    .kpi-change.down { background: var(--err-soft); color: oklch(70% 0.12 25); }
+
+    /* Dash Row */
+    .dash-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .panel { padding: 1.25rem; border-radius: var(--r-lg); background: linear-gradient(145deg, oklch(15% 0.03 265) 0%, oklch(11% 0.02 265) 100%); border: 1px solid oklch(100% 0 0 / 0.06); }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .panel-header h3 { font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.01em; }
+    .panel-header .panel-actions { display: flex; gap: 0.375rem; }
+    .panel-action { padding: 0.25rem 0.625rem; border-radius: var(--r); border: 1px solid var(--border-faint); background: oklch(100% 0 0 / 0.03); color: var(--fg-muted); font-size: 0.75rem; font-weight: 500; cursor: pointer; font-family: inherit; transition: all var(--dur-fast) var(--ease-out); }
+    .panel-action:hover { background: oklch(100% 0 0 / 0.06); color: var(--fg); }
+    .panel-action.active { background: oklch(100% 0 0 / 0.08); color: var(--fg); border-color: oklch(100% 0 0 / 0.12); }
+
+    /* Chart */
+    .chart-wrap { height: 220px; position: relative; }
+    .chart-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 180px; gap: 0.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-faint); }
+    .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.375rem; }
+    .chart-bar { width: 100%; max-width: 28px; border-radius: var(--r-sm) var(--r-sm) 0 0; position: relative; transition: all var(--dur-base) var(--ease-out); }
+    .chart-bar:hover { filter: brightness(1.2); }
+    .chart-bar-tooltip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 0.25rem 0.5rem; border-radius: var(--r-sm); background: oklch(25% 0.02 265); color: var(--fg); font-size: 0.6875rem; font-weight: 600; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
+    .chart-bar:hover .chart-bar-tooltip { opacity: 1; }
+    .chart-label { font-size: 0.6875rem; color: var(--fg-dim); }
+    .chart-legend { display: flex; gap: 1rem; margin-top: 0.75rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--fg-muted); }
+    .legend-color { width: 8px; height: 8px; border-radius: var(--r-xs); }
+
+    /* Alerts */
+    .alert-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .alert-item { display: flex; align-items: flex-start; gap: 0.625rem; padding: 0.625rem 0.75rem; border-radius: var(--r); background: oklch(100% 0 0 / 0.03); border: 1px solid oklch(100% 0 0 / 0.04); transition: all var(--dur-fast) var(--ease-out); cursor: pointer; }
+    .alert-item:hover { background: oklch(100% 0 0 / 0.05); border-color: oklch(100% 0 0 / 0.08); }
+    .alert-severity { width: 3px; border-radius: var(--r-full); align-self: stretch; flex-shrink: 0; }
+    .alert-severity.p0 { background: var(--err); box-shadow: 0 0 6px var(--err); }
+    .alert-severity.p1 { background: var(--warn); }
+    .alert-severity.p2 { background: var(--info); }
+    .alert-body { flex: 1; min-width: 0; }
+    .alert-title { font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .alert-meta { font-size: 0.75rem; color: var(--fg-dim); display: flex; gap: 0.5rem; }
+    .alert-time { font-size: 0.6875rem; color: var(--fg-dim); white-space: nowrap; margin-top: 0.125rem; }
+    .alert-count { margin-left: auto; padding: 0.125rem 0.5rem; border-radius: var(--r-full); font-size: 0.6875rem; font-weight: 700; }
+
+    /* Vehicle Status */
+    .status-bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .status-cell { padding: 0.875rem; border-radius: var(--r); background: oklch(100% 0 0 / 0.03); border: 1px solid oklch(100% 0 0 / 0.04); text-align: center; transition: all var(--dur-fast) var(--ease-out); }
+    .status-cell:hover { background: oklch(100% 0 0 / 0.05); border-color: oklch(100% 0 0 / 0.08); }
+    .status-cell .st-num { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; margin-bottom: 0.25rem; }
+    .status-cell .st-label { font-size: 0.6875rem; color: var(--fg-dim); }
+    .status-cell .st-bar { height: 3px; border-radius: var(--r-full); margin-top: 0.5rem; overflow: hidden; background: oklch(100% 0 0 / 0.06); }
+    .status-cell .st-bar-fill { height: 100%; border-radius: var(--r-full); }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
+    .data-table th { text-align: left; padding: 0.625rem 0.875rem; font-size: 0.6875rem; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-faint); white-space: nowrap; }
+    .data-table td { padding: 0.75rem 0.875rem; border-bottom: 1px solid oklch(100% 0 0 / 0.03); color: var(--fg-muted); white-space: nowrap; }
+    .data-table tr:hover td { background: oklch(100% 0 0 / 0.03); }
+    .data-table .cell-strong { color: var(--fg); font-weight: 600; }
+    .status-pill { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: var(--r-full); font-size: 0.6875rem; font-weight: 600; }
+    .status-pill .dot { width: 5px; height: 5px; border-radius: 50%; }
+
+    .dash-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Entrance */
+    @starting-style { .kpi-card { opacity: 0; transform: translateY(16px) scale(0.98); } .panel { opacity: 0; transform: translateY(20px); } .status-cell { opacity: 0; transform: scale(0.95); } }
+    .kpi-card:nth-child(1) { animation: enter-kpi var(--dur-slow) var(--ease-out) 60ms both; }
+    .kpi-card:nth-child(2) { animation: enter-kpi var(--dur-slow) var(--ease-out) 120ms both; }
+    .kpi-card:nth-child(3) { animation: enter-kpi var(--dur-slow) var(--ease-out) 180ms both; }
+    .kpi-card:nth-child(4) { animation: enter-kpi var(--dur-slow) var(--ease-out) 240ms both; }
+    @keyframes enter-kpi { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* Responsive */
+    @media (max-width: 1280px) { .kpi-bento { grid-template-columns: repeat(2, 1fr); } .dash-row { grid-template-columns: 1fr; } .dash-row-2 { grid-template-columns: 1fr; } .status-bento { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } .kpi-bento { grid-template-columns: 1fr; } .status-bento { grid-template-columns: repeat(2, 1fr); } .dashboard { padding: 1rem; } .topbar { padding: 0.75rem 1rem; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo"><i data-lucide="bike" style="width:18px;height:18px;color:oklch(97% 0.01 95)"></i></div>
+      <div><div class="name">两轮智运</div><div class="sub">城市级运营后台</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">核心运营</div>
+        <button class="nav-item active"><span class="nav-icon"><i data-lucide="layout-dashboard" style="width:16px;height:16px"></i></span>运营总览</button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="map" style="width:16px;height:16px"></i></span>地图调度中心</button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="car" style="width:16px;height:16px"></i></span>车队资产</button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="battery-charging" style="width:16px;height:16px"></i></span>电池与能源</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">执行与合规</div>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="clipboard-list" style="width:16px;height:16px"></i></span>运维工单<span class="nav-badge">12</span></button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="shield-alert" style="width:16px;height:16px"></i></span>告警中心<span class="nav-badge">5</span></button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="route" style="width:16px;height:16px"></i></span>规则与区域</button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="file-check" style="width:16px;height:16px"></i></span>合规监管</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">数据与系统</div>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="bar-chart-3" style="width:16px;height:16px"></i></span>数据报表</button>
+        <button class="nav-item"><span class="nav-icon"><i data-lucide="settings" style="width:16px;height:16px"></i></span>系统配置</button>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-mini">
+        <div class="user-avatar">李</div>
+        <div class="user-info"><div class="user-name">李建国</div><div class="user-role">城市运营经理 · 杭州</div></div>
+        <i data-lucide="log-out" style="width:16px;height:16px;color:var(--fg-dim);cursor:pointer"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb"><span>两轮智运</span><i data-lucide="chevron-right" style="width:14px;height:14px"></i><span class="current">运营总览</span></div>
+      </div>
+      <div class="topbar-right">
+        <button class="city-select"><i data-lucide="map-pin" style="width:14px;height:14px"></i>杭州 <i data-lucide="chevron-down" style="width:14px;height:14px"></i></button>
+        <button class="topbar-btn"><i data-lucide="search" style="width:16px;height:16px"></i></button>
+        <button class="topbar-btn"><i data-lucide="bell" style="width:16px;height:16px"></i><span class="dot"></span></button>
+        <button class="topbar-btn"><i data-lucide="help-circle" style="width:16px;height:16px"></i></button>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+      <div class="dash-header">
+        <h1>运营总览 Dashboard</h1>
+        <p class="subtitle">今日数据实时更新 · 统计周期：2026年6月6日 00:00 - 09:41</p>
+      </div>
+
+      <!-- KPI Bento -->
+      <div class="kpi-bento">
+        <div class="kpi-card" style="--line-color:var(--primary)">
+          <div class="kpi-label"><i data-lucide="calendar" style="width:14px;height:14px"></i>今日订单量</div>
+          <div class="kpi-value">28,642</div>
+          <span class="kpi-change up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+12.5% 较昨日</span>
+        </div>
+        <div class="kpi-card" style="--line-color:var(--accent)">
+          <div class="kpi-label"><i data-lucide="dollar-sign" style="width:14px;height:14px"></i>今日GMV</div>
+          <div class="kpi-value">¥86,320</div>
+          <span class="kpi-change up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+8.3% 较昨日</span>
+        </div>
+        <div class="kpi-card" style="--line-color:var(--warn)">
+          <div class="kpi-label"><i data-lucide="activity" style="width:14px;height:14px"></i>单车日均骑行</div>
+          <div class="kpi-value">4.2</div>
+          <span class="kpi-change down"><i data-lucide="trending-down" style="width:12px;height:12px"></i>-2.1% 较昨日</span>
+        </div>
+        <div class="kpi-card" style="--line-color:var(--info)">
+          <div class="kpi-label"><i data-lucide="users" style="width:14px;height:14px"></i>活跃用户数 DAU</div>
+          <div class="kpi-value">18,952</div>
+          <span class="kpi-change up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+5.7% 较昨日</span>
+        </div>
+      </div>
+
+      <!-- Vehicle Status Bento -->
+      <div class="status-bento">
+        <div class="status-cell">
+          <div class="st-num" style="color:var(--accent)">21,420</div>
+          <div class="st-label">可用</div>
+          <div class="st-bar"><div class="st-bar-fill" style="width:72%;background:var(--accent)"></div></div>
+        </div>
+        <div class="status-cell">
+          <div class="st-num" style="color:var(--primary)">4,832</div>
+          <div class="st-label">使用中</div>
+          <div class="st-bar"><div class="st-bar-fill" style="width:24%;background:var(--primary)"></div></div>
+        </div>
+        <div class="status-cell">
+          <div class="st-num" style="color:var(--warn)">1,256</div>
+          <div class="st-label">低电</div>
+          <div class="st-bar"><div class="st-bar-fill" style="width:8%;background:var(--warn)"></div></div>
+        </div>
+        <div class="status-cell">
+          <div class="st-num" style="color:var(--err)">468</div>
+          <div class="st-label">故障</div>
+          <div class="st-bar"><div class="st-bar-fill" style="width:3%;background:var(--err)"></div></div>
+        </div>
+        <div class="status-cell">
+          <div class="st-num" style="color:var(--fg-muted)">312</div>
+          <div class="st-label">离线</div>
+          <div class="st-bar"><div class="st-bar-fill" style="width:2%;background:var(--fg-muted)"></div></div>
+        </div>
+        <div class="status-cell">
+          <div class="st-num" style="color:var(--info)">189</div>
+          <div class="st-label">回收中</div>
+          <div class="st-bar"><div class="st-bar-fill" style="width:1%;background:var(--info)"></div></div>
+        </div>
+      </div>
+
+      <!-- Row: Chart + Alerts -->
+      <div class="dash-row">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>订单与收入趋势</h3>
+            <div class="panel-actions">
+              <button class="panel-action active">今日</button>
+              <button class="panel-action">本周</button>
+              <button class="panel-action">本月</button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-bars">
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:35%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥12k</span></div>
+                <span class="chart-label">00</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:22%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥8k</span></div>
+                <span class="chart-label">02</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:18%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥6k</span></div>
+                <span class="chart-label">04</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:28%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥10k</span></div>
+                <span class="chart-label">06</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:55%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥22k</span></div>
+                <span class="chart-label">08</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:78%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥32k</span></div>
+                <span class="chart-label">10</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:92%;background:linear-gradient(180deg,var(--accent),oklch(45% 0.10 155));"><span class="chart-bar-tooltip">¥38k</span></div>
+                <span class="chart-label">12</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:65%;background:linear-gradient(180deg,var(--accent),oklch(45% 0.10 155));"><span class="chart-bar-tooltip">¥26k</span></div>
+                <span class="chart-label">14</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:48%;background:linear-gradient(180deg,var(--accent),oklch(45% 0.10 155));"><span class="chart-bar-tooltip">¥19k</span></div>
+                <span class="chart-label">16</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:72%;background:linear-gradient(180deg,var(--accent),oklch(45% 0.10 155));"><span class="chart-bar-tooltip">¥29k</span></div>
+                <span class="chart-label">18</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:85%;background:linear-gradient(180deg,var(--accent),oklch(45% 0.10 155));"><span class="chart-bar-tooltip">¥34k</span></div>
+                <span class="chart-label">20</span>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height:42%;background:linear-gradient(180deg,var(--primary),oklch(45% 0.12 255));"><span class="chart-bar-tooltip">¥17k</span></div>
+                <span class="chart-label">22</span>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-color" style="background:var(--primary)"></span>订单收入</div>
+              <div class="legend-item"><span class="legend-color" style="background:var(--accent)"></span>骑行次数</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h3>实时告警</h3>
+            <button class="panel-action">查看全部</button>
+          </div>
+          <div class="alert-list">
+            <div class="alert-item">
+              <div class="alert-severity p0"></div>
+              <div class="alert-body">
+                <div class="alert-title">重点区域可用率低于85%</div>
+                <div class="alert-meta">西湖区 · 文三路商圈</div>
+              </div>
+              <div class="alert-time">2分钟前</div>
+            </div>
+            <div class="alert-item">
+              <div class="alert-severity p0"></div>
+              <div class="alert-body">
+                <div class="alert-title">大规模离线车辆 detected</div>
+                <div class="alert-meta">上城区 · 批量IoT信号中断</div>
+              </div>
+              <div class="alert-time">8分钟前</div>
+            </div>
+            <div class="alert-item">
+              <div class="alert-severity p1"></div>
+              <div class="alert-body">
+                <div class="alert-title">低电车辆超过阈值</div>
+                <div class="alert-meta">全市 · 低电车辆 1,256</div>
+              </div>
+              <div class="alert-time">15分钟前</div>
+            </div>
+            <div class="alert-item">
+              <div class="alert-severity p1"></div>
+              <div class="alert-body">
+                <div class="alert-title">违停聚集告警</div>
+                <div class="alert-meta">滨江区 · 地铁站C口</div>
+              </div>
+              <div class="alert-time">23分钟前</div>
+            </div>
+            <div class="alert-item">
+              <div class="alert-severity p2"></div>
+              <div class="alert-body">
+                <div class="alert-title">换电任务积压</div>
+                <div class="alert-meta">拱墅区 · 待换电 34辆</div>
+              </div>
+              <div class="alert-time">31分钟前</div>
+            </div>
+            <div class="alert-item">
+              <div class="alert-severity p2"></div>
+              <div class="alert-body">
+                <div class="alert-title">数据共享接口延迟</div>
+                <div class="alert-meta">MDS接口 · 延迟 4.2s</div>
+              </div>
+              <div class="alert-time">42分钟前</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Work Orders + Battery -->
+      <div class="dash-row-2">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>运维工单看板</h3>
+            <div class="panel-actions">
+              <button class="panel-action active">待处理</button>
+              <button class="panel-action">执行中</button>
+              <button class="panel-action">已完成</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>工单号</th><th>类型</th><th>区域</th><th>优先级</th><th>状态</th><th>创建时间</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="cell-strong">WO-2026060601</td>
+                  <td>换电</td>
+                  <td>西湖区·黄龙</td>
+                  <td><span class="status-pill" style="background:var(--err-soft);color:oklch(75% 0.12 25)"><span class="dot" style="background:var(--err)"></span>P0</span></td>
+                  <td><span class="status-pill" style="background:oklch(20% 0.06 255 / 0.40);color:var(--primary)">待派单</span></td>
+                  <td>09:35</td>
+                </tr>
+                <tr>
+                  <td class="cell-strong">WO-2026060602</td>
+                  <td>调度</td>
+                  <td>上城区·火车东站</td>
+                  <td><span class="status-pill" style="background:var(--err-soft);color:oklch(75% 0.12 25)"><span class="dot" style="background:var(--err)"></span>P0</span></td>
+                  <td><span class="status-pill" style="background:oklch(20% 0.06 65 / 0.35);color:var(--warn)">执行中</span></td>
+                  <td>09:28</td>
+                </tr>
+                <tr>
+                  <td class="cell-strong">WO-2026060603</td>
+                  <td>维修</td>
+                  <td>滨江区·星光大道</td>
+                  <td><span class="status-pill" style="background:var(--warn-soft);color:oklch(75% 0.10 65)"><span class="dot" style="background:var(--warn)"></span>P1</span></td>
+                  <td><span class="status-pill" style="background:oklch(20% 0.06 255 / 0.40);color:var(--primary)">待派单</span></td>
+                  <td>09:15</td>
+                </tr>
+                <tr>
+                  <td class="cell-strong">WO-2026060604</td>
+                  <td>违停处置</td>
+                  <td>拱墅区·武林广场</td>
+                  <td><span class="status-pill" style="background:var(--warn-soft);color:oklch(75% 0.10 65)"><span class="dot" style="background:var(--warn)"></span>P1</span></td>
+                  <td><span class="status-pill" style="background:oklch(20% 0.06 155 / 0.30);color:var(--accent)">已接单</span></td>
+                  <td>09:02</td>
+                </tr>
+                <tr>
+                  <td class="cell-strong">WO-2026060605</td>
+                  <td>巡检</td>
+                  <td>萧山区·钱江世纪城</td>
+                  <td><span class="status-pill" style="background:oklch(20% 0.04 265 / 0.30);color:var(--fg-muted)"><span class="dot" style="background:var(--fg-dim)"></span>P2</span></td>
+                  <td><span class="status-pill" style="background:oklch(20% 0.06 255 / 0.40);color:var(--primary)">待派单</span></td>
+                  <td>08:45</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h3>电池与能源态势</h3>
+            <button class="panel-action">详情</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.375rem;">
+                <span style="font-size:0.8125rem;font-weight:600;">电量分布</span>
+                <span style="font-size:0.75rem;color:var(--fg-dim)">28,800 块电池</span>
+              </div>
+              <div style="display:flex;height:24px;border-radius:var(--r);overflow:hidden;">
+                <div style="width:62%;background:var(--accent);display:grid;place-items:center;font-size:0.6875rem;font-weight:700;color:oklch(20% 0.05 155)">62%</div>
+                <div style="width:22%;background:var(--warn);display:grid;place-items:center;font-size:0.6875rem;font-weight:700;color:oklch(20% 0.05 65)">22%</div>
+                <div style="width:10%;background:var(--err);display:grid;place-items:center;font-size:0.6875rem;font-weight:700;color:oklch(20% 0.05 25)">10%</div>
+                <div style="width:6%;background:var(--fg-dim);display:grid;place-items:center;font-size:0.6875rem;font-weight:700;color:oklch(20% 0.02 265)">6%</div>
+              </div>
+              <div style="display:flex;gap:1rem;margin-top:0.5rem;font-size:0.75rem;">
+                <span style="color:var(--accent)">● 60-100%</span>
+                <span style="color:var(--warn)">● 30-60%</span>
+                <span style="color:var(--err)">● 10-30%</span>
+                <span style="color:var(--fg-dim)">● 0-10%</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <div style="padding:0.875rem;border-radius:var(--r);background:oklch(100% 0 0 / 0.03);border:1px solid oklch(100% 0 0 / 0.04);text-align:center;">
+                <div style="font-size:1.125rem;font-weight:800;color:var(--primary)">1,256</div>
+                <div style="font-size:0.6875rem;color:var(--fg-dim);margin-top:0.125rem;">低电待换</div>
+              </div>
+              <div style="padding:0.875rem;border-radius:var(--r);background:oklch(100% 0 0 / 0.03);border:1px solid oklch(100% 0 0 / 0.04);text-align:center;">
+                <div style="font-size:1.125rem;font-weight:800;color:var(--accent)">892</div>
+                <div style="font-size:0.6875rem;color:var(--fg-dim);margin-top:0.125rem;">今日已换电</div>
+              </div>
+              <div style="padding:0.875rem;border-radius:var(--r);background:oklch(100% 0 0 / 0.03);border:1px solid oklch(100% 0 0 / 0.04);text-align:center;">
+                <div style="font-size:1.125rem;font-weight:800;color:var(--warn)">4.2min</div>
+                <div style="font-size:0.6875rem;color:var(--fg-dim);margin-top:0.125rem;">平均换电耗时</div>
+              </div>
+              <div style="padding:0.875rem;border-radius:var(--r);background:oklch(100% 0 0 / 0.03);border:1px solid oklch(100% 0 0 / 0.04);text-align:center;">
+                <div style="font-size:1.125rem;font-weight:800;color:var(--fg)">98.5%</div>
+                <div style="font-size:0.6875rem;color:var(--fg-dim);margin-top:0.125rem;">换电成功率</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    // Panel action toggle
+    document.querySelectorAll('.panel-actions').forEach(group => {
+      group.querySelectorAll('.panel-action').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.panel-action').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

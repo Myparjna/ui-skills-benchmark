@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星空航空 Skystar Airlines · 飞向更远的地方</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter Tight', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        midnight: '#0a1628',
+        'midnight-light': '#111f38',
+        silver: '#e8ecf1',
+        'silver-warm': '#f0f2f5',
+        amber: '#c9a96e',
+        'amber-light': '#d4b87a',
+        chrome: '#8a93a1',
+        smoke: '#4a5568',
+      }
+    }
+  }
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter Tight', system-ui, sans-serif; background: #0a1628; color: #e8ecf1; }
+  .gradient-sky {
+    background: linear-gradient(135deg, #0a1628 0%, #111f38 40%, #1a2d4d 100%);
+  }
+  .gradient-hero {
+    background: radial-gradient(ellipse at 70% 30%, rgba(201,169,110,0.12) 0%, transparent 60%),
+                linear-gradient(180deg, #0a1628 0%, #0f1c32 50%, #0a1628 100%);
+  }
+  .amber-glow {
+    box-shadow: 0 0 40px rgba(201,169,110,0.15), 0 4px 20px rgba(201,169,110,0.08);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, #c9a96e 0%, #e8d5a3 50%, #c9a96e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .card-hover {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .line-pattern {
+    background-image: repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(201,169,110,0.06) 79px, rgba(201,169,110,0.06) 80px);
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .nav-blur {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(10, 22, 40, 0.85);
+  }
+  .bento-cell {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+  }
+  .bento-cell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at 20% 0%, rgba(201,169,110,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .search-glow:focus-within {
+    box-shadow: 0 0 0 3px rgba(201,169,110,0.2), 0 8px 40px rgba(0,0,0,0.3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .card-hover { transition: none; }
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- Navigation -->
+<nav class="nav-blur fixed top-0 left-0 right-0 z-50 border-b border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 lg:h-[72px] flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber to-amber-light flex items-center justify-center">
+        <i data-lucide="plane" class="w-4.5 h-4.5 text-midnight"></i>
+      </div>
+      <span class="text-lg font-semibold tracking-tight text-silver">星空航空</span>
+      <span class="hidden sm:inline text-[11px] text-chrome tracking-wide uppercase">Skystar</span>
+    </a>
+    <div class="hidden lg:flex items-center gap-8">
+      <a href="#hero" class="text-sm text-chrome hover:text-silver transition-colors duration-300">首页</a>
+      <a href="#search" class="text-sm text-chrome hover:text-silver transition-colors duration-300">航班查询</a>
+      <a href="#destinations" class="text-sm text-chrome hover:text-silver transition-colors duration-300">目的地</a>
+      <a href="#features" class="text-sm text-chrome hover:text-silver transition-colors duration-300">服务与礼遇</a>
+      <a href="#member" class="text-sm text-chrome hover:text-silver transition-colors duration-300">常旅客计划</a>
+      <a href="#about" class="text-sm text-chrome hover:text-silver transition-colors duration-300">关于我们</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="hidden sm:block text-sm text-chrome hover:text-silver transition-colors">登录</button>
+      <button class="px-4 py-2 text-sm font-medium bg-amber text-midnight rounded-full hover:bg-amber-light transition-colors duration-300">注册</button>
+      <button class="lg:hidden p-2 text-chrome" id="menuBtn"><i data-lucide="menu" class="w-5 h-5"></i></button>
+    </div>
+  </div>
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="hidden lg:hidden border-t border-white/5 px-6 py-4 space-y-3">
+    <a href="#hero" class="block text-sm text-chrome">首页</a>
+    <a href="#search" class="block text-sm text-chrome">航班查询</a>
+    <a href="#destinations" class="block text-sm text-chrome">目的地</a>
+    <a href="#features" class="block text-sm text-chrome">服务与礼遇</a>
+    <a href="#member" class="block text-sm text-chrome">常旅客计划</a>
+    <a href="#about" class="block text-sm text-chrome">关于我们</a>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section id="hero" class="relative min-h-[100dvh] gradient-hero pt-24 lg:pt-24 overflow-hidden">
+  <div class="absolute inset-0 line-pattern pointer-events-none"></div>
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 relative">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center min-h-[calc(100dvh-6rem)]">
+      <!-- Left Content -->
+      <div class="pt-8 lg:pt-0">
+        <p class="text-[11px] uppercase tracking-[0.22em] text-amber mb-6">Skystar Airlines</p>
+        <h1 class="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-bold tracking-tighter leading-[1.05] text-silver mb-6">
+          每一次起飞，<br>都是一次全新的<span class="text-gradient">抵达</span>
+        </h1>
+        <p class="text-base lg:text-lg text-chrome leading-relaxed max-w-[55ch] mb-8">
+          连接世界，触达梦想。星空航空以安全、舒适、准时为核心承诺，航线覆盖国内82座城市及全球47个国际目的地。
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <button class="px-7 py-3.5 bg-amber text-midnight font-semibold rounded-full hover:bg-amber-light transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">预订航班</button>
+          <button class="px-7 py-3.5 border border-white/15 text-silver font-medium rounded-full hover:bg-white/5 transition-all duration-300 active:scale-[0.98]">探索目的地</button>
+        </div>
+      </div>
+      <!-- Right Visual -->
+      <div class="relative flex items-center justify-center lg:justify-end">
+        <div class="relative w-full max-w-[540px] aspect-[4/3]">
+          <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-midnight-light to-[#1a2d4d] border border-white/8 overflow-hidden">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 540 405" fill="none">
+              <defs>
+                <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#111f38"/>
+                  <stop offset="100%" stop-color="#0a1628"/>
+                </linearGradient>
+                <linearGradient id="wingGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#c9a96e" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#c9a96e" stop-opacity="0.05"/>
+                </linearGradient>
+              </defs>
+              <rect width="540" height="405" fill="url(#skyGrad)"/>
+              <!-- Stars -->
+              <circle cx="60" cy="50" r="1.5" fill="white" opacity="0.6"/>
+              <circle cx="140" cy="80" r="1" fill="white" opacity="0.4"/>
+              <circle cx="420" cy="60" r="1.5" fill="white" opacity="0.5"/>
+              <circle cx="480" cy="120" r="1" fill="white" opacity="0.3"/>
+              <circle cx="200" cy="40" r="1" fill="white" opacity="0.5"/>
+              <circle cx="380" cy="90" r="1.5" fill="white" opacity="0.4"/>
+              <!-- Moon -->
+              <circle cx="460" cy="70" r="28" fill="#f0f4f8" opacity="0.08"/>
+              <circle cx="460" cy="70" r="20" fill="#f0f4f8" opacity="0.12"/>
+              <!-- Clouds -->
+              <ellipse cx="120" cy="140" rx="80" ry="12" fill="white" opacity="0.03"/>
+              <ellipse cx="380" cy="180" rx="100" ry="15" fill="white" opacity="0.02"/>
+              <!-- Plane silhouette -->
+              <path d="M180 200 L360 160 L340 175 L280 190 L340 200 L320 215 L240 205 L200 220 Z" fill="url(#wingGrad)" stroke="#c9a96e" stroke-width="0.5" stroke-opacity="0.3"/>
+              <!-- City lights below -->
+              <rect x="40" y="320" width="4" height="12" fill="#c9a96e" opacity="0.15" rx="1"/>
+              <rect x="60" y="310" width="4" height="22" fill="#c9a96e" opacity="0.1" rx="1"/>
+              <rect x="100" y="315" width="3" height="17" fill="#c9a96e" opacity="0.12" rx="1"/>
+              <rect x="130" y="325" width="4" height="8" fill="#c9a96e" opacity="0.15" rx="1"/>
+              <rect x="160" y="305" width="5" height="28" fill="#c9a96e" opacity="0.08" rx="1"/>
+              <rect x="200" y="318" width="4" height="15" fill="#c9a96e" opacity="0.1" rx="1"/>
+              <rect x="240" y="312" width="3" height="21" fill="#c9a96e" opacity="0.12" rx="1"/>
+              <rect x="280" y="322" width="4" height="11" fill="#c9a96e" opacity="0.1" rx="1"/>
+              <rect x="320" y="308" width="5" height="25" fill="#c9a96e" opacity="0.08" rx="1"/>
+              <rect x="360" y="316" width="4" height="17" fill="#c9a96e" opacity="0.12" rx="1"/>
+              <rect x="400" y="324" width="3" height="9" fill="#c9a96e" opacity="0.15" rx="1"/>
+              <rect x="430" y="310" width="4" height="23" fill="#c9a96e" opacity="0.1" rx="1"/>
+              <rect x="470" y="320" width="4" height="13" fill="#c9a96e" opacity="0.12" rx="1"/>
+            </svg>
+            <!-- Overlay text -->
+            <div class="absolute bottom-6 left-6 right-6">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-2 h-2 rounded-full bg-amber"></div>
+                <span class="text-[11px] text-chrome uppercase tracking-wider">实时航班</span>
+              </div>
+              <p class="text-sm text-silver">今日执飞 <span class="text-amber font-semibold">612</span> 个航班，覆盖 <span class="text-amber font-semibold">129</span> 个目的地</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Search Section -->
+<section id="search" class="relative py-16 lg:py-20 bg-midnight border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="max-w-4xl mx-auto">
+      <div class="search-glow bg-midnight-light rounded-2xl border border-white/8 p-6 lg:p-8 transition-shadow duration-300">
+        <p class="text-sm text-chrome mb-5">您想去哪里？</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="lg:col-span-1">
+            <label class="block text-[11px] text-chrome uppercase tracking-wider mb-1.5">出发</label>
+            <div class="flex items-center gap-2 bg-midnight rounded-xl px-3 py-2.5 border border-white/8">
+              <i data-lucide="map-pin" class="w-4 h-4 text-amber"></i>
+              <input type="text" value="杭州" class="bg-transparent text-sm text-silver w-full outline-none placeholder-chrome/50">
+            </div>
+          </div>
+          <div class="lg:col-span-1">
+            <label class="block text-[11px] text-chrome uppercase tracking-wider mb-1.5">到达</label>
+            <div class="flex items-center gap-2 bg-midnight rounded-xl px-3 py-2.5 border border-white/8">
+              <i data-lucide="map-pin" class="w-4 h-4 text-chrome"></i>
+              <input type="text" placeholder="城市或机场" class="bg-transparent text-sm text-silver w-full outline-none placeholder-chrome/50">
+            </div>
+          </div>
+          <div class="lg:col-span-1">
+            <label class="block text-[11px] text-chrome uppercase tracking-wider mb-1.5">出发日期</label>
+            <div class="flex items-center gap-2 bg-midnight rounded-xl px-3 py-2.5 border border-white/8">
+              <i data-lucide="calendar" class="w-4 h-4 text-chrome"></i>
+              <input type="text" value="2026-06-15" class="bg-transparent text-sm text-silver w-full outline-none">
+            </div>
+          </div>
+          <div class="lg:col-span-1">
+            <label class="block text-[11px] text-chrome uppercase tracking-wider mb-1.5">舱位</label>
+            <div class="flex items-center gap-2 bg-midnight rounded-xl px-3 py-2.5 border border-white/8">
+              <i data-lucide="armchair" class="w-4 h-4 text-chrome"></i>
+              <select class="bg-transparent text-sm text-silver w-full outline-none appearance-none cursor-pointer">
+                <option>经济舱</option>
+                <option>商务舱</option>
+                <option>头等舱</option>
+              </select>
+            </div>
+          </div>
+          <div class="lg:col-span-1 flex items-end">
+            <button class="w-full py-2.5 bg-amber text-midnight font-semibold rounded-xl hover:bg-amber-light transition-colors duration-300 flex items-center justify-center gap-2 active:scale-[0.98]">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              搜索航班
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Promo Banner -->
+<section class="py-10 bg-gradient-to-r from-[#1a1020] via-midnight-light to-[#102018] border-y border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="megaphone" class="w-4 h-4 text-amber"></i>
+          <span class="text-[11px] uppercase tracking-[0.18em] text-amber">夏季出行季</span>
+        </div>
+        <h3 class="text-lg font-semibold text-silver">特惠机票开抢</h3>
+      </div>
+      <div class="flex flex-wrap gap-6 lg:gap-10">
+        <div class="text-center">
+          <p class="text-xs text-chrome">杭州 <i data-lucide="arrow-right" class="w-3 h-3 inline"></i> 三亚</p>
+          <p class="text-xl font-bold text-amber">¥399<span class="text-xs text-chrome font-normal">起</span></p>
+        </div>
+        <div class="text-center">
+          <p class="text-xs text-chrome">杭州 <i data-lucide="arrow-right" class="w-3 h-3 inline"></i> 大阪</p>
+          <p class="text-xl font-bold text-amber">¥1,299<span class="text-xs text-chrome font-normal">起</span></p>
+        </div>
+        <div class="text-center">
+          <p class="text-xs text-chrome">杭州 <i data-lucide="arrow-right" class="w-3 h-3 inline"></i> 伦敦</p>
+          <p class="text-xl font-bold text-amber">¥3,899<span class="text-xs text-chrome font-normal">起</span></p>
+        </div>
+      </div>
+      <button class="px-5 py-2 text-sm border border-amber/30 text-amber rounded-full hover:bg-amber/10 transition-colors duration-300">查看全部特惠</button>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-20 lg:py-32 bg-midnight">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="grid lg:grid-cols-12 gap-8 lg:gap-16 mb-16 lg:mb-24">
+      <div class="lg:col-span-5">
+        <h2 class="text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1] text-silver mb-4">为什么选择星空航空</h2>
+        <p class="text-base text-chrome leading-relaxed max-w-[50ch]">十六年深耕航空服务，从安全运营到客舱细节，我们重新定义每一段旅程的品质标准。</p>
+      </div>
+    </div>
+
+    <!-- Feature Grid (Bento-style, asymmetric) -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+      <!-- Large Feature Card -->
+      <div class="md:col-span-2 lg:col-span-2 bento-cell p-6 lg:p-8 card-hover reveal">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="shield-check" class="w-5 h-5 text-amber"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-silver mb-2">安全第一，永不妥协</h3>
+            <p class="text-sm text-chrome leading-relaxed">机长团队平均飞行经验超过9800小时，全机队配备波音787与空客A320neo。连续16年零重大事故，八年获评民航局安全运营优秀单位。</p>
+          </div>
+        </div>
+        <div class="flex gap-6 mt-6 pt-6 border-t border-white/8">
+          <div>
+            <p class="text-2xl font-bold text-amber">9800h</p>
+            <p class="text-xs text-chrome">平均机长经验</p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-amber">16年</p>
+            <p class="text-xs text-chrome">零重大事故</p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-amber">186架</p>
+            <p class="text-xs text-chrome">年轻机队规模</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route Card -->
+      <div class="bento-cell p-6 lg:p-8 card-hover reveal">
+        <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center mb-4">
+          <i data-lucide="globe" class="w-5 h-5 text-amber"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-silver mb-2">广泛航线，覆盖全球</h3>
+        <p class="text-sm text-chrome leading-relaxed mb-4">国内82城，国际47个目的地。与28家航司代码共享，190个目的地的出行网络。</p>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-2.5 py-1 text-xs bg-white/5 text-chrome rounded-lg border border-white/8">东京</span>
+          <span class="px-2.5 py-1 text-xs bg-white/5 text-chrome rounded-lg border border-white/8">迪拜</span>
+          <span class="px-2.5 py-1 text-xs bg-white/5 text-chrome rounded-lg border border-white/8">巴黎</span>
+          <span class="px-2.5 py-1 text-xs bg-white/5 text-chrome rounded-lg border border-white/8">伦敦</span>
+        </div>
+      </div>
+
+      <!-- Cabin Card -->
+      <div class="bento-cell p-6 lg:p-8 card-hover reveal">
+        <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center mb-4">
+          <i data-lucide="sofa" class="w-5 h-5 text-amber"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-silver mb-2">精心设计的客舱体验</h3>
+        <p class="text-sm text-chrome leading-relaxed">商务舱1-2-1全通道平躺座椅，17英寸4K娱乐屏。经济舱领先座椅间距，全程免费Wi-Fi覆盖。</p>
+      </div>
+
+      <!-- Dining Card -->
+      <div class="bento-cell p-6 lg:p-8 card-hover reveal">
+        <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center mb-4">
+          <i data-lucide="utensils" class="w-5 h-5 text-amber"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-silver mb-2">云端餐饮，匠心呈现</h3>
+        <p class="text-sm text-chrome leading-relaxed">与知名主厨联名打造机上菜单，融合东方饮食哲学与现代烹饪技术，商务舱可按需点餐。</p>
+      </div>
+
+      <!-- Digital Card -->
+      <div class="bento-cell p-6 lg:p-8 card-hover reveal">
+        <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center mb-4">
+          <i data-lucide="smartphone" class="w-5 h-5 text-amber"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-silver mb-2">数字化服务，便捷出行</h3>
+        <p class="text-sm text-chrome leading-relaxed">App支持全流程无纸化出行，智能客服"星星"7x24小时在线，平均流程仅需18分钟。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Destinations Section -->
+<section id="destinations" class="py-20 lg:py-32 bg-midnight-light border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-12 lg:mb-16">
+      <div>
+        <h2 class="text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1] text-silver mb-3">精选目的地</h2>
+        <p class="text-base text-chrome max-w-[45ch]">从热带海岛到艺术之都，发现您的下一站。</p>
+      </div>
+      <a href="#" class="text-sm text-amber hover:text-amber-light transition-colors flex items-center gap-1">查看全部目的地 <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+    </div>
+
+    <!-- Asymmetric Destination Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+      <!-- Featured: Sanya -->
+      <div class="md:col-span-2 lg:col-span-2 lg:row-span-2 bento-cell card-hover reveal overflow-hidden group">
+        <div class="h-full min-h-[320px] lg:min-h-full relative flex flex-col justify-end p-6 lg:p-8">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1a3a4a] via-[#162d3a] to-midnight"></div>
+          <svg class="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 400">
+            <circle cx="320" cy="80" r="60" fill="#c9a96e" opacity="0.1"/>
+            <ellipse cx="200" cy="360" rx="180" ry="20" fill="#c9a96e" opacity="0.05"/>
+            <path d="M0 300 Q100 280 200 300 T400 300" stroke="#c9a96e" stroke-width="0.5" fill="none" opacity="0.2"/>
+            <path d="M0 320 Q100 300 200 320 T400 320" stroke="#c9a96e" stroke-width="0.5" fill="none" opacity="0.15"/>
+          </svg>
+          <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2 py-0.5 text-[10px] uppercase tracking-wider bg-amber/20 text-amber rounded">热门</span>
+            </div>
+            <h3 class="text-2xl lg:text-3xl font-bold text-silver mb-1">三亚</h3>
+            <p class="text-sm text-chrome mb-3">阳光与海浪的完美邂逅</p>
+            <div class="flex items-center gap-4 text-xs text-chrome">
+              <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> 1小时45分</span>
+              <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> 每日4班</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chengdu -->
+      <div class="bento-cell card-hover reveal overflow-hidden group">
+        <div class="h-full min-h-[180px] relative flex flex-col justify-end p-5">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#2a1a2a] via-[#1a1520] to-midnight"></div>
+          <svg class="absolute right-0 top-0 w-24 h-24 opacity-20" viewBox="0 0 100 100">
+            <circle cx="80" cy="20" r="30" fill="#c9a96e"/>
+          </svg>
+          <div class="relative z-10">
+            <h3 class="text-lg font-bold text-silver mb-0.5">成都</h3>
+            <p class="text-xs text-chrome mb-2">慢下来，遇见真正的巴蜀</p>
+            <p class="text-[11px] text-chrome">每日8班 · 支持中转西藏</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tokyo -->
+      <div class="bento-cell card-hover reveal overflow-hidden group">
+        <div class="h-full min-h-[180px] relative flex flex-col justify-end p-5">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1a1a2e] via-[#151528] to-midnight"></div>
+          <svg class="absolute right-2 top-2 w-20 h-20 opacity-15" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="35" fill="#c9a96e"/>
+          </svg>
+          <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-1.5 py-0.5 text-[10px] uppercase tracking-wider bg-amber/20 text-amber rounded">限量</span>
+            </div>
+            <h3 class="text-lg font-bold text-silver mb-0.5">东京</h3>
+            <p class="text-xs text-chrome mb-2">赏樱季专属航班</p>
+            <p class="text-[11px] text-chrome">每日2班 · 双机场</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dubai -->
+      <div class="bento-cell card-hover reveal overflow-hidden group">
+        <div class="h-full min-h-[180px] relative flex flex-col justify-end p-5">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#2a2015] via-[#1a1510] to-midnight"></div>
+          <svg class="absolute right-0 bottom-0 w-28 h-28 opacity-10" viewBox="0 0 100 100">
+            <polygon points="50,10 90,90 10,90" fill="#c9a96e"/>
+          </svg>
+          <div class="relative z-10">
+            <h3 class="text-lg font-bold text-silver mb-0.5">迪拜</h3>
+            <p class="text-xs text-chrome mb-2">沙漠奢旅的起点</p>
+            <p class="text-[11px] text-chrome">每日1班 · 商务舱平躺</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paris -->
+      <div class="bento-cell card-hover reveal overflow-hidden group">
+        <div class="h-full min-h-[180px] relative flex flex-col justify-end p-5">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1a1a2a] via-[#151520] to-midnight"></div>
+          <svg class="absolute right-2 top-4 w-16 h-16 opacity-15" viewBox="0 0 100 100">
+            <path d="M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z" fill="#c9a96e"/>
+          </svg>
+          <div class="relative z-10">
+            <h3 class="text-lg font-bold text-silver mb-0.5">巴黎</h3>
+            <p class="text-xs text-chrome mb-2">艺术与浪漫在等你</p>
+            <p class="text-[11px] text-chrome">每周5班 · CDG直航</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Frequent Flyer Section -->
+<section id="member" class="py-20 lg:py-32 bg-midnight border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div class="reveal">
+        <h2 class="text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1] text-silver mb-4">星辰会员计划</h2>
+        <p class="text-base text-chrome leading-relaxed max-w-[50ch] mb-6">加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿及超过300个合作品牌的礼遇权益。</p>
+        <div class="flex gap-4">
+          <button class="px-6 py-3 bg-amber text-midnight font-semibold rounded-full hover:bg-amber-light transition-colors duration-300 active:scale-[0.98]">立即注册</button>
+          <p class="text-xs text-chrome self-center">即送2,000里程开户礼</p>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="space-y-3">
+          <div class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/8 hover:border-amber/20 transition-colors duration-300">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="award" class="w-5 h-5 text-midnight"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-silver">银卡</p>
+              <p class="text-xs text-chrome">年飞25,000里程</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-chrome">优先值机</p>
+              <p class="text-xs text-chrome">额外行李额</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/8 hover:border-amber/20 transition-colors duration-300">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-light to-amber flex items-center justify-center flex-shrink-0">
+              <i data-lucide="crown" class="w-5 h-5 text-midnight"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-silver">金卡</p>
+              <p class="text-xs text-chrome">年飞50,000里程</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-chrome">贵宾休息室</p>
+              <p class="text-xs text-chrome">优先登机</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/8 hover:border-amber/20 transition-colors duration-300">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-200 to-white flex items-center justify-center flex-shrink-0">
+              <i data-lucide="gem" class="w-5 h-5 text-midnight"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-silver">白金卡</p>
+              <p class="text-xs text-chrome">年飞100,000里程</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-chrome">专属顾问</p>
+              <p class="text-xs text-chrome">头等舱升级券</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/8 hover:border-amber/20 transition-colors duration-300">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber via-amber-light to-white flex items-center justify-center flex-shrink-0">
+              <i data-lucide="diamond" class="w-5 h-5 text-midnight"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-silver">钻石卡</p>
+              <p class="text-xs text-chrome">邀请制</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-chrome">全部权益</p>
+              <p class="text-xs text-chrome">私人定制服务</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Special Services -->
+<section class="py-20 lg:py-24 bg-midnight-light border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center">
+            <i data-lucide="heart-handshake" class="w-5 h-5 text-amber"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-silver">特殊旅客关怀</h3>
+        </div>
+        <p class="text-sm text-chrome leading-relaxed">为有特殊需求的旅客提供全程无缝协助，包括婴幼儿推车寄存、轮椅陪同、无障碍座位优先安排。主要枢纽设有独立"星空关爱"服务柜台。</p>
+      </div>
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center">
+            <i data-lucide="dog" class="w-5 h-5 text-amber"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-silver">宠物随行计划</h3>
+        </div>
+        <p class="text-sm text-chrome leading-relaxed">小型宠物可进入客舱同乘，大型犬猫提供恒温专属货舱运输，全程由专业动物运输团队监护。毛孩子也是家庭的一员。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About / Business Section -->
+<section id="about" class="py-20 lg:py-32 bg-midnight border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="grid lg:grid-cols-12 gap-8 lg:gap-16">
+      <div class="lg:col-span-7 reveal">
+        <h2 class="text-3xl lg:text-4xl font-bold tracking-tight leading-[1.1] text-silver mb-5">关于星空航空</h2>
+        <p class="text-base text-chrome leading-relaxed max-w-[60ch] mb-5">星空航空成立于2008年，总部位于杭州萧山国际机场。机队规模186架，平均机龄仅5.2年，是国内机队最年轻的航空公司之一。</p>
+        <p class="text-base text-chrome leading-relaxed max-w-[60ch] mb-6">我们相信航空出行不应该是从A到B的位移，而是一段有温度的旅程。因此持续在客舱品质、数字化服务与可持续发展三个维度深度投入。</p>
+        <div class="p-5 rounded-xl bg-white/[0.03] border border-white/8">
+          <p class="text-xs uppercase tracking-wider text-amber mb-2">可持续承诺</p>
+          <p class="text-sm text-chrome leading-relaxed">2026年起全面加入CORSIA国际碳抵消机制，承诺2035年单位客公里碳排放较2019年下降40%。新引进机型全部选用新一代节能发动机。</p>
+        </div>
+      </div>
+      <div class="lg:col-span-5 reveal">
+        <div class="p-6 lg:p-8 rounded-2xl bg-gradient-to-br from-midnight-light to-midnight border border-white/8">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl bg-amber/10 flex items-center justify-center">
+              <i data-lucide="briefcase" class="w-5 h-5 text-amber"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-silver">企业商务服务</h3>
+          </div>
+          <p class="text-sm text-chrome leading-relaxed mb-5">为企业客户提供定制化商务出行解决方案：统一账期结算、差旅数据报告、专属客户经理、团体机票协议价格。</p>
+          <div class="flex items-center gap-4 mb-5">
+            <div>
+              <p class="text-2xl font-bold text-amber">12,000+</p>
+              <p class="text-xs text-chrome">企业客户</p>
+            </div>
+          </div>
+          <button class="w-full py-2.5 border border-amber/30 text-amber rounded-xl hover:bg-amber/10 transition-colors duration-300 text-sm font-medium">联系商务合作团队</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-12 lg:py-16 bg-[#060e1a] border-t border-white/5">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-10">
+      <div class="lg:col-span-1">
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber to-amber-light flex items-center justify-center">
+            <i data-lucide="plane" class="w-4 h-4 text-midnight"></i>
+          </div>
+          <span class="text-lg font-semibold tracking-tight text-silver">星空航空</span>
+        </div>
+        <p class="text-xs text-chrome leading-relaxed">杭州萧山国际机场运营基地</p>
+        <p class="text-xs text-chrome">客服热线：400-800-9988</p>
+        <p class="text-xs text-chrome">7x24小时</p>
+      </div>
+      <div>
+        <h4 class="text-xs uppercase tracking-wider text-chrome mb-3">出行服务</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">航班状态查询</a></li>
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">行李规定</a></li>
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">退改签政策</a></li>
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">旅行保险</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-xs uppercase tracking-wider text-chrome mb-3">会员与礼遇</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">星辰会员计划</a></li>
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">贵宾休息室</a></li>
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">企业商务服务</a></li>
+          <li><a href="#" class="text-sm text-chrome hover:text-silver transition-colors">常见问题</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-xs uppercase tracking-wider text-chrome mb-3">关注我们</h4>
+        <ul class="space-y-2">
+          <li><span class="text-sm text-chrome">微信公众号「星空航空」</span></li>
+          <li><span class="text-sm text-chrome">微博 @星空航空官方</span></li>
+          <li><span class="text-sm text-chrome">抖音 @skystarairlines</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <p class="text-xs text-chrome">CATA中国航空运输协会会员 · IATA国际航空运输协会认证</p>
+      <p class="text-xs text-chrome">© 2026 Skystar Airlines Co., Ltd. 保留所有权利</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Initialize Lucide icons
+lucide.createIcons();
+
+// Mobile menu toggle
+const menuBtn = document.getElementById('menuBtn');
+const mobileMenu = document.getElementById('mobileMenu');
+if (menuBtn && mobileMenu) {
+  menuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+  });
+}
+
+// Scroll reveal animation
+const revealElements = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry, index) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, index * 60);
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+revealElements.forEach(el => revealObserver.observe(el));
+
+// Smooth scroll for nav links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (mobileMenu) mobileMenu.classList.add('hidden');
+    }
+  });
+});
+</script>
+</body>
+</html>

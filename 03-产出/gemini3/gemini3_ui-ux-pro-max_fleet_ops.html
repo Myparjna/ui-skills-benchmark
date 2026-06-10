@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市运营管理后台 - UI-UX Pro Max</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --p0: #fee2e2;
+            --p1: #ffedd5;
+            --p2: #fef9c3;
+            --radius: 12px;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+
+        /* Layout */
+        .app-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: var(--surface); border-right: 1px border var(--border); padding: 24px 16px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        .main-content { flex: 1; padding: 32px; max-width: 1600px; margin: 0 auto; width: 100%; }
+
+        /* Sidebar Nav */
+        .logo { font-weight: 700; font-size: 20px; color: var(--primary); margin-bottom: 32px; padding: 0 12px; display: flex; align-items: center; gap: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius); color: var(--text-sub); text-decoration: none; font-weight: 500; transition: all 0.2s; min-height: 48px; margin-bottom: 4px; }
+        .nav-item:hover { background: #f1f5f9; color: var(--text-main); }
+        .nav-item.active { background: #eff6ff; color: var(--primary); }
+
+        /* Header */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+        .header-actions { display: flex; gap: 16px; align-items: center; }
+        .btn { height: 44px; padding: 0 20px; border-radius: var(--radius); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none; transition: all 0.2s; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+        /* Dashboard Grid */
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
+        .card { background: var(--surface); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .card-label { font-size: 14px; color: var(--text-sub); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .card-value { font-size: 28px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+        .trend { font-size: 14px; font-weight: 600; }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* Table Optimization */
+        .table-container { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; margin-top: 24px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #f8fafc; padding: 16px 20px; font-size: 13px; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+        td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 14px; min-height: 56px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8fafc; cursor: pointer; }
+        .status-badge { padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .status-online { background: #ecfdf5; color: #059669; }
+        .status-offline { background: #f1f5f9; color: #64748b; }
+        .status-low-battery { background: #fff7ed; color: #d97706; }
+
+        /* Alarm grading */
+        .alarm-row-p0 { background: #fef2f2; }
+        .alarm-row-p0:hover td { background: #fee2e2 !important; }
+        .level-tag { width: 4px; height: 100%; position: absolute; left: 0; top: 0; }
+        .level-p0 { background: var(--danger); }
+        .level-p1 { background: var(--warning); }
+        .level-p2 { background: var(--primary); }
+
+        /* Tooltips & Icons placeholder */
+        .icon { width: 18px; height: 18px; stroke-width: 2; fill: none; stroke: currentColor; }
+        
+        /* Interactive feedback */
+        .clickable-row { position: relative; }
+
+        /* Responsive */
+        @media (max-width: 1200px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .sidebar { display: none; } .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                FleetManager Pro
+            </div>
+            <nav>
+                <a href="#" class="nav-item active"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg> 运营总览</a>
+                <a href="#" class="nav-item"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M16.2 7.8l-2 6.4-6.4 2 2-6.4 6.4-2z"></path></svg> 地图调度</a>
+                <a href="#" class="nav-item"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> 车辆资产</a>
+                <a href="#" class="nav-item"><svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> 运维工单</a>
+                <a href="#" class="nav-item"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> 合规监管</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div class="page-title">
+                    <h1>城市运营监控大屏</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn" style="background: white; border: 1px solid var(--border)">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        杭州市 · 萧山区
+                    </button>
+                    <button class="btn btn-primary">
+                        <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        创建调度任务
+                    </button>
+                </div>
+            </header>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-label">今日订单数 <span class="trend trend-up">↑ 12.5%</span></div>
+                    <div class="card-value">12,840</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">车辆可用率 <span class="trend trend-up">↑ 2.1%</span></div>
+                    <div class="card-value">94.2%</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">低电量预警 <span class="trend trend-down">↓ 5.4%</span></div>
+                    <div class="card-value" style="color: var(--warning)">1,402</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">待处理告警</div>
+                    <div class="card-value" style="color: var(--danger)">42</div>
+                </div>
+            </div>
+
+            <section>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="font-size: 18px; font-weight: 600;">实时异常监控 (P0/P1)</h2>
+                    <div style="font-size: 14px; color: var(--text-sub);">每 30s 自动刷新</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">级别</th>
+                                <th>告警内容</th>
+                                <th>关联车辆</th>
+                                <th>当前位置</th>
+                                <th>持续时间</th>
+                                <th style="text-align: right;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="alarm-row-p0 clickable-row">
+                                <td><span class="status-badge" style="background: #fee2e2; color: #b91c1c;">P0 · 紧急</span></td>
+                                <td style="font-weight: 600;">疑似盗损：异常轨迹偏移</td>
+                                <td>EB-94021</td>
+                                <td>萧山区北干街道...</td>
+                                <td>12m 45s</td>
+                                <td style="text-align: right;"><button class="btn" style="height: 32px; font-size: 12px; background: white; border: 1px solid #fee2e2;">立即定位</button></td>
+                            </tr>
+                            <tr class="clickable-row">
+                                <td><span class="status-badge" style="background: #ffedd5; color: #9a3412;">P1 · 高危</span></td>
+                                <td>车辆倒地：倾斜角度 > 60°</td>
+                                <td>BK-22108</td>
+                                <td>滨江区西兴路...</td>
+                                <td>4m 12s</td>
+                                <td style="text-align: right;"><button class="btn" style="height: 32px; font-size: 12px; background: white; border: 1px solid var(--border);">指派运维</button></td>
+                            </tr>
+                            <tr class="clickable-row">
+                                <td><span class="status-badge" style="background: #ffedd5; color: #9a3412;">P1 · 高危</span></td>
+                                <td>严重低电：SOC < 5%</td>
+                                <td>EB-88390</td>
+                                <td>钱江世纪城站...</td>
+                                <td>8m 20s</td>
+                                <td style="text-align: right;"><button class="btn" style="height: 32px; font-size: 12px; background: white; border: 1px solid var(--border);">生成换电工单</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section style="margin-top: 40px;">
+                <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">车辆资产概览</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>车辆编号</th>
+                                <th>型号</th>
+                                <th>状态</th>
+                                <th>电量 (SOC)</th>
+                                <th>今日里程</th>
+                                <th>最后在线</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 500;">EB-20031</td>
+                                <td>电单车 V3</td>
+                                <td><span class="status-badge status-online">● 在线可用</span></td>
+                                <td>82%</td>
+                                <td>14.2 km</td>
+                                <td>1m 之前</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">EB-20032</td>
+                                <td>电单车 V3</td>
+                                <td><span class="status-badge status-low-battery">● 低电预警</span></td>
+                                <td style="color: var(--warning); font-weight: 600;">12%</td>
+                                <td>28.5 km</td>
+                                <td>2m 之前</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">BK-10045</td>
+                                <td>自行车 V2</td>
+                                <td><span class="status-badge status-online">● 在线可用</span></td>
+                                <td>--</td>
+                                <td>8.1 km</td>
+                                <td>10m 之前</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">EB-20035</td>
+                                <td>电单车 V3</td>
+                                <td><span class="status-badge status-offline">● 离线故障</span></td>
+                                <td>45%</td>
+                                <td>0.0 km</td>
+                                <td>4h 之前</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', () => {
+                console.log('Row clicked, opening detail drawer...');
+                // Smooth feedback
+                row.style.backgroundColor = '#f1f5f9';
+                setTimeout(() => {
+                    row.style.backgroundColor = '';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html>

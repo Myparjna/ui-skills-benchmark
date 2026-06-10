@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>城市运营管理后台 · Modern Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --color-bg: #f8fafc;
+      --color-surface: rgba(255, 255, 255, 0.72);
+      --color-surface-solid: #ffffff;
+      --color-border: rgba(226, 232, 240, 0.6);
+      --color-primary: #4f46e5;
+      --color-primary-light: #818cf8;
+      --color-accent: #0ea5e9;
+    }
+
+    /* Fluid typography */
+    html {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+      --text-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.25rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+    }
+
+    * { font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif; }
+    body {
+      background: var(--color-bg);
+      color: #0f172a;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom Cursor */
+    .cursor {
+      position: fixed;
+      top: 0; left: 0;
+      width: 16px; height: 16px;
+      border: 2px solid var(--color-primary);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s var(--ease-spring), height 0.2s var(--ease-spring), background 0.2s ease, border-color 0.2s ease;
+      mix-blend-mode: difference;
+    }
+    .cursor.expanded {
+      width: 40px; height: 40px;
+      background: rgba(79, 70, 229, 0.08);
+      border-color: var(--color-primary-light);
+    }
+    .cursor-dot {
+      position: fixed;
+      top: 0; left: 0;
+      width: 4px; height: 4px;
+      background: var(--color-primary);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+    }
+    @media (pointer: coarse) {
+      .cursor, .cursor-dot { display: none; }
+      body { cursor: auto; }
+    }
+
+    /* Glass Surface */
+    .glass {
+      background: var(--color-surface);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border: 1px solid var(--color-border);
+    }
+    .glass-strong {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* Depth shadows */
+    .depth-1 { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02); }
+    .depth-2 { box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03); }
+    .depth-3 { box-shadow: 0 8px 24px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.04); }
+    .depth-4 { box-shadow: 0 16px 48px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.04); }
+
+    /* Sidebar */
+    .sidebar {
+      background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at 70% 30%, rgba(79,70,229,0.12) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .nav-link {
+      position: relative;
+      transition: all 0.25s var(--ease-out-expo);
+      border-radius: 10px;
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 0; border-radius: 0 3px 3px 0;
+      background: linear-gradient(180deg, #818cf8, #4f46e5);
+      transition: height 0.3s var(--ease-spring);
+    }
+    .nav-link:hover::before, .nav-link.active::before { height: 24px; }
+    .nav-link:hover { background: rgba(255,255,255,0.04); }
+    .nav-link.active { background: rgba(79,70,229,0.12); color: #a5b4fc; }
+
+    /* Reveal animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.08s; }
+    .reveal-delay-2 { transition-delay: 0.16s; }
+    .reveal-delay-3 { transition-delay: 0.24s; }
+    .reveal-delay-4 { transition-delay: 0.32s; }
+    .reveal-delay-5 { transition-delay: 0.40s; }
+
+    /* Count animation */
+    @keyframes countPop {
+      0% { opacity: 0; transform: translateY(12px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .count-anim {
+      animation: countPop 0.7s var(--ease-out-expo) both;
+    }
+
+    /* Bar chart */
+    @keyframes barRise {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+    .bar-animate {
+      transform-origin: bottom;
+      animation: barRise 0.8s var(--ease-out-expo) both;
+    }
+
+    /* Shimmer loading state (decorative) */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Pulse dot for live indicator */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .live-dot {
+      position: relative;
+    }
+    .live-dot::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-ring 2s ease-out infinite;
+      z-index: -1;
+    }
+
+    /* Hover lift */
+    .hover-lift {
+      transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+
+    /* Micro interaction: button press */
+    .btn-press {
+      transition: transform 0.1s var(--ease-spring), box-shadow 0.15s ease;
+    }
+    .btn-press:active {
+      transform: scale(0.96);
+    }
+
+    /* Table row */
+    .data-row {
+      transition: background 0.15s ease;
+    }
+    .data-row:hover {
+      background: rgba(248, 250, 252, 0.8);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Focus states */
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="antialiased">
+  <!-- Custom Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-dot" id="cursorDot"></div>
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 sidebar text-slate-300 flex flex-col flex-shrink-0 select-none">
+      <div class="h-16 flex items-center px-6 border-b border-white/5 relative z-10">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/20">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 17V5c0-1.1-.9-2-2-2H8a2 2 0 0 0-2 2v12"/></svg>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-white leading-tight tracking-tight">BikeOps City</div>
+          <div class="text-[10px] text-slate-500 leading-tight font-medium tracking-wide">运营管理后台</div>
+        </div>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-5 px-3 space-y-1 relative z-10">
+        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">运营中心</div>
+        <a href="#" class="nav-link active flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-200">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          运营总览
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+          地图调度中心
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+          车队资产
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17v5"/><path d="M17 17v5"/><path d="M2 10h20"/><path d="M5 10v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 10V3"/><path d="M8 3h8"/></svg>
+          电池与能源
+        </a>
+
+        <div class="px-3 mt-6 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">执行与规则</div>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+          运维工单
+          <span class="ml-auto bg-red-500/15 text-red-400 text-[10px] px-2 py-0.5 rounded-full font-semibold border border-red-500/20">12</span>
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          告警与异常
+          <span class="ml-auto bg-orange-500/15 text-orange-400 text-[10px] px-2 py-0.5 rounded-full font-semibold border border-orange-500/20">5</span>
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          规则与区域
+        </a>
+
+        <div class="px-3 mt-6 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">数据与系统</div>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          数据报表
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          组织与权限
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          系统配置
+        </a>
+      </nav>
+
+      <div class="p-4 border-t border-white/5 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-indigo-500/20">李</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm text-white font-medium truncate">李运营</div>
+            <div class="text-[11px] text-slate-500 truncate">城市运营经理</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+      <!-- Ambient background gradient -->
+      <div class="absolute top-0 left-0 right-0 h-80 bg-gradient-to-b from-indigo-50/50 to-transparent pointer-events-none"></div>
+
+      <!-- Header -->
+      <header class="glass-strong h-16 flex items-center justify-between px-8 flex-shrink-0 relative z-10">
+        <div class="flex items-center gap-5">
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight" style="font-size:var(--text-lg);">运营总览</h1>
+          <span class="text-slate-300">|</span>
+          <div class="flex items-center gap-2 text-sm text-slate-600">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            北京市 · 全城
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 font-medium">
+            <span class="live-dot w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            实时监控中
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="btn-press flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            今日 2026-06-06
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <button class="btn-press relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-8 relative z-0" id="scrollContainer">
+        <!-- Hero stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-1">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium text-slate-500">今日订单数</span>
+              <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-100">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6 18.29 8.29"/><path d="M18.63 4.37 16 6.999"/><path d="M7.5 14l2.3 2.3"/><path d="m6 18 2.3-2.3"/><path d="m18 10 2.3-2.3"/><path d="m16 6 2.3-2.3"/><path d="m7.5 14-2.3 2.3"/><path d="m6 18-2.3-2.3"/><path d="m18 10-2.3-2.3"/><path d="M16 6h2v2"/><path d="M6 18h-2v-2"/></svg>
+                +12.5%
+              </span>
+            </div>
+            <div class="count-anim text-4xl font-extrabold text-slate-900 tracking-tight" style="font-size:var(--text-2xl);" data-count="24683">24,683</div>
+            <div class="text-xs text-slate-400 mt-2 font-medium">昨日 21,942</div>
+          </div>
+
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-2">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium text-slate-500">GMV / 收入</span>
+              <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-100">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6 18.29 8.29"/><path d="M18.63 4.37 16 6.999"/><path d="M7.5 14l2.3 2.3"/><path d="m6 18 2.3-2.3"/><path d="m18 10 2.3-2.3"/><path d="m16 6 2.3-2.3"/><path d="m7.5 14-2.3 2.3"/><path d="m6 18-2.3-2.3"/><path d="m18 10-2.3-2.3"/><path d="M16 6h2v2"/><path d="M6 18h-2v-2"/></svg>
+                +8.3%
+              </span>
+            </div>
+            <div class="count-anim text-4xl font-extrabold text-slate-900 tracking-tight" style="font-size:var(--text-2xl);" data-count="48520">¥48,520</div>
+            <div class="text-xs text-slate-400 mt-2 font-medium">昨日 ¥44,789</div>
+          </div>
+
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-3">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium text-slate-500">车队可用率</span>
+              <span class="text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full flex items-center gap-1 border border-red-100">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18l-5.5-5.5"/><path d="m12.5 18.5 5.5-5.5"/><path d="m6 10 2.3-2.3"/><path d="m8.3 12.3-2.3-2.3"/><path d="m14 6 2.3-2.3"/><path d="m16.3 8.3-2.3-2.3"/><path d="m10 12 2.3 2.3"/><path d="m12.3 14.3 2.3 2.3"/><path d="m16 18 2.3 2.3"/><path d="M18 16h2v2"/><path d="m8 6-2-2"/></svg>
+                -2.1%
+              </span>
+            </div>
+            <div class="count-anim text-4xl font-extrabold text-slate-900 tracking-tight" style="font-size:var(--text-2xl);" data-count="87.4">87.4%</div>
+            <div class="text-xs text-slate-400 mt-2 font-medium">目标 ≥ 90%</div>
+          </div>
+
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-4">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium text-slate-500">活跃用户 DAU</span>
+              <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-100">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6 18.29 8.29"/><path d="M18.63 4.37 16 6.999"/><path d="M7.5 14l2.3 2.3"/><path d="m6 18 2.3-2.3"/><path d="m18 10 2.3-2.3"/><path d="m16 6 2.3-2.3"/><path d="m7.5 14-2.3 2.3"/><path d="m6 18-2.3-2.3"/><path d="m18 10-2.3-2.3"/><path d="M16 6h2v2"/><path d="M6 18h-2v-2"/></svg>
+                +5.7%
+              </span>
+            </div>
+            <div class="count-anim text-4xl font-extrabold text-slate-900 tracking-tight" style="font-size:var(--text-2xl);" data-count="18902">18,902</div>
+            <div class="text-xs text-slate-400 mt-2 font-medium">昨日 17,882</div>
+          </div>
+        </div>
+
+        <!-- Secondary stats with progress -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-1">
+            <div class="flex items-center gap-4 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17v5"/><path d="M17 17v5"/><path d="M2 10h20"/><path d="M5 10v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 10V3"/><path d="M8 3h8"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-slate-900">低电车辆</div>
+                <div class="text-xs text-slate-400">需换电/充电</div>
+              </div>
+              <div class="ml-auto text-3xl font-extrabold text-indigo-600">1,247</div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-3 overflow-hidden">
+              <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out" style="width:0%" data-width="42%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500 font-medium">
+              <span>占车队 4.2%</span>
+              <span>阈值 5%</span>
+            </div>
+          </div>
+
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-2">
+            <div class="flex items-center gap-4 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-slate-900">未处理告警</div>
+                <div class="text-xs text-slate-400">P0/P1 需立即响应</div>
+              </div>
+              <div class="ml-auto text-3xl font-extrabold text-orange-600">36</div>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-1 bg-red-50 rounded-xl p-3 text-center border border-red-100">
+                <div class="text-xl font-extrabold text-red-600">5</div>
+                <div class="text-[11px] text-red-500 font-medium mt-0.5">P0 紧急</div>
+              </div>
+              <div class="flex-1 bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
+                <div class="text-xl font-extrabold text-orange-600">12</div>
+                <div class="text-[11px] text-orange-500 font-medium mt-0.5">P1 重要</div>
+              </div>
+              <div class="flex-1 bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+                <div class="text-xl font-extrabold text-blue-600">19</div>
+                <div class="text-[11px] text-blue-500 font-medium mt-0.5">P2 一般</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass depth-2 rounded-2xl p-6 hover-lift reveal reveal-delay-3">
+            <div class="flex items-center gap-4 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-slate-900">工单完成率</div>
+                <div class="text-xs text-slate-400">今日累计</div>
+              </div>
+              <div class="ml-auto text-3xl font-extrabold text-emerald-600">91.2%</div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-3 overflow-hidden">
+              <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-1000 ease-out" style="width:0%" data-width="91%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500 font-medium">
+              <span>已完成 142 / 156</span>
+              <span class="text-red-500">超时 8</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+          <!-- Order Trend -->
+          <div class="glass depth-2 lg:col-span-2 rounded-2xl p-6 reveal reveal-delay-1">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">订单与骑行趋势</h3>
+                <p class="text-xs text-slate-400 mt-0.5">近 7 日订单量与骑行里程对比</p>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span class="w-3 h-3 rounded-sm bg-indigo-500"></span> 订单数
+                </div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span class="w-3 h-3 rounded-sm bg-emerald-400"></span> 骑行里程(km)
+                </div>
+              </div>
+            </div>
+            <div class="h-56 flex items-end gap-4 px-2">
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-indigo-500 rounded-t-lg bar-animate" style="height:55%;animation-delay:0.1s"></div>
+                  <div class="flex-1 bg-emerald-400 rounded-t-lg bar-animate" style="height:48%;animation-delay:0.15s"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">5/31</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-indigo-500 rounded-t-lg bar-animate" style="height:62%;animation-delay:0.15s"></div>
+                  <div class="flex-1 bg-emerald-400 rounded-t-lg bar-animate" style="height:55%;animation-delay:0.2s"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">6/1</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-indigo-500 rounded-t-lg bar-animate" style="height:48%;animation-delay:0.2s"></div>
+                  <div class="flex-1 bg-emerald-400 rounded-t-lg bar-animate" style="height:42%;animation-delay:0.25s"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">6/2</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-indigo-500 rounded-t-lg bar-animate" style="height:72%;animation-delay:0.25s"></div>
+                  <div class="flex-1 bg-emerald-400 rounded-t-lg bar-animate" style="height:65%;animation-delay:0.3s"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">6/3</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-indigo-500 rounded-t-lg bar-animate" style="height:80%;animation-delay:0.3s"></div>
+                  <div class="flex-1 bg-emerald-400 rounded-t-lg bar-animate" style="height:70%;animation-delay:0.35s"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">6/4</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-indigo-500 rounded-t-lg bar-animate" style="height:76%;animation-delay:0.35s"></div>
+                  <div class="flex-1 bg-emerald-400 rounded-t-lg bar-animate" style="height:68%;animation-delay:0.4s"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">6/5</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full flex items-end gap-1.5 h-44">
+                  <div class="flex-1 bg-gradient-to-t from-indigo-500 to-indigo-400 rounded-t-lg bar-animate shadow-lg shadow-indigo-500/20" style="height:88%;animation-delay:0.4s"></div>
+                  <div class="flex-1 bg-gradient-to-t from-emerald-400 to-emerald-300 rounded-t-lg bar-animate shadow-lg shadow-emerald-500/20" style="height:78%;animation-delay:0.45s"></div>
+                </div>
+                <span class="text-[10px] text-slate-500 font-bold">今日</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle Status -->
+          <div class="glass depth-2 rounded-2xl p-6 reveal reveal-delay-2">
+            <h3 class="text-sm font-bold text-slate-900 mb-0.5">车辆状态分布</h3>
+            <p class="text-xs text-slate-400 mb-6">全市 29,847 辆</p>
+            <div class="flex items-center justify-center mb-6">
+              <svg width="170" height="170" viewBox="0 0 170 170">
+                <defs>
+                  <linearGradient id="gradBlue" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="100%" style="stop-color:#4f46e5"/></linearGradient>
+                  <linearGradient id="gradGreen" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#34d399"/><stop offset="100%" style="stop-color:#10b981"/></linearGradient>
+                  <linearGradient id="gradAmber" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#fbbf24"/><stop offset="100%" style="stop-color:#f59e0b"/></linearGradient>
+                  <linearGradient id="gradRed" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#f87171"/><stop offset="100%" style="stop-color:#ef4444"/></linearGradient>
+                </defs>
+                <circle cx="85" cy="85" r="64" fill="none" stroke="#f1f5f9" stroke-width="18"/>
+                <circle cx="85" cy="85" r="64" fill="none" stroke="url(#gradBlue)" stroke-width="18" stroke-dasharray="226 402" stroke-dashoffset="0" transform="rotate(-90 85 85)" style="transition: stroke-dasharray 1.2s var(--ease-out-expo);"/>
+                <circle cx="85" cy="85" r="64" fill="none" stroke="url(#gradGreen)" stroke-width="18" stroke-dasharray="100 402" stroke-dashoffset="-226" transform="rotate(-90 85 85)"/>
+                <circle cx="85" cy="85" r="64" fill="none" stroke="url(#gradAmber)" stroke-width="18" stroke-dasharray="40 402" stroke-dashoffset="-326" transform="rotate(-90 85 85)"/>
+                <circle cx="85" cy="85" r="64" fill="none" stroke="url(#gradRed)" stroke-width="18" stroke-dasharray="20 402" stroke-dashoffset="-366" transform="rotate(-90 85 85)"/>
+                <text x="85" y="78" text-anchor="middle" fill="#0f172a" font-size="22" font-weight="800">87.4%</text>
+                <text x="85" y="100" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="500">可用率</text>
+              </svg>
+            </div>
+            <div class="space-y-3.5">
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-indigo-100"></span>
+                  <span class="text-slate-600 font-medium">可用</span>
+                </div>
+                <span class="font-bold text-slate-900">26,087 <span class="text-slate-400 font-normal text-xs">(87.4%)</span></span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
+                  <span class="text-slate-600 font-medium">使用中</span>
+                </div>
+                <span class="font-bold text-slate-900">10,842 <span class="text-slate-400 font-normal text-xs">(36.3%)</span></span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-100"></span>
+                  <span class="text-slate-600 font-medium">低电/待换电</span>
+                </div>
+                <span class="font-bold text-slate-900">1,247 <span class="text-slate-400 font-normal text-xs">(4.2%)</span></span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-500 ring-4 ring-red-100"></span>
+                  <span class="text-slate-600 font-medium">故障/离线</span>
+                </div>
+                <span class="font-bold text-slate-900">1,453 <span class="text-slate-400 font-normal text-xs">(4.9%)</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Recent Alerts -->
+          <div class="glass depth-2 rounded-2xl p-6 reveal reveal-delay-1">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="text-sm font-bold text-slate-900">实时告警</h3>
+              <a href="#" class="text-xs text-indigo-600 hover:text-indigo-700 font-semibold btn-press">查看全部 →</a>
+            </div>
+            <div class="space-y-2.5">
+              <div class="data-row flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-white/50 hover:bg-white transition-colors">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> P0
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-slate-900 truncate">中关村大街大量车辆倒地</div>
+                  <div class="text-xs text-slate-400">海淀区 · 2分钟前</div>
+                </div>
+                <button class="text-xs bg-slate-900 text-white px-3.5 py-1.5 rounded-lg hover:bg-slate-800 transition-colors btn-press font-medium">处置</button>
+              </div>
+              <div class="data-row flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-white/50 hover:bg-white transition-colors">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> P0
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-slate-900 truncate">西二旗站区域超投预警</div>
+                  <div class="text-xs text-slate-400">昌平区 · 5分钟前</div>
+                </div>
+                <button class="text-xs bg-slate-900 text-white px-3.5 py-1.5 rounded-lg hover:bg-slate-800 transition-colors btn-press font-medium">处置</button>
+              </div>
+              <div class="data-row flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-white/50 hover:bg-white transition-colors">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-600 border border-orange-100">
+                  <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> P1
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-slate-900 truncate">朝阳区 328 辆低电车辆待换电</div>
+                  <div class="text-xs text-slate-400">朝阳区 · 12分钟前</div>
+                </div>
+                <button class="text-xs border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors btn-press font-medium">派单</button>
+              </div>
+              <div class="data-row flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-white/50 hover:bg-white transition-colors">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-600 border border-orange-100">
+                  <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> P1
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-slate-900 truncate">国贸CBD禁停区违规聚集</div>
+                  <div class="text-xs text-slate-400">朝阳区 · 18分钟前</div>
+                </div>
+                <button class="text-xs border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors btn-press font-medium">派单</button>
+              </div>
+              <div class="data-row flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-white/50 hover:bg-white transition-colors">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> P2
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-slate-900 truncate">通州区 5 辆设备离线超 1h</div>
+                  <div class="text-xs text-slate-400">通州区 · 32分钟前</div>
+                </div>
+                <button class="text-xs border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors btn-press font-medium">查看</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Work Orders -->
+          <div class="glass depth-2 rounded-2xl p-6 reveal reveal-delay-2">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="text-sm font-bold text-slate-900">最新工单</h3>
+              <a href="#" class="text-xs text-indigo-600 hover:text-indigo-700 font-semibold btn-press">查看全部 →</a>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-xs text-slate-400 border-b border-slate-100">
+                    <th class="text-left font-semibold pb-3 uppercase tracking-wider">工单号</th>
+                    <th class="text-left font-semibold pb-3 uppercase tracking-wider">类型</th>
+                    <th class="text-left font-semibold pb-3 uppercase tracking-wider">负责人</th>
+                    <th class="text-left font-semibold pb-3 uppercase tracking-wider">状态</th>
+                    <th class="text-right font-semibold pb-3 uppercase tracking-wider">耗时</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                  <tr class="data-row">
+                    <td class="py-3.5 font-semibold text-slate-900">WO-20260606-001</td>
+                    <td class="py-3.5 text-slate-600">换电</td>
+                    <td class="py-3.5 text-slate-600">王运维</td>
+                    <td class="py-3.5">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <span class="w-1 h-1 rounded-full bg-emerald-500"></span> 执行中
+                      </span>
+                    </td>
+                    <td class="py-3.5 text-right text-slate-500">12分钟</td>
+                  </tr>
+                  <tr class="data-row">
+                    <td class="py-3.5 font-semibold text-slate-900">WO-20260606-002</td>
+                    <td class="py-3.5 text-slate-600">调度</td>
+                    <td class="py-3.5 text-slate-600">张调度</td>
+                    <td class="py-3.5">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
+                        <span class="w-1 h-1 rounded-full bg-blue-500"></span> 待派单
+                      </span>
+                    </td>
+                    <td class="py-3.5 text-right text-slate-500">—</td>
+                  </tr>
+                  <tr class="data-row">
+                    <td class="py-3.5 font-semibold text-slate-900">WO-20260606-003</td>
+                    <td class="py-3.5 text-slate-600">维修</td>
+                    <td class="py-3.5 text-slate-600">李维修</td>
+                    <td class="py-3.5">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <span class="w-1 h-1 rounded-full bg-emerald-500"></span> 已完成
+                      </span>
+                    </td>
+                    <td class="py-3.5 text-right text-slate-500">45分钟</td>
+                  </tr>
+                  <tr class="data-row">
+                    <td class="py-3.5 font-semibold text-slate-900">WO-20260606-004</td>
+                    <td class="py-3.5 text-slate-600">违停处置</td>
+                    <td class="py-3.5 text-slate-600">赵地勤</td>
+                    <td class="py-3.5">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-600 border border-orange-100">
+                        <span class="w-1 h-1 rounded-full bg-orange-500"></span> 超时
+                      </span>
+                    </td>
+                    <td class="py-3.5 text-right text-red-500 font-semibold">67分钟</td>
+                  </tr>
+                  <tr class="data-row">
+                    <td class="py-3.5 font-semibold text-slate-900">WO-20260606-005</td>
+                    <td class="py-3.5 text-slate-600">巡检</td>
+                    <td class="py-3.5 text-slate-600">刘巡检</td>
+                    <td class="py-3.5">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <span class="w-1 h-1 rounded-full bg-emerald-500"></span> 已完成
+                      </span>
+                    </td>
+                    <td class="py-3.5 text-right text-slate-500">2小时</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-10 text-xs text-slate-400 text-center pb-6 reveal">
+          BikeOps City · 城市级共享两轮运营管理后台 · 数据更新于 2026-06-06 14:32:18
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Custom Cursor
+    const cursor = document.getElementById('cursor');
+    const cursorDot = document.getElementById('cursorDot');
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    let dotX = 0, dotY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    function animateCursor() {
+      cursorX += (mouseX - cursorX) * 0.12;
+      cursorY += (mouseY - cursorY) * 0.12;
+      dotX += (mouseX - dotX) * 0.25;
+      dotY += (mouseY - dotY) * 0.25;
+
+      cursor.style.left = cursorX + 'px';
+      cursor.style.top = cursorY + 'px';
+      cursorDot.style.left = dotX + 'px';
+      cursorDot.style.top = dotY + 'px';
+
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // Expand cursor on interactive elements
+    document.querySelectorAll('a, button, .tap-scale, .hover-lift, .data-row').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('expanded'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('expanded'));
+    });
+
+    // Scroll-triggered reveals
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.08 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Animate progress bars after reveal
+    setTimeout(() => {
+      document.querySelectorAll('[data-width]').forEach(bar => {
+        bar.style.width = bar.dataset.width;
+      });
+    }, 600);
+
+    // Live clock
+    function updateTime() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      // Optional: update any clock element if present
+    }
+    setInterval(updateTime, 60000);
+    updateTime();
+  </script>
+</body>
+</html>

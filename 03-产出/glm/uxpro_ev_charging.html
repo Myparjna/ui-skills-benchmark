@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>充电桩 - UX Pro Max 专家风格</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+/* ============================================================
+   UX Pro Max Design System
+   - Accessibility: WCAG AA (4.5:1 contrast)
+   - Touch targets ≥ 44×44px
+   - Typography: 16px base, line-height 1.5, 65ch max
+   - Animation: 150-300ms, reduced-motion support
+   - Performance: semantic HTML, ARIA, focus management
+   ============================================================ */
+
+/* ---------- Custom Properties (Design Tokens) ---------- */
+:root {
+  /* Primary palette - deep blue with high contrast */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-active: #1E40AF;
+  --color-primary-bg: #EFF6FF;
+  --color-on-primary: #FFFFFF;
+
+  /* Semantic colors - all pass WCAG AA on their backgrounds */
+  --color-success: #15803D;
+  --color-success-bg: #F0FDF4;
+  --color-warning: #A16207;
+  --color-warning-bg: #FEFCE8;
+  --color-error: #DC2626;
+  --color-error-bg: #FEF2F2;
+  --color-info: #0369A1;
+  --color-info-bg: #F0F9FF;
+
+  /* Neutral scale */
+  --color-text-primary: #111827;    /* 14.5:1 on white */
+  --color-text-secondary: #4B5563;  /* 7:1 */
+  --color-text-muted: #6B7280;      /* 4.6:1 */
+  --color-border: #E5E7EB;
+  --color-border-light: #F3F4F6;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F9FAFB;
+  --color-background: #F3F4F6;
+
+  /* Spacing system (4px base) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.08);
+
+  /* Transitions - respects prefers-reduced-motion */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  max-width: 65ch;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Skip Link (Accessibility CRITICAL) ---------- */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  z-index: 1000;
+  transition: top var(--transition-fast);
+}
+.skip-link:focus {
+  top: var(--space-sm);
+}
+
+/* ---------- Focus Ring (Keyboard Navigation) ---------- */
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* ---------- App Container (Mobile-first 375px centered) ---------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-surface);
+  position: relative;
+}
+
+/* ---------- Header ---------- */
+.header {
+  background: var(--color-surface);
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.header__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-primary);
+}
+
+/* Search Input - Accessible & Large Touch Target */
+.search-wrapper {
+  position: relative;
+}
+.search-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-md) 0 48px;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background: var(--color-surface-alt);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+.search-input::placeholder { color: var(--color-text-muted); }
+.search-input:hover { border-color: var(--color-border); }
+.search-input:focus {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+}
+.search-icon {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  font-size: 1.25rem;
+}
+/* Screen reader label for icon */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Filters Section ---------- */
+.filters {
+  padding: var(--space-sm) var(--space-md);
+  overflow-x: auto;
+  display: flex;
+  gap: var(--space-sm);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--space-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.filter-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+.filter-chip[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+.filter-chip .count {
+  background: rgba(0,0,0,0.1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.filter-chip[aria-pressed="true"] .count { background: rgba(255,255,255,0.25); }
+
+/* ---------- Station List ---------- */
+.station-list {
+  flex: 1;
+  padding: 0 var(--space-md) calc(var(--space-xl) + 60px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Station Card - High contrast hierarchy via size + spacing + weight */
+.station-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  cursor: pointer;
+}
+.station-card:hover,
+.station-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+.card-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+/* Status Badge - Color is NOT sole indicator; includes icon + text */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.status-badge--free     { background: var(--color-success-bg); color: var(--color-success); border-color: rgba(22,128,61,0.15); }
+.status-badge--busy     { background: var(--color-warning-bg); color: var(--color-warning); border-color: rgba(161,98,7,0.15); }
+.status-badge--fault    { background: var(--color-error-bg); color: var(--color-error); border-color: rgba(220,38,38,0.15); }
+
+.card-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+  line-height: 1.45;
+}
+.card-distance {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Stats Grid */
+.card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--color-border);
+}
+.stat-block { text-align: center; }
+.stat-number {
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.stat-number--free   { color: var(--color-success); }
+.stat-number--busy   { color: var(--color-warning); }
+.stat-number--fault  { color: var(--color-error); }
+.stat-label {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+  gap: var(--space-sm);
+}
+.price-tag {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+.price-tag strong {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+/* CTA Button - Minimum 44px touch target */
+.cta-button {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 var(--space-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.cta-button:hover { background: var(--color-primary-hover); }
+.cta-button:active { background: var(--color-primary-active); transform: scale(0.97); }
+
+/* Map toggle FAB */
+.map-fab {
+  position: fixed;
+  bottom: calc(var(--space-xl) + 56px);
+  right: var(--space-md);
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.375rem;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  z-index: 30;
+  transition: all var(--transition-normal);
+}
+.map-fab:hover { transform: scale(1.06); box-shadow: 0 14px 28px rgba(37,99,235,0.25); }
+.map-fab:active { transform: scale(0.95); }
+
+/* ========== Bottom Navigation (≤5 items per UX rule) ========== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-around;
+  z-index: 40;
+  padding: var(--space-xs) 0 env(safe-area-inset-bottom, 8px);
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: var(--space-sm) var(--space-md);
+  min-width: 64px;
+  min-height: 56px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.nav-item .icon { font-size: 1.5rem; }
+.nav-item .label { font-size: 0.6875rem; font-weight: 600; }
+.nav-item[aria-current="page"],
+.nav-item.active {
+  color: var(--color-primary);
+}
+.nav-item:hover { color: var(--color-primary); }
+
+/* ========== State Demonstrations ========== */
+.state-section { padding: var(--space-md); }
+.state-section h2 { font-size: 1rem; font-weight: 700; margin-bottom: var(--space-md); color: var(--color-text-primary); }
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-alt) 25%,
+    var(--color-border-light) 50%,
+    var(--color-surface-alt) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+}
+.skeleton-line { height: 16px; margin-bottom: 10px; }
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.empty-state .icon { font-size: 3rem; color: var(--color-text-muted); opacity: 0.5; margin-bottom: var(--space-md); }
+.empty-state h3 { font-size: 1.0625rem; font-weight: 700; margin-bottom: var(--space-xs); }
+.empty-state p { font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: var(--space-md); }
+
+/* Error State */
+.error-state {
+  background: var(--color-error-bg);
+  border: 1.5px solid rgba(220,38,38,0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: center;
+}
+.error-state .icon { font-size: 2.5rem; color: var(--color-error); margin-bottom: var(--space-sm); }
+.error-state h3 { font-size: 1.0625rem; font-weight: 700; color: var(--color-error); margin-bottom: 4px; }
+.error-state p { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: var(--space-md); }
+.retry-btn {
+  min-height: 44px;
+  padding: 0 var(--space-lg);
+  background: var(--color-error);
+  color: white;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.retry-btn:hover { background: #B91C1C; }
+</style>
+</head>
+
+<body>
+
+<a href="#main-content" class="skip-link">跳转到主要内容</a>
+
+<div class="app">
+
+<!-- ===== Header ===== -->
+<header class="header" role="banner">
+  <h1 class="header__title">
+    <span class="iconify" data-icon="i-heroicons-bolt-solid" style="font-size:1.35rem;color:#2563EB;" aria-hidden="true"></span>
+    智慧充电
+  </h1>
+  <div class="search-wrapper">
+    <span class="iconify search-icon" data-icon="i-heroicons-magnifying-glass" aria-hidden="true"></span>
+    <input
+      class="search-input"
+      type="text"
+      id="station-search"
+      placeholder="搜索充电站名称或地址..."
+      aria-label="搜索充电站"
+      autocomplete="off"
+    >
+  </div>
+</header>
+
+<!-- ===== Filter Bar ===== -->
+<section class="filters" role="toolbar" aria-label="站点状态筛选">
+  <button class="filter-chip" role="button" aria-pressed="true" aria-label="显示全部站点，共28个">
+    <span class="iconify" data-icon="i-heroicons-squares-2x2" aria-hidden="true"></span> 全部
+    <span class="count">28</span>
+  </button>
+  <button class="filter-chip" role="button" aria-pressed="false" aria-label="仅显示空闲站点，共18个">
+    <span class="iconify" data-icon="i-heroicons-check-circle" aria-hidden="true"></span> 空闲
+    <span class="count">18</span>
+  </button>
+  <button class="filter-chip" role="button" aria-pressed="false" aria-label="仅显示充电中站点，共8个">
+    <span class="iconify" data-icon="i-heroicons-bolt" aria-hidden="true"></span> 充电中
+    <span class="count">8</span>
+  </button>
+  <button class="filter-chip" role="button" aria-pressed="false" aria-label="仅显示故障站点，共2个">
+    <span class="iconify" data-icon="i-heroicons-exclamation-triangle" aria-hidden="true"></span> 故障
+    <span class="count">2</span>
+  </button>
+</section>
+
+<!-- ===== Main Content ===== -->
+<main class="station-list" id="main-content" role="main" aria-label="充电站列表">
+
+  <!-- ===== Card 1: Normal State ===== -->
+  <article class="station-card" tabindex="0" role="listitem" aria-label="宁波东部新城充电站，距离1.2公里，12个空闲桩">
+    <div class="card-header">
+      <div style="flex:1;">
+        <h2 class="card-title">宁波东部新城充电站</h2>
+        <span class="status-badge status-badge--free">
+          <span class="iconify" data-icon="i-heroicons-check-circle-solid" aria-hidden="true"></span>
+          空闲充足
+        </span>
+      </div>
+      <span class="card-distance">1.2 km</span>
+    </div>
+    <address class="card-address" aria-label="地址：鄞州区中山东路与福明路交叉口">
+      <span class="iconify" data-icon="i-heroicons-map-pin" aria-hidden="true" style="flex-shrink:0;font-size:1rem;margin-top:2px;"></span>
+      <span>鄞州区中山东路与福明路交叉口</span>
+    </address>
+    <div class="card-stats">
+      <div class="stat-block">
+        <div class="stat-number stat-number--free">12</div>
+        <div class="stat-label">空闲桩</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-number stat-number--busy">5</div>
+        <div class="stat-label">充电中</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-number stat-number--fault">1</div>
+        <div class="stat-label">故障</div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <p class="price-tag">电费 <strong>¥1.20</strong>/度 · 服务费 <strong>¥0.60</strong>/度</p>
+      <button class="cta-button" aria-label="导航到宁波东部新城充电站">
+        导航 <span class="iconify" data-icon="i-heroicons-arrow-right" aria-hidden="true"></span>
+      </button>
+    </div>
+  </article>
+
+  <!-- ===== Card 2: Busy State ===== -->
+  <article class="station-card" tabindex="0" role="listitem" aria-label="杭州湾新区超级充电中心，距离3.8公里，4个空闲桩">
+    <div class="card-header">
+      <div style="flex:1;">
+        <h2 class="card-title">杭州湾新区超级充电中心</h2>
+        <span class="status-badge status-badge--busy">
+          <span class="iconify" data-icon="i-heroicons-bolt-solid" aria-hidden="true"></span>
+          使用率较高
+        </span>
+      </div>
+      <span class="card-distance">3.8 km</span>
+    </div>
+    <address class="card-address" aria-label="地址：杭州湾大道与滨海五路交汇处">
+      <span class="iconify" data-icon="i-heroicons-map-pin" aria-hidden="true" style="flex-shrink:0;font-size:1rem;margin-top:2px;"></span>
+      <span>杭州湾大道与滨海五路交汇处</span>
+    </address>
+    <div class="card-stats">
+      <div class="stat-block"><div class="stat-number stat-number--free">4</div><div class="stat-label">空闲桩</div></div>
+      <div class="stat-block"><div class="stat-number stat-number--busy">16</div><div class="stat-label">充电中</div></div>
+      <div class="stat-block"><div class="stat-number stat-number--fault">0</div><div class="stat-label">故障</div></div>
+    </div>
+    <div class="card-actions">
+      <p class="price-tag">电费 <strong>¥1.05</strong>/度 · 服务费 <strong>¥0.40</strong>/度</p>
+      <button class="cta-button" aria-label="导航到杭州湾新区超级充电中心">
+        导航 <span class="iconify" data-icon="i-heroicons-arrow-right" aria-hidden="true"></span>
+      </button>
+    </div>
+  </article>
+
+  <!-- ===== Card 3: Fault State ===== -->
+  <article class="station-card" tabindex="0" role="listitem" aria-label="北仑港城快速充电站，距离5.5公里，部分设备故障">
+    <div class="card-header">
+      <div style="flex:1;">
+        <h2 class="card-title">北仑港城快速充电站</h2>
+        <span class="status-badge status-badge--fault">
+          <span class="iconify" data-icon="i-heroicons-exclamation-triangle-solid" aria-hidden="true"></span>
+          部分设备故障
+        </span>
+      </div>
+      <span class="card-distance">5.5 km</span>
+    </div>
+    <address class="card-address" aria-label="地址：北仑区新大路256号">
+      <span class="iconify" data-icon="i-heroicons-map-pin" aria-hidden="true" style="flex-shrink:0;font-size:1rem;margin-top:2px;"></span>
+      <span>北仑区新大路256号</span>
+    </address>
+    <div class="card-stats">
+      <div class="stat-block"><div class="stat-number stat-number--free">2</div><div class="stat-label">空闲桩</div></div>
+      <div class="stat-block"><div class="stat-number stat-number--busy">3</div><div class="stat-label">充电中</div></div>
+      <div class="stat-block"><div class="stat-number stat-number--fault">5</div><div class="stat-label">故障</div></div>
+    </div>
+    <div class="card-actions">
+      <p class="price-tag">电费 <strong>¥1.30</strong>/度 · 服务费 <strong>¥0.70</strong>/度</p>
+      <button class="cta-button" aria-label="导航到北仑港城快速充电站">
+        导航 <span class="iconify" data-icon="i-heroicons-arrow-right" aria-hidden="true"></span>
+      </button>
+    </div>
+  </article>
+
+  <!-- ===== State Demos ===== -->
+
+  <!-- Loading / Skeleton State -->
+  <section class="state-section" aria-label="加载状态示例">
+    <h2>加载状态（Skeleton）</h2>
+    <div class="skeleton-card" aria-busy="true" aria-live="polite">
+      <div class="skeleton skeleton-line medium" style="width:70%;height:20px;"></div>
+      <div class="skeleton skeleton-line short" style="height:14px;"></div>
+      <div style="display:flex;gap:var(--space-md);margin-top:var(--space-md);">
+        <div class="skeleton" style="flex:1;height:60px;border-radius:var(--radius-md);"></div>
+        <div class="skeleton" style="flex:1;height:60px;border-radius:var(--radius-md);"></div>
+        <div class="skeleton" style="flex:1;height:60px;border-radius:var(--radius-md);"></div>
+      </div>
+      <div class="skeleton skeleton-line" style="margin-top:var(--space-md);height:36px;width:120px;margin-left:auto;"></div>
+    </div>
+  </section>
+
+  <!-- Empty State -->
+  <section class="state-section" aria-label="空状态示例">
+    <h2>空状态（Empty）</h2>
+    <div class="empty-state" role="status">
+      <span class="iconify icon" data-icon="i-heroicons-map" aria-hidden="true"></span>
+      <h3>附近暂无充电站</h3>
+      <p>当前筛选条件下未找到匹配的充电站<br>尝试调整搜索条件或扩大搜索范围</p>
+      <button class="cta-button" style="background:var(--color-primary);" aria-label="清除所有筛选条件">清除筛选</button>
+    </div>
+  </section>
+
+  <!-- Error State -->
+  <section class="state-section" aria-label="错误状态示例">
+    <h2>错误状态（Error）</h2>
+    <div class="error-state" role="alert">
+      <span class="iconify icon" data-icon="i-heroicons-wifi-exclamation" aria-hidden="true"></span>
+      <h3>网络连接异常</h3>
+      <p>无法获取充电站数据，请检查网络连接后重试<br>如问题持续存在请联系客服</p>
+      <button class="retry-btn" aria-label="重新加载数据">重新加载</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- Map FAB -->
+<button class="map-fab" aria-label="切换到地图视图">
+  <span class="iconify" data-icon="i-heroicons-map" aria-hidden="true"></span>
+</button>
+
+<!-- Bottom Nav (≤5 items) -->
+<nav class="bottom-nav" aria-label="主导航">
+  <a class="nav-item active" href="#" aria-current="page">
+    <span class="iconify icon" data-icon="i-heroicons-home-solid" aria-hidden="true"></span>
+    <span class="label">首页</span>
+  </a>
+  <a class="nav-item" href="#map" aria-label="地图视图">
+    <span class="iconify icon" data-icon="i-heroicons-map" aria-hidden="true"></span>
+    <span class="label">地图</span>
+  </a>
+  <a class="nav-item" href="#orders" aria-label="订单记录">
+    <span class="iconify icon" data-icon="i-heroicons-clock" aria-hidden="true"></span>
+    <span class="label">订单</span>
+  </a>
+  <a class="nav-item" href="#profile" aria-label="个人中心">
+    <span class="iconify icon" data-icon="i-heroicons-user-circle" aria-hidden="true"></span>
+    <span class="label">我的</span>
+  </a>
+</nav>
+
+</div>
+
+</body>
+</html>

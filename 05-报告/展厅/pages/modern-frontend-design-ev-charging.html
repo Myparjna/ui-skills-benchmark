@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>闪电充电 · EV Charging</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN TOKENS (OKLCH) ─────────────────────────── */
+:root {
+  --bg:           oklch(97% 0.005 265);
+  --bg-card:      oklch(100% 0 0);
+  --surface:      oklch(95% 0.005 265);
+  --surface-up:   oklch(93% 0.008 265);
+  --fg:           oklch(15% 0.02 265);
+  --fg-secondary: oklch(42% 0.02 265);
+  --fg-muted:     oklch(58% 0.015 265);
+  --fg-dim:       oklch(72% 0.01 265);
+  --primary:      oklch(55% 0.22 265);
+  --primary-up:   oklch(62% 0.22 265);
+  --primary-soft: oklch(55% 0.22 265 / 0.1);
+  --green:        oklch(62% 0.18 155);
+  --green-soft:   oklch(62% 0.18 155 / 0.1);
+  --orange:       oklch(68% 0.18 55);
+  --orange-soft:  oklch(68% 0.18 55 / 0.1);
+  --red:          oklch(58% 0.22 25);
+  --red-soft:     oklch(58% 0.22 25 / 0.1);
+  --border:       oklch(90% 0.008 265);
+  --border-light: oklch(94% 0.005 265);
+
+  --font: 'Inter', 'PingFang SC', system-ui, sans-serif;
+
+  --r-xs:   4px;
+  --r-sm:   8px;
+  --r:      12px;
+  --r-lg:   16px;
+  --r-xl:   20px;
+  --r-full: 9999px;
+
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast:  150ms;
+  --dur-base:  250ms;
+  --dur-slow:  500ms;
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── RESET ──────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input { font-family: inherit; }
+
+/* ── STATUS BAR (simulated) ─────────────────────────── */
+.status-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg);
+}
+.status-bar-right { display: flex; gap: 6px; align-items: center; }
+.status-bar-right span { font-size: 0.7rem; }
+
+/* ── HEADER ─────────────────────────────────────────── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px 12px;
+  background: var(--bg);
+}
+.header-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.header-actions {
+  display: flex; gap: 12px; align-items: center;
+}
+.header-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-full);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+
+/* ── MAP AREA ───────────────────────────────────────── */
+.map-area {
+  position: relative;
+  height: 260px;
+  background: linear-gradient(160deg, oklch(92% 0.01 240), oklch(88% 0.015 220));
+  overflow: hidden;
+}
+.map-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(oklch(80% 0.01 265 / 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(80% 0.01 265 / 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.map-roads {
+  position: absolute; inset: 0;
+}
+.map-road-h {
+  position: absolute;
+  height: 3px;
+  background: oklch(75% 0.01 265 / 0.5);
+  border-radius: 2px;
+}
+.map-road-v {
+  position: absolute;
+  width: 3px;
+  background: oklch(75% 0.01 265 / 0.5);
+  border-radius: 2px;
+}
+.map-marker {
+  position: absolute;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 8px oklch(0% 0 0 / 0.2);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.map-marker:active { transform: scale(1.2); }
+.map-marker.available { background: var(--green); }
+.map-marker.busy { background: var(--orange); }
+.map-marker.full { background: var(--red); }
+.map-marker::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  width: 8px; height: 8px;
+  background: inherit;
+  transform: rotate(45deg);
+  border-radius: 0 0 2px 0;
+}
+.map-locate-btn {
+  position: absolute;
+  right: 16px; bottom: 16px;
+  width: 40px; height: 40px;
+  background: var(--bg-card);
+  border-radius: 50%;
+  box-shadow: 0 2px 12px oklch(0% 0 0 / 0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.map-user-dot {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 14px; height: 14px;
+  background: var(--primary);
+  border: 3px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 6px oklch(55% 0.22 265 / 0.15);
+}
+
+/* ── BOTTOM SHEET ───────────────────────────────────── */
+.bottom-sheet {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  margin-top: -16px;
+  padding: 12px 16px 0;
+  box-shadow: 0 -4px 20px oklch(0% 0 0 / 0.05);
+  z-index: 10;
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: var(--r-full);
+  margin: 0 auto 16px;
+}
+
+/* ── SEARCH BAR ─────────────────────────────────────── */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-radius: var(--r);
+  margin-bottom: 16px;
+}
+.search-bar input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 0.9rem;
+  color: var(--fg);
+  outline: none;
+}
+.search-bar input::placeholder { color: var(--fg-dim); }
+.search-bar-icon { font-size: 1rem; color: var(--fg-muted); }
+.search-divider {
+  width: 1px; height: 20px;
+  background: var(--border);
+}
+.filter-chips {
+  display: flex; gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-chips::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 6px 14px;
+  border-radius: var(--r-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--surface);
+  color: var(--fg-secondary);
+  border: 1px solid var(--border-light);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.chip.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: oklch(55% 0.22 265 / 0.2);
+}
+.chip:active { transform: scale(0.96); }
+
+/* ── STATION LIST ───────────────────────────────────── */
+.station-list-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.station-list-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.station-sort {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+.station-card {
+  display: flex; gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.station-card:last-child { border-bottom: none; }
+.station-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.station-icon.green { background: var(--green-soft); }
+.station-icon.orange { background: var(--orange-soft); }
+.station-icon.red { background: var(--red-soft); }
+.station-info { flex: 1; min-width: 0; }
+.station-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+.station-addr {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.station-meta {
+  display: flex; gap: 12px; align-items: center;
+}
+.station-tag {
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+.station-tag.fast { background: var(--primary-soft); color: var(--primary); }
+.station-tag.slow { background: var(--green-soft); color: var(--green); }
+.station-tag.parking { background: var(--surface); color: var(--fg-muted); }
+.station-dist {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  margin-left: auto;
+  text-align: right;
+  flex-shrink: 0;
+}
+.station-dist-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+.station-price {
+  font-size: 0.7rem;
+  color: var(--fg-dim);
+}
+
+/* ── TAB BAR ────────────────────────────────────────── */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding: 6px 0 calc(6px + var(--safe-bottom));
+  z-index: 100;
+  box-shadow: 0 -2px 12px oklch(0% 0 0 / 0.04);
+}
+.tab-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  font-size: 0.6rem;
+  color: var(--fg-dim);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.tab-item.active { color: var(--primary); }
+.tab-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.tab-scan {
+  position: relative;
+  top: -12px;
+}
+.tab-scan-btn {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), oklch(62% 0.22 240));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 16px oklch(55% 0.22 265 / 0.35);
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.tab-scan-btn:active { transform: scale(0.92); }
+.tab-scan-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 2px;
+}
+
+/* ── CHARGING CARD (floating) ───────────────────────── */
+.charging-float {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 398px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border-radius: var(--r);
+  box-shadow: 0 4px 20px oklch(0% 0 0 / 0.1);
+  border: 1px solid var(--border-light);
+  display: flex; align-items: center; gap: 12px;
+  z-index: 90;
+  animation: slide-up var(--dur-slow) var(--ease-expo) both;
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.charging-progress {
+  position: relative;
+  width: 44px; height: 44px;
+  flex-shrink: 0;
+}
+.charging-progress svg {
+  width: 44px; height: 44px;
+  transform: rotate(-90deg);
+}
+.charging-progress-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 4;
+}
+.charging-progress-fill {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 113;
+  stroke-dashoffset: 45;
+  transition: stroke-dashoffset 1s var(--ease-out);
+}
+.charging-pct {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.charging-info { flex: 1; }
+.charging-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--green);
+}
+.charging-detail {
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+.charging-stop {
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── PADDING FOR TAB BAR ────────────────────────────── */
+.tab-spacer { height: 80px; }
+
+/* ── ANIMATIONS ─────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.station-card {
+  animation: fade-in-up var(--dur-base) var(--ease-out) both;
+}
+.station-card:nth-child(1) { animation-delay: 0ms; }
+.station-card:nth-child(2) { animation-delay: 60ms; }
+.station-card:nth-child(3) { animation-delay: 120ms; }
+.station-card:nth-child(4) { animation-delay: 180ms; }
+
+/* ── REDUCED MOTION ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── STATUS BAR ──────────────────────────────────── -->
+<div class="status-bar">
+  <span>9:41</span>
+  <div class="status-bar-right">
+    <span>&#9679;&#9679;&#9679;&#9679;&#9675;</span>
+    <span>WiFi</span>
+    <span>&#9664;&#9664; 85%</span>
+  </div>
+</div>
+
+<!-- ── HEADER ──────────────────────────────────────── -->
+<div class="header">
+  <div class="header-title">闪电充电</div>
+  <div class="header-actions">
+    <div class="header-icon">&#9888;</div>
+    <div class="header-icon">&#9993;</div>
+  </div>
+</div>
+
+<!-- ── MAP ─────────────────────────────────────────── -->
+<div class="map-area">
+  <div class="map-grid"></div>
+  <div class="map-roads">
+    <div class="map-road-h" style="top:60px; left:20px; width:70%;"></div>
+    <div class="map-road-h" style="top:140px; left:40px; width:80%;"></div>
+    <div class="map-road-h" style="top:200px; left:10px; width:60%;"></div>
+    <div class="map-road-v" style="left:80px; top:30px; height:70%;"></div>
+    <div class="map-road-v" style="left:200px; top:20px; height:80%;"></div>
+    <div class="map-road-v" style="left:320px; top:40px; height:60%;"></div>
+  </div>
+  <div class="map-marker available" style="top:70px; left:120px;">6</div>
+  <div class="map-marker available" style="top:100px; left:260px;">3</div>
+  <div class="map-marker busy" style="top:160px; left:160px;">1</div>
+  <div class="map-marker full" style="top:130px; left:340px;">0</div>
+  <div class="map-marker available" style="top:50px; left:310px;">8</div>
+  <div class="map-marker busy" style="top:190px; left:90px;">2</div>
+  <div class="map-user-dot"></div>
+  <button class="map-locate-btn">&#9737;</button>
+</div>
+
+<!-- ── BOTTOM SHEET ────────────────────────────────── -->
+<div class="bottom-sheet">
+  <div class="sheet-handle"></div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <span class="search-bar-icon">&#128269;</span>
+    <input type="text" placeholder="搜索充电站名称或地址" />
+    <div class="search-divider"></div>
+    <span class="search-bar-icon">&#9776;</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-chips">
+    <button class="chip active">全部</button>
+    <button class="chip">快充</button>
+    <button class="chip">慢充</button>
+    <button class="chip">超充</button>
+    <button class="chip">免费停车</button>
+    <button class="chip">PLUS会员</button>
+    <button class="chip">即插即充</button>
+  </div>
+
+  <!-- Station List -->
+  <div class="station-list-header">
+    <div class="station-list-title">附近充电站</div>
+    <div class="station-sort">综合排序 &#9662;</div>
+  </div>
+
+  <div class="station-card">
+    <div class="station-icon green">&#9889;</div>
+    <div class="station-info">
+      <div class="station-name">星星充电·城西银泰站</div>
+      <div class="station-addr">西湖区萍水街333号银泰城B1层</div>
+      <div class="station-meta">
+        <span class="station-tag fast">快充x6</span>
+        <span class="station-tag slow">慢充x4</span>
+        <span class="station-tag parking">免费停车2h</span>
+      </div>
+    </div>
+    <div class="station-dist">
+      <div class="station-dist-val">0.8km</div>
+      <div class="station-price">&#165;0.85/度</div>
+    </div>
+  </div>
+
+  <div class="station-card">
+    <div class="station-icon green">&#9889;</div>
+    <div class="station-info">
+      <div class="station-name">特来电·翠苑街道站</div>
+      <div class="station-addr">西湖区文一路298号翠苑新村旁</div>
+      <div class="station-meta">
+        <span class="station-tag fast">快充x4</span>
+        <span class="station-tag slow">慢充x8</span>
+      </div>
+    </div>
+    <div class="station-dist">
+      <div class="station-dist-val">1.2km</div>
+      <div class="station-price">&#165;0.78/度</div>
+    </div>
+  </div>
+
+  <div class="station-card">
+    <div class="station-icon orange">&#9889;</div>
+    <div class="station-info">
+      <div class="station-name">云快充·黄龙体育中心站</div>
+      <div class="station-addr">西湖区黄龙路1号黄龙体育中心停车场</div>
+      <div class="station-meta">
+        <span class="station-tag fast">快充x8</span>
+        <span class="station-tag parking">免费停车3h</span>
+      </div>
+    </div>
+    <div class="station-dist">
+      <div class="station-dist-val">2.1km</div>
+      <div class="station-price">&#165;0.92/度</div>
+    </div>
+  </div>
+
+  <div class="station-card">
+    <div class="station-icon green">&#9889;</div>
+    <div class="station-info">
+      <div class="station-name">小桔充电·三墩站</div>
+      <div class="station-addr">西湖区古墩路与灯彩街交叉口</div>
+      <div class="station-meta">
+        <span class="station-tag fast">快充x10</span>
+        <span class="station-tag slow">慢充x6</span>
+      </div>
+    </div>
+    <div class="station-dist">
+      <div class="station-dist-val">3.5km</div>
+      <div class="station-price">&#165;0.72/度</div>
+    </div>
+  </div>
+
+  <div class="tab-spacer"></div>
+</div>
+
+<!-- ── CHARGING FLOAT ──────────────────────────────── -->
+<div class="charging-float">
+  <div class="charging-progress">
+    <svg viewBox="0 0 40 40">
+      <circle class="charging-progress-bg" cx="20" cy="20" r="18" />
+      <circle class="charging-progress-fill" cx="20" cy="20" r="18" />
+    </svg>
+    <div class="charging-pct">62%</div>
+  </div>
+  <div class="charging-info">
+    <div class="charging-status">充电中 · 38.6kW</div>
+    <div class="charging-detail">已充24.3kWh · 预计还需28分钟 · &#165;18.70</div>
+  </div>
+  <button class="charging-stop">停止</button>
+</div>
+
+<!-- ── TAB BAR ─────────────────────────────────────── -->
+<div class="tab-bar">
+  <button class="tab-item active">
+    <span class="tab-icon">&#127968;</span>
+    <span>首页</span>
+  </button>
+  <button class="tab-item">
+    <span class="tab-icon">&#128176;</span>
+    <span>省钱</span>
+  </button>
+  <div class="tab-scan">
+    <button class="tab-scan-btn">&#128247;</button>
+    <div class="tab-scan-label">扫码充电</div>
+  </div>
+  <button class="tab-item">
+    <span class="tab-icon">&#128196;</span>
+    <span>订单</span>
+  </button>
+  <button class="tab-item">
+    <span class="tab-icon">&#128100;</span>
+    <span>我的</span>
+  </button>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>城市运营后台 - 共享两轮运营管理平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            ops: {
+              bg: '#0B0F19',
+              surface: '#151B2B',
+              surfaceHover: '#1C2438',
+              border: '#232D45',
+              primary: '#06B6D4',
+              secondary: '#3B82F6',
+              success: '#10B981',
+              warning: '#F59E0B',
+              danger: '#EF4444',
+              text: '#E2E8F0',
+              textMuted: '#64748B',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body {
+      font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+      background: #0B0F19;
+      color: #E2E8F0;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0B0F19; }
+    ::-webkit-scrollbar-thumb { background: #232D45; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: #0F1523;
+      border-right: 1px solid #232D45;
+      transition: width 0.3s var(--ease-out-expo);
+    }
+    .nav-group-label {
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: #475569; padding: 16px 20px 8px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px;
+      margin: 2px 12px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      color: #94A3B8;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .nav-item:hover {
+      background: #151B2B;
+      color: #E2E8F0;
+    }
+    .nav-item.active {
+      background: rgba(6, 182, 212, 0.08);
+      color: #06B6D4;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 20px;
+      background: #06B6D4;
+      border-radius: 0 2px 2px 0;
+    }
+    .nav-item .nav-icon { width: 18px; height: 18px; }
+
+    /* Cards - Bento style */
+    .bento-card {
+      background: #151B2B;
+      border: 1px solid #232D45;
+      border-radius: 14px;
+      padding: 20px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .bento-card:hover {
+      border-color: #334155;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .kpi-card {
+      background: linear-gradient(135deg, #151B2B 0%, #111827 100%);
+      border: 1px solid #232D45;
+      border-radius: 14px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .kpi-card:hover { border-color: #334155; }
+    .kpi-glow {
+      position: absolute; top: -20px; right: -20px;
+      width: 80px; height: 80px; border-radius: 50%;
+      filter: blur(40px); opacity: 0.15;
+      pointer-events: none;
+    }
+
+    /* Charts */
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; }
+    .bar {
+      flex: 1;
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: opacity 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .bar:hover { opacity: 0.8; }
+    .bar-tooltip {
+      position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: #1E293B; color: #E2E8F0;
+      font-size: 10px; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px;
+      white-space: nowrap; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s; border: 1px solid #334155;
+    }
+    .bar:hover .bar-tooltip { opacity: 1; }
+
+    /* Progress ring */
+    .ring-circle {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    /* Alert items */
+    .alert-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.04);
+      border: 1px solid rgba(239, 68, 68, 0.08);
+      margin-bottom: 8px;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .alert-item:hover { background: rgba(239, 68, 68, 0.08); }
+    .alert-item.warning {
+      background: rgba(245, 158, 11, 0.04);
+      border-color: rgba(245, 158, 11, 0.08);
+    }
+    .alert-item.warning:hover { background: rgba(245, 158, 11, 0.08); }
+    .alert-item.info {
+      background: rgba(6, 182, 212, 0.04);
+      border-color: rgba(6, 182, 212, 0.08);
+    }
+    .alert-item.info:hover { background: rgba(6, 182, 212, 0.08); }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      text-align: left; padding: 10px 16px;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: #475569; background: #0F1523;
+    }
+    .data-table td {
+      padding: 12px 16px;
+      font-size: 13px; color: #CBD5E1;
+      border-top: 1px solid #232D45;
+    }
+    .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-red { background: rgba(239,68,68,0.1); color: #EF4444; }
+    .badge-amber { background: rgba(245,158,11,0.1); color: #F59E0B; }
+    .badge-emerald { background: rgba(16,185,129,0.1); color: #10B981; }
+    .badge-cyan { background: rgba(6,182,212,0.1); color: #06B6D4; }
+    .badge-slate { background: rgba(100,116,139,0.1); color: #94A3B8; }
+
+    /* Focus states */
+    a:focus-visible, button:focus-visible, .nav-item:focus-visible {
+      outline: 2px solid #06B6D4;
+      outline-offset: 2px;
+    }
+
+    /* Heatmap grid */
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 3px;
+    }
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      transition: transform 0.15s;
+      cursor: pointer;
+    }
+    .heatmap-cell:hover { transform: scale(1.2); z-index: 1; }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+      animation: fadeUp 0.5s var(--ease-out-expo) forwards;
+      opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.1s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.2s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .animate-fade-up { animation: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="sidebar flex flex-col shrink-0" role="navigation" aria-label="侧边导航">
+      <div class="h-16 flex items-center gap-3 px-5 border-b border-[#232D45]">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+          <i data-lucide="bike" class="w-4 h-4 text-white" aria-hidden="true"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-white">城市运营后台</p>
+          <p class="text-[10px] text-slate-500">Ops Dashboard v2.4</p>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto py-2">
+        <div class="nav-group-label">概览</div>
+        <div class="nav-item active" role="button" tabindex="0" aria-label="运营总览">
+          <i data-lucide="layout-dashboard" class="nav-icon" aria-hidden="true"></i>
+          <span>运营总览</span>
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="地图调度中心">
+          <i data-lucide="map" class="nav-icon" aria-hidden="true"></i>
+          <span>地图调度中心</span>
+        </div>
+
+        <div class="nav-group-label">资产管理</div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="车队资产">
+          <i data-lucide="truck" class="nav-icon" aria-hidden="true"></i>
+          <span>车队资产</span>
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="电池与能源">
+          <i data-lucide="battery-charging" class="nav-icon" aria-hidden="true"></i>
+          <span>电池与能源</span>
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="运维工单">
+          <i data-lucide="clipboard-list" class="nav-icon" aria-hidden="true"></i>
+          <span>运维工单</span>
+        </div>
+
+        <div class="nav-group-label">运营</div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="规则与区域">
+          <i data-lucide="hexagon" class="nav-icon" aria-hidden="true"></i>
+          <span>规则与区域</span>
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="合规监管">
+          <i data-lucide="shield" class="nav-icon" aria-hidden="true"></i>
+          <span>合规监管</span>
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="数据报表">
+          <i data-lucide="bar-chart-3" class="nav-icon" aria-hidden="true"></i>
+          <span>数据报表</span>
+        </div>
+
+        <div class="nav-group-label">系统</div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="组织与权限">
+          <i data-lucide="users" class="nav-icon" aria-hidden="true"></i>
+          <span>组织与权限</span>
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="系统配置">
+          <i data-lucide="settings" class="nav-icon" aria-hidden="true"></i>
+          <span>系统配置</span>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-[#232D45]">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-cyan-500/20">
+            <i data-lucide="user" class="w-4 h-4 text-cyan-400" aria-hidden="true"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white truncate">张运营</p>
+            <p class="text-[11px] text-slate-500">城市运营经理</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+      <!-- Header -->
+      <header class="h-16 border-b border-[#232D45] flex items-center justify-between px-6 bg-[#0B0F19]/80 backdrop-blur-xl sticky top-0 z-30">
+        <div class="flex items-center gap-4">
+          <h1 class="text-lg font-bold text-white">运营总览</h1>
+          <div class="h-4 w-px bg-[#232D45]"></div>
+          <div class="flex items-center gap-2 text-sm text-slate-400">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5" aria-hidden="true"></i>
+            <span>杭州市</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- Time Range -->
+          <div class="flex items-center bg-[#151B2B] rounded-lg border border-[#232D45] overflow-hidden">
+            <button class="px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10" aria-label="今日">今日</button>
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors" aria-label="昨日">昨日</button>
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors" aria-label="本周">本周</button>
+            <button class="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors" aria-label="本月">本月</button>
+          </div>
+          <button class="w-9 h-9 rounded-lg bg-[#151B2B] border border-[#232D45] flex items-center justify-center hover:border-[#334155] transition-colors" aria-label="刷新数据">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-400" aria-hidden="true"></i>
+          </button>
+          <button class="w-9 h-9 rounded-lg bg-[#151B2B] border border-[#232D45] flex items-center justify-center hover:border-[#334155] transition-colors" aria-label="通知">
+            <i data-lucide="bell" class="w-4 h-4 text-slate-400" aria-hidden="true"></i>
+            <span class="absolute top-3 right-5 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- KPI Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <div class="kpi-card animate-fade-up delay-1">
+            <div class="kpi-glow bg-cyan-400"></div>
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs text-slate-500 font-medium">今日订单量</span>
+                <span class="badge badge-emerald"><i data-lucide="trending-up" class="w-3 h-3" aria-hidden="true"></i> +12.5%</span>
+              </div>
+              <p class="text-3xl font-bold text-white font-mono">28,642</p>
+              <p class="text-xs text-slate-500 mt-1">昨日同期 25,460</p>
+            </div>
+          </div>
+
+          <div class="kpi-card animate-fade-up delay-2">
+            <div class="kpi-glow bg-emerald-400"></div>
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs text-slate-500 font-medium">车队可用率</span>
+                <span class="badge badge-emerald"><i data-lucide="trending-up" class="w-3 h-3" aria-hidden="true"></i> +2.1%</span>
+              </div>
+              <p class="text-3xl font-bold text-white font-mono">91.8%</p>
+              <p class="text-xs text-slate-500 mt-1">目标 90% | 可用 18,360 辆</p>
+            </div>
+          </div>
+
+          <div class="kpi-card animate-fade-up delay-3">
+            <div class="kpi-glow bg-amber-400"></div>
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs text-slate-500 font-medium">低电车辆数</span>
+                <span class="badge badge-amber"><i data-lucide="alert-triangle" class="w-3 h-3" aria-hidden="true"></i> 需关注</span>
+              </div>
+              <p class="text-3xl font-bold text-white font-mono">1,247</p>
+              <p class="text-xs text-slate-500 mt-1">占比 6.2% | 阈值 5%</p>
+            </div>
+          </div>
+
+          <div class="kpi-card animate-fade-up delay-4">
+            <div class="kpi-glow bg-blue-400"></div>
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs text-slate-500 font-medium">今日营收 (GMV)</span>
+                <span class="badge badge-emerald"><i data-lucide="trending-up" class="w-3 h-3" aria-hidden="true"></i> +8.3%</span>
+              </div>
+              <p class="text-3xl font-bold text-white font-mono">¥142,580</p>
+              <p class="text-xs text-slate-500 mt-1">昨日 ¥131,560</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts & Middle Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+          <!-- Hourly Orders Chart -->
+          <div class="bento-card lg:col-span-2 animate-fade-up delay-2">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="text-sm font-bold text-white">今日订单趋势</h3>
+                <p class="text-xs text-slate-500 mt-0.5">每小时订单量 vs 昨日同期</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                  <span class="text-slate-400">今日</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                  <span class="text-slate-400">昨日</span>
+                </div>
+              </div>
+            </div>
+            <div class="bar-chart px-2">
+              <!-- 24 hours bars -->
+              <div class="bar bg-cyan-500/80" style="height: 15%;"><div class="bar-tooltip">00:00 · 420</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 10%;"><div class="bar-tooltip">01:00 · 280</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 8%;"><div class="bar-tooltip">02:00 · 210</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 12%;"><div class="bar-tooltip">03:00 · 340</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 18%;"><div class="bar-tooltip">04:00 · 510</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 35%;"><div class="bar-tooltip">05:00 · 980</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 72%;"><div class="bar-tooltip">06:00 · 2,040</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 95%;"><div class="bar-tooltip">07:00 · 2,680</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 88%;"><div class="bar-tooltip">08:00 · 2,480</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 55%;"><div class="bar-tooltip">09:00 · 1,540</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 42%;"><div class="bar-tooltip">10:00 · 1,180</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 48%;"><div class="bar-tooltip">11:00 · 1,350</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 62%;"><div class="bar-tooltip">12:00 · 1,740</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 58%;"><div class="bar-tooltip">13:00 · 1,630</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 45%;"><div class="bar-tooltip">14:00 · 1,260</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 52%;"><div class="bar-tooltip">15:00 · 1,460</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 68%;"><div class="bar-tooltip">16:00 · 1,920</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 90%;"><div class="bar-tooltip">17:00 · 2,540</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 100%;"><div class="bar-tooltip">18:00 · 2,820</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 78%;"><div class="bar-tooltip">19:00 · 2,200</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 50%;"><div class="bar-tooltip">20:00 · 1,410</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 38%;"><div class="bar-tooltip">21:00 · 1,070</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 28%;"><div class="bar-tooltip">22:00 · 790</div></div>
+              <div class="bar bg-cyan-500/80" style="height: 20%;"><div class="bar-tooltip">23:00 · 560</div></div>
+            </div>
+            <div class="flex justify-between mt-2 text-[10px] text-slate-600 px-2">
+              <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+            </div>
+          </div>
+
+          <!-- Battery SOC Distribution -->
+          <div class="bento-card animate-fade-up delay-3">
+            <h3 class="text-sm font-bold text-white mb-1">电量分布</h3>
+            <p class="text-xs text-slate-500 mb-5">按 SOC 分段统计电单车</p>
+
+            <div class="flex items-center justify-center mb-5">
+              <div class="relative w-36 h-36">
+                <svg class="w-full h-full" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#232D45" stroke-width="10"/>
+                  <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#10B981" stroke-width="10"
+                    stroke-dasharray="175.9" stroke-dashoffset="0" stroke-linecap="round"/>
+                  <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#06B6D4" stroke-width="10"
+                    stroke-dasharray="75.4" stroke-dashoffset="-175.9" stroke-linecap="round"/>
+                  <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="10"
+                    stroke-dasharray="50.3" stroke-dashoffset="-251.3" stroke-linecap="round"/>
+                  <circle class="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#EF4444" stroke-width="10"
+                    stroke-dasharray="37.7" stroke-dashoffset="-301.6" stroke-linecap="round"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <p class="text-2xl font-bold text-white font-mono">20,000</p>
+                  <p class="text-[10px] text-slate-500">总车辆</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  <span class="text-xs text-slate-400">60-100% 充足</span>
+                </div>
+                <span class="text-xs font-semibold text-white font-mono">14,000 (70%)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                  <span class="text-xs text-slate-400">30-60% 正常</span>
+                </div>
+                <span class="text-xs font-semibold text-white font-mono">3,000 (15%)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  <span class="text-xs text-slate-400">10-30% 偏低</span>
+                </div>
+                <span class="text-xs font-semibold text-white font-mono">2,000 (10%)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                  <span class="text-xs text-slate-400">0-10% 低电</span>
+                </div>
+                <span class="text-xs font-semibold text-white font-mono">1,000 (5%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: Alerts & Work Orders -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Alert List -->
+          <div class="bento-card animate-fade-up delay-3">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-white">实时告警</h3>
+                <p class="text-xs text-slate-500 mt-0.5">过去30分钟内触发的高优先级告警</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-red">P0: 3</span>
+                <span class="badge badge-amber">P1: 7</span>
+              </div>
+            </div>
+
+            <div class="alert-item" role="button" tabindex="0">
+              <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                <i data-lucide="map-pin-off" class="w-4 h-4 text-red-400" aria-hidden="true"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-semibold text-white">越界告警</span>
+                  <span class="badge badge-red">P0</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate">车辆 EV-28491 触发服务区越界，位置：滨江区长河街道</p>
+              </div>
+              <span class="text-[10px] text-slate-600 shrink-0">2分钟前</span>
+            </div>
+
+            <div class="alert-item" role="button" tabindex="0">
+              <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                <i data-lucide="alert-octagon" class="w-4 h-4 text-red-400" aria-hidden="true"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-semibold text-white">禁停违规</span>
+                  <span class="badge badge-red">P0</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate">西湖区文三路地铁站A口检测到 12 辆违规停放</p>
+              </div>
+              <span class="text-[10px] text-slate-600 shrink-0">5分钟前</span>
+            </div>
+
+            <div class="alert-item warning" role="button" tabindex="0">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                <i data-lucide="battery-warning" class="w-4 h-4 text-amber-400" aria-hidden="true"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-semibold text-white">低电预警</span>
+                  <span class="badge badge-amber">P1</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate">上城区庆春路片区低电车辆达 45 辆，建议派发换电任务</p>
+              </div>
+              <span class="text-[10px] text-slate-600 shrink-0">8分钟前</span>
+            </div>
+
+            <div class="alert-item warning" role="button" tabindex="0">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                <i data-lucide="wifi-off" class="w-4 h-4 text-amber-400" aria-hidden="true"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-semibold text-white">设备离线</span>
+                  <span class="badge badge-amber">P1</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate">车辆 EV-19234 / EV-19235 / EV-19236 连续离线超1小时</p>
+              </div>
+              <span class="text-[10px] text-slate-600 shrink-0">12分钟前</span>
+            </div>
+
+            <div class="alert-item info" role="button" tabindex="0">
+              <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0">
+                <i data-lucide="users" class="w-4 h-4 text-cyan-400" aria-hidden="true"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-semibold text-white">车辆聚集</span>
+                  <span class="badge badge-cyan">P2</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate">余杭区未来科技城站点车辆堆积超 30 辆，建议调度</p>
+              </div>
+              <span class="text-[10px] text-slate-600 shrink-0">18分钟前</span>
+            </div>
+          </div>
+
+          <!-- Work Orders & Quick Stats -->
+          <div class="space-y-5">
+            <!-- Work Order Stats -->
+            <div class="bento-card animate-fade-up delay-4">
+              <h3 class="text-sm font-bold text-white mb-4">工单概览</h3>
+              <div class="grid grid-cols-4 gap-3">
+                <div class="text-center p-3 rounded-xl bg-[#0B0F19] border border-[#232D45]">
+                  <p class="text-lg font-bold text-white font-mono">18</p>
+                  <p class="text-[10px] text-slate-500 mt-1">待派发</p>
+                </div>
+                <div class="text-center p-3 rounded-xl bg-[#0B0F19] border border-[#232D45]">
+                  <p class="text-lg font-bold text-cyan-400 font-mono">32</p>
+                  <p class="text-[10px] text-slate-500 mt-1">执行中</p>
+                </div>
+                <div class="text-center p-3 rounded-xl bg-[#0B0F19] border border-[#232D45]">
+                  <p class="text-lg font-bold text-amber-400 font-mono">7</p>
+                  <p class="text-[10px] text-slate-500 mt-1">超时</p>
+                </div>
+                <div class="text-center p-3 rounded-xl bg-[#0B0F19] border border-[#232D45]">
+                  <p class="text-lg font-bold text-emerald-400 font-mono">156</p>
+                  <p class="text-[10px] text-slate-500 mt-1">今日完成</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Heatmap -->
+            <div class="bento-card animate-fade-up delay-4">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-white">供需热力</h3>
+                  <p class="text-xs text-slate-500 mt-0.5">缺车 / 堆车栅格分布</p>
+                </div>
+                <div class="flex items-center gap-2 text-[10px]">
+                  <span class="text-slate-500">缺车</span>
+                  <div class="flex gap-0.5">
+                    <span class="w-3 h-3 rounded-sm bg-cyan-900"></span>
+                    <span class="w-3 h-3 rounded-sm bg-cyan-700"></span>
+                    <span class="w-3 h-3 rounded-sm bg-cyan-500"></span>
+                    <span class="w-3 h-3 rounded-sm bg-cyan-300"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="heatmap-grid">
+                <!-- Generate 48 cells with varying colors -->
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    const grid = document.currentScript.previousElementSibling;
+                    const colors = [
+                      '#0F172A', '#0F172A', '#1E3A4C', '#164E63', '#155E75',
+                      '#0F172A', '#0F172A', '#0F172A', '#1E3A4C', '#0F172A',
+                      '#0F172A', '#0F172A', '#1E3A4C', '#164E63', '#0F172A',
+                      '#0F172A', '#1E3A4C', '#164E63', '#155E75', '#06B6D4',
+                      '#0F172A', '#0F172A', '#0F172A', '#1E3A4C', '#0F172A',
+                      '#0F172A', '#0F172A', '#1E3A4C', '#164E63', '#155E75',
+                      '#0F172A', '#0F172A', '#0F172A', '#0F172A', '#1E3A4C',
+                      '#0F172A', '#0F172A', '#0F172A', '#1E3A4C', '#164E63',
+                      '#0F172A', '#0F172A', '#0F172A', '#0F172A', '#0F172A',
+                      '#0F172A', '#0F172A', '#1E3A4C'
+                    ];
+                    colors.forEach((color, i) => {
+                      const cell = document.createElement('div');
+                      cell.className = 'heatmap-cell';
+                      cell.style.background = color;
+                      cell.title = '栅格 ' + (i + 1);
+                      grid.appendChild(cell);
+                    });
+                  });
+                </script>
+              </div>
+            </div>
+
+            <!-- Recent Work Orders Table -->
+            <div class="bento-card animate-fade-up delay-4">
+              <h3 class="text-sm font-bold text-white mb-3">最新工单</h3>
+              <div class="overflow-x-auto">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>工单号</th>
+                      <th>类型</th>
+                      <th>区域</th>
+                      <th>状态</th>
+                      <th>负责人</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="font-mono text-xs">WO-260606-001</td>
+                      <td><span class="badge badge-cyan">换电</span></td>
+                      <td>西湖区</td>
+                      <td><span class="badge badge-emerald">执行中</span></td>
+                      <td>王师傅</td>
+                    </tr>
+                    <tr>
+                      <td class="font-mono text-xs">WO-260606-002</td>
+                      <td><span class="badge badge-amber">调度</span></td>
+                      <td>上城区</td>
+                      <td><span class="badge badge-emerald">执行中</span></td>
+                      <td>李师傅</td>
+                    </tr>
+                    <tr>
+                      <td class="font-mono text-xs">WO-260606-003</td>
+                      <td><span class="badge badge-red">维修</span></td>
+                      <td>滨江区</td>
+                      <td><span class="badge badge-amber">待接单</span></td>
+                      <td>--</td>
+                    </tr>
+                    <tr>
+                      <td class="font-mono text-xs">WO-260606-004</td>
+                      <td><span class="badge badge-slate">巡检</span></td>
+                      <td>拱墅区</td>
+                      <td><span class="badge badge-slate">已完成</span></td>
+                      <td>张师傅</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 pt-6 border-t border-[#232D45] flex items-center justify-between text-xs text-slate-600">
+          <p>共享两轮城市运营管理后台 · 数据更新于 2026-06-06 18:42:18</p>
+          <p>系统版本 v2.4.0 · 杭州运营中心</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Nav item active state
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Time range toggle
+    document.querySelectorAll('header button').forEach(btn => {
+      if (btn.textContent.match(/今日|昨日|本周|本月/)) {
+        btn.addEventListener('click', function() {
+          this.parentElement.querySelectorAll('button').forEach(b => {
+            b.classList.remove('text-cyan-400', 'bg-cyan-500/10');
+            b.classList.add('text-slate-400');
+          });
+          this.classList.remove('text-slate-400');
+          this.classList.add('text-cyan-400', 'bg-cyan-500/10');
+        });
+      }
+    });
+  </script>
+</body>
+</html>

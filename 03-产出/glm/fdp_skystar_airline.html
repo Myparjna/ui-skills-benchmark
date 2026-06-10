@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyStar — 每一次起飞，都是一次全新的抵达</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#000;
+  --bg-deep:#030712;
+  --fg:#e8eaed;
+  --muted:rgba(255,255,255,.45);
+  --accent:#60a5fa;
+  --accent-bright:#93c5fd;
+  --gold:#fbbf24;
+  --font-main:'Sora',sans-serif;
+  --font-serif:'Instrument Serif',serif;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-main);background:var(--bg);color:var(--fg);overflow-x:hidden;}
+
+/* ===== STARFIELD PARTICLES ===== */
+.starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite;animation-delay:var(--del);}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.9;transform:scale(1.2)}}
+
+/* Shooting star */
+.shooting-star{
+  position:absolute;width:120px;height:1px;background:linear-gradient(90deg,var(--accent-bright),transparent);
+  opacity:0;top:10%;left:-120px;transform:rotate(-35deg);
+  animation:shoot 8s ease-in-out infinite;animation-delay:4s;
+}
+@keyframes shoot{0%,90%{opacity:0;left:-120px}92%{opacity:.8}100%{left:110%;opacity:0}}
+
+/* Gradient overlay for depth */
+.gradient-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(59,130,246,.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,92,246,.04) 0%, transparent 50%),
+    linear-gradient(to bottom,#000 0%,#0a1025 40%,#030712 70%,#000 100%);
+}
+
+/* ===== CINEMATIC ENTRANCE ===== */
+@keyframes cinematicFade{from{opacity:0}to{opacity:1}}
+@keyframes heroReveal{from{opacity:0;filter:blur(16px) brightness(.6)}to{opacity:1;filter:none}}
+@keyframes slideUp{from{opacity:0;transform:translateY(56px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleReveal{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes lineDraw{from{width:0}to{width:80px}}
+@keyframes floatGentle{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes parallaxShift{from{background-position:center}to{background-position:center -80px}}
+@keyframes glassShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(96,165,250,.15),inset 0 1px 0 rgba(255,255,255,.04)}
+  50%{box-shadow:0 0 48px rgba(96,165,250,.25),inset 0 1px 0 rgba(255,255,255,.08)}}
+
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
+
+/* ===== NAV ===== */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:100;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 44px;background:rgba(0,0,0,.5);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-bottom:1px solid rgba(255,255,255,.05);}
+.nav-logo{font-size:1.25rem;font-weight:800;letter-spacing:-.03em;display:flex;align-items:center;gap:10px;font-feature-settings:'ss01';}
+.nav-logo .star-icon{color:var(--accent-bright);font-size:1.4rem;}
+.nav-links{display:flex;gap:38px;}
+.nav-link{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:500;transition:all .35s ease;position:relative;}
+.nav-link:hover{color:var(--fg);}
+.nav-link::after{content:'';position:absolute;bottom:-5px;left:0;width:0;height:1.5px;background:linear-gradient(90deg,var(--accent),transparent);transition:width .4s cubic-bezier(.22,1,.36,1);}
+.nav-link:hover::after{width:100%;}
+.nav-book{padding:11px 26px;border-radius:14px;background:rgba(255,255,255,.06);color:var(--fg);border:1px solid rgba(255,255,255,.08);font-size:.88rem;font-weight:600;cursor:pointer;font-family:var(--font-main);transition:all .4s cubic-bezier(.22,1,.36,1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.nav-book:hover{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.25);box-shadow:0 8px 32px rgba(96,165,250,.1);}
+
+/* ===== HERO (FULLSCREEN IMMERSIVE) ===== */
+.hero-section{
+  position:relative;z-index:2;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:140px 44px 100px;
+}
+.hero-cine{animation:heroReveal 2s cubic-bezier(.22,1,.36,1) both;}
+
+/* Hero tagline */
+.hero-tagline{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 18px;border-radius:30px;border:1px solid rgba(96,165,250,.15);
+  background:rgba(96,165,250,.06);backdrop-filter:blur(12px);
+  font-size:.78rem;color:var(--accent-bright);font-weight:600;letter-spacing:.02em;
+  margin-bottom:36px;animation:slideUp 1s cubic-bezier(.22,1,.36,1) both;animation-delay:.4s;
+  width:fit-content;
+}
+
+/* Main headline */
+.hero-headline{
+  font-family:var(--font-serif);font-style:italic;font-size:clamp(2.4rem,6vw,4.8rem);
+  font-weight:400;line-height:1.2;letter-spacing:-.01em;
+  max-width:900px;margin-bottom:24px;
+  animation:slideUp 1s cubic-bezier(.22,1,.36,1) both;animation-delay:.55s;
+  background:linear-gradient(180deg,#fff 0%,rgba(200,210,230,.85) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero-subhead{
+  font-size:1.1rem;color:var(--muted);line-height:1.8;max-width:520px;margin-bottom:42px;
+  animation:slideUp 1s cubic-bezier(.22,1,.36,1) both;animation-delay:.7s;
+}
+.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:slideUp 1s cubic-bezier(.22,1,.36,1) both;animation-delay:.85s;}
+
+.btn-hero-primary{
+  padding:16px 38px;border-radius:16px;background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(139,92,246,.15));
+  color:var(--fg);border:1px solid rgba(96,165,250,.25);font-size:1rem;font-weight:600;
+  cursor:pointer;font-family:var(--font-main);transition:all .45s cubic-bezier(.22,1,.36,1);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:inline-flex;align-items:center;gap:10px;
+}
+.btn-hero-primary:hover{transform:translateY(-3px);box-shadow:0 14px 44px rgba(96,165,250,.2);
+  border-color:rgba(96,165,250,.45);background:linear-gradient(135deg,rgba(96,165,250,.22),rgba(139,92,246,.22));}
+.btn-hero-secondary{
+  padding:16px 34px;border-radius:16px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.08);
+  font-size:1rem;font-weight:500;cursor:pointer;font-family:var(--font-main);transition:all .35s ease;display:inline-flex;align-items:center;gap:10px;}
+.btn-hero-secondary:hover{color:var(--fg);border-color:rgba(255,255,255,.18);}
+
+/* Scroll indicator */
+.scroll-indicator{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;animation:slideUp 1s both;animation-delay:1.2s;}
+.si-line{width:1px;height:48px;background:linear-gradient(to bottom,var(--accent),transparent);opacity:.4;}
+.si-text{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.2em;}
+
+/* ===== FLIGHT SEARCH BOX (GLASSMORPHISM ON HERO) ===== */
+.search-section{position:relative;z-index:5;margin-top:-50px;padding:0 44px;pointer-events:none;}
+.search-glass{
+  max-width:800px;margin:0 auto;padding:32px 36px;border-radius:24px;
+  background:rgba(10,15,30,.65);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+  border:1px solid rgba(255,255,255,.07);box-shadow:0 24px 80px rgba(0,0,0,.5);
+  pointer-events:auto;animation:scaleReveal .9s cubic-bezier(.22,1,.36,1) both;animation-delay:1s;
+}
+.sg-tabs{display:flex;gap:4px;margin-bottom:22px;}
+.sg-tab{padding:8px 18px;border-radius:10px;font-size:.84rem;font-weight:500;
+  color:var(--muted);background:transparent;border:none;cursor:pointer;font-family:var(--font-main);transition:all .3s ease;}
+.sg-tab.active{color:var(--fg);background:rgba(255,255,255,.07);}
+.sg-tab:hover:not(.active){color:var(--fg);}
+.sg-fields{display:grid;grid-template-columns:1fr auto 1fr auto;gap:12px;align-items:end;}
+.sg-field label{font-size:.72rem;color:var(--muted);font-weight:500;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;}
+.sg-field input{
+  width:100%;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);color:var(--fg);font-family:var(--font-main);font-size:.95rem;outline:none;
+  transition:border-color .3s ease;
+}
+.sg-field input:focus{border-color:rgba(96,165,250,.3);}
+.sg-swap{width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .3s ease;font-size:1.15rem;margin-bottom:2px;}
+.sg-swap:hover{border-color:rgba(96,165,250,.3);color:var(--accent-bright);transform:rotate(180deg);}
+.sg-search-btn{
+  padding:13px 28px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#8b5cf6);
+  color:#fff;border:none;font-size:.95rem;font-weight:600;cursor:pointer;font-family:var(--font-main);
+  white-space:nowrap;transition:all .35s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 8px 28px rgba(96,165,250,.2);
+}
+.sg-search-btn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(96,165,250,.35);}
+
+/* ===== DESTINATIONS SECTION ===== */
+.dest-section{position:relative;z-index:2;padding:100px 44px 60px;max-width:1280px;margin:0 auto;}
+.sec-header{text-align:center;margin-bottom:52px;}
+.sec-tag{font-size:.75rem;text-transform:uppercase;letter-spacing:.2em;color:var(--accent);font-weight:600;margin-bottom:14px;}
+.sec-title{font-family:var(--font-serif);font-style:italic;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:400;line-height:1.3;}
+.dest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.dest-card{border-radius:22px;overflow:hidden;position:relative;cursor:pointer;group:dest-card;
+  transition:all .55s cubic-bezier(.22,1,.36,1);
+  border:1px solid rgba(255,255,255,.05);background:var(--bg-deep);
+}
+.dc-image{height:240px;overflow:hidden;position:relative;}
+.dc-image img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.22,1,.36,1);}
+.dest-card:hover .dc-image img{transform:scale(1.08);}
+.dc-img-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 55%);}
+.dc-body{padding:24px;}
+.dc-city{font-family:var(--font-serif);font-style:italic;font-size:1.25rem;margin-bottom:4px;}
+.dc-route{font-size:.84rem;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:5px;}
+.dc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+.dc-price{font-family:var(--font-main);font-size:1.3rem;font-weight:700;color:var(--gold);}
+.dc-meta{display:flex;gap:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06);}
+.dm-item{font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:5px;}
+
+/* Hover spotlight effect */
+.dest-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  border-radius:22px;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 60px rgba(96,165,250,.06);
+  transition:opacity .5s ease;
+}
+.dest-card:hover::after{opacity:1;}
+
+/* ===== PARALLAX STATS STRIP ===== */
+.parallax-strip{
+  position:relative;z-index:2;padding:80px 44px;margin:40px 0 0;overflow:hidden;
+  /* Parallax-ready background */
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(96,165,250,.04), transparent 70%);
+  border-top:1px solid rgba(255,255,255,.04);
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.ps-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+.ps-item{text-align:center;padding:28px 16px;position:relative;}
+.ps-item::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:40px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4;
+}
+.ps-num{font-family:var(--font-main);font-size:2.8rem;font-weight:700;letter-spacing:-.03em;line-height:1.1;
+  background:linear-gradient(180deg,var(--fg),var(--accent-bright));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.ps-label{font-size:.86rem;color:var(--muted);margin-top:8px;font-weight:500;}
+
+/* ===== EXPERIENCE SECTION ===== */
+.exp-section{position:relative;z-index:2;padding:80px 44px 60px;max-width:1280px;margin:0 auto;}
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.exp-card{
+  padding:32px;border-radius:22px;background:rgba(255,255,255,.015);
+  border:1px solid rgba(255,255,255,.05);transition:all .45s ease;
+}
+.exp-card:hover{border-color:rgba(96,165,250,.12);transform:translateY(-4px);}
+.ec-icon{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;margin-bottom:18px;background:linear-gradient(135deg,rgba(96,165,250,.1),rgba(139,92,246,.1));color:var(--accent-bright);}
+.ec-h3{font-family:var(--font-main);font-size:1.15rem;font-weight:600;margin-bottom:8px;}
+.ec-p{font-size:.88rem;color:var(--muted);line-height:1.7;}
+
+/* ===== FOOTER ===== */
+.footer{position:relative;z-index:2;max-width:1280px;margin:80px auto 40px;padding:0 44px;
+  border-top:1px solid rgba(255,255,255,.05);padding-top:40px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px;}
+.f-brand{font-family:var(--font-serif);font-style:italic;font-size:1.15rem;font-weight:400;display:flex;align-items:center;gap:8px;}
+.f-brand .iconify{color:var(--accent-bright);}
+.f-copy{font-size:.82rem;color:var(--muted);margin-top:8px;}
+.f-links{display:flex;gap:28px;}
+.f-link{color:var(--muted);text-decoration:none;font-size:.84rem;transition:color .25s;}
+.f-link:hover{color:var(--fg);}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .hero-section{padding-left:28px;padding-right:28px;}
+  .search-section,.dest-section,.exp-section,.parallax-strip,.footer{padding-left:28px;padding-right:28px;}
+  .navbar{padding:0 28px;}
+  .sg-fields{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;}
+  .sg-swap{grid-column:span 2;justify-content:center;margin-bottom:8px;}
+  .sg-search-btn{grid-column:span 2;justify-self:stretch;text-align:center;}
+  .dest-grid{grid-template-columns:1fr 1fr;}
+  .ps-inner{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:640px){
+  .nav-links{display:none;}
+  .hero-section{min-height:auto;padding-top:120px;padding-bottom:80px;}
+  .search-section,.dest-section,.exp-section,.parallax-strip,.footer{padding-left:16px;padding-right:16px;}
+  .navbar{padding:0 16px;}
+  .sg-fields{grid-template-columns:1fr;}
+  .sg-swap{grid-column:unset;grid-row:2;}
+  .sg-search-btn{grid-column:unset;grid-row:4;}
+  .dest-grid{grid-template-columns:1fr;}
+  .exp-grid{grid-template-columns:1fr;}
+  .ps-inner{grid-template-columns:1fr 1fr;}
+  .footer{flex-direction-column;text-align:center;}
+  .f-links{justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- Starfield -->
+<div class="starfield" id="starfield"></div>
+<div class="shooting-star"></div>
+<div class="gradient-overlay"></div>
+
+<!-- NAV -->
+<nav class="navbar">
+  <div class="nav-logo"><span class="iconify star-icon" data-icon="mdi:white-balance-scale"></span>SkyStar</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#">航班查询</a>
+    <a class="nav-link" href="#">目的地</a>
+    <a class="nav-link" href="#">星空俱乐部</a>
+    <a class="nav-link" href="#">关于我们</a>
+  </div>
+  <button class="nav-book">立即预订</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="hero-cine">
+    <div class="hero-tagline"><span class="iconify" data-icon="mdi:star-four-points"></span> 连接全球 180+ 目的地城市</div>
+    <h1 class="hero-headline">每一次起飞，<br/>都是一次全新的抵达</h1>
+    <p class="hero-subhead">SkyStar 以电影级体验重新定义飞行。从沉浸式座舱到米其林餐食，让每一段旅程都成为值得铭记的篇章。</p>
+    <div class="hero-actions">
+      <button class="btn-hero-primary"><span class="iconify" data-icon="mdi:magnify"></span> 搜索航班</button>
+      <button class="btn-hero-secondary"><span class="iconify" data-icon="mdi:map-marker-outline"></span> 探索目的地</button>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <span class="si-text">Scroll</span>
+    <div class="si-line"></div>
+  </div>
+</section>
+
+<!-- SEARCH GLASSMORPHISM -->
+<div class="search-section">
+  <div class="search-glass">
+    <div class="sg-tabs">
+      <button class="sg-tab active">往返</button><button class="sg-tab">单程</button><button class="sg-tab">多行程</button>
+    </div>
+    <div class="sg-fields">
+      <div class="sg-field">
+        <label>出发地</label>
+        <input type="text" value="宁波（NGB）"/>
+      </div>
+      <button class="sg-swap" aria-label="交换起降点"><span class="iconify" data-icon="mdi:swap-horizontal"></span></button>
+      <div class="sg-field">
+        <label>目的地</label>
+        <input type="text" placeholder="输入目的地..."/>
+      </div>
+      <button class="sg-search-btn"><span class="iconify" data-icon="mdi:magnify" style="vertical-align:middle;margin-right:6px"></span>搜索</button>
+    </div>
+  </div>
+</div>
+
+<!-- PARALLAX STATS -->
+<div class="parallax-strip" id="parallaxStrip">
+  <div class="ps-inner">
+    <div class="ps-item"><div class="ps-num">180+</div><div class="ps-label">目的地城市</div></div>
+    <div class="ps-item"><div class="ps-num">98.6%</div><div class="ps-label">准点率</div></div>
+    <div class="ps-item"><div class="ps-num">12M+</div><div class="ps-label">年载客量</div></div>
+    <div class="ps-item"><div class="ps-num">4.9/5</div><div class="ps-label">乘客满意度</div></div>
+  </div>
+</div>
+
+<!-- DESTINATIONS -->
+<section class="dest-section">
+  <div class="sec-header">
+    <div class="sec-tag">Featured Destinations</div>
+    <h2 class="sec-title">探索世界，从这里启航</h2>
+  </div>
+  <div class="dest-grid">
+
+    <!-- Sanya -->
+    <div class="dest-card">
+      <div class="dc-image">
+        <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80" alt="三亚海滩" loading="lazy"/>
+        <div class="dc-img-grad"></div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-city">三亚 · 海南</div>
+        <div class="dc-route"><span class="iconify" data-icon="mdi:airplane-takeoff" style="font-size:.8rem"></span> 宁波 → 三亚</div>
+        <div class="dc-price-row"><div class="dc-price">¥880 起</div></div>
+        <div class="dc-meta">
+          <span class="dm-item"><span class="iconify" data-icon="mdi:clock-outline"></span> 3h 15m</span>
+          <span class="dm-item"><span class="iconify" data-icon="mdi:update"></span> 每日 4 班</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chengdu -->
+    <div class="dest-card">
+      <div class="dc-image">
+        <img src="https://images.unsplash.com/photo-1590559849738-b1cc0b228921?w=800&q=80" alt="成都熊猫" loading="lazy"/>
+        <div class="dc-img-grad"></div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-city">成都 · 四川</div>
+        <div class="dc-route"><span class="iconify" data-icon="mdi:airplane-takeoff" style="font-size:.8rem"></span> 宁波 → 成都</div>
+        <div class="dc-price-row"><div class="dc-price">¥1,280 起</div></div>
+        <div class="dc-meta">
+          <span class="dm-item"><span class="iconify" data-icon="mdi:clock-outline"></span> 3h 45m</span>
+          <span class="dm-item"><span class="iconify" data-icon="mdi:update"></span> 每日 6 班</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tokyo -->
+    <div class="dest-card">
+      <div class="dc-image">
+        <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80" alt="东京塔" loading="lazy"/>
+        <div class="dc-img-grad"></div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-city">东京 · 日本</div>
+        <div class="dc-route"><span class="iconify" data-icon="mdi:airplane-takeoff" style="font-size:.8rem"></span> 宁波 → 东京成田</div>
+        <div class="dc-price-row"><div class="dc-price">¥2,480 起</div></div>
+        <div class="dc-meta">
+          <span class="dm-item"><span class="iconify" data-icon="mdi:clock-outline"></span> 2h 50m</span>
+          <span class="dm-item"><span class="iconify" data-icon="mdi:update"></span> 每日 2 班</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dubai -->
+    <div class="dest-card">
+      <div class="dc-image">
+        <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80" alt="迪拜" loading="lazy"/>
+        <div class="dc-img-grad"></div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-city">迪拜 · 阿联酋</div>
+        <div class="dc-route"><span class="iconify" data-icon="mdi:airplane-takeoff" style="font-size:.8rem"></span> 宁波 → 迪拜</div>
+        <div class="dc-price-row"><div class="dc-price">¥4,280 起</div></div>
+        <div class="dc-meta">
+          <span class="dm-item"><span class="iconify" data-icon="mdi:clock-outline"></span> 9h 20m</span>
+          <span class="dm-item"><span class="iconify" data-icon="mdi:update"></span> 每周 3 班</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paris -->
+    <div class="dest-card">
+      <div class="dc-image">
+        <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80" alt="巴黎铁塔" loading="lazy"/>
+        <div class="dc-img-grad"></div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-city">巴黎 · 法国</div>
+        <div class="dc-route"><span class="iconify" data-icon="mdi:airplane-takeoff" style="font-size:.8rem"></span> 宁波 → 巴黎</div>
+        <div class="dc-price-row"><div class="dc-price">¥5,680 起</div></div>
+        <div class="dc-meta">
+          <span class="dm-item"><span class="iconify" data-icon="mdi:clock-outline"></span> 12h 40m</span>
+          <span class="dm-item"><span class="iconify" data-icon="mdi:update"></span> 每周 2 班</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Maldives (extra) -->
+    <div class="dest-card">
+      <div class="dc-image">
+        <img src="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80" alt="马尔代夫" loading="lazy"/>
+        <div class="dc-img-grad"></div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-city">马尔代夫</div>
+        <div class="dc-route"><span class="iconify" data-icon="mdi:airplane-takeoff" style="font-size:.8rem"></span> 宁波 → 马累</div>
+        <div class="dc-price-row"><div class="dc-price">¥3,980 起</div></div>
+        <div class="dc-meta">
+          <span class="dm-item"><span class="iconify" data-icon="mdi:clock-outline"></span> 7h 15m</span>
+          <span class="dm-item"><span class="iconify" data-icon="mdi:update"></span> 每周 3 班</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section class="exp-section">
+  <div class="sec-header">
+    <div class="sec-tag">The SkyStar Experience</div>
+    <h2 class="sec-title">不止于飞行，更是一种生活方式</h2>
+  </div>
+  <div class="exp-grid">
+    <div class="exp-card">
+      <div class="ec-icon"><span class="iconify" data-icon="mdi:seat-passenger"></span></div>
+      <h3 class="ec-h3">极致舒适座舱</h3>
+      <p class="ec-p">全机队配备人体工学座椅，商务舱支持 180 度平躺。每个座位都配有独立娱乐系统与高速 Wi-Fi。</p>
+    </div>
+    <div class="exp-card">
+      <div class="ec-icon"><span class="iconify" data-icon="mdi:silverware-fork-knife"></span></div>
+      <h3 class="ec-h3">米其林级餐食</h3>
+      <p class="ec-p">携手全球顶级餐饮品牌，每季度更新菜单。满足素食、低敏等多元饮食需求。</p>
+    </div>
+    <div class="exp-card">
+      <div class="ec-icon"><span class="iconify" data-icon="mdi:wifi-star"></span></div>
+      <h3 class="ec-h3">全程互联体验</h3>
+      <p class="ec-p">StarLink 卫星互联网覆盖所有航线，支持 4K 视频流媒体和实时视频通话。</p>
+    </div>
+    <div class="exp-card">
+      <div class="ec-icon"><span class="iconify" data-icon="mdi:leaf-circle"></span></div>
+      <h3 class="ec-h3">碳中和承诺</h3>
+      <p class="ec-p">SAF 可持续航空燃料使用率达 40%，2025 年实现全面碳补偿目标。</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div>
+    <div class="f-brand"><span class="iconify" data-icon="mdi:airplane"></span> SkyStar Airlines</div>
+    <div class="f-copy">连接世界，不止于飞行。</div>
+  </div>
+  <div class="f-links">
+    <a class="f-link" href="#">关于我们</a>
+    <a class="f-link" href="#">隐私政策</a>
+    <a class="f-link" href="#">条款条件</a>
+    <a class="f-link" href="#">联系我们</a>
+  </div>
+</footer>
+
+<!-- Starfield Generation + Parallax -->
+<script>
+// Generate stars
+const sf=document.getElementById('starfield');
+for(let i=0;i<150;i++){
+  const s=document.createElement('div');
+  s.className='star';
+  s.style.cssText=`top:${Math.random()*100}%;left:${Math.random()*100}%;width:${Math.random()*2+1}px;height:${Math.random()*2+1}px;--dur:${(Math.random()*4+2)s};--del:${Math.random()*4}s`;
+  sf.appendChild(s);
+}
+
+// Scroll-driven parallax for stats strip
+const strip=document.getElementById('parallaxStrip');
+window.addEventListener('scroll',()=>{
+  if(!strip)return;
+  const rect=strip.getBoundingClientRect();
+  const scrolled=Math.min(Math.max((window.innerHeight-rect.top)/(window.innerHeight*0.6),0),1);
+  strip.style.backgroundPositionY=scrolled*40+'px';
+}, {passive:true});
+
+// Search tab toggle
+document.querySelectorAll('.sg-tab').forEach(t=>{
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.sg-tab').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

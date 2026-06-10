@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1677FF">
+<title>闪电充电 - 找桩充电一扫搞定</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1677FF;
+    --blue-light: #4096ff;
+    --blue-bg: #e6f4ff;
+    --green: #52C41A;
+    --green-bg: #f6ffed;
+    --orange: #FA8C16;
+    --orange-bg: #fff7e6;
+    --red: #FF4D4F;
+    --red-bg: #fff2f0;
+    --white: #ffffff;
+    --bg: #f5f7fa;
+    --gray-50: #fafafa;
+    --gray-100: #f0f0f0;
+    --gray-200: #e8e8e8;
+    --gray-300: #d9d9d9;
+    --gray-400: #bfbfbf;
+    --gray-500: #8c8c8c;
+    --gray-600: #595959;
+    --gray-800: #262626;
+    --text-primary: #1a1a1a;
+    --text-secondary: #8c8c8c;
+    --font-body: 'Noto Sans SC', 'Inter', -apple-system, sans-serif;
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 999px;
+    --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+    --shadow-elevated: 0 8px 24px rgba(0,0,0,0.1);
+    --transition: 180ms cubic-bezier(0.4,0,0.2,1);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-primary);
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* ---- STATUS BAR MOCK ---- */
+  .status-bar {
+    height: 44px; background: var(--white);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; font-size: 12px; font-weight: 600;
+    color: var(--text-primary);
+  }
+  .status-bar .time { font-variant-numeric: tabular-nums; }
+
+  /* ---- MAP AREA ---- */
+  .map-area {
+    height: 280px; position: relative;
+    background: linear-gradient(180deg, #e8f0fe 0%, #d4e4f7 100%);
+    overflow: hidden;
+  }
+  .map-area::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle 120px at 30% 40%, rgba(22,119,255,0.15) 0%, transparent 100%),
+      radial-gradient(circle 100px at 70% 60%, rgba(82,196,26,0.12) 0%, transparent 100%),
+      radial-gradient(circle 80px at 50% 80%, rgba(250,140,22,0.1) 0%, transparent 100%);
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .map-roads {
+    position: absolute; inset: 0;
+  }
+  .map-road {
+    position: absolute; background: rgba(255,255,255,0.7);
+    border-radius: 2px;
+  }
+  .map-road.h1 { top: 35%; left: 0; right: 0; height: 3px; }
+  .map-road.h2 { top: 65%; left: 10%; right: 5%; height: 2px; }
+  .map-road.v1 { left: 25%; top: 0; bottom: 0; width: 3px; }
+  .map-road.v2 { left: 60%; top: 10%; bottom: 5%; width: 2px; }
+  .map-road.v3 { left: 80%; top: 5%; bottom: 15%; width: 2px; }
+
+  .map-pin {
+    position: absolute; width: 36px; height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform var(--transition);
+  }
+  .map-pin:hover { transform: rotate(-45deg) scale(1.15); }
+  .map-pin-inner {
+    transform: rotate(45deg);
+    font-size: 11px; font-weight: 700; color: white;
+  }
+  .map-pin.available { background: var(--green); }
+  .map-pin.busy { background: var(--orange); }
+  .map-pin.full { background: var(--red); }
+  .map-pin.p1 { top: 25%; left: 20%; }
+  .map-pin.p2 { top: 45%; left: 55%; }
+  .map-pin.p3 { top: 60%; left: 30%; }
+  .map-pin.p4 { top: 30%; left: 75%; }
+  .map-pin.p5 { top: 70%; left: 70%; }
+
+  .map-center-dot {
+    position: absolute; top: 50%; left: 50%;
+    width: 16px; height: 16px; margin: -8px 0 0 -8px;
+    background: var(--blue); border: 3px solid var(--white);
+    border-radius: 50%; box-shadow: 0 2px 8px rgba(22,119,255,0.4);
+    z-index: 5;
+  }
+  .map-center-ring {
+    position: absolute; top: 50%; left: 50%;
+    width: 48px; height: 48px; margin: -24px 0 0 -24px;
+    border: 2px solid rgba(22,119,255,0.2);
+    border-radius: 50%; z-index: 4;
+  }
+
+  .map-controls {
+    position: absolute; right: 16px; bottom: 16px;
+    display: flex; flex-direction: column; gap: 8px; z-index: 10;
+  }
+  .map-btn {
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    background: var(--white); border: none;
+    box-shadow: var(--shadow-card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    transition: background var(--transition);
+  }
+  .map-btn:hover { background: var(--gray-50); }
+  .map-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .map-search-bar {
+    position: absolute; top: 12px; left: 16px; right: 16px; z-index: 10;
+    background: var(--white); border-radius: var(--radius-full);
+    box-shadow: var(--shadow-elevated);
+    display: flex; align-items: center;
+    padding: 10px 16px; gap: 10px;
+  }
+  .map-search-bar input {
+    flex: 1; border: none; outline: none;
+    font-size: 14px; font-family: var(--font-body);
+    color: var(--text-primary);
+    background: transparent;
+  }
+  .map-search-bar input::placeholder { color: var(--gray-400); }
+  .search-icon { color: var(--gray-400); font-size: 16px; flex-shrink: 0; }
+
+  /* ---- BOTTOM SHEET ---- */
+  .bottom-sheet {
+    position: relative; z-index: 20;
+    background: var(--white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    margin-top: -20px;
+    padding: 12px 16px 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--gray-300); margin: 0 auto 16px;
+  }
+  .sheet-tabs {
+    display: flex; gap: 0; margin-bottom: 16px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .sheet-tab {
+    flex: 1; padding: 10px 0; text-align: center;
+    font-size: 14px; font-weight: 500;
+    color: var(--text-secondary);
+    background: none; border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color var(--transition), border-color var(--transition);
+  }
+  .sheet-tab.active {
+    color: var(--blue); border-bottom-color: var(--blue); font-weight: 600;
+  }
+  .sheet-tab:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+
+  /* ---- STATION CARDS ---- */
+  .station-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 100px; }
+  .station-card {
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    display: flex; gap: 14px;
+    transition: box-shadow var(--transition);
+    cursor: pointer;
+  }
+  .station-card:hover { box-shadow: var(--shadow-card); }
+  .station-card:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .station-icon {
+    width: 44px; height: 44px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .station-icon.green { background: var(--green-bg); color: var(--green); }
+  .station-icon.orange { background: var(--orange-bg); color: var(--orange); }
+  .station-icon.blue { background: var(--blue-bg); color: var(--blue); }
+  .station-info { flex: 1; min-width: 0; }
+  .station-name {
+    font-size: 15px; font-weight: 600; margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .station-meta {
+    font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;
+  }
+  .station-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px; padding: 2px 8px; border-radius: var(--radius-xs);
+    font-weight: 500;
+  }
+  .tag-free { background: var(--green-bg); color: var(--green); }
+  .tag-fast { background: var(--blue-bg); color: var(--blue); }
+  .tag-plus { background: #fff7e6; color: #d48806; }
+  .tag-slow { background: var(--gray-50); color: var(--gray-500); }
+  .station-right {
+    display: flex; flex-direction: column;
+    align-items: flex-end; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .station-distance {
+    font-size: 13px; font-weight: 600; color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .station-price {
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .station-price strong {
+    font-size: 16px; color: var(--orange);
+    font-variant-numeric: tabular-nums;
+  }
+  .pile-status {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .pile-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .pile-dot.free { background: var(--green); }
+  .pile-dot.charging { background: var(--orange); }
+  .pile-dot.fault { background: var(--red); }
+
+  /* ---- QUICK ACTIONS ---- */
+  .quick-actions {
+    display: flex; gap: 0; justify-content: space-around;
+    padding: 16px 0; margin-bottom: 4px;
+  }
+  .quick-action {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; background: none; border: none; cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .quick-action:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; border-radius: 8px; }
+  .qa-icon {
+    width: 44px; height: 44px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .qa-icon.q1 { background: var(--blue-bg); color: var(--blue); }
+  .qa-icon.q2 { background: var(--green-bg); color: var(--green); }
+  .qa-icon.q3 { background: #fff1f0; color: var(--red); }
+  .qa-icon.q4 { background: #f9f0ff; color: #722ed1; }
+  .qa-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+  /* ---- TAB BAR ---- */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--white);
+    border-top: 1px solid var(--gray-100);
+    display: flex; align-items: flex-end; justify-content: space-around;
+    padding: 6px 0 calc(6px + var(--safe-bottom));
+    z-index: 100;
+  }
+  .tab-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 2px; background: none; border: none;
+    cursor: pointer; padding: 4px 12px;
+    font-family: var(--font-body);
+    transition: color var(--transition);
+  }
+  .tab-item:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
+  .tab-icon { font-size: 20px; line-height: 1; }
+  .tab-label { font-size: 10px; font-weight: 500; }
+  .tab-item.active { color: var(--blue); }
+  .tab-item:not(.active) { color: var(--gray-400); }
+
+  .tab-scan {
+    position: relative; top: -20px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), #36cfc9);
+    border: 4px solid var(--white);
+    box-shadow: 0 4px 16px rgba(22,119,255,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: var(--white);
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .tab-scan:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(22,119,255,0.45); }
+  .tab-scan:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+
+  /* ---- CHARGING MODAL ---- */
+  .charging-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--transition);
+  }
+  .charging-overlay.show { opacity: 1; pointer-events: auto; }
+  .charging-modal {
+    width: 100%; max-width: 430px;
+    background: var(--white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 24px 20px calc(24px + var(--safe-bottom));
+    transform: translateY(100%);
+    transition: transform 300ms cubic-bezier(0.4,0,0.2,1);
+  }
+  .charging-overlay.show .charging-modal { transform: translateY(0); }
+  .charging-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .charging-header h3 { font-size: 18px; font-weight: 700; }
+  .charging-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gray-100); border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    transition: background var(--transition);
+  }
+  .charging-close:hover { background: var(--gray-200); }
+  .charging-close:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .charge-ring-wrap {
+    display: flex; justify-content: center; margin-bottom: 24px;
+  }
+  .charge-ring {
+    width: 160px; height: 160px; position: relative;
+  }
+  .charge-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .charge-ring-bg { fill: none; stroke: var(--gray-100); stroke-width: 10; }
+  .charge-ring-fill {
+    fill: none; stroke: var(--blue); stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 408; stroke-dashoffset: 143;
+    transition: stroke-dashoffset 1s ease;
+  }
+  .charge-ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .charge-pct {
+    font-size: 36px; font-weight: 700; color: var(--blue);
+    font-variant-numeric: tabular-nums;
+  }
+  .charge-pct small { font-size: 18px; }
+  .charge-kwh { font-size: 13px; color: var(--text-secondary); }
+
+  .charge-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px; margin-bottom: 20px;
+  }
+  .charge-stat {
+    text-align: center; padding: 12px 0;
+    background: var(--gray-50); border-radius: var(--radius-sm);
+  }
+  .charge-stat-value {
+    font-size: 18px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+  .charge-stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  .charge-actions { display: flex; gap: 12px; }
+  .charge-btn {
+    flex: 1; padding: 14px; border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+    border: none;
+  }
+  .charge-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .charge-btn-stop {
+    background: var(--red-bg); color: var(--red);
+  }
+  .charge-btn-stop:hover { background: #ffe6e6; }
+  .charge-btn-detail {
+    background: var(--blue-bg); color: var(--blue);
+  }
+  .charge-btn-detail:hover { background: #d6e8fa; }
+
+  /* ---- MEMBER BANNER ---- */
+  .member-banner {
+    margin: 16px; padding: 16px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: var(--radius-md);
+    color: white; position: relative; overflow: hidden;
+  }
+  .member-banner::after {
+    content: ''; position: absolute; top: -30px; right: -30px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+  .member-banner h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .member-banner p { font-size: 12px; opacity: 0.85; margin-bottom: 12px; }
+  .member-btn {
+    display: inline-block; padding: 8px 20px;
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+    border-radius: var(--radius-full); color: white;
+    font-size: 13px; font-weight: 600; text-decoration: none;
+    transition: background var(--transition);
+  }
+  .member-btn:hover { background: rgba(255,255,255,0.3); }
+  .member-btn:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<div class="status-bar" role="presentation" aria-hidden="true">
+  <span class="time">09:41</span>
+  <span>闪电充电</span>
+  <span>100%</span>
+</div>
+
+<!-- MAP -->
+<div class="map-area" role="img" aria-label="充电站地图视图，显示附近5个充电站位置">
+  <div class="map-grid" aria-hidden="true"></div>
+  <div class="map-roads" aria-hidden="true">
+    <div class="map-road h1"></div>
+    <div class="map-road h2"></div>
+    <div class="map-road v1"></div>
+    <div class="map-road v2"></div>
+    <div class="map-road v3"></div>
+  </div>
+
+  <div class="map-search-bar" role="search">
+    <span class="search-icon" aria-hidden="true">Q</span>
+    <input type="text" placeholder="搜索充电站、地点…" aria-label="搜索充电站">
+  </div>
+
+  <div class="map-center-ring" aria-hidden="true"></div>
+  <div class="map-center-dot" aria-hidden="true"></div>
+
+  <div class="map-pin available p1" tabindex="0" role="button" aria-label="城西银港充电站，空闲4个桩">
+    <span class="map-pin-inner">4</span>
+  </div>
+  <div class="map-pin busy p2" tabindex="0" role="button" aria-label="未来科技城充电站，空闲1个桩">
+    <span class="map-pin-inner">1</span>
+  </div>
+  <div class="map-pin available p3" tabindex="0" role="button" aria-label="翠苑街道充电站，空闲6个桩">
+    <span class="map-pin-inner">6</span>
+  </div>
+  <div class="map-pin full p4" tabindex="0" role="button" aria-label="西溪湿地充电站，已满">
+    <span class="map-pin-inner">0</span>
+  </div>
+  <div class="map-pin available p5" tabindex="0" role="button" aria-label="三墩充电站，空闲3个桩">
+    <span class="map-pin-inner">3</span>
+  </div>
+
+  <div class="map-controls">
+    <button class="map-btn" aria-label="定位到当前位置">L</button>
+    <button class="map-btn" aria-label="切换到列表视图">=</button>
+  </div>
+</div>
+
+<!-- BOTTOM SHEET -->
+<div class="bottom-sheet">
+  <div class="sheet-handle" aria-hidden="true"></div>
+
+  <div class="quick-actions" role="group" aria-label="快捷功能">
+    <button class="quick-action" aria-label="扫码充电">
+      <div class="qa-icon q1">S</div>
+      <span class="qa-label">扫码充电</span>
+    </button>
+    <button class="quick-action" aria-label="收藏电站">
+      <div class="qa-icon q2">H</div>
+      <span class="qa-label">收藏电站</span>
+    </button>
+    <button class="quick-action" aria-label="充电记录">
+      <div class="qa-icon q3">L</div>
+      <span class="qa-label">充电记录</span>
+    </button>
+    <button class="quick-action" aria-label="开具发票">
+      <div class="qa-icon q4">F</div>
+      <span class="qa-label">开具发票</span>
+    </button>
+  </div>
+
+  <div class="sheet-tabs" role="tablist" aria-label="站点列表筛选">
+    <button class="sheet-tab active" role="tab" aria-selected="true" id="tab-nearby">附近推荐</button>
+    <button class="sheet-tab" role="tab" aria-selected="false" id="tab-fast">快充优先</button>
+    <button class="sheet-tab" role="tab" aria-selected="false" id="tab-cheap">价格最低</button>
+  </div>
+
+  <div class="station-list" role="list" aria-label="附近充电站列表">
+    <article class="station-card" role="listitem" tabindex="0" aria-label="城西银港充电站，距离850米">
+      <div class="station-icon green" aria-hidden="true">C</div>
+      <div class="station-info">
+        <div class="station-name">城西银港充电站</div>
+        <div class="station-meta">西湖区文三路 458 号 &middot; 850m</div>
+        <div class="station-tags">
+          <span class="tag tag-free">免费停车2h</span>
+          <span class="tag tag-fast">快充</span>
+          <span class="tag tag-plus">PLUS 6折</span>
+        </div>
+      </div>
+      <div class="station-right">
+        <div class="station-distance">850m</div>
+        <div class="station-price"><strong>0.85</strong> 元/度</div>
+        <div class="pile-status" aria-label="4个空闲，2个充电中">
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="station-card" role="listitem" tabindex="0" aria-label="未来科技城超级充电站，距离1.2公里">
+      <div class="station-icon orange" aria-hidden="true">C</div>
+      <div class="station-info">
+        <div class="station-name">未来科技城超级充电站</div>
+        <div class="station-meta">余杭区海创园 B 座 &middot; 1.2km</div>
+        <div class="station-tags">
+          <span class="tag tag-fast">超充</span>
+          <span class="tag tag-fast">快充</span>
+        </div>
+      </div>
+      <div class="station-right">
+        <div class="station-distance">1.2km</div>
+        <div class="station-price"><strong>1.20</strong> 元/度</div>
+        <div class="pile-status" aria-label="1个空闲，5个充电中，1个故障">
+          <span class="pile-dot free"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot fault"></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="station-card" role="listitem" tabindex="0" aria-label="翠苑街道充电站，距离1.5公里">
+      <div class="station-icon green" aria-hidden="true">C</div>
+      <div class="station-info">
+        <div class="station-name">翠苑街道充电站</div>
+        <div class="station-meta">西湖区翠苑一区东门 &middot; 1.5km</div>
+        <div class="station-tags">
+          <span class="tag tag-free">免费停车</span>
+          <span class="tag tag-slow">慢充</span>
+        </div>
+      </div>
+      <div class="station-right">
+        <div class="station-distance">1.5km</div>
+        <div class="station-price"><strong>0.65</strong> 元/度</div>
+        <div class="pile-status" aria-label="6个空闲，1个充电中">
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot free"></span>
+          <span class="pile-dot charging"></span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Member Banner -->
+    <div class="member-banner" role="complementary" aria-label="PLUS会员推广">
+      <h4>PLUS 会员专享</h4>
+      <p>充电低至 6 折，每月立省约 50 元，首月仅需 2.9 元</p>
+      <a href="#" class="member-btn" aria-label="立即开通PLUS会员">立即开通</a>
+    </div>
+
+    <article class="station-card" role="listitem" tabindex="0" aria-label="西溪湿地充电站，距离2.1公里，已满">
+      <div class="station-icon blue" aria-hidden="true">C</div>
+      <div class="station-info">
+        <div class="station-name">西溪湿地充电站</div>
+        <div class="station-meta">西溪路 528 号 &middot; 2.1km</div>
+        <div class="station-tags">
+          <span class="tag tag-fast">快充</span>
+          <span class="tag tag-free">停车免费</span>
+        </div>
+      </div>
+      <div class="station-right">
+        <div class="station-distance">2.1km</div>
+        <div class="station-price"><strong>0.95</strong> 元/度</div>
+        <div class="pile-status" aria-label="全部充电中">
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+          <span class="pile-dot charging"></span>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav class="tab-bar" role="navigation" aria-label="底部导航">
+  <button class="tab-item active" aria-label="首页" aria-current="page">
+    <span class="tab-icon" aria-hidden="true">H</span>
+    <span class="tab-label">首页</span>
+  </button>
+  <button class="tab-item" aria-label="省钱活动">
+    <span class="tab-icon" aria-hidden="true">%</span>
+    <span class="tab-label">省钱</span>
+  </button>
+  <button class="tab-scan" aria-label="扫码充电" id="scanBtn">
+    S
+  </button>
+  <button class="tab-item" aria-label="订单">
+    <span class="tab-icon" aria-hidden="true">O</span>
+    <span class="tab-label">订单</span>
+  </button>
+  <button class="tab-item" aria-label="我的">
+    <span class="tab-icon" aria-hidden="true">U</span>
+    <span class="tab-label">我的</span>
+  </button>
+</nav>
+
+<!-- CHARGING MODAL -->
+<div class="charging-overlay" id="chargingOverlay" role="dialog" aria-modal="true" aria-label="充电中详情">
+  <div class="charging-modal">
+    <div class="charging-header">
+      <h3>充电中</h3>
+      <button class="charging-close" id="chargingClose" aria-label="关闭充电详情">X</button>
+    </div>
+    <div class="charge-ring-wrap">
+      <div class="charge-ring">
+        <svg viewBox="0 0 140 140" aria-hidden="true">
+          <circle class="charge-ring-bg" cx="70" cy="70" r="65"/>
+          <circle class="charge-ring-fill" cx="70" cy="70" r="65"/>
+        </svg>
+        <div class="charge-ring-text">
+          <div class="charge-pct">65<small>%</small></div>
+          <div class="charge-kwh">已充 28.6 kWh</div>
+        </div>
+      </div>
+    </div>
+    <div class="charge-stats">
+      <div class="charge-stat">
+        <div class="charge-stat-value">62<small>kW</small></div>
+        <div class="charge-stat-label">当前功率</div>
+      </div>
+      <div class="charge-stat">
+        <div class="charge-stat-value">45<small>min</small></div>
+        <div class="charge-stat-label">已用时长</div>
+      </div>
+      <div class="charge-stat">
+        <div class="charge-stat-value">&yen;24.3</div>
+        <div class="charge-stat-label">实时费用</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+      预计还需 25 分钟充满 &middot; 城西银港充电站 A3 号桩
+    </p>
+    <div class="charge-actions">
+      <button class="charge-btn charge-btn-stop" aria-label="停止充电">停止充电</button>
+      <button class="charge-btn charge-btn-detail" aria-label="查看详情">查看详情</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const scanBtn = document.getElementById('scanBtn');
+  const overlay = document.getElementById('chargingOverlay');
+  const closeBtn = document.getElementById('chargingClose');
+
+  scanBtn.addEventListener('click', () => {
+    overlay.classList.add('show');
+  });
+  closeBtn.addEventListener('click', () => {
+    overlay.classList.remove('show');
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+</script>
+
+</body>
+</html>

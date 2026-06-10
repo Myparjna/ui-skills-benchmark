@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>骑呗运营 - 城市共享两轮运营管理后台</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-dark: #4f46e5;
+    --primary-50: #eef2ff;
+    --green: #10b981;
+    --green-light: #34d399;
+    --green-50: #ecfdf5;
+    --orange: #f59e0b;
+    --orange-50: #fffbeb;
+    --red: #ef4444;
+    --red-50: #fef2f2;
+    --blue: #3b82f6;
+    --bg-base: #f8fafc;
+    --bg-sidebar: #1e1b4b;
+    --bg-card: #ffffff;
+    --bg-muted: #f1f5f9;
+    --text-default: #1e293b;
+    --text-secondary: #64748b;
+    --text-hint: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans SC','Inter',sans-serif; background:var(--bg-base); color:var(--text-default); display:flex; min-height:100vh; }
+  a { text-decoration:none; color:inherit; }
+
+  /* Sidebar */
+  .sidebar { width:240px; background:var(--bg-sidebar); color:rgba(255,255,255,0.8); display:flex; flex-direction:column; flex-shrink:0; position:fixed; top:0; bottom:0; left:0; z-index:50; }
+  .sidebar-brand { padding:20px 20px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .sidebar-brand svg { width:28px; height:28px; }
+  .sidebar-brand span { font-size:16px; font-weight:700; color:#fff; }
+  .sidebar-nav { flex:1; padding:12px 10px; overflow-y:auto; }
+  .nav-section { margin-bottom:8px; }
+  .nav-label { font-size:11px; font-weight:600; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:1px; padding:8px 12px 4px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; margin-bottom:2px; }
+  .nav-item:hover { background:rgba(255,255,255,0.06); }
+  .nav-item.active { background:var(--primary); color:#fff; }
+  .nav-item svg { width:18px; height:18px; flex-shrink:0; }
+  .nav-item .nav-badge { margin-left:auto; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:1px 7px; border-radius:var(--radius-sm); }
+  .sidebar-footer { padding:12px 16px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:10px; }
+  .sidebar-footer .avatar { width:32px; height:32px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; }
+  .sidebar-footer .user-info { flex:1; }
+  .sidebar-footer .user-name { font-size:13px; font-weight:600; color:#fff; }
+  .sidebar-footer .user-role { font-size:11px; color:rgba(255,255,255,0.5); }
+
+  /* Main */
+  .main { flex:1; margin-left:240px; display:flex; flex-direction:column; }
+
+  /* Top Bar */
+  .topbar { height:56px; background:var(--bg-card); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; position:sticky; top:0; z-index:40; }
+  .topbar-left { display:flex; align-items:center; gap:16px; }
+  .topbar-left h2 { font-size:16px; font-weight:700; }
+  .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-hint); }
+  .breadcrumb span { color:var(--text-default); font-weight:500; }
+  .topbar-right { display:flex; align-items:center; gap:12px; }
+  .topbar-btn { width:36px; height:36px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-card); display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+  .topbar-btn svg { width:18px; height:18px; color:var(--text-secondary); }
+  .topbar-btn .dot { position:absolute; top:6px; right:6px; width:8px; height:8px; background:var(--red); border-radius:50%; border:2px solid #fff; }
+  .range-select { display:flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+  .range-opt { padding:6px 14px; font-size:12px; font-weight:500; cursor:pointer; background:var(--bg-card); border:none; font-family:inherit; color:var(--text-secondary); }
+  .range-opt.active { background:var(--primary); color:#fff; }
+
+  /* Content */
+  .content { padding:20px 24px; flex:1; }
+
+  /* KPI Grid */
+  .kpi-grid { display:grid; grid-template-columns:repeat(5, 1fr); gap:14px; margin-bottom:20px; }
+  .kpi-card { background:var(--bg-card); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:18px; transition:box-shadow 0.2s; }
+  .kpi-card:hover { box-shadow:var(--shadow-md); }
+  .kpi-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .kpi-label { font-size:12px; color:var(--text-secondary); font-weight:500; }
+  .kpi-icon { width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; }
+  .kpi-icon svg { width:16px; height:16px; }
+  .kpi-icon.green { background:var(--green-50); color:var(--green); }
+  .kpi-icon.blue { background:var(--primary-50); color:var(--primary); }
+  .kpi-icon.orange { background:var(--orange-50); color:var(--orange); }
+  .kpi-icon.red { background:var(--red-50); color:var(--red); }
+  .kpi-value { font-size:26px; font-weight:800; margin-bottom:4px; line-height:1; }
+  .kpi-change { font-size:11px; font-weight:600; display:flex; align-items:center; gap:3px; }
+  .kpi-change.up { color:var(--green); }
+  .kpi-change.down { color:var(--red); }
+  .kpi-change span { color:var(--text-hint); font-weight:400; }
+
+  /* Grid Layout */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .grid-3 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+
+  /* Card */
+  .card { background:var(--bg-card); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:18px; }
+  .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .card-header h3 { font-size:14px; font-weight:700; }
+  .card-header .card-action { font-size:12px; color:var(--primary); font-weight:600; cursor:pointer; }
+
+  /* Vehicle Status Bar */
+  .status-bars { display:flex; flex-direction:column; gap:10px; }
+  .status-row { display:flex; align-items:center; gap:10px; }
+  .status-label { font-size:12px; color:var(--text-secondary); width:56px; flex-shrink:0; }
+  .status-bar-track { flex:1; height:24px; background:var(--bg-muted); border-radius:var(--radius-sm); overflow:hidden; position:relative; }
+  .status-bar-fill { height:100%; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:11px; font-weight:700; color:#fff; transition:width 0.8s ease; }
+  .fill-green { background:linear-gradient(90deg, #10b981, #34d399); }
+  .fill-blue { background:linear-gradient(90deg, #6366f1, #818cf8); }
+  .fill-orange { background:linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .fill-red { background:linear-gradient(90deg, #ef4444, #f87171); }
+  .fill-gray { background:linear-gradient(90deg, #94a3b8, #cbd5e1); }
+  .status-count { font-size:13px; font-weight:700; width:56px; text-align:right; flex-shrink:0; }
+
+  /* Alert List */
+  .alert-list { display:flex; flex-direction:column; gap:8px; }
+  .alert-item { display:flex; align-items:flex-start; gap:10px; padding:10px; border-radius:var(--radius-sm); border:1px solid var(--border-light); cursor:pointer; transition:background 0.15s; }
+  .alert-item:hover { background:var(--bg-muted); }
+  .alert-dot { width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+  .alert-dot.p0 { background:var(--red); }
+  .alert-dot.p1 { background:var(--orange); }
+  .alert-dot.p2 { background:var(--blue); }
+  .alert-body { flex:1; min-width:0; }
+  .alert-title { font-size:12px; font-weight:600; margin-bottom:2px; }
+  .alert-meta { font-size:11px; color:var(--text-hint); }
+  .alert-time { font-size:11px; color:var(--text-hint); white-space:nowrap; }
+
+  /* Battery SOC */
+  .soc-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+  .soc-item { text-align:center; padding:12px 8px; border-radius:var(--radius-sm); border:1px solid var(--border-light); }
+  .soc-pct { font-size:20px; font-weight:800; }
+  .soc-count { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  .soc-label { font-size:10px; color:var(--text-hint); margin-top:4px; }
+
+  /* Work Order */
+  .wo-stages { display:flex; gap:8px; margin-bottom:14px; }
+  .wo-stage { flex:1; text-align:center; padding:10px 8px; border-radius:var(--radius-sm); background:var(--bg-muted); }
+  .wo-stage .wo-num { font-size:20px; font-weight:800; }
+  .wo-stage .wo-label { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  .wo-stage.active { background:var(--primary-50); border:1px solid var(--primary); }
+  .wo-stage.active .wo-label { color:var(--primary); font-weight:600; }
+
+  /* Compliance */
+  .compliance-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .comp-item { padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-light); text-align:center; }
+  .comp-value { font-size:22px; font-weight:800; }
+  .comp-label { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  .comp-status { font-size:10px; font-weight:600; margin-top:4px; padding:2px 8px; border-radius:var(--radius-sm); display:inline-block; }
+  .comp-status.ok { background:var(--green-50); color:var(--green); }
+  .comp-status.warn { background:var(--orange-50); color:var(--orange); }
+
+  /* Quick Action */
+  .quick-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+  .quick-btn { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 8px; border-radius:var(--radius-sm); border:1px solid var(--border-light); background:var(--bg-card); cursor:pointer; transition:all 0.15s; }
+  .quick-btn:hover { border-color:var(--primary); background:var(--primary-50); }
+  .quick-btn svg { width:20px; height:20px; color:var(--primary); }
+  .quick-btn span { font-size:11px; color:var(--text-secondary); font-weight:500; }
+
+  /* Mini Chart Placeholder */
+  .chart-placeholder { height:160px; background:linear-gradient(180deg, var(--primary-50) 0%, transparent 100%); border-radius:var(--radius-sm); position:relative; overflow:hidden; display:flex; align-items:flex-end; padding:0 8px; gap:6px; }
+  .chart-bar { flex:1; border-radius:4px 4px 0 0; transition:height 0.5s ease; }
+  .chart-bar.primary { background:linear-gradient(180deg, var(--primary), var(--primary-light)); }
+  .chart-bar.muted { background:var(--border); }
+
+  /* Supply Demand */
+  .sd-grid { display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
+  .sd-cell { aspect-ratio:1; border-radius:var(--radius-sm); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; font-weight:600; }
+  .sd-cell.deficit { background:#fef2f2; color:var(--red); }
+  .sd-cell.balanced { background:#ecfdf5; color:var(--green); }
+  .sd-cell.surplus { background:#eef2ff; color:var(--primary); }
+
+  /* Responsive */
+  @media (max-width:1400px) {
+    .kpi-grid { grid-template-columns:repeat(3, 1fr); }
+    .grid-3 { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#6366f1"/><path d="M8 18l4-10 4 6 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>骑呗运营</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-label">核心</div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        运营总览
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        地图调度中心
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-8 8M8 8l8 8"/></svg>
+        车队资产
+        <span class="nav-badge">28,431</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="7" width="12" height="14" rx="2"/><path d="M10 7V5a2 2 0 014 0v2"/></svg>
+        电池与能源
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">执行</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        运维工单
+        <span class="nav-badge">23</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        规则与区域
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        合规监管
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">分析</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        数据报表
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        组织与权限
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        系统配置
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">张</div>
+    <div class="user-info">
+      <div class="user-name">张明远</div>
+      <div class="user-role">城市运营经理</div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        首页 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <span>运营总览</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="range-select">
+        <button class="range-opt">今日</button>
+        <button class="range-opt active">本周</button>
+        <button class="range-opt">本月</button>
+        <button class="range-opt">自定义</button>
+      </div>
+      <div class="topbar-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <div class="dot"></div>
+      </div>
+      <div class="topbar-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/><circle cx="12" cy="12" r="4"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">今日订单</span>
+          <div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+        </div>
+        <div class="kpi-value">18,432</div>
+        <div class="kpi-change up">+12.3% <span>vs 昨日</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">GMV 收入</span>
+          <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        </div>
+        <div class="kpi-value">&yen;86,240</div>
+        <div class="kpi-change up">+8.7% <span>vs 昨日</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">车辆可用率</span>
+          <div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+        </div>
+        <div class="kpi-value">89.2%</div>
+        <div class="kpi-change down">-1.4% <span>vs 昨日</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">活跃用户 DAU</span>
+          <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
+        </div>
+        <div class="kpi-value">12,847</div>
+        <div class="kpi-change up">+5.2% <span>vs 昨日</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">待处理告警</span>
+          <div class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:var(--red);">47</div>
+        <div class="kpi-change down">+23 <span>vs 昨日</span></div>
+      </div>
+    </div>
+
+    <!-- Quick Actions + Alerts -->
+    <div class="grid-3">
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header">
+          <h3>快速工作台</h3>
+        </div>
+        <div class="quick-grid">
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></svg>
+            <span>创建调度</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="7" width="12" height="14" rx="2"/><path d="M10 7V5a2 2 0 014 0v2"/></svg>
+            <span>换电任务</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>车辆检索</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span>批量指令</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+            <span>巡检任务</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+            <span>发布公告</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>围栏管理</span>
+          </div>
+          <div class="quick-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            <span>数据导出</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="card" style="grid-column:span 2;">
+        <div class="card-header">
+          <h3>告警与异常中心</h3>
+          <span class="card-action">查看全部 &rarr;</span>
+        </div>
+        <div style="display:flex; gap:12px; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:6px; font-size:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);"></span>P0 紧急 <strong>5</strong></div>
+          <div style="display:flex; align-items:center; gap:6px; font-size:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--orange);"></span>P1 重要 <strong>18</strong></div>
+          <div style="display:flex; align-items:center; gap:6px; font-size:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue);"></span>P2 一般 <strong>24</strong></div>
+        </div>
+        <div class="alert-list">
+          <div class="alert-item"><div class="alert-dot p0"></div><div class="alert-body"><div class="alert-title">西湖区文三路 聚集堆积 - 23辆违规停放</div><div class="alert-meta">禁停区触发 &middot; 已生成工单 #W20260601-042</div></div><div class="alert-time">3分钟前</div></div>
+          <div class="alert-item"><div class="alert-dot p0"></div><div class="alert-body"><div class="alert-title">滨江物联网园区 越界车辆 8辆超出服务区</div><div class="alert-meta">越界告警 &middot; 已自动锁车</div></div><div class="alert-time">12分钟前</div></div>
+          <div class="alert-item"><div class="alert-dot p1"></div><div class="alert-body"><div class="alert-title">下沙高教园区 低电车辆 142辆 SOC&lt;15%</div><div class="alert-meta">换电任务已派发 &middot; 执行中 38/142</div></div><div class="alert-time">28分钟前</div></div>
+          <div class="alert-item"><div class="alert-dot p1"></div><div class="alert-body"><div class="alert-title">拱墅区万达广场 疑似盗损 3辆异常轨迹</div><div class="alert-meta">轨迹异常 &middot; 已通知风控</div></div><div class="alert-time">45分钟前</div></div>
+          <div class="alert-item"><div class="alert-dot p2"></div><div class="alert-body"><div class="alert-title">余杭区未来科技城 离线车辆 27辆超30分钟未上报</div><div class="alert-meta">设备离线 &middot; 已批量重启</div></div><div class="alert-time">1小时前</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vehicle Status + Battery -->
+    <div class="grid-2">
+      <!-- Vehicle Status -->
+      <div class="card">
+        <div class="card-header">
+          <h3>车队健康状态</h3>
+          <span class="card-action">详情 &rarr;</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+          <div style="text-align:center;"><div style="font-size:24px; font-weight:800;">28,431</div><div style="font-size:11px; color:var(--text-hint);">总车辆</div></div>
+          <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--green);">25,362</div><div style="font-size:11px; color:var(--text-hint);">可用</div></div>
+          <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--orange);">1,847</div><div style="font-size:11px; color:var(--text-hint);">使用中</div></div>
+          <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--red);">1,222</div><div style="font-size:11px; color:var(--text-hint);">异常</div></div>
+        </div>
+        <div class="status-bars">
+          <div class="status-row"><span class="status-label">可用</span><div class="status-bar-track"><div class="status-bar-fill fill-green" style="width:89.2%;">89.2%</div></div><span class="status-count">25,362</span></div>
+          <div class="status-row"><span class="status-label">使用中</span><div class="status-bar-track"><div class="status-bar-fill fill-blue" style="width:6.5%;">6.5%</div></div><span class="status-count">1,847</span></div>
+          <div class="status-row"><span class="status-label">低电</span><div class="status-bar-track"><div class="status-bar-fill fill-orange" style="width:2.8%;">2.8%</div></div><span class="status-count">796</span></div>
+          <div class="status-row"><span class="status-label">故障</span><div class="status-bar-track"><div class="status-bar-fill fill-red" style="width:1.1%;">1.1%</div></div><span class="status-count">314</span></div>
+          <div class="status-row"><span class="status-label">离线</span><div class="status-bar-track"><div class="status-bar-fill fill-gray" style="width:0.4%;">0.4%</div></div><span class="status-count">112</span></div>
+        </div>
+      </div>
+
+      <!-- Battery SOC -->
+      <div class="card">
+        <div class="card-header">
+          <h3>电池电量分布 (SOC)</h3>
+          <span class="card-action">详情 &rarr;</span>
+        </div>
+        <div class="soc-grid">
+          <div class="soc-item" style="border-color:var(--red);"><div class="soc-pct" style="color:var(--red);">4.2%</div><div class="soc-count">1,194 辆</div><div class="soc-label">0-10%</div></div>
+          <div class="soc-item" style="border-color:var(--orange);"><div class="soc-pct" style="color:var(--orange);">8.7%</div><div class="soc-count">2,473 辆</div><div class="soc-label">10-30%</div></div>
+          <div class="soc-item" style="border-color:var(--primary);"><div class="soc-pct" style="color:var(--primary);">32.1%</div><div class="soc-count">9,126 辆</div><div class="soc-label">30-60%</div></div>
+          <div class="soc-item" style="border-color:var(--green);"><div class="soc-pct" style="color:var(--green);">55.0%</div><div class="soc-count">15,638 辆</div><div class="soc-label">60-100%</div></div>
+        </div>
+        <div style="margin-top:14px; padding:12px; background:var(--green-50); border-radius:var(--radius-sm); display:flex; align-items:center; gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+          <div style="font-size:12px; color:var(--text-secondary);">今日换电完成 <strong style="color:var(--text-default);">847</strong> 次 &middot; 平均耗时 <strong style="color:var(--text-default);">4.2分钟</strong> &middot; 成功率 <strong style="color:var(--green);">98.6%</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work Orders + Supply/Demand -->
+    <div class="grid-2">
+      <!-- Work Orders -->
+      <div class="card">
+        <div class="card-header">
+          <h3>运维工单概览</h3>
+          <span class="card-action">工单池 &rarr;</span>
+        </div>
+        <div class="wo-stages">
+          <div class="wo-stage"><div class="wo-num">12</div><div class="wo-label">待派</div></div>
+          <div class="wo-stage"><div class="wo-num">8</div><div class="wo-label">待接</div></div>
+          <div class="wo-stage active"><div class="wo-num">34</div><div class="wo-label">执行中</div></div>
+          <div class="wo-stage"><div class="wo-num">6</div><div class="wo-label">待验收</div></div>
+          <div class="wo-stage"><div class="wo-num" style="color:var(--green);">186</div><div class="wo-label">已完成</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:1; padding:12px; background:var(--red-50); border-radius:var(--radius-sm); text-align:center;">
+            <div style="font-size:18px; font-weight:800; color:var(--red);">7</div>
+            <div style="font-size:11px; color:var(--text-secondary);">超时工单</div>
+          </div>
+          <div style="flex:1; padding:12px; background:var(--orange-50); border-radius:var(--radius-sm); text-align:center;">
+            <div style="font-size:18px; font-weight:800; color:var(--orange);">14</div>
+            <div style="font-size:11px; color:var(--text-secondary);">临近超时</div>
+          </div>
+          <div style="flex:1; padding:12px; background:var(--green-50); border-radius:var(--radius-sm); text-align:center;">
+            <div style="font-size:18px; font-weight:800; color:var(--green);">92%</div>
+            <div style="font-size:11px; color:var(--text-secondary);">准时率</div>
+          </div>
+          <div style="flex:1; padding:12px; background:var(--primary-50); border-radius:var(--radius-sm); text-align:center;">
+            <div style="font-size:18px; font-weight:800; color:var(--primary);">87%</div>
+            <div style="font-size:11px; color:var(--text-secondary);">一次修复率</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supply/Demand -->
+      <div class="card">
+        <div class="card-header">
+          <h3>供需热区栅格</h3>
+          <span class="card-action">跳转地图 &rarr;</span>
+        </div>
+        <div style="display:flex; gap:12px; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:4px; font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#fef2f2;border:1px solid var(--red);"></span> 缺车区</div>
+          <div style="display:flex; align-items:center; gap:4px; font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#ecfdf5;border:1px solid var(--green);"></span> 平衡</div>
+          <div style="display:flex; align-items:center; gap:4px; font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#eef2ff;border:1px solid var(--primary);"></span> 堆车区</div>
+        </div>
+        <div class="sd-grid">
+          <div class="sd-cell balanced">A1<br><small>OK</small></div>
+          <div class="sd-cell deficit">A2<br><small>-18</small></div>
+          <div class="sd-cell deficit">A3<br><small>-32</small></div>
+          <div class="sd-cell balanced">A4<br><small>OK</small></div>
+          <div class="sd-cell balanced">A5<br><small>OK</small></div>
+          <div class="sd-cell balanced">B1<br><small>OK</small></div>
+          <div class="sd-cell surplus">B2<br><small>+24</small></div>
+          <div class="sd-cell deficit">B3<br><small>-45</small></div>
+          <div class="sd-cell deficit">B4<br><small>-28</small></div>
+          <div class="sd-cell balanced">B5<br><small>OK</small></div>
+          <div class="sd-cell surplus">C1<br><small>+15</small></div>
+          <div class="sd-cell surplus">C2<br><small>+38</small></div>
+          <div class="sd-cell balanced">C3<br><small>OK</small></div>
+          <div class="sd-cell deficit">C4<br><small>-22</small></div>
+          <div class="sd-cell balanced">C5<br><small>OK</small></div>
+        </div>
+        <div style="margin-top:12px; padding:10px; background:var(--orange-50); border-radius:var(--radius-sm); font-size:12px; color:var(--text-secondary);">
+          <strong style="color:var(--orange);">高峰预警</strong> &middot; 17:00-19:00 预计缺车区域 4 个，建议调度 120 辆至 B3/C4 区域
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance + Chart -->
+    <div class="grid-2">
+      <!-- Compliance -->
+      <div class="card">
+        <div class="card-header">
+          <h3>合规与治理概览</h3>
+          <span class="card-action">合规报表 &rarr;</span>
+        </div>
+        <div class="compliance-grid">
+          <div class="comp-item">
+            <div class="comp-value" style="color:var(--red);">127</div>
+            <div class="comp-label">禁停违规</div>
+            <div class="comp-status warn">处置率 86%</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-value" style="color:var(--orange);">43</div>
+            <div class="comp-label">越界车辆</div>
+            <div class="comp-status ok">处置率 94%</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-value" style="color:var(--primary);">28,431</div>
+            <div class="comp-label">投放量 / 上限 30,000</div>
+            <div class="comp-status ok">未超投</div>
+          </div>
+        </div>
+        <div style="margin-top:14px; padding:12px; background:var(--bg-muted); border-radius:var(--radius-sm);">
+          <div style="font-size:12px; font-weight:600; margin-bottom:8px;">数据共享健康度</div>
+          <div style="display:flex; gap:16px; font-size:11px; color:var(--text-secondary);">
+            <span>MDS 上报 <strong style="color:var(--green);">正常</strong></span>
+            <span>延迟 <strong>1.2s</strong></span>
+            <span>字段合规率 <strong style="color:var(--green);">99.4%</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h3>订单趋势 (近7日)</h3>
+          <span class="card-action">详细报表 &rarr;</span>
+        </div>
+        <div class="chart-placeholder">
+          <div class="chart-bar primary" style="height:55%;"></div>
+          <div class="chart-bar primary" style="height:62%;"></div>
+          <div class="chart-bar primary" style="height:58%;"></div>
+          <div class="chart-bar primary" style="height:72%;"></div>
+          <div class="chart-bar primary" style="height:68%;"></div>
+          <div class="chart-bar primary" style="height:80%;"></div>
+          <div class="chart-bar primary" style="height:90%;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--text-hint);">
+          <span>5/26</span><span>5/27</span><span>5/28</span><span>5/29</span><span>5/30</span><span>5/31</span><span>6/1</span>
+        </div>
+        <div style="display:flex; gap:24px; margin-top:14px; padding:12px; background:var(--bg-muted); border-radius:var(--radius-sm);">
+          <div><div style="font-size:11px; color:var(--text-hint);">本周订单</div><div style="font-size:18px; font-weight:800;">108,432</div></div>
+          <div><div style="font-size:11px; color:var(--text-hint);">日均骑行</div><div style="font-size:18px; font-weight:800;">2.8 次/车</div></div>
+          <div><div style="font-size:11px; color:var(--text-hint);">开锁成功率</div><div style="font-size:18px; font-weight:800; color:var(--green);">99.2%</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

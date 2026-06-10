@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>闪电充电 - EV Charging</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1677FF;
+    --primary-light: #4096ff;
+    --primary-bg: #e6f4ff;
+    --green: #52C41A;
+    --green-bg: #f6ffed;
+    --orange: #FA8C16;
+    --orange-bg: #fff7e6;
+    --red: #FF4D4F;
+    --red-bg: #fff2f0;
+    --text: #141414;
+    --text-2: #595959;
+    --text-3: #8c8c8c;
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --border: #f0f0f0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 28px rgba(0,0,0,0.08);
+    --radius: 12px;
+    --radius-lg: 20px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Status Bar */
+  .status-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--card);
+  }
+
+  .status-bar .time { font-size: 15px; font-weight: 700; }
+
+  .status-icons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .status-icons svg { width: 16px; height: 16px; }
+
+  /* Map Area */
+  .map-area {
+    height: 320px;
+    background: linear-gradient(180deg, #e8f4fd 0%, #d1e9f9 40%, #c5e1f5 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(22,119,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22,119,255,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .map-roads {
+    position: absolute;
+    inset: 0;
+  }
+
+  .map-road-h {
+    position: absolute;
+    height: 3px;
+    background: rgba(22,119,255,0.12);
+    border-radius: 2px;
+  }
+
+  .map-road-v {
+    position: absolute;
+    width: 3px;
+    background: rgba(22,119,255,0.12);
+    border-radius: 2px;
+  }
+
+  .map-marker {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 2;
+  }
+
+  .map-marker::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+  }
+
+  .map-marker.free { background: var(--green); }
+  .map-marker.free::after { border-top: 6px solid var(--green); }
+  .map-marker.busy { background: var(--orange); }
+  .map-marker.busy::after { border-top: 6px solid var(--orange); }
+  .map-marker.full { background: var(--red); }
+  .map-marker.full::after { border-top: 6px solid var(--red); }
+
+  .map-marker:hover { transform: scale(1.15); }
+
+  .map-marker .count {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .map-marker .label {
+    font-size: 7px;
+    font-weight: 500;
+    opacity: 0.9;
+    position: absolute;
+    bottom: -20px;
+    white-space: nowrap;
+    color: var(--text);
+    background: var(--card);
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  .my-location {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    background: var(--primary);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 6px rgba(22,119,255,0.15), 0 2px 8px rgba(22,119,255,0.3);
+    z-index: 3;
+  }
+
+  /* Map Controls */
+  .map-controls {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 5;
+  }
+
+  .map-ctrl-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--card);
+    border: none;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    color: var(--text);
+  }
+
+  .map-ctrl-btn svg { width: 20px; height: 20px; }
+
+  /* Search Bar */
+  .search-bar {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    z-index: 5;
+    display: flex;
+    gap: 10px;
+  }
+
+  .search-input {
+    flex: 1;
+    height: 44px;
+    background: var(--card);
+    border: none;
+    border-radius: var(--radius);
+    padding: 0 16px 0 40px;
+    font-size: 14px;
+    font-family: 'Noto Sans SC', sans-serif;
+    box-shadow: var(--shadow-lg);
+    outline: none;
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3);
+  }
+
+  .filter-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--card);
+    border: none;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    color: var(--primary);
+  }
+
+  /* Bottom Sheet */
+  .bottom-sheet {
+    position: relative;
+    z-index: 4;
+    background: var(--card);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    margin-top: -24px;
+    padding: 12px 20px 0;
+    min-height: calc(100vh - 320px);
+  }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .sheet-title {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .sheet-sort {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Quick Filters */
+  .quick-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .quick-filters::-webkit-scrollbar { display: none; }
+
+  .qf-tag {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .qf-tag.active {
+    background: var(--primary-bg);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  /* Station Cards */
+  .station-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 100px;
+  }
+
+  .station-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .station-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 12px rgba(22,119,255,0.08);
+  }
+
+  .station-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .station-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .station-addr {
+    font-size: 12px;
+    color: var(--text-3);
+  }
+
+  .station-dist {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+  }
+
+  .station-tags {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .stag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .stag-fast { background: var(--primary-bg); color: var(--primary); }
+  .stag-slow { background: #f0f5ff; color: #597ef7; }
+  .stag-plus { background: #fff7e6; color: #fa8c16; }
+  .stag-free { background: var(--green-bg); color: var(--green); }
+
+  .station-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .pile-status {
+    display: flex;
+    gap: 12px;
+  }
+
+  .pile-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  .pile-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .pile-dot.free { background: var(--green); }
+  .pile-dot.charging { background: var(--orange); }
+  .pile-dot.fault { background: var(--red); }
+
+  .station-price {
+    text-align: right;
+  }
+
+  .price-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .price-unit {
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  .station-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--orange);
+    margin-top: 2px;
+    justify-content: flex-end;
+  }
+
+  /* Charging Status Card */
+  .charging-card {
+    background: linear-gradient(135deg, #1677FF 0%, #4096ff 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+
+  .charging-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .charging-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .charging-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .charging-ring {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+
+  .charging-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .charging-ring .ring-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.15);
+    stroke-width: 8;
+  }
+
+  .charging-ring .ring-fill {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 339.29;
+    stroke-dashoffset: 84.82;
+    transition: stroke-dashoffset 1s ease;
+  }
+
+  .charging-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .charging-pct {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .charging-kwh {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  .charging-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    text-align: center;
+  }
+
+  .cstat-val {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .cstat-label {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+
+  /* Tab Bar */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    padding: 8px 0 calc(8px + var(--safe-bottom));
+    z-index: 100;
+  }
+
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 16px;
+    color: var(--text-3);
+    transition: color 0.2s;
+  }
+
+  .tab-item.active { color: var(--primary); }
+  .tab-item svg { width: 24px; height: 24px; }
+  .tab-item span { font-size: 10px; font-weight: 500; }
+
+  /* Scan Button (Center Tab) */
+  .tab-scan {
+    position: relative;
+    top: -20px;
+  }
+
+  .scan-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1677FF, #52C41A);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(22,119,255,0.35);
+    color: #fff;
+  }
+
+  .scan-circle svg { width: 26px; height: 26px; }
+
+  .tab-scan span {
+    margin-top: 4px;
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* Member Banner */
+  .member-banner {
+    background: linear-gradient(135deg, #fff7e6 0%, #fff1d6 100%);
+    border: 1px solid #ffe7ba;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .member-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #fa8c16, #ffc53d);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .member-info {
+    flex: 1;
+  }
+
+  .member-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #d46b08;
+  }
+
+  .member-desc {
+    font-size: 12px;
+    color: #ad6800;
+    margin-top: 2px;
+  }
+
+  .member-btn {
+    background: #d46b08;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Section Title in list */
+  .list-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .list-section-title .more {
+    font-size: 13px;
+    color: var(--text-3);
+    font-weight: 400;
+  }
+
+  /* Responsive */
+  @media (min-width: 431px) {
+    body {
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(0,0,0,0.05);
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <span class="time">9:41</span>
+  <div class="status-icons">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+  </div>
+</div>
+
+<!-- Map Area -->
+<div class="map-area">
+  <div class="map-grid"></div>
+
+  <!-- Roads -->
+  <div class="map-roads">
+    <div class="map-road-h" style="top:30%;left:10%;width:80%"></div>
+    <div class="map-road-h" style="top:65%;left:5%;width:90%"></div>
+    <div class="map-road-v" style="left:25%;top:10%;height:80%"></div>
+    <div class="map-road-v" style="left:60%;top:5%;height:90%"></div>
+    <div class="map-road-v" style="left:80%;top:15%;height:70%"></div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <div style="position:relative;flex:1;">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input class="search-input" type="text" placeholder="搜索充电站、地点...">
+    </div>
+    <button class="filter-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V14M4 10V3M12 21V12M12 8V3M20 21V16M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+    </button>
+  </div>
+
+  <!-- Station Markers -->
+  <div class="map-marker free" style="top:25%;left:20%"><span class="count">4</span><span class="label">绿城充电站</span></div>
+  <div class="map-marker free" style="top:40%;left:70%"><span class="count">6</span></div>
+  <div class="map-marker busy" style="top:55%;left:35%"><span class="count">2</span></div>
+  <div class="map-marker full" style="top:30%;left:55%"><span class="count">0</span></div>
+  <div class="map-marker free" style="top:70%;left:15%"><span class="count">8</span></div>
+  <div class="map-marker busy" style="top:60%;left:80%"><span class="count">1</span></div>
+  <div class="map-marker free" style="top:18%;left:42%"><span class="count">5</span></div>
+
+  <!-- My Location -->
+  <div class="my-location"></div>
+
+  <!-- Map Controls -->
+  <div class="map-controls">
+    <button class="map-ctrl-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+    </button>
+    <button class="map-ctrl-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Bottom Sheet -->
+<div class="bottom-sheet">
+  <div class="sheet-handle"></div>
+
+  <!-- Charging Status (if active) -->
+  <div class="charging-card">
+    <div class="charging-header">
+      <span class="charging-title">充电中 - 绿城国际充电站</span>
+      <span class="charging-badge">A03号桩</span>
+    </div>
+    <div class="charging-ring">
+      <svg viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="54"/>
+        <circle class="ring-fill" cx="60" cy="60" r="54"/>
+      </svg>
+      <div class="charging-center">
+        <div class="charging-pct">75%</div>
+        <div class="charging-kwh">已充 42.6 kWh</div>
+      </div>
+    </div>
+    <div class="charging-stats">
+      <div>
+        <div class="cstat-val">68 kW</div>
+        <div class="cstat-label">当前功率</div>
+      </div>
+      <div>
+        <div class="cstat-val">46 min</div>
+        <div class="cstat-label">已用时长</div>
+      </div>
+      <div>
+        <div class="cstat-val">25 min</div>
+        <div class="cstat-label">预计剩余</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Banner -->
+  <div class="member-banner">
+    <div class="member-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </div>
+    <div class="member-info">
+      <div class="member-title">PLUS会员享6折充电</div>
+      <div class="member-desc">每月可省约50元，首月仅需2.9元</div>
+    </div>
+    <button class="member-btn">开通</button>
+  </div>
+
+  <!-- Station List -->
+  <div class="list-section-title">
+    附近充电站
+    <span class="more">综合排序</span>
+  </div>
+
+  <div class="quick-filters">
+    <span class="qf-tag active">全部</span>
+    <span class="qf-tag">快充</span>
+    <span class="qf-tag">慢充</span>
+    <span class="qf-tag">超充</span>
+    <span class="qf-tag">空闲优先</span>
+    <span class="qf-tag">PLUS会员</span>
+    <span class="qf-tag">免费停车</span>
+  </div>
+
+  <div class="station-list">
+    <!-- Station 1 -->
+    <div class="station-card">
+      <div class="station-top">
+        <div>
+          <div class="station-name">绿城国际充电站</div>
+          <div class="station-addr">西湖区文三路478号B1停车场</div>
+        </div>
+        <div>
+          <div class="station-dist">320m</div>
+          <div class="station-rating">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            4.8
+          </div>
+        </div>
+      </div>
+      <div class="station-tags">
+        <span class="stag stag-fast">快充x8</span>
+        <span class="stag stag-slow">慢充x4</span>
+        <span class="stag stag-plus">PLUS 6折</span>
+        <span class="stag stag-free">免费停车2h</span>
+      </div>
+      <div class="station-bottom">
+        <div class="pile-status">
+          <div class="pile-item"><span class="pile-dot free"></span>空闲 6</div>
+          <div class="pile-item"><span class="pile-dot charging"></span>充电中 4</div>
+          <div class="pile-item"><span class="pile-dot fault"></span>故障 2</div>
+        </div>
+        <div class="station-price">
+          <div class="price-val">1.2 <span class="price-unit">元/度</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Station 2 -->
+    <div class="station-card">
+      <div class="station-top">
+        <div>
+          <div class="station-name">星星充电·万达广场站</div>
+          <div class="station-addr">拱墅区万达广场地下停车场B2</div>
+        </div>
+        <div>
+          <div class="station-dist">1.2km</div>
+          <div class="station-rating">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            4.6
+          </div>
+        </div>
+      </div>
+      <div class="station-tags">
+        <span class="stag stag-fast">快充x12</span>
+        <span class="stag stag-slow">慢充x6</span>
+        <span class="stag stag-free">免费停车1h</span>
+      </div>
+      <div class="station-bottom">
+        <div class="pile-status">
+          <div class="pile-item"><span class="pile-dot free"></span>空闲 9</div>
+          <div class="pile-item"><span class="pile-dot charging"></span>充电中 7</div>
+          <div class="pile-item"><span class="pile-dot fault"></span>故障 2</div>
+        </div>
+        <div class="station-price">
+          <div class="price-val">1.0 <span class="price-unit">元/度</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Station 3 -->
+    <div class="station-card">
+      <div class="station-top">
+        <div>
+          <div class="station-name">特来电·滨江科技园站</div>
+          <div class="station-addr">滨江区网商路599号地面停车场</div>
+        </div>
+        <div>
+          <div class="station-dist">2.8km</div>
+          <div class="station-rating">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            4.9
+          </div>
+        </div>
+      </div>
+      <div class="station-tags">
+        <span class="stag stag-fast">超充x4</span>
+        <span class="stag stag-fast">快充x8</span>
+        <span class="stag stag-plus">PLUS 8折</span>
+      </div>
+      <div class="station-bottom">
+        <div class="pile-status">
+          <div class="pile-item"><span class="pile-dot free"></span>空闲 10</div>
+          <div class="pile-item"><span class="pile-dot charging"></span>充电中 2</div>
+        </div>
+        <div class="station-price">
+          <div class="price-val">1.5 <span class="price-unit">元/度</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Station 4 -->
+    <div class="station-card">
+      <div class="station-top">
+        <div>
+          <div class="station-name">云快充·城西银泰站</div>
+          <div class="station-addr">西湖区丰潭路380号B3停车场</div>
+        </div>
+        <div>
+          <div class="station-dist">3.5km</div>
+          <div class="station-rating">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            4.3
+          </div>
+        </div>
+      </div>
+      <div class="station-tags">
+        <span class="stag stag-fast">快充x6</span>
+        <span class="stag stag-slow">慢充x10</span>
+      </div>
+      <div class="station-bottom">
+        <div class="pile-status">
+          <div class="pile-item"><span class="pile-dot free"></span>空闲 3</div>
+          <div class="pile-item"><span class="pile-dot charging"></span>充电中 11</div>
+          <div class="pile-item"><span class="pile-dot fault"></span>故障 2</div>
+        </div>
+        <div class="station-price">
+          <div class="price-val">0.9 <span class="price-unit">元/度</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <div class="tab-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    <span>首页</span>
+  </div>
+  <div class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
+    <span>省钱</span>
+  </div>
+  <div class="tab-item tab-scan">
+    <div class="scan-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M14 20h3M20 14v3M20 20h-3"/></svg>
+    </div>
+    <span>扫码充电</span>
+  </div>
+  <div class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/><path d="M9 14l2 2 4-4"/></svg>
+    <span>订单</span>
+  </div>
+  <div class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>我的</span>
+  </div>
+</div>
+
+</body>
+</html>

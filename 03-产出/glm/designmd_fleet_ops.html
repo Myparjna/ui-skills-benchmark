@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DESIGN.MD — 共享两轮运营后台设计系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+  <style>
+    :root {
+      --bg: #F4F5F7;
+      --surface: #FFFFFF;
+      --border: #DFE3E8;
+      --border-light: #EAECEF;
+      --text: #1D2129;
+      --text-secondary: #4E5969;
+      --text-dim: #86909C;
+      /* Semantic colors */
+      --primary: #165DFF;
+      --primary-light: #E8F3FF;
+      --warning: #FF7D00;
+      --warning-light: #FFF7E6;
+      --error: #F53F3F;
+      --error-light: #FFECE8;
+      --success: #00B42A;
+      --success-light: #E8FFEA;
+      --info: #0FC6C2;
+      --info-light: #E8FFFA;
+      /* Dark theme for dashboard preview */
+      --dark-bg: #0F1219;
+      --dark-card: #1A1F2B;
+      --dark-border: #252D3A;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== Sidebar ===== */
+    .ds-sidebar {
+      width: 272px;
+      height: 100vh;
+      position: fixed;
+      left: 0; top: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      overflow-y: auto;
+      z-index: 50;
+    }
+
+    .ds-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px;
+      margin-bottom: 28px;
+    }
+    .ds-logo-box {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), #4096FF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .ds-brand-text { font-size: 15px; font-weight: 700; }
+    .ds-brand-sub { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-top: -2px; }
+
+    .ds-nav-section { margin-bottom: 22px; }
+    .ds-nav-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-dim); padding: 0 10px; margin-bottom: 6px;
+    }
+    .ds-nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 10px; border-radius: 8px; cursor: pointer;
+      transition: all 0.15s ease; color: var(--text-secondary); font-size: 13px;
+    }
+    .ds-nav-item:hover { background: var(--bg); color: var(--text); }
+    .ds-nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+    .ds-nav-icon { font-size: 16px; }
+
+    /* ===== Main ===== */
+    .ds-main { flex: 1; margin-left: 272px; min-height: 100vh; }
+
+    .ds-header {
+      position: sticky; top: 0; z-index: 40;
+      height: 60px; background: rgba(244,245,247,0.88);
+      backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+    }
+    .ds-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+    .ds-breadcrumb span:last-child { color: var(--text); font-weight: 500; }
+
+    .ds-content { max-width: 1024px; margin: 0 auto; padding: 28px 32px 56px; }
+    @media (max-width: 900px) {
+      .ds-sidebar { display: none; } .ds-main { margin-left: 0; } .ds-content { padding: 24px 18px 48px; }
+    }
+
+    .page-title-area { margin-bottom: 32px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+    .page-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 600;
+      background: var(--primary-light); color: var(--primary); margin-bottom: 10px;
+    }
+    .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.6px; }
+    .page-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 5px; max-width: 580px; }
+
+    .doc-section { margin-bottom: 38px; }
+    .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .section-num {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .section-title { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+    .section-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; padding-left: 34px; line-height: 1.65; }
+
+    /* ===== Color Semantics Grid ===== */
+    .semantics-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-left: 34px;
+    }
+    .sem-swatch {
+      border-radius: 11px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .sem-color { height: 64px; display: flex; align-items: flex-end; padding: 10px 12px; }
+    .sem-info { padding: 10px 13px; }
+    .sem-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+    .sem-role { font-size: 11px; color: var(--text-secondary); }
+    .sem-code {
+      font-family:'JetBrains Mono',monospace; font-size: 10px;
+      padding: 2px 6px; background: var(--bg); border-radius: 4px; color: var(--text-dim); display: inline-block; margin-top: 5px;
+    }
+
+    .sc-pri { background: var(--primary); color: white; }
+    .sc-warn { background: var(--warning); color: white; }
+    .sc-err { background: var(--error); color: white; }
+    .sc-succ { background: var(--success); color: white; }
+    .sc-inf { background: var(--info); color: white; }
+    .sc-dark { background: var(--dark-bg); color: white; }
+
+    /* ===== Data Density ===== */
+    .density-area { margin-left: 34px; }
+    .density-table-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    .dt-head {
+      display: grid; grid-template-columns: 140px 1fr 120px 90px;
+      background: var(--bg); padding: 10px 14px;
+      font-size: 11px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.5px;
+    }
+    .dt-row {
+      display: grid; grid-template-columns: 140px 1fr 120px 90px;
+      padding: 12px 14px; border-top: 1px solid var(--border-light);
+      align-items: center; font-size: 13px; transition: background 0.15s;
+    }
+    .dt-row:hover { background: rgba(22,93,255,0.02); }
+    .dt-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 500;
+    }
+    .tag-h { background: var(--success-light); color: var(--success); }
+    .tag-m { background: var(--primary-light); color: var(--primary); }
+    .tag-l { background: var(--warning-light); color: var(--warning); }
+    @media(max-width:650px){ .dt-head,.dt-row{grid-template-columns:1fr;} .dt-head{display:none;} }
+
+    /* ===== Dashboard Preview ===== */
+    .dash-preview { margin-left: 34px; }
+    .dp-frame {
+      background: var(--dark-bg); border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--dark-border);
+    }
+    .dp-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; background: var(--dark-card); border-bottom: 1px solid var(--dark-border);
+    }
+    .dp-tb-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+    .dp-tabs { display: flex; gap: 4px; }
+    .dp-tab {
+      padding: 5px 12px; border-radius: 6px; font-size: 11px;
+      cursor: pointer; color: rgba(255,255,255,0.45); transition: all 0.2s;
+    }
+    .dp-tab.active { background: rgba(22,93,255,0.15); color: var(--primary); }
+
+    .dp-body { padding: 20px; }
+    .dp-kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    @media(max-width:750px){ .dp-kpi-row{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:480px){ .dp-kpi-row{grid-template-columns:1fr;} }
+
+    .dp-kpi {
+      background: var(--dark-card); border-radius: 10px;
+      padding: 18px; border: 1px solid var(--dark-border);
+    }
+    .dp-kpi-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 8px; display:flex;align-items:center;gap:5px; }
+    .dp-kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.8px; }
+    .kv-primary { color: var(--primary); }
+    .kv-success { color: var(--success); }
+    .kv-warning { color: var(--warning); }
+    .kv-error { color: var(--error); }
+    .dp-kpi-change {
+      display: inline-flex; align-items:center; gap:3px; margin-top:6px;
+      font-size: 11px; padding: 2px 7px; border-radius:4px;
+    }
+    .kc-up { color: var(--success); background: rgba(0,180,42,0.08); }
+    .kc-down { color: var(--error); background: rgba(245,63,63,0.08); }
+
+    .dp-table-area { background: var(--dark-card); border-radius: 10px; border: 1px solid var(--dark-border); overflow:hidden; }
+    .dpt-head {
+      display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px;
+      padding: 10px 16px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.35); border-bottom: 1px solid var(--dark-border);
+    }
+    .dpt-row {
+      display: grid; grid-template-columns: 80px 1.5fr 1fr 1fr 100px;
+      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: 12px; color: rgba(255,255,255,0.75); align-items:center; transition:background 0.15s;
+    }
+    .dpt-row:hover { background: rgba(255,255,255,0.02); }
+    .dpt-status {
+      display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:500;
+    }
+    .ds-online { background: rgba(0,180,42,0.12); color: var(--success); }
+    .ds-offline { background: rgba(245,63,63,0.12); color: var(--error); }
+    .ds-charging { background: rgba(255,125,0,0.12); color: var(--warning); }
+    .dpt-action {
+      width:28px;height:28px;border-radius:6px;background:rgba(22,93,255,0.12);color:var(--primary);
+      display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all 0.2s;
+    }
+    .dpt-action:hover { background: var(--primary); color: white; }
+
+    @media(max-width:720px){ .dpt-head,.dpt-row{grid-template-columns:1fr 1fr auto;} .dpt-head{display:none;} }
+
+    /* ===== Layout Principles ===== */
+    .lp-grid { margin-left: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width:700px){ .lp-grid{grid-template-columns:1fr;} }
+    .lp-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px; transition: box-shadow 0.2s;
+    }
+    .lp-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+    .lp-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .lp-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
+
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="ds-sidebar">
+  <div class="ds-brand">
+    <div class="ds-logo-box">⚡</div>
+    <div>
+      <div class="ds-brand-text">Fleet Ops DS</div>
+      <div class="ds-brand-sub">Design System v1.8</div>
+    </div>
+  </div>
+  <div class="ds-nav-section">
+    <div class="ds-nav-label">基础规范</div>
+    <a class="ds-nav-item active"><span class="iconify ds-nav-icon" data-icon="mdi:format-color-fill"></span> 色彩语义</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:format-font"></span> 字体排版</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:ruler-square"></span> 数据密度</a>
+  </div>
+  <div class="ds-nav-section">
+    <div class="ds-nav-label">组件库</div>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:table"></span> 数据表格</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:chart-bar"></span> 图表组件</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:card-outline"></span> 卡片模块</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:tag-outline"></span> 状态标签</a>
+  </div>
+  <div class="ds-nav-section">
+    <div class="ds-nav-label">布局模板</div>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:view-dashboard-outline"></span> Dashboard 首页</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:bell-ring-outline"></span> 告警中心</a>
+    <a class="ds-nav-item"><span class="iconify ds-nav-icon" data-icon="mdi:bicycle"></span> 车辆管理</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="ds-main">
+  <header class="ds-header">
+    <div class="ds-breadcrumb">
+      <span class="iconify" data-icon="mdi:home-outline" style="font-size:15px;"></span><span>/</span><span>Fleet Ops</span><span>/</span><span>设计系统</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-family:inherit;font-size:12px;cursor:pointer;"><span class="iconify" data-icon="mdi:share-variant-outline" style="font-size:14px;margin-right:4px;"></span> 分享</button>
+      <button style="padding:6px 14px;border:none;border-radius:6px;background:var(--primary);color:white;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;">导出</button>
+    </div>
+  </header>
+
+  <main class="ds-content">
+    <div class="page-title-area">
+      <div class="page-tag"><span class="iconify" data-icon="mdi:bike-fast" style="font-size:13px;"></span> Fleet Operations</div>
+      <h1 class="page-title">共享两轮 · 运营后台设计系统</h1>
+      <p class="page-subtitle">企业级数据可视化后台的设计规范，涵盖色彩语义、数据密度、组件样式与 Dashboard 布局原则。</p>
+    </div>
+
+    <!-- Section 1: Color Semantics -->
+    <section class="doc-section">
+      <div class="section-head"><div class="section-num">01</div><h2 class="section-title">色彩语义系统 Color Semantics</h2></div>
+      <p class="section-desc">基于企业级 B 端产品的语义化色彩体系，每种颜色承载明确的业务含义。</p>
+      <div class="semantics-grid">
+        <div class="sem-swatch">
+          <div class="sem-color sc-pri">#165DFF</div>
+          <div class="sem-info">
+            <div class="sem-name">Primary Blue</div>
+            <div class="sem-role">主操作色 / 链接 / 品牌标识</div>
+            <span class="sem-code">#165DFF</span>
+          </div>
+        </div>
+        <div class="sem-swatch">
+          <div class="sem-color sc-succ">#00B42A</div>
+          <div class="sem-info">
+            <div class="sem-name">Success Green</div>
+            <div class="sem-role">正常运行 / 在线状态 / 收入增长</div>
+            <span class="sem-code">#00B42A</span>
+          </div>
+        </div>
+        <div class="sem-swatch">
+          <div class="sem-color sc-warn">#FF7D00</div>
+          <div class="sem-info">
+            <div class="sem-name">Warning Orange</div>
+            <div class="sem-role">告警提醒 / 充电中状态 / 待处理</div>
+            <span class="sem-code">#FF7D00</span>
+          </div>
+        </div>
+        <div class="sem-swatch">
+          <div class="sem-color sc-err">#F53F3F</div>
+          <div class="sem-info">
+            <div class="sem-name">Error Red</div>
+            <div class="sem-role">故障异常 / 离线状态 / 危急告警</div>
+            <span class="sem-code">#F53F3F</span>
+          </div>
+        </div>
+        <div class="sem-swatch">
+          <div class="sem-color sc-inf">#0FC6C2</div>
+          <div class="sem-info">
+            <div class="sem-name">Info Cyan</div>
+            <div class="sem-role">信息提示 / 中性状态 / 辅助说明</div>
+            <span class="sem-code">#0FC6C2</span>
+          </div>
+        </div>
+        <div class="sem-swatch">
+          <div class="sem-color sc-dark">#0F1219</div>
+          <div class="sem-info">
+            <div class="sem-name">Dark Background</div>
+            <div class="sem-role">深色模式底板 / 高对比度场景</div>
+            <span class="sem-code">#0F1219</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Data Density -->
+    <section class="doc-section">
+      <div class="section-head"><div class="section-num">02</div><h2 class="section-title">数据密度规范 Data Density</h2></div>
+      <p class="section-desc">针对不同信息层级和屏幕空间定义的数据密度等级，平衡可读性与信息量。</p>
+      <div class="density-table-wrap">
+        <div class="dt-head">
+          <div>密度等级</div>
+          <div>适用场景</div>
+          <div>行高 / 字号</div>
+          <div>每屏行数</div>
+        </div>
+        <div class="dt-row">
+          <div><span class="dt-tag tag-h">High 高密度</span></div>
+          <div>KPI 总览、实时监控大屏、多列数据表</div>
+          <div>36px / 12px</div>
+          <div>18~22 行</div>
+        </div>
+        <div class="dt-row">
+          <div><span class="dt-tag tag-m">Med 标准密度</span></div>
+          <div>常规列表页、搜索结果、车辆台账</div>
+          <div>44px / 13px</div>
+          <div>14~16 行</div>
+        </div>
+        <div class="dt-row">
+          <div><span class="dt-tag tag-l">Low 宽松模式</span></div>
+          <div>详情页面、告警分析、报表查看</div>
+          <div>52px / 14px</div>
+          <div>10~12 行</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Component Preview -->
+    <section class="doc-section">
+      <div class="section-head"><div class="section-num">03</div><h2 class="section-title">Dashboard 组件预览</h2></div>
+      <p class="section-desc">运营后台核心 UI 组件的真实渲染效果，包含 KPI 指标卡与数据表格。</p>
+      <div class="dash-preview">
+        <div class="dp-frame">
+          <div class="dp-toolbar">
+            <span class="dp-tb-title"><span class="iconify" data-icon="mdi:view-dashboard-outline" style="margin-right:6px;color:var(--primary);"></span>Dashboard Preview</span>
+            <div class="dp-tabs">
+              <div class="dp-tab active">今日</div>
+              <div class="dp-tab">本周</div>
+              <div class="dp-tab">本月</div>
+            </div>
+          </div>
+          <div class="dp-body">
+            <!-- KPI Cards -->
+            <div class="dp-kpi-row">
+              <div class="dp-kpi">
+                <div class="dp-kpi-label"><span class="iconify" data-icon="mdi:clipboard-check-outline"></span> 订单总量</div>
+                <div class="dp-kpi-value kv-primary">12,847</div>
+                <div class="dp-kpi-change kc-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:12px;"></span> +18.2%</div>
+              </div>
+              <div class="dp-kpi">
+                <div class="dp-kpi-label"><span class="iconify" data-icon="mdi:currency-cny"></span> 营收总额</div>
+                <div class="dp-kpi-value kv-success">¥89.4万</div>
+                <div class="dp-kpi-change kc-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:12px;"></span> +23.5%</div>
+              </div>
+              <div class="dp-kpi">
+                <div class="dp-kpi-label"><span class="iconify" data-icon="mdi:bicycle"></span> 车辆可用率</div>
+                <div class="dp-kpi-value kv-warning">94.7%</div>
+                <div class="dp-kpi-change kc-down"><span class="iconify" data-icon="mdi:trending-down" style="font-size:12px;"></span> -1.2%</div>
+              </div>
+              <div class="dp-kpi">
+                <div class="dp-kpi-label"><span class="iconify" data-icon="mdi:alert-circle-outline"></span> 活跃告警</div>
+                <div class="dp-kpi-value kv-error">17</div>
+                <div class="dp-kpi-change kc-down"><span class="iconify" data-icon="mdi:arrow-up-bold" style="font-size:12px;"></span> +3 条</div>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="dp-table-area">
+              <div class="dpt-head">
+                <div>ID</div><div>车辆编号</div><div>当前位置</div><div>状态</div><div></div>
+              </div>
+              <div class="dpt-row">
+                <div style="font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.4);">#001</div>
+                <div>A-7824</div><div>高新区科技园北门</div>
+                <div><span class="dpt-status ds-online"><span class="iconify" data-icon="mdi:battery-charging-high" style="font-size:11px;"></span> 运行中</span></div>
+                <div><div class="dpt-action"><span class="iconify" data-icon="mdi:eye-outline"></span></div></div>
+              </div>
+              <div class="dpt-row">
+                <div style="font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.4);">#002</div>
+                <div>B-3391</div><div>万达广场东侧停车场</div>
+                <div><span class="dpt-status ds-offline"><span class="iconify" data-icon="mdi:close-circle-outline" style="font-size:11px;"></span> 离线</span></div>
+                <div><div class="dpt-action"><span class="iconify" data-icon="mdi:eye-outline"></span></div></div>
+              </div>
+              <div class="dpt-row">
+                <div style="font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.4);">#003</div>
+                <div>C-1056</div><div>世纪大道地铁站口</div>
+                <div><span class="dpt-status ds-charging"><span class="iconify" data-icon="mdi:battery-charging" style="font-size:11px;"></span> 充电中</span></div>
+                <div><div class="dpt-action"><span class="iconify" data-icon="mdi:eye-outline"></span></div></div>
+              </div>
+              <div class="dpt-row">
+                <div style="font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.4);">#004</div>
+                <div>D-4420</div><div>大学城图书馆前</div>
+                <div><span class="dpt-status ds-online"><span class="iconify" data-icon="mdi:check-circle-outline" style="font-size:11px;"></span> 空闲停放</span></div>
+                <div><div class="dpt-action"><span class="iconify" data-icon="mdi:eye-outline"></span></div></div>
+              </div>
+              <div class="dpt-row">
+                <div style="font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.4);">#005</div>
+                <div>E-2187</div><div>南港码头入口</div>
+                <div><span class="dpt-status ds-online"><span class="iconify" data-icon="mdi:bicycle" style="font-size:11px;"></span> 骑行中</span></div>
+                <div><div class="dpt-action"><span class="iconify" data-icon="mdi:eye-outline"></span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Layout Principles -->
+    <section class="doc-section">
+      <div class="section-head"><div class="section-num">04</div><h2 class="section-title">Dashboard 布局原则</h2></div>
+      <p class="section-desc">企业级后台的布局设计准则，确保信息架构清晰、操作效率最优。</p>
+      <div class="lp-grid">
+        <div class="lp-card">
+          <h4>L1 — 信息优先级分层</h4>
+          <p>将关键 KPI 放在首屏黄金区域（顶部），次要数据依次下移。用户视线遵循 F 型浏览路径。</p>
+        </div>
+        <div class="lp-card">
+          <h4>L2 — 左侧固定导航</h4>
+          <p>导航宽度 260~280px，支持折叠至图标模式。当前页面高亮，二级菜单缩进显示。</p>
+        </div>
+        <div class="lp-card">
+          <h4>L3 — 卡片式模块化</h4>
+          <p>每个功能区域封装为独立卡片，圆角 8~12px，内边距 16~20px，卡片间距 12~16px。</p>
+        </div>
+        <div class="lp-card">
+          <h4>L4 — 深色主题优化</h4>
+          <p>深色模式下降低亮度对比度，文字使用 70%~85% 白度，避免纯白刺眼。边框使用半透明分隔。</p>
+        </div>
+        <div class="lp-card">
+          <h4>L5 — 响应式断点策略</h4>
+          <p>≥1440px 全宽布局；1024~1439px 缩减侧栏；768~1023px 单列堆叠；≤767px 移动端适配。</p>
+        </div>
+        <div class="lp-card">
+          <h4>L6 — 操作一致性</h4>
+          <p>表格操作按钮统一右对齐；筛选器置顶固定；分页器底部居中；全局 Loading 使用骨架屏。</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

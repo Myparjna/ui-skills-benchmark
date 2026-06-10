@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleetOps 2026 — Bento Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* OKLCH Dark Mode Tokens */
+    --bg: oklch(8% 0.02 265);
+    --surface: oklch(12% 0.02 265);
+    --surface-elevated: oklch(16% 0.02 265);
+    --border: oklch(22% 0.02 265 / .6);
+    --fg: oklch(95% 0.01 250);
+    --fg-dim: oklch(65% 0.015 260);
+    --primary: oklch(62% 0.21 285);
+    --primary-dim: oklch(62% 0.08 285);
+    --green: oklch(68% 0.18 155);
+    --red: oklch(62% 0.2 25);
+    --orange: oklch(72% 0.18 65);
+    --purple: oklch(62% 0.19 300);
+    --cyan: oklch(70% 0.16 210);
+    --glass: oklch(15% 0.025 265 / .55);
+    --glass-border: oklch(30% 0.03 265 / .35);
+    --radius: 16px;
+    --radius-lg: 24px;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans); background: var(--bg);
+    color: var(--fg); display: flex; min-height: 100vh; overflow-x: hidden;
+  }
+
+  /* ═══ Liquid Glass Sidebar ═══ */
+  .sidebar {
+    width: 240px; min-height: 100vh;
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
+    display: flex; flex-direction: column;
+    background: var(--glass);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-right: 1px solid var(--glass-border);
+  }
+  .sidebar::before {
+    content:''; position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      transparent 0%, oklch(60% 0.12 285 / .03) 50%, transparent 100%
+    );
+    pointer-events: none;
+  }
+  .logo-area {
+    padding: 28px 20px 20px; display: flex; align-items: center; gap: 12px;
+    position: relative; z-index: 1;
+  }
+  .logo-icon {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px oklch(62% 0.21 285 / .25);
+  }
+  .logo-icon .iconify { font-size: 20px; color: white; }
+  .logo-text { font-size: 17px; font-weight: 800; letter-spacing: -.3px; }
+  .logo-text span { color: var(--primary); }
+
+  .nav-section { padding: 10px 14px; position: relative; z-index: 1; }
+  .nav-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--fg-dim);
+    padding: 0 10px; margin-bottom: 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 13px; border-radius: 12px;
+    cursor: pointer; transition: all .25s ease;
+    color: var(--fg-dim); font-size: 13.5px; font-weight: 500;
+    text-decoration: none; position: relative; overflow: hidden;
+  }
+  .nav-item::before {
+    content:''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, var(--primary-dim), transparent 70%);
+    opacity: 0; transition: opacity .3s ease;
+  }
+  .nav-item:hover::before { opacity: 1; }
+  .nav-item:hover { color: var(--fg); }
+  .nav-item.active {
+    background: oklch(62% 0.21 285 / .12);
+    color: var(--primary); font-weight: 600;
+    box-shadow: inset 0 0 0 1px oklch(62% 0.21 285 / .15);
+  }
+  .nav-item .iconify { font-size: 18px; flex-shrink: 0; position: relative; z-index: 1; }
+
+  /* ═══ Main Content ═══ */
+  .main { flex: 1; margin-left: 240px; position: relative; z-index: 1; }
+
+  /* Top Bar (Liquid Glass) */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--glass);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 16px 36px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .topbar h1 { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-btn {
+    padding: 8px 18px; border-radius: 9999px;
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    color: var(--fg-dim); font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: all .25s ease;
+  }
+  .topbar-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .topbar-btn.primary {
+    background: var(--primary); color: white; border-color: var(--primary);
+    box-shadow: 0 4px 16px oklch(62% 0.21 285 / .3);
+  }
+  .topbar-btn.primary:hover { box-shadow: 0 6px 24px oklch(62% 0.21 285 / .45); transform: translateY(-1px); }
+
+  /* Dashboard Body */
+  .dash-body { padding: 28px 36px; }
+
+  /* ═══ Bento KPI Grid (不对称布局) ═══ */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .bento-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    position: relative; overflow: hidden;
+    animation: bentoReveal .7s cubic-bezier(.22,1,.36,1) both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 90%;
+  }
+  @keyframes bentoReveal {
+    from { opacity: 0; transform: translateY(24px) scale(.97); filter: blur(6px); }
+    to   { opacity: 1; transform: none; filter: none; }
+  }
+
+  /* Card glow accent */
+  .bento-card::after {
+    content:''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--card-accent, var(--primary)), transparent);
+    opacity: .4;
+  }
+
+  .bc-label { font-size: 12px; font-weight: 700; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; }
+  .bc-value { font-size: 36px; font-weight: 900; line-height: 1; font-family: var(--font-mono); letter-spacing: -1.5px; }
+  .bc-trend { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; }
+
+  /* Individual card styles */
+  .card-orders { grid-column: span 1; --card-accent: var(--cyan); }
+  .card-orders .bc-value { color: var(--cyan); }
+  .card-orders .bc-trend { background: oklch(70% 0.16 210 / .1); color: var(--green); }
+
+  .card-vehicles { grid-column: span 1; --card-accent: var(--green); }
+  .card-vehicles .bc-value { color: var(--green); }
+  .card-vehicles .bc-trend { background: oklch(68% 0.18 155 / .1); color: var(--green); }
+
+  .card-avail { grid-column: span 1; --card-accent: var(--purple); }
+  .card-avail .bc-value { color: var(--purple); }
+  .card-avail .bc-trend { background: oklch(62% 0.19 300 / .1); color: var(--green); }
+
+  .card-alerts-wide { grid-column: span 3; --card-accent: var(--red); }
+
+  /* ── Perpetual Micro-Animations ── */
+
+  /* Number shimmer effect */
+  .num-shimmer {
+    position: relative; display: inline-block;
+  }
+  .num-shimmer::after {
+    content: attr(data-value);
+    position: absolute; top: 0; left: 0;
+    background: linear-gradient(
+      120deg, transparent 30%, oklch(95% 0.01 250 / .06) 50%, transparent 70%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: numShine 3s ease-in-out infinite;
+    background-repeat: no-repeat;
+    background-position: 150% 0;
+  }
+  @keyframes numShine {
+    0%, 80%, 100% { background-position: 200% 0; }
+    85% { background-position: -100% 0; }
+  }
+
+  /* Progress bar flow */
+  .flow-bar {
+    height: 5px; border-radius: 9999px; overflow: hidden;
+    background: var(--bg); margin-top: 14px;
+    position: relative;
+  }
+  .flow-bar-fill {
+    height: 100%; border-radius: 9999px;
+    position: relative; overflow: hidden;
+  }
+  .flow-bar-fill::after {
+    content:''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+    background-size: 200% 100%;
+    animation: flowGlow 2s linear infinite;
+  }
+  @keyframes flowGlow {
+    from { background-position: -100% 0; }
+    to   { background-position: 200% 0; }
+  }
+
+  /* Pulse dot */
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    vertical-align: middle; margin-right: 4px;
+  }
+  .pulse-dot.critical { background: var(--red); animation: pulseCrit 1.5s ease-in-out infinite; }
+  .pulse-dot.warn { background: var(--orange); animation: pulseWarn 2s ease-in-out infinite; }
+  .pulse-dot.info { background: var(--cyan); }
+  @keyframes pulseCrit { 0%,100%{box-shadow:0 0 0 0 oklch(62% 0.2 25 / .4);} 50%{box-shadow:0 0 0 8px oklch(62% 0.2 25 / 0);} }
+  @keyframes pulseWarn { 0%,100%{box-shadow:0 0 0 0 oklch(72% 0.18 65 / .3);} 50%{box-shadow:0 0 0 6px oklch(72% 0.18 65 / 0);} }
+
+  /* Mini alert list inside wide card */
+  .alert-mini-list { display: flex; gap: 16px; margin-top: 16px; }
+  .alert-mini-item {
+    flex: 1; padding: 14px 16px; border-radius: var(--radius);
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 13px; transition: all .2s ease;
+  }
+  .alert-mini-item:hover { border-color: var(--primary-dim); transform: translateY(-1px); }
+  .ami-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .ami-title { font-weight: 600; color: var(--fg); }
+  .ami-desc { font-size: 12px; color: var(--fg-dim); }
+
+  /* ═══ Data Table with Scroll-driven Reveal ═══ */
+  .table-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    animation: tableReveal .8s cubic-bezier(.22,1,.36,1) both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 95%;
+  }
+  @keyframes tableReveal {
+    from { opacity: 0; transform: translateY(30px); filter: blur(8px); }
+    to   { opacity: 1; transform: none; filter: none; }
+  }
+  .tp-header { padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center; }
+  .tp-title { font-size: 17px; font-weight: 750; letter-spacing: -.3px; }
+  .tp-action { font-size: 13px; color: var(--primary); font-weight: 600; cursor: pointer; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 12px 24px 10px; font-size: 11px;
+    font-weight: 700; color: var(--fg-dim); text-transform: uppercase;
+    letter-spacing: 1px; border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 14px 24px; font-size: 13.5px; font-weight: 500;
+    color: var(--fg); border-bottom: 1px solid oklch(22% 0.02 265 / .3);
+  }
+  tbody tr { transition: background .2s ease; }
+  tbody tr:hover { background: var(--surface-elevated); }
+
+  /* Status pills (dark mode) */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 9999px; font-size: 11.5px; font-weight: 700;
+  }
+  .sp-online { background: oklch(68% 0.18 155 / .12); color: var(--green); }
+  .sp-offline { background: oklch(62% 0.2 25 / .12); color: var(--red); }
+  .sp-charging { background: oklch(70% 0.16 210 / .12); color: var(--cyan); }
+  .sp-idle { background: oklch(72% 0.18 65 / .12); color: var(--orange); }
+  .sp-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* Battery bar (dark mode) */
+  .bat-track { display: flex; align-items: center; gap: 8px; }
+  .bat-line { flex: 1; height: 4px; border-radius: 9999px; background: var(--bg); overflow: hidden; }
+  .bat-fill { height: 100%; border-radius: 9999px; }
+  .bat-pct { font-size: 12px; font-weight: 600; font-family: var(--font-mono); color: var(--fg-dim); min-width: 34px; text-align: right; }
+
+  /* Action button */
+  .act-btn {
+    padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--fg-dim); font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all .2s ease;
+  }
+  .act-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* ══ Responsive ══ */
+  @media (max-width: 1280px) {
+    .bento-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-orders, .card-vehicles, .card-avail { grid-column: span 1; }
+    .card-alerts-wide { grid-column: span 2; }
+  }
+  @media (max-width: 900px) {
+    .sidebar { width: 72px; }
+    .sidebar .logo-text, .sidebar .nav-label, .sidebar nav a span:last-child { display: none; }
+    .sidebar .nav-item { justify-content: center; padding: 10px; }
+    .sidebar .nav-item .iconify { margin: 0; }
+    .main { margin-left: 72px; }
+    .dash-body { padding: 20px; }
+    .topbar { padding: 14px 20px; }
+    .bento-grid { grid-template-columns: 1fr; }
+    .card-alerts-wide { grid-column: span 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Liquid Glass Sidebar -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-icon"><span class="iconify" data-icon="lucide:gauge"></span></div>
+    <div class="logo-text">Fleet<span>Ops</span></div>
+  </div>
+
+  <nav class="nav-section">
+    <div class="nav-label">主菜单</div>
+    <a href="#" class="nav-item active"><span class="iconify" data-icon="lucide:layout-dashboard"></span><span>总览</span></a>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:car"></span><span>车辆</span></a>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:map-pin"></span><span>站点</span></a>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:plug-zap"></span><span>电桩</span></a>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:calendar-days"></span><span>排班</span></a>
+
+    <div class="nav-label" style="margin-top:14px;">分析</div>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:bar-chart-3"></span><span>报表</span></a>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:bell-ring"></span><span>告警</span></a>
+    <a href="#" class="nav-item"><span class="iconify" data-icon="lucide:settings"></span><span>设置</span></a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <h1>📊 运营指挥中心</h1>
+    <div class="topbar-right">
+      <button class="topbar-btn">导出报表</button>
+      <button class="topbar-btn primary">＋ 新建任务</button>
+    </div>
+  </header>
+
+  <!-- Dashboard Body -->
+  <div class="dash-body">
+
+    <!-- Bento KPI Grid (Asymmetric) -->
+    <div class="bento-grid">
+
+      <!-- Orders -->
+      <div class="bento-card card-orders">
+        <p class="bc-label">今日订单</p>
+        <div class="bc-value num-shimmer" data-value="1,284">1,284</div>
+        <div class="bc-trend">
+          ↑ +12.3% 较昨日
+          <div class="flow-bar" style="margin-top:8px;margin-left:0;width:100%;">
+            <div class="flow-bar-fill" style="width:72%;background:linear-gradient(90deg,var(--cyan),var(--green));"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Vehicles -->
+      <div class="bento-card card-vehicles">
+        <p class="bc-label">活跃车辆</p>
+        <div class="bc-value num-shimmer" data-value="186">186</div>
+        <div class="bc-trend">
+          ↑ 在线率 94.2%
+          <div class="flow-bar" style="margin-top:8px;margin-left:0;width:100%;">
+            <div class="flow-bar-fill" style="width:94.2%;background:var(--green);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Availability -->
+      <div class="bento-card card-avail">
+        <p class="bc-label">可用率</p>
+        <div class="bc-value num-shimmer" data-value="96.8%">96.8<small style="font-size:20px;color:var(--fg-dim)">%</small></div>
+        <div class="bc-trend">
+          ↑ 较上周 +2.1%
+          <div class="flow-bar" style="margin-top:8px;margin-left:0;width:100%;">
+            <div class="flow-bar-fill" style="width:96.8%;background:var(--purple);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts Wide Card -->
+      <div class="bento-card card-alerts-wide">
+        <p class="bc-label">今日告警 · 实时监控</p>
+        <div class="alert-mini-list">
+          <div class="alert-mini-item">
+            <div class="ami-header"><span class="pulse-dot critical"></span><span class="ami-title">电量危急</span></div>
+            <div class="ami-desc">EV-0047 仅剩 8%，即将停机</div>
+          </div>
+          <div class="alert-mini-item">
+            <div class="ami-header"><span class="pulse-dot warn"></span><span class="ami-title">温度异常</span></div>
+            <div class="ami-desc">CP-1088 达到 52°C 阈值</div>
+          </div>
+          <div class="alert-mini-item">
+            <div class="ami-header"><span class="pulse-dot info"></span><span class="ami-title">数据同步</span></div>
+            <div class="ami-desc">日终归档已完成 ✓</div>
+          </div>
+          <div class="alert-mini-item">
+            <div class="ami-header"><span class="pulse-dot critical"></span><span class="ami-title">GPS丢失</span></div>
+            <div class="ami-desc">EV-0072 信号中断 30min+</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.bento-grid -->
+
+    <!-- Data Table -->
+    <div class="table-panel">
+      <div class="tp-header">
+        <h2 class="tp-title">车辆实时状态</h2>
+        <span class="tp-action">导出 CSV →</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>车辆ID</th>
+            <th>位置</th>
+            <th>状态</th>
+            <th>电量</th>
+            <th>司机</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--primary);font-weight:700;">EV-0001</td>
+            <td>鄞州区中山东路</td>
+            <td><span class="status-pill sp-online"><span class="sp-dot"></span>行驶中</span></td>
+            <td>
+              <div class="bat-track">
+                <div class="bat-line"><div class="bat-fill" style="width:78%;background:var(--green);"></div></div>
+                <span class="bat-pct">78%</span>
+              </div>
+            </td>
+            <td>张伟</td>
+            <td><button class="act-btn">定位</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--primary);font-weight:700;">EV-0012</td>
+            <td>东部银泰城充电站</td>
+            <td><span class="status-pill sp-charging"><span class="sp-dot"></span>充电中</span></td>
+            <td>
+              <div class="bat-track">
+                <div class="bat-line"><div class="bat-fill" style="width:45%;background:var(--orange);"></div></div>
+                <span class="bat-pct">45%</span>
+              </div>
+            </td>
+            <td>李明</td>
+            <td><button class="act-btn">详情</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--primary);font-weight:700;">EV-0023</td>
+            <td>宁波客运中心停车场</td>
+            <td><span class="status-pill sp-idle"><span class="sp-dot"></span>待命</span></td>
+            <td>
+              <div class="bat-track">
+                <div class="bat-line"><div class="bat-fill" style="width:92%;background:var(--green);"></div></div>
+                <span class="bat-pct">92%</span>
+              </div>
+            </td>
+            <td>王芳</td>
+            <td><button class="act-btn">派单</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--primary);font-weight:700;">EV-0047</td>
+            <td>鄞州万达广场地下</td>
+            <td><span class="status-pill sp-offline"><span class="sp-dot"></span>告警</span></td>
+            <td>
+              <div class="bat-track">
+                <div class="bat-line"><div class="bat-fill" style="width:8%;background:var(--red);"></div></div>
+                <span class="bat-pct">8%</span>
+              </div>
+            </td>
+            <td>赵强</td>
+            <td><button class="act-btn">处理</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--primary);font-weight:700;">EV-0068</td>
+            <td>江北区环城北路</td>
+            <td><span class="status-pill sp-online"><span class="sp-dot"></span>行驶中</span></td>
+            <td>
+              <div class="bat-track">
+                <div class="bat-line"><div class="bat-fill" style="width:63%;background:var(--cyan);"></div></div>
+                <span class="bat-pct">63%</span>
+              </div>
+            </td>
+            <td>陈静</td>
+            <td><button class="act-btn">定位</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div><!-- /.table-panel -->
+
+  </div><!-- /.dash-body -->
+</div><!-- /.main -->
+
+</body>
+</html>

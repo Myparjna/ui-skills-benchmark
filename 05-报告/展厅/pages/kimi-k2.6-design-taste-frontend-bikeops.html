@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>巡城运营后台 — 城市级共享两轮运营管理平台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Geist', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        teal: {
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
+          950: '#042f2e',
+        },
+        zinc: {
+          50: '#fafafa',
+          100: '#f4f4f5',
+          200: '#e4e4e7',
+          300: '#d4d4d8',
+          400: '#a1a1aa',
+          500: '#71717a',
+          600: '#52525b',
+          700: '#3f3f46',
+          800: '#27272a',
+          900: '#18181b',
+          950: '#09090b',
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    background: #fafafa;
+    color: #18181b;
+    overflow-x: hidden;
+  }
+  .num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 256px;
+    background: #09090b;
+    color: #a1a1aa;
+    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sidebar-collapsed { width: 64px; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin: 2px 8px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #e4e4e7; }
+  .nav-item.active { background: rgba(20,184,166,0.12); color: #14b8a6; }
+  .nav-item .nav-label { transition: opacity 0.2s; }
+  .sidebar-collapsed .nav-label { opacity: 0; width: 0; overflow: hidden; }
+  .sidebar-collapsed .nav-item { justify-content: center; padding: 10px; margin: 2px 6px; }
+
+  /* Top bar liquid glass */
+  .topbar-glass {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 8px rgba(0,0,0,0.03);
+  }
+
+  /* KPI tiles: not generic cards, use border-left accent + minimal bg */
+  .kpi-tile {
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-left: 3px solid transparent;
+    border-radius: 12px;
+    padding: 20px;
+    transition: box-shadow 0.25s, transform 0.25s cubic-bezier(0.16,1,0.3,1);
+  }
+  .kpi-tile:hover { box-shadow: 0 8px 24px -8px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .kpi-tile.accent-teal { border-left-color: #14b8a6; }
+  .kpi-tile.accent-amber { border-left-color: #f59e0b; }
+  .kpi-tile.accent-rose { border-left-color: #f43f5e; }
+  .kpi-tile.accent-blue { border-left-color: #3b82f6; }
+
+  /* Alert severity badges */
+  .severity-p0 { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .severity-p1 { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+  .severity-p2 { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+
+  /* Table styles: no heavy cards, use rule lines */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #71717a;
+    border-bottom: 1px solid #e4e4e7;
+    background: #fafafa;
+  }
+  .data-table td {
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #3f3f46;
+    border-bottom: 1px solid #f4f4f5;
+    vertical-align: middle;
+  }
+  .data-table tr:hover td { background: #fafafa; }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  /* Mini sparkline bars */
+  .sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 28px;
+  }
+  .spark-bar {
+    width: 4px;
+    border-radius: 1px;
+    background: #e4e4e7;
+    transition: background 0.2s;
+  }
+  .spark-bar.active { background: #14b8a6; }
+
+  /* Progress ring */
+  .ring-progress {
+    transform: rotate(-90deg);
+  }
+  .ring-bg { stroke: #e4e4e7; }
+  .ring-fill { stroke: #14b8a6; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+  /* Section header */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #71717a;
+  }
+
+  /* Quick action buttons */
+  .action-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    color: #3f3f46;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .action-chip:hover { border-color: #d4d4d8; background: #fafafa; }
+  .action-chip:active { transform: scale(0.98); }
+
+  /* Chart bars */
+  .chart-bar {
+    border-radius: 3px 3px 0 0;
+    transition: opacity 0.2s;
+    min-width: 8px;
+  }
+  .chart-bar:hover { opacity: 0.8; }
+
+  /* Empty / subtle divider instead of card box for dense sections */
+  .rule-row {
+    border-bottom: 1px solid #f4f4f5;
+    padding: 14px 0;
+  }
+  .rule-row:last-child { border-bottom: none; }
+
+  /* Stagger reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .stagger-1 { transition-delay: 0.06s; }
+  .stagger-2 { transition-delay: 0.12s; }
+  .stagger-3 { transition-delay: 0.18s; }
+  .stagger-4 { transition-delay: 0.24s; }
+
+  /* Filter pill */
+  .filter-pill {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #e4e4e7;
+    background: #ffffff;
+    color: #52525b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-pill.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .filter-pill:hover:not(.active) { border-color: #d4d4d8; }
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+<!-- Sidebar -->
+<aside class="sidebar flex flex-col shrink-0" id="sidebar">
+  <div class="h-14 flex items-center px-4 gap-3 border-b border-white/5">
+    <div class="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center shrink-0">
+      <i data-lucide="bike" class="w-4.5 h-4.5 text-white"></i>
+    </div>
+    <span class="font-bold text-white text-sm tracking-tight nav-label">巡城运营后台</span>
+    <button class="ml-auto text-zinc-500 hover:text-zinc-300 transition-colors nav-label" onclick="toggleSidebar()">
+      <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <nav class="flex-1 py-4 overflow-y-auto">
+    <div class="px-4 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 nav-label">运营中心</div>
+    <div class="nav-item active">
+      <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">运营总览</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="map" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">地图调度中心</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="car" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">车队资产</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="battery-charging" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">电池与能源</span>
+    </div>
+
+    <div class="px-4 mt-5 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 nav-label">执行与合规</div>
+    <div class="nav-item">
+      <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">运维工单</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="shield-check" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">规则与区域</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="file-check" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">合规监管</span>
+    </div>
+
+    <div class="px-4 mt-5 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 nav-label">数据与系统</div>
+    <div class="nav-item">
+      <i data-lucide="bar-chart-3" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">数据报表</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="users" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">组织与权限</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="settings" class="w-4 h-4 shrink-0"></i>
+      <span class="nav-label">系统配置</span>
+    </div>
+  </nav>
+
+  <div class="p-4 border-t border-white/5">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-medium text-white shrink-0">
+        林薇
+      </div>
+      <div class="nav-label">
+        <div class="text-xs text-white font-medium">林薇</div>
+        <div class="text-[10px] text-zinc-500">城市运营经理 · 杭州</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+  <!-- Top Bar -->
+  <header class="topbar-glass h-14 flex items-center justify-between px-6 shrink-0 z-30">
+    <div class="flex items-center gap-3">
+      <h1 class="text-sm font-semibold text-zinc-900">运营总览</h1>
+      <span class="text-zinc-300">/</span>
+      <span class="text-xs text-zinc-500">杭州市 · 全城</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-1.5">
+        <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
+        <span class="text-xs text-zinc-600">今日</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-400"></i>
+      </div>
+      <div class="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-1.5">
+        <i data-lucide="filter" class="w-3.5 h-3.5 text-zinc-400"></i>
+        <span class="text-xs text-zinc-600">全部车型</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-400"></i>
+      </div>
+      <button class="w-8 h-8 rounded-lg border border-zinc-200 bg-white flex items-center justify-center hover:bg-zinc-50 transition-colors">
+        <i data-lucide="bell" class="w-4 h-4 text-zinc-500"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Dashboard Content -->
+  <div class="flex-1 overflow-y-auto p-6">
+    <!-- Quick Actions -->
+    <div class="mb-6 reveal">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="section-label mr-2">快速操作</span>
+        <button class="action-chip">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          创建调度任务
+        </button>
+        <button class="action-chip">
+          <i data-lucide="battery-warning" class="w-3.5 h-3.5"></i>
+          低电换电任务
+        </button>
+        <button class="action-chip">
+          <i data-lucide="route" class="w-3.5 h-3.5"></i>
+          批量指令
+        </button>
+        <button class="action-chip">
+          <i data-lucide="scan" class="w-3.5 h-3.5"></i>
+          车辆检索
+        </button>
+        <button class="action-chip">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+          围栏配置
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Row: 4 columns, not 3. Asymmetric visual weights via content -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="kpi-tile accent-teal reveal">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs text-zinc-500">今日订单量</span>
+          <span class="inline-flex items-center gap-0.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            +12.4%
+          </span>
+        </div>
+        <div class="num text-2xl font-bold text-zinc-900">47,293</div>
+        <div class="text-[11px] text-zinc-400 mt-1">较昨日 42,061</div>
+        <div class="sparkline mt-3">
+          <div class="spark-bar active" style="height: 40%;"></div>
+          <div class="spark-bar active" style="height: 55%;"></div>
+          <div class="spark-bar active" style="height: 45%;"></div>
+          <div class="spark-bar active" style="height: 70%;"></div>
+          <div class="spark-bar active" style="height: 60%;"></div>
+          <div class="spark-bar active" style="height: 85%;"></div>
+          <div class="spark-bar active" style="height: 75%;"></div>
+          <div class="spark-bar active" style="height: 100%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-tile accent-blue reveal stagger-1">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs text-zinc-500">单车日均骑行次数</span>
+          <span class="inline-flex items-center gap-0.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            +3.2%
+          </span>
+        </div>
+        <div class="num text-2xl font-bold text-zinc-900">4.7</div>
+        <div class="text-[11px] text-zinc-400 mt-1">目标 5.0</div>
+        <div class="w-full bg-zinc-100 rounded-full h-1.5 mt-4">
+          <div class="bg-blue-500 h-1.5 rounded-full" style="width: 94%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-tile accent-amber reveal stagger-2">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs text-zinc-500">车队可用率</span>
+          <span class="inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+            <i data-lucide="alert-circle" class="w-3 h-3"></i>
+            -2.1%
+          </span>
+        </div>
+        <div class="flex items-end gap-3">
+          <div class="num text-2xl font-bold text-zinc-900">87.3%</div>
+          <div class="relative w-10 h-10 mb-0.5">
+            <svg class="ring-progress w-10 h-10" viewBox="0 0 36 36">
+              <circle class="ring-bg" cx="18" cy="18" r="15.9" fill="none" stroke-width="3"/>
+              <circle class="ring-fill" cx="18" cy="18" r="15.9" fill="none" stroke-width="3" stroke-dasharray="100" stroke-dashoffset="12.7"/>
+            </svg>
+          </div>
+        </div>
+        <div class="text-[11px] text-zinc-400 mt-1">警戒线 85%</div>
+      </div>
+
+      <div class="kpi-tile accent-rose reveal stagger-3">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs text-zinc-500">P0 告警待处理</span>
+          <span class="inline-flex items-center gap-0.5 text-[11px] font-medium text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            +5
+          </span>
+        </div>
+        <div class="num text-2xl font-bold text-zinc-900">23</div>
+        <div class="text-[11px] text-zinc-400 mt-1">超时 4 条</div>
+        <div class="flex items-center gap-1.5 mt-3">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+          <span class="text-[11px] text-rose-600 font-medium">需立即响应</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Section: Chart + Fleet Health -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Chart: 2/3 width -->
+      <div class="lg:col-span-2 bg-white border border-zinc-200 rounded-xl p-5 reveal">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h3 class="text-sm font-semibold text-zinc-900">今日订单与收入趋势</h3>
+            <p class="text-[11px] text-zinc-500 mt-0.5">单位：订单量（柱）/ GMV 千元（线）</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="flex items-center gap-1.5 text-[11px] text-zinc-500">
+              <span class="w-2.5 h-2.5 rounded-sm bg-teal-500"></span>
+              订单
+            </span>
+            <span class="flex items-center gap-1.5 text-[11px] text-zinc-500">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              GMV
+            </span>
+          </div>
+        </div>
+        <div class="relative h-56 flex items-end gap-2">
+          <!-- Y-axis labels -->
+          <div class="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] text-zinc-400 num">
+            <span>8k</span>
+            <span>6k</span>
+            <span>4k</span>
+            <span>2k</span>
+            <span>0</span>
+          </div>
+          <!-- Chart bars -->
+          <div class="ml-10 flex-1 flex items-end justify-between gap-1 h-full pb-6 border-b border-l border-zinc-100">
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 120px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">00</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 80px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">04</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 60px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">08</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 200px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">12</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 170px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">14</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 220px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">16</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 190px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">18</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 140px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">20</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <div class="w-full flex justify-center"><div class="chart-bar bg-teal-500 w-full max-w-[18px]" style="height: 90px;"></div></div>
+              <span class="text-[10px] text-zinc-400 num">22</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fleet Health: 1/3 width -->
+      <div class="bg-white border border-zinc-200 rounded-xl p-5 reveal stagger-1">
+        <h3 class="text-sm font-semibold text-zinc-900 mb-1">车队健康分布</h3>
+        <p class="text-[11px] text-zinc-500 mb-5">总计 23,186 辆 · 实时</p>
+
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-zinc-600 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                可用
+              </span>
+              <span class="num font-semibold text-zinc-900">20,241 <span class="text-zinc-400 font-normal">87.3%</span></span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-2">
+              <div class="bg-emerald-500 h-2 rounded-full" style="width: 87.3%;"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-zinc-600 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                运营中
+              </span>
+              <span class="num font-semibold text-zinc-900">1,847 <span class="text-zinc-400 font-normal">7.9%</span></span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-2">
+              <div class="bg-blue-500 h-2 rounded-full" style="width: 7.9%;"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-zinc-600 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                低电
+              </span>
+              <span class="num font-semibold text-zinc-900">642 <span class="text-zinc-400 font-normal">2.8%</span></span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-2">
+              <div class="bg-amber-500 h-2 rounded-full" style="width: 2.8%;"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-zinc-600 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                故障 / 离线
+              </span>
+              <span class="num font-semibold text-zinc-900">456 <span class="text-zinc-400 font-normal">2.0%</span></span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-2">
+              <div class="bg-rose-500 h-2 rounded-full" style="width: 2%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-zinc-100">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-zinc-500">离线车辆</span>
+            <span class="num text-zinc-900 font-semibold">189 <span class="text-zinc-400 font-normal">辆</span></span>
+          </div>
+          <div class="flex items-center gap-3 mt-2">
+            <span class="text-[10px] text-zinc-400 num">&lt;10min: 42</span>
+            <span class="text-[10px] text-zinc-400 num">&lt;1h: 87</span>
+            <span class="text-[10px] text-zinc-400 num">&gt;1h: 60</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section: Alerts + Work Orders -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <!-- Alerts: 3/5 width -->
+      <div class="lg:col-span-3 bg-white border border-zinc-200 rounded-xl overflow-hidden reveal">
+        <div class="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-semibold text-zinc-900">告警与异常中心</h3>
+            <p class="text-[11px] text-zinc-500 mt-0.5">共 47 条未处理 · 其中 P0 需立即响应</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="filter-pill active">全部</button>
+            <button class="filter-pill">P0</button>
+            <button class="filter-pill">P1</button>
+            <button class="filter-pill">P2</button>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="w-16">级别</th>
+              <th>类型</th>
+              <th>描述</th>
+              <th>位置</th>
+              <th>时间</th>
+              <th>响应SLA</th>
+              <th class="w-20">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="severity-p0 text-[11px] font-semibold px-2 py-0.5 rounded-md inline-block">P0</span></td>
+              <td class="text-xs">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-500"></i>
+                  越界
+                </span>
+              </td>
+              <td class="font-medium text-zinc-800">车辆 #HGH-28471 驶出服务区围栏</td>
+              <td class="text-xs text-zinc-500">萧山区 · 市心北路</td>
+              <td class="num text-xs text-zinc-500">14:32</td>
+              <td><span class="num text-xs text-rose-600 font-semibold">剩余 8min</span></td>
+              <td><button class="text-xs text-teal-600 font-medium hover:text-teal-700">派单</button></td>
+            </tr>
+            <tr>
+              <td><span class="severity-p0 text-[11px] font-semibold px-2 py-0.5 rounded-md inline-block">P0</span></td>
+              <td class="text-xs">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-500"></i>
+                  禁停
+                </span>
+              </td>
+              <td class="font-medium text-zinc-800">聚集堆积 · 西湖文化广场北侧 47辆</td>
+              <td class="text-xs text-zinc-500">拱墅区 · 西湖文化广场</td>
+              <td class="num text-xs text-zinc-500">14:28</td>
+              <td><span class="num text-xs text-rose-600 font-semibold">剩余 12min</span></td>
+              <td><button class="text-xs text-teal-600 font-medium hover:text-teal-700">派单</button></td>
+            </tr>
+            <tr>
+              <td><span class="severity-p1 text-[11px] font-semibold px-2 py-0.5 rounded-md inline-block">P1</span></td>
+              <td class="text-xs">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="battery-warning" class="w-3.5 h-3.5 text-amber-500"></i>
+                  低电
+                </span>
+              </td>
+              <td class="font-medium text-zinc-800">车辆 #HGH-19204 SOC 降至 8%</td>
+              <td class="text-xs text-zinc-500">滨江区 · 星光大道</td>
+              <td class="num text-xs text-zinc-500">14:15</td>
+              <td><span class="num text-xs text-amber-600">剩余 42min</span></td>
+              <td><button class="text-xs text-teal-600 font-medium hover:text-teal-700">换电</button></td>
+            </tr>
+            <tr>
+              <td><span class="severity-p1 text-[11px] font-semibold px-2 py-0.5 rounded-md inline-block">P1</span></td>
+              <td class="text-xs">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="wifi-off" class="w-3.5 h-3.5 text-amber-500"></i>
+                  离线
+                </span>
+              </td>
+              <td class="font-medium text-zinc-800">车辆 #HGH-31092 离线超 1 小时</td>
+              <td class="text-xs text-zinc-500">上城区 · 钱江新城</td>
+              <td class="num text-xs text-zinc-500">13:50</td>
+              <td><span class="num text-xs text-amber-600">剩余 1h 10min</span></td>
+              <td><button class="text-xs text-teal-600 font-medium hover:text-teal-700">巡检</button></td>
+            </tr>
+            <tr>
+              <td><span class="severity-p2 text-[11px] font-semibold px-2 py-0.5 rounded-md inline-block">P2</span></td>
+              <td class="text-xs">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="thermometer" class="w-3.5 h-3.5 text-teal-600"></i>
+                  温度
+                </span>
+              </td>
+              <td class="font-medium text-zinc-800">电池 #BAT-7741 温度异常 48.2°C</td>
+              <td class="text-xs text-zinc-500">余杭区 · 未来科技城</td>
+              <td class="num text-xs text-zinc-500">13:22</td>
+              <td><span class="num text-xs text-zinc-500">剩余 3h</span></td>
+              <td><button class="text-xs text-teal-600 font-medium hover:text-teal-700">回收</button></td>
+            </tr>
+            <tr>
+              <td><span class="severity-p2 text-[11px] font-semibold px-2 py-0.5 rounded-md inline-block">P2</span></td>
+              <td class="text-xs">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="map-pin-off" class="w-3.5 h-3.5 text-teal-600"></i>
+                  倒地
+                </span>
+              </td>
+              <td class="font-medium text-zinc-800">车辆 #HGH-15673 疑似倒地未恢复</td>
+              <td class="text-xs text-zinc-500">西湖区 · 文三路</td>
+              <td class="num text-xs text-zinc-500">12:48</td>
+              <td><span class="num text-xs text-zinc-500">剩余 4h</span></td>
+              <td><button class="text-xs text-teal-600 font-medium hover:text-teal-700">派单</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Work Orders + Battery: 2/5 width -->
+      <div class="lg:col-span-2 flex flex-col gap-6">
+        <!-- Work Orders -->
+        <div class="bg-white border border-zinc-200 rounded-xl p-5 reveal stagger-1">
+          <h3 class="text-sm font-semibold text-zinc-900 mb-4">工单与人效概览</h3>
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            <div class="text-center p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+              <div class="num text-lg font-bold text-zinc-900">142</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">待派</div>
+            </div>
+            <div class="text-center p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+              <div class="num text-lg font-bold text-zinc-900">89</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">执行中</div>
+            </div>
+            <div class="text-center p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+              <div class="num text-lg font-bold text-zinc-900">17</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">超时</div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-zinc-600">换电任务完成率</span>
+              <span class="num font-semibold text-zinc-900">91.2%</span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-1.5">
+              <div class="bg-teal-500 h-1.5 rounded-full" style="width: 91.2%;"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-zinc-600">维修一次修复率</span>
+              <span class="num font-semibold text-zinc-900">84.7%</span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-1.5">
+              <div class="bg-blue-500 h-1.5 rounded-full" style="width: 84.7%;"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-zinc-600">调度准时率</span>
+              <span class="num font-semibold text-zinc-900">76.3%</span>
+            </div>
+            <div class="w-full bg-zinc-100 rounded-full h-1.5">
+              <div class="bg-amber-500 h-1.5 rounded-full" style="width: 76.3%;"></div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-zinc-100">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="text-zinc-500">今日在岗运维</span>
+              <span class="num text-zinc-900 font-semibold">47 / 52 人</span>
+            </div>
+            <div class="flex -space-x-2">
+              <div class="w-7 h-7 rounded-full bg-teal-600 border-2 border-white flex items-center justify-center text-[10px] text-white font-medium">林</div>
+              <div class="w-7 h-7 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-[10px] text-white font-medium">陈</div>
+              <div class="w-7 h-7 rounded-full bg-amber-600 border-2 border-white flex items-center justify-center text-[10px] text-white font-medium">王</div>
+              <div class="w-7 h-7 rounded-full bg-rose-600 border-2 border-white flex items-center justify-center text-[10px] text-white font-medium">张</div>
+              <div class="w-7 h-7 rounded-full bg-zinc-200 border-2 border-white flex items-center justify-center text-[10px] text-zinc-600 font-medium">+43</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery Status -->
+        <div class="bg-white border border-zinc-200 rounded-xl p-5 reveal stagger-2">
+          <h3 class="text-sm font-semibold text-zinc-900 mb-4">电池与能源态势</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-zinc-600">今日已完成换电</span>
+              <span class="num text-sm font-bold text-zinc-900">1,247 <span class="text-xs font-normal text-zinc-400">次</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-zinc-600">在途换电任务</span>
+              <span class="num text-sm font-bold text-zinc-900">86 <span class="text-xs font-normal text-zinc-400">次</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-zinc-600">平均单次换电耗时</span>
+              <span class="num text-sm font-bold text-zinc-900">4.2 <span class="text-xs font-normal text-zinc-400">分钟</span></span>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-zinc-100">
+            <div class="text-[11px] text-zinc-500 mb-2">SOC 分布</div>
+            <div class="flex items-end gap-1 h-16">
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full bg-rose-200 rounded-sm" style="height: 8%;"></div>
+                <span class="num text-[9px] text-zinc-400">0-10</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full bg-amber-200 rounded-sm" style="height: 18%;"></div>
+                <span class="num text-[9px] text-zinc-400">10-30</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full bg-blue-200 rounded-sm" style="height: 35%;"></div>
+                <span class="num text-[9px] text-zinc-400">30-60</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full bg-emerald-200 rounded-sm" style="height: 100%;"></div>
+                <span class="num text-[9px] text-zinc-400">60-100</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer spacer -->
+    <div class="h-8"></div>
+  </div>
+</main>
+
+<script>
+  lucide.createIcons();
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+  }
+
+  // Reveal animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Filter pill toggle
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    pill.addEventListener('click', function() {
+      this.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

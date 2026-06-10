@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智充 EV Charging</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --tech-blue: oklch(0.55 0.18 250);
+      --tech-blue-light: oklch(0.92 0.06 250);
+      --mint: oklch(0.85 0.1 160);
+      --mint-dark: oklch(0.6 0.14 160);
+      --orange: oklch(0.75 0.16 70);
+      --bg: oklch(0.99 0 0);
+      --surface: oklch(1 0 0);
+      --text-primary: oklch(0.2 0.02 260);
+      --text-secondary: oklch(0.5 0.04 260);
+      --border: oklch(0.9 0.01 260);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .grain::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .tab-content {
+      display: none;
+      opacity: 0;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    @starting-style {
+      .tab-content.active {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .btn-primary {
+      background: var(--tech-blue);
+      color: white;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background: oklch(0.5 0.18 250);
+    }
+
+    .glass-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px oklch(0 0 0 / 0.02);
+    }
+
+    .nav-tab {
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+    }
+
+    .nav-tab.active {
+      color: var(--tech-blue);
+    }
+
+    .nav-tab.active .nav-icon {
+      background: var(--tech-blue-light);
+    }
+
+    .nav-icon {
+      transition: all 0.2s ease;
+    }
+
+    .map-placeholder {
+      background: linear-gradient(135deg, oklch(0.94 0.02 250) 0%, oklch(0.9 0.03 160 / 0.3) 100%);
+    }
+
+    .progress-ring circle {
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .kinetic-title {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      animation: scroll-reveal-anim linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 30%;
+    }
+
+    @keyframes scroll-reveal-anim {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stat-card {
+      transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .deal-tag {
+      background: oklch(0.95 0.04 70);
+      color: var(--orange);
+    }
+
+    .status-available {
+      color: var(--mint-dark);
+      background: oklch(0.93 0.05 160);
+    }
+
+    .status-busy {
+      color: oklch(0.6 0.12 30);
+      background: oklch(0.93 0.04 30);
+    }
+  </style>
+</head>
+<body class="grain">
+  <div class="max-w-md mx-auto min-h-screen flex flex-col relative bg-[var(--bg)]">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 px-6 pt-12 pb-4 bg-[var(--bg)]/90 backdrop-blur-md border-b border-[var(--border)]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs text-[var(--text-secondary)] font-medium tracking-wide">早上好</p>
+          <h1 class="text-lg font-semibold text-[var(--text-primary)]">智充 Charge+</h1>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)]">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 px-6 py-6 pb-28 overflow-y-auto">
+      <!-- Home Tab -->
+      <div id="tab-home" class="tab-content active">
+        <!-- Hero / Map -->
+        <div class="scroll-reveal mb-8">
+          <div class="map-placeholder rounded-3xl h-56 relative overflow-hidden border border-[var(--border)]">
+            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" alt="Map" class="absolute inset-0 w-full h-full object-cover opacity-40">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <button onclick="switchTab('tab-scan')" class="btn-primary px-8 py-4 rounded-2xl text-base flex items-center gap-3 shadow-lg">
+                <i data-lucide="scan-line" class="w-5 h-5"></i>
+                扫码充电
+              </button>
+            </div>
+            <div class="absolute bottom-4 left-4 right-4 glass-card rounded-xl p-3 flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)]">
+                <i data-lucide="map-pin" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">西湖区文一西路充电站</p>
+                <p class="text-xs text-[var(--text-secondary)]">距离 320m · 空闲 4/12</p>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--text-secondary)]"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 gap-3 mb-8">
+          <div class="stat-card glass-card rounded-2xl p-4 scroll-reveal" style="animation-delay: 0.05s">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-lg bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)]">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs text-[var(--text-secondary)]">本月充电</span>
+            </div>
+            <p class="text-xl font-semibold">482 kWh</p>
+          </div>
+          <div class="stat-card glass-card rounded-2xl p-4 scroll-reveal" style="animation-delay: 0.1s">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-lg bg-[oklch(0.93_0.04_160)] flex items-center justify-center text-[var(--mint-dark)]">
+                <i data-lucide="leaf" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs text-[var(--text-secondary)]">减碳贡献</span>
+            </div>
+            <p class="text-xl font-semibold">186 kg</p>
+          </div>
+        </div>
+
+        <!-- Nearby Stations -->
+        <div class="mb-8 scroll-reveal" style="animation-delay: 0.15s">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold">附近电站</h2>
+            <button class="text-sm text-[var(--tech-blue)] font-medium">查看全部</button>
+          </div>
+          <div class="space-y-3">
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)]">
+                <i data-lucide="battery-charging" class="w-6 h-6"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">未来科技城快充站</p>
+                <p class="text-xs text-[var(--text-secondary)]">¥1.08/度 · 120kW快充</p>
+              </div>
+              <span class="status-available text-xs px-2 py-1 rounded-full font-medium">空闲</span>
+            </div>
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-[oklch(0.93_0.04_160)] flex items-center justify-center text-[var(--mint-dark)]">
+                <i data-lucide="battery-charging" class="w-6 h-6"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">西溪湿地充电站</p>
+                <p class="text-xs text-[var(--text-secondary)]">¥0.95/度 · 60kW直流</p>
+              </div>
+              <span class="status-busy text-xs px-2 py-1 rounded-full font-medium">繁忙</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLUS Membership -->
+        <div class="scroll-reveal" style="animation-delay: 0.2s">
+          <div class="rounded-2xl p-5 relative overflow-hidden" style="background: linear-gradient(135deg, oklch(0.25 0.06 260) 0%, oklch(0.18 0.05 280) 100%);">
+            <div class="relative z-10 flex items-center justify-between">
+              <div>
+                <p class="text-xs text-white/60 mb-1">智充 PLUS 会员</p>
+                <p class="text-white font-semibold text-lg">充电低至 8 折</p>
+                <p class="text-white/60 text-xs mt-1">每月赠送 50 度电 · 免服务费</p>
+              </div>
+              <button class="bg-white text-[var(--text-primary)] px-4 py-2 rounded-xl text-sm font-medium">立即开通</button>
+            </div>
+            <div class="absolute top-0 right-0 w-32 h-32 opacity-20" style="background: radial-gradient(circle, var(--tech-blue) 0%, transparent 70%);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deals Tab -->
+      <div id="tab-deals" class="tab-content">
+        <h2 class="kinetic-title mb-8 scroll-reveal">精选优惠</h2>
+        <div class="space-y-4">
+          <div class="glass-card rounded-2xl p-4 flex gap-4 scroll-reveal" style="animation-delay: 0.05s">
+            <div class="w-20 h-20 rounded-xl bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)] flex-shrink-0">
+              <i data-lucide="ticket" class="w-8 h-8"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="deal-tag text-[10px] px-1.5 py-0.5 rounded font-medium">限时</span>
+                <span class="text-sm font-medium">新用户首单立减</span>
+              </div>
+              <p class="text-xs text-[var(--text-secondary)] mb-2">注册7天内有效，最高减免 ¥30</p>
+              <button class="text-xs text-[var(--tech-blue)] font-medium">立即领取</button>
+            </div>
+          </div>
+          <div class="glass-card rounded-2xl p-4 flex gap-4 scroll-reveal" style="animation-delay: 0.1s">
+            <div class="w-20 h-20 rounded-xl bg-[oklch(0.93_0.04_160)] flex items-center justify-center text-[var(--mint-dark)] flex-shrink-0">
+              <i data-lucide="gift" class="w-8 h-8"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="deal-tag text-[10px] px-1.5 py-0.5 rounded font-medium">会员</span>
+                <span class="text-sm font-medium">PLUS 专享满减券包</span>
+              </div>
+              <p class="text-xs text-[var(--text-secondary)] mb-2">每月1日自动发放 ¥50 券包</p>
+              <button class="text-xs text-[var(--tech-blue)] font-medium">查看详情</button>
+            </div>
+          </div>
+          <div class="glass-card rounded-2xl p-4 flex gap-4 scroll-reveal" style="animation-delay: 0.15s">
+            <div class="w-20 h-20 rounded-xl bg-[oklch(0.93_0.04_30)] flex items-center justify-center text-[oklch(0.6_0.12_30)] flex-shrink-0">
+              <i data-lucide="clock" class="w-8 h-8"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="deal-tag text-[10px] px-1.5 py-0.5 rounded font-medium">时段</span>
+                <span class="text-sm font-medium">谷时充电 5 折</span>
+              </div>
+              <p class="text-xs text-[var(--text-secondary)] mb-2">23:00-07:00 享谷时电价优惠</p>
+              <button class="text-xs text-[var(--tech-blue)] font-medium">预约充电</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scan Tab -->
+      <div id="tab-scan" class="tab-content">
+        <div class="flex flex-col items-center justify-center min-h-[60vh]">
+          <div class="w-64 h-64 rounded-3xl border-2 border-dashed border-[var(--border)] flex items-center justify-center mb-6 relative">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <i data-lucide="scan" class="w-20 h-20 text-[var(--tech-blue)]"></i>
+            </div>
+            <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[var(--tech-blue)] rounded-tl-xl"></div>
+            <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[var(--tech-blue)] rounded-tr-xl"></div>
+            <div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[var(--tech-blue)] rounded-bl-xl"></div>
+            <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[var(--tech-blue)] rounded-br-xl"></div>
+          </div>
+          <p class="text-lg font-medium mb-2">对准充电桩二维码</p>
+          <p class="text-sm text-[var(--text-secondary)] mb-8">自动识别，快速启动充电</p>
+          <button class="btn-primary px-10 py-4 rounded-2xl text-base">模拟扫码</button>
+        </div>
+      </div>
+
+      <!-- Orders Tab -->
+      <div id="tab-orders" class="tab-content">
+        <h2 class="kinetic-title mb-8 scroll-reveal">我的订单</h2>
+        <div class="space-y-4">
+          <div class="glass-card rounded-2xl p-5 scroll-reveal" style="animation-delay: 0.05s">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-[var(--text-secondary)]">2026-04-12 14:32</span>
+              <span class="status-available text-xs px-2 py-1 rounded-full font-medium">已完成</span>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)]">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium">未来科技城快充站</p>
+                <p class="text-xs text-[var(--text-secondary)]">直流快充 · 桩号 A03</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+              <p class="text-sm"><span class="text-[var(--text-secondary)]">电量</span> <span class="font-medium">45.2 kWh</span></p>
+              <p class="text-base font-semibold text-[var(--text-primary)]">¥48.82</p>
+            </div>
+          </div>
+          <div class="glass-card rounded-2xl p-5 scroll-reveal" style="animation-delay: 0.1s">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-[var(--text-secondary)]">2026-04-10 09:15</span>
+              <span class="status-available text-xs px-2 py-1 rounded-full font-medium">已完成</span>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-[oklch(0.93_0.04_160)] flex items-center justify-center text-[var(--mint-dark)]">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium">西溪湿地充电站</p>
+                <p class="text-xs text-[var(--text-secondary)]">直流快充 · 桩号 B01</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+              <p class="text-sm"><span class="text-[var(--text-secondary)]">电量</span> <span class="font-medium">32.8 kWh</span></p>
+              <p class="text-base font-semibold text-[var(--text-primary)]">¥31.16</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Tab -->
+      <div id="tab-profile" class="tab-content">
+        <div class="flex items-center gap-4 mb-8 scroll-reveal">
+          <div class="w-16 h-16 rounded-full bg-[var(--tech-blue-light)] flex items-center justify-center text-[var(--tech-blue)] text-xl font-semibold">
+            U
+          </div>
+          <div>
+            <p class="text-lg font-semibold">User_8823</p>
+            <p class="text-sm text-[var(--text-secondary)]">普通会员</p>
+          </div>
+        </div>
+        <div class="glass-card rounded-2xl overflow-hidden mb-6 scroll-reveal" style="animation-delay: 0.05s">
+          <div class="p-4 flex items-center justify-between border-b border-[var(--border)] hover:bg-[oklch(0.98_0_0)] cursor-pointer transition-colors">
+            <div class="flex items-center gap-3">
+              <i data-lucide="wallet" class="w-5 h-5 text-[var(--text-secondary)]"></i>
+              <span class="text-sm font-medium">我的钱包</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-[var(--text-secondary)]">¥128.50</span>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--text-secondary)]"></i>
+            </div>
+          </div>
+          <div class="p-4 flex items-center justify-between border-b border-[var(--border)] hover:bg-[oklch(0.98_0_0)] cursor-pointer transition-colors">
+            <div class="flex items-center gap-3">
+              <i data-lucide="car" class="w-5 h-5 text-[var(--text-secondary)]"></i>
+              <span class="text-sm font-medium">我的爱车</span>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--text-secondary)]"></i>
+          </div>
+          <div class="p-4 flex items-center justify-between hover:bg-[oklch(0.98_0_0)] cursor-pointer transition-colors">
+            <div class="flex items-center gap-3">
+              <i data-lucide="settings" class="w-5 h-5 text-[var(--text-secondary)]"></i>
+              <span class="text-sm font-medium">设置</span>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--text-secondary)]"></i>
+          </div>
+        </div>
+        <div class="glass-card rounded-2xl p-5 scroll-reveal" style="animation-delay: 0.1s">
+          <p class="text-xs text-[var(--text-secondary)] mb-3">充电进度模拟</p>
+          <div class="flex items-center gap-4">
+            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+              <path class="text-[var(--border)]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"/>
+              <path class="progress-ring text-[var(--tech-blue)]" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <p class="text-xl font-semibold">75%</p>
+              <p class="text-xs text-[var(--text-secondary)]">预计 12 分钟充满</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg)]/95 backdrop-blur-md border-t border-[var(--border)] pb-safe">
+      <div class="max-w-md mx-auto flex items-center justify-around px-2 py-3">
+        <button class="nav-tab active flex flex-col items-center gap-1 px-3 py-1" onclick="switchTab('tab-home')">
+          <div class="nav-icon w-10 h-10 rounded-xl flex items-center justify-center">
+            <i data-lucide="home" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[10px] font-medium">首页</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 px-3 py-1" onclick="switchTab('tab-deals')">
+          <div class="nav-icon w-10 h-10 rounded-xl flex items-center justify-center">
+            <i data-lucide="tag" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[10px] font-medium">优惠</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 px-3 py-1" onclick="switchTab('tab-scan')">
+          <div class="nav-icon w-12 h-12 rounded-2xl bg-[var(--tech-blue)] text-white flex items-center justify-center shadow-md">
+            <i data-lucide="scan-line" class="w-6 h-6"></i>
+          </div>
+          <span class="text-[10px] font-medium">扫码</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 px-3 py-1" onclick="switchTab('tab-orders')">
+          <div class="nav-icon w-10 h-10 rounded-xl flex items-center justify-center">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[10px] font-medium">订单</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 px-3 py-1" onclick="switchTab('tab-profile')">
+          <div class="nav-icon w-10 h-10 rounded-xl flex items-center justify-center">
+            <i data-lucide="user" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[10px] font-medium">我的</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

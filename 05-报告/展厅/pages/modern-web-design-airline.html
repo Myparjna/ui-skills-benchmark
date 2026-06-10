@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星空航空 - Skystar Airlines</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #0a1628;
+    --color-accent: #c8a45c;
+    --color-accent-light: #e8d5a0;
+    --color-navy: #1a2a4a;
+    --color-sky: #3a7bd5;
+    --color-sky-light: #6db3f2;
+    --color-white: #ffffff;
+    --color-gray-50: #f8f9fb;
+    --color-gray-100: #eef1f5;
+    --color-gray-300: #c5cad3;
+    --color-gray-500: #7a8494;
+    --color-gray-700: #3d4551;
+    --color-gray-900: #1a1e26;
+    --font-serif: 'Noto Serif SC', serif;
+    --font-sans: 'Noto Sans SC', sans-serif;
+    --space-xs: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+    --space-sm: clamp(0.75rem, 0.6rem + 0.75vw, 1.125rem);
+    --space-md: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+    --space-lg: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+    --space-xl: clamp(2rem, 1.6rem + 2vw, 3rem);
+    --space-2xl: clamp(3rem, 2.4rem + 3vw, 4.5rem);
+    --space-3xl: clamp(4rem, 3rem + 5vw, 7rem);
+    --font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+    --font-size-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+    --font-size-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    --font-size-lg: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+    --font-size-xl: clamp(1.75rem, 1.5rem + 1.25vw, 2.25rem);
+    --font-size-2xl: clamp(2.5rem, 2rem + 2.5vw, 3.5rem);
+    --font-size-3xl: clamp(3rem, 2.2rem + 4vw, 5rem);
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.12);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.16);
+    --shadow-xl: 0 24px 64px rgba(0,0,0,0.2);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-gray-900);
+    background: var(--color-white);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { text-decoration: none; color: inherit; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: var(--space-md) var(--space-xl);
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out);
+  }
+  .nav--scrolled {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: var(--shadow-sm);
+  }
+  .nav__brand {
+    display: flex; align-items: center; gap: var(--space-xs);
+    font-family: var(--font-serif); font-weight: 700;
+    font-size: var(--font-size-lg); color: var(--color-white);
+    transition: color var(--duration-normal);
+  }
+  .nav--scrolled .nav__brand { color: var(--color-primary); }
+  .nav__logo {
+    width: 36px; height: 36px;
+    background: var(--color-accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--color-primary);
+  }
+  .nav__links {
+    display: flex; gap: var(--space-lg); list-style: none;
+  }
+  .nav__links a {
+    font-size: var(--font-size-sm); font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    transition: color var(--duration-fast);
+    position: relative;
+  }
+  .nav__links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 2px; background: var(--color-accent);
+    transition: width var(--duration-normal) var(--ease-out);
+  }
+  .nav__links a:hover::after { width: 100%; }
+  .nav--scrolled .nav__links a { color: var(--color-gray-700); }
+  .nav--scrolled .nav__links a:hover { color: var(--color-primary); }
+  .nav__cta {
+    padding: 10px 24px; border-radius: 100px;
+    background: var(--color-accent); color: var(--color-primary);
+    font-weight: 600; font-size: var(--font-size-sm);
+    border: none; cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-spring),
+                box-shadow var(--duration-fast);
+  }
+  .nav__cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(200,164,92,0.4);
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-navy) 40%, var(--color-sky) 100%);
+    overflow: hidden;
+  }
+  .hero__bg-pattern {
+    position: absolute; inset: 0; opacity: 0.06;
+    background-image:
+      radial-gradient(circle at 20% 30%, var(--color-accent) 1px, transparent 1px),
+      radial-gradient(circle at 80% 70%, var(--color-sky-light) 1px, transparent 1px);
+    background-size: 60px 60px, 80px 80px;
+  }
+  .hero__glow {
+    position: absolute; width: 600px; height: 600px;
+    border-radius: 50%; filter: blur(120px); opacity: 0.15;
+    background: var(--color-sky-light);
+    top: 10%; right: -10%;
+    animation: float 8s ease-in-out infinite;
+  }
+  .hero__glow--2 {
+    background: var(--color-accent);
+    top: auto; bottom: -10%; left: -5%; right: auto;
+    animation-delay: -4s;
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -30px); }
+  }
+  .hero__content {
+    position: relative; z-index: 2; text-align: center;
+    max-width: 900px; padding: var(--space-xl);
+  }
+  .hero__badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 20px; border-radius: 100px;
+    background: rgba(200,164,92,0.15);
+    border: 1px solid rgba(200,164,92,0.3);
+    color: var(--color-accent-light);
+    font-size: var(--font-size-xs); font-weight: 500;
+    margin-bottom: var(--space-lg);
+    backdrop-filter: blur(10px);
+  }
+  .hero__title {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-3xl);
+    font-weight: 700; color: var(--color-white);
+    line-height: 1.15; margin-bottom: var(--space-md);
+    letter-spacing: -0.02em;
+  }
+  .hero__title span {
+    display: block;
+    background: linear-gradient(135deg, var(--color-accent-light), var(--color-accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero__subtitle {
+    font-size: var(--font-size-lg); color: rgba(255,255,255,0.7);
+    font-weight: 300; max-width: 600px; margin: 0 auto var(--space-xl);
+    line-height: 1.7;
+  }
+  .hero__actions {
+    display: flex; gap: var(--space-md); justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 36px; border-radius: 100px;
+    font-size: var(--font-size-base); font-weight: 600;
+    cursor: pointer; border: none;
+    transition: transform var(--duration-fast) var(--ease-spring),
+                box-shadow var(--duration-fast);
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn--primary {
+    background: var(--color-accent); color: var(--color-primary);
+    box-shadow: 0 4px 20px rgba(200,164,92,0.3);
+  }
+  .btn--primary:hover { box-shadow: 0 8px 32px rgba(200,164,92,0.45); }
+  .btn--ghost {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--color-white);
+    backdrop-filter: blur(10px);
+  }
+  .btn--ghost:hover { background: rgba(255,255,255,0.18); }
+  .hero__scroll {
+    position: absolute; bottom: var(--space-xl); left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: rgba(255,255,255,0.5); font-size: var(--font-size-xs);
+  }
+  .hero__scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent);
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+  @keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* ===== SEARCH BAR ===== */
+  .search-section {
+    position: relative; z-index: 10;
+    max-width: 1100px; margin: -60px auto 0;
+    padding: 0 var(--space-xl);
+  }
+  .search-bar {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: var(--space-lg) var(--space-xl);
+    display: flex; align-items: end; gap: var(--space-md); flex-wrap: wrap;
+  }
+  .search-field {
+    flex: 1; min-width: 160px;
+  }
+  .search-field label {
+    display: block; font-size: var(--font-size-xs);
+    color: var(--color-gray-500); margin-bottom: 6px; font-weight: 500;
+  }
+  .search-field input, .search-field select {
+    width: 100%; padding: 12px 16px;
+    border: 1.5px solid var(--color-gray-100);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base); font-family: var(--font-sans);
+    color: var(--color-gray-900);
+    transition: border-color var(--duration-fast);
+    background: var(--color-gray-50);
+  }
+  .search-field input:focus, .search-field select:focus {
+    outline: none; border-color: var(--color-sky);
+    box-shadow: 0 0 0 3px rgba(58,123,213,0.1);
+  }
+  .search-field input::placeholder { color: var(--color-gray-300); }
+  .search-bar .btn--primary { white-space: nowrap; padding: 14px 32px; }
+
+  /* ===== SECTION UTILITY ===== */
+  .section {
+    padding: var(--space-3xl) var(--space-xl);
+  }
+  .section__header {
+    text-align: center; max-width: 700px; margin: 0 auto var(--space-2xl);
+  }
+  .section__eyebrow {
+    font-size: var(--font-size-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--color-accent); margin-bottom: var(--space-xs);
+  }
+  .section__title {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-2xl); font-weight: 700;
+    color: var(--color-primary); line-height: 1.2;
+    margin-bottom: var(--space-sm);
+  }
+  .section__desc {
+    font-size: var(--font-size-base); color: var(--color-gray-500);
+    line-height: 1.7;
+  }
+
+  /* ===== STATS ===== */
+  .stats {
+    background: var(--color-gray-50);
+  }
+  .stats__grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg); max-width: 1100px; margin: 0 auto;
+  }
+  .stat-card {
+    text-align: center; padding: var(--space-lg);
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-normal) var(--ease-spring),
+                box-shadow var(--duration-normal);
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-2xl); font-weight: 700;
+    color: var(--color-sky);
+    margin-bottom: 4px;
+  }
+  .stat-card__label {
+    font-size: var(--font-size-sm); color: var(--color-gray-500);
+  }
+
+  /* ===== FEATURES ===== */
+  .features__grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg); max-width: 1100px; margin: 0 auto;
+  }
+  .feature-card {
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-100);
+    transition: transform var(--duration-normal) var(--ease-spring),
+                box-shadow var(--duration-normal),
+                border-color var(--duration-normal);
+  }
+  .feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-accent);
+  }
+  .feature-card__icon {
+    width: 56px; height: 56px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: var(--space-md);
+    background: linear-gradient(135deg, rgba(58,123,213,0.1), rgba(200,164,92,0.1));
+  }
+  .feature-card__title {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-lg); font-weight: 600;
+    color: var(--color-primary); margin-bottom: var(--space-xs);
+  }
+  .feature-card__text {
+    font-size: var(--font-size-sm); color: var(--color-gray-500);
+    line-height: 1.7;
+  }
+
+  /* ===== PROMO BANNER ===== */
+  .promo {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-navy));
+    border-radius: var(--radius-lg);
+    max-width: 1100px; margin: 0 auto;
+    padding: var(--space-2xl) var(--space-xl);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--space-lg); flex-wrap: wrap;
+    position: relative; overflow: hidden;
+  }
+  .promo::before {
+    content: ''; position: absolute; top: -50%; right: -20%;
+    width: 400px; height: 400px; border-radius: 50%;
+    background: var(--color-accent); opacity: 0.08;
+    filter: blur(60px);
+  }
+  .promo__text { position: relative; z-index: 1; }
+  .promo__title {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-xl); color: var(--color-white);
+    margin-bottom: var(--space-xs);
+  }
+  .promo__routes {
+    display: flex; gap: var(--space-md); flex-wrap: wrap;
+    margin-top: var(--space-sm);
+  }
+  .promo__route {
+    padding: 10px 20px; border-radius: 100px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--color-accent-light);
+    font-size: var(--font-size-sm); font-weight: 500;
+    backdrop-filter: blur(10px);
+  }
+  .promo__note {
+    font-size: var(--font-size-xs); color: rgba(255,255,255,0.5);
+    margin-top: var(--space-sm);
+  }
+
+  /* ===== DESTINATIONS ===== */
+  .destinations {
+    background: var(--color-gray-50);
+  }
+  .destinations__grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-md); max-width: 1100px; margin: 0 auto;
+  }
+  .dest-card {
+    position: relative; border-radius: var(--radius-lg);
+    overflow: hidden; aspect-ratio: 3/4;
+    cursor: pointer;
+    transition: transform var(--duration-normal) var(--ease-spring);
+  }
+  .dest-card:hover { transform: scale(1.03); }
+  .dest-card:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
+  .dest-card__bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    transition: transform var(--duration-slow);
+  }
+  .dest-card:hover .dest-card__bg { transform: scale(1.08); }
+  .dest-card__overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10,22,40,0.85) 0%, rgba(10,22,40,0.1) 60%);
+  }
+  .dest-card__content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: var(--space-lg);
+  }
+  .dest-card__name {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-xl); color: var(--color-white);
+    margin-bottom: 4px;
+  }
+  .dest-card:first-child .dest-card__name { font-size: var(--font-size-2xl); }
+  .dest-card__tagline {
+    font-size: var(--font-size-sm); color: rgba(255,255,255,0.7);
+    margin-bottom: 8px;
+  }
+  .dest-card__info {
+    font-size: var(--font-size-xs); color: var(--color-accent-light);
+    font-weight: 500;
+  }
+
+  /* ===== MEMBERSHIP ===== */
+  .membership__grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md); max-width: 1100px; margin: 0 auto;
+  }
+  .member-card {
+    padding: var(--space-xl) var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+    border: 1.5px solid var(--color-gray-100);
+    text-align: center;
+    transition: transform var(--duration-normal) var(--ease-spring),
+                border-color var(--duration-normal),
+                box-shadow var(--duration-normal);
+    position: relative;
+  }
+  .member-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-accent);
+  }
+  .member-card--featured {
+    border-color: var(--color-accent);
+    background: linear-gradient(to bottom, rgba(200,164,92,0.04), var(--color-white));
+  }
+  .member-card--featured::before {
+    content: '推荐';
+    position: absolute; top: 12px; right: 12px;
+    padding: 4px 12px; border-radius: 100px;
+    background: var(--color-accent); color: var(--color-primary);
+    font-size: 12px; font-weight: 600;
+  }
+  .member-card__tier {
+    font-size: var(--font-size-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--color-gray-500); margin-bottom: var(--space-xs);
+  }
+  .member-card__name {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-lg); font-weight: 700;
+    color: var(--color-primary); margin-bottom: var(--space-sm);
+  }
+  .member-card__req {
+    font-size: var(--font-size-sm); color: var(--color-gray-500);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-gray-100);
+  }
+  .member-card__benefits {
+    list-style: none; text-align: left;
+  }
+  .member-card__benefits li {
+    font-size: var(--font-size-sm); color: var(--color-gray-700);
+    padding: 6px 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .member-card__benefits li::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--color-accent); flex-shrink: 0;
+  }
+
+  /* ===== ABOUT ===== */
+  .about {
+    background: var(--color-gray-50);
+  }
+  .about__content {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: var(--space-2xl); align-items: center;
+  }
+  .about__text h3 {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-xl); color: var(--color-primary);
+    margin-bottom: var(--space-md);
+  }
+  .about__text p {
+    font-size: var(--font-size-base); color: var(--color-gray-700);
+    line-height: 1.8; margin-bottom: var(--space-md);
+  }
+  .about__highlight {
+    padding: var(--space-lg);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-navy));
+    border-radius: var(--radius-lg);
+    color: var(--color-white);
+  }
+  .about__highlight h4 {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-lg); margin-bottom: var(--space-sm);
+    color: var(--color-accent-light);
+  }
+  .about__highlight p {
+    font-size: var(--font-size-sm); color: rgba(255,255,255,0.8);
+    line-height: 1.7;
+  }
+
+  /* ===== CTA ===== */
+  .cta-section {
+    text-align: center;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-navy));
+    position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 120%, var(--color-accent) 0%, transparent 60%);
+    opacity: 0.08;
+  }
+  .cta-section .section__title { color: var(--color-white); }
+  .cta-section .section__desc { color: rgba(255,255,255,0.6); }
+  .cta-section .section__eyebrow { color: var(--color-accent-light); }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    background: var(--color-gray-900);
+    color: rgba(255,255,255,0.6);
+    padding: var(--space-2xl) var(--space-xl) var(--space-lg);
+  }
+  .footer__top {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--space-xl); max-width: 1100px; margin: 0 auto;
+    padding-bottom: var(--space-xl);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .footer__brand-name {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-lg); color: var(--color-white);
+    margin-bottom: var(--space-sm);
+  }
+  .footer__brand-desc {
+    font-size: var(--font-size-sm); line-height: 1.7;
+    max-width: 300px;
+  }
+  .footer__col-title {
+    font-size: var(--font-size-sm); font-weight: 600;
+    color: var(--color-white); margin-bottom: var(--space-sm);
+  }
+  .footer__links { list-style: none; }
+  .footer__links li { margin-bottom: 8px; }
+  .footer__links a {
+    font-size: var(--font-size-sm);
+    transition: color var(--duration-fast);
+  }
+  .footer__links a:hover { color: var(--color-accent-light); }
+  .footer__bottom {
+    max-width: 1100px; margin: 0 auto;
+    padding-top: var(--space-lg);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1024px) {
+    .features__grid, .stats__grid { grid-template-columns: repeat(2, 1fr); }
+    .destinations__grid { grid-template-columns: repeat(3, 1fr); }
+    .dest-card:first-child { grid-column: span 1; grid-row: span 1; }
+    .membership__grid { grid-template-columns: repeat(2, 1fr); }
+    .about__content { grid-template-columns: 1fr; }
+    .footer__top { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .nav__links { display: none; }
+    .search-bar { flex-direction: column; }
+    .features__grid, .stats__grid, .destinations__grid,
+    .membership__grid { grid-template-columns: 1fr; }
+    .promo { flex-direction: column; text-align: center; }
+    .footer__top { grid-template-columns: 1fr; }
+    .hero__actions { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav__brand">
+    <div class="nav__logo">S</div>
+    星空航空
+  </a>
+  <ul class="nav__links">
+    <li><a href="#">首页</a></li>
+    <li><a href="#">航班查询</a></li>
+    <li><a href="#">目的地</a></li>
+    <li><a href="#">服务与礼遇</a></li>
+    <li><a href="#">常旅客计划</a></li>
+    <li><a href="#">关于我们</a></li>
+  </ul>
+  <button class="nav__cta">登录 / 注册</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero__bg-pattern"></div>
+  <div class="hero__glow"></div>
+  <div class="hero__glow hero__glow--2"></div>
+  <div class="hero__content">
+    <div class="hero__badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+      Skystar Airlines
+    </div>
+    <h1 class="hero__title">
+      每一次起飞<br>
+      <span>都是一次全新的抵达</span>
+    </h1>
+    <p class="hero__subtitle">
+      飞向更远的地方 -- 连接世界，触达梦想
+    </p>
+    <div class="hero__actions">
+      <button class="btn btn--primary">搜索航班</button>
+      <button class="btn btn--ghost">了解星辰会员</button>
+    </div>
+  </div>
+  <div class="hero__scroll">
+    <span>向下探索</span>
+    <div class="hero__scroll-line"></div>
+  </div>
+</section>
+
+<!-- SEARCH BAR -->
+<div class="search-section">
+  <div class="search-bar">
+    <div class="search-field">
+      <label>出发城市</label>
+      <input type="text" placeholder="杭州">
+    </div>
+    <div class="search-field">
+      <label>到达城市</label>
+      <input type="text" placeholder="您想去哪里？">
+    </div>
+    <div class="search-field">
+      <label>出发日期</label>
+      <input type="date">
+    </div>
+    <div class="search-field">
+      <label>返程日期</label>
+      <input type="date">
+    </div>
+    <div class="search-field">
+      <label>舱位</label>
+      <select>
+        <option>经济舱</option>
+        <option>商务舱</option>
+        <option>头等舱</option>
+      </select>
+    </div>
+    <button class="btn btn--primary">搜索航班</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<section class="section stats">
+  <div class="stats__grid">
+    <div class="stat-card">
+      <div class="stat-card__number">186</div>
+      <div class="stat-card__label">机队规模（架）</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__number">129</div>
+      <div class="stat-card__label">覆盖目的地</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__number">600+</div>
+      <div class="stat-card__label">每日执飞航班</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__number">1200万+</div>
+      <div class="stat-card__label">安全飞行小时</div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY CHOOSE -->
+<section class="section">
+  <div class="section__header">
+    <div class="section__eyebrow">Why Choose Skystar</div>
+    <h2 class="section__title">为什么选择星空航空</h2>
+    <p class="section__desc">安全、舒适、准时 -- 我们以核心承诺为基础，为每一位旅客提供超出预期的飞行体验</p>
+  </div>
+  <div class="features__grid">
+    <div class="feature-card">
+      <div class="feature-card__icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3 class="feature-card__title">安全第一，永不妥协</h3>
+      <p class="feature-card__text">平均飞行经验超过9800小时的机长团队，全机队配备波音787与空客A320neo，连续16年零重大事故安全纪录。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      </div>
+      <h3 class="feature-card__title">广泛航线，覆盖全球</h3>
+      <p class="feature-card__text">国内82座城市、47个国际目的地，与全球28家航司代码共享，覆盖190个目的地的出行网络。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h-8l-2 4h12l-2-4z"/></svg>
+      </div>
+      <h3 class="feature-card__title">精心设计的客舱体验</h3>
+      <p class="feature-card__text">商务舱1-2-1全通道平躺座椅、17英寸4K娱乐屏；经济舱行业领先间距，全程免费Wi-Fi覆盖。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      </div>
+      <h3 class="feature-card__title">云端餐饮，匠心呈现</h3>
+      <p class="feature-card__text">与多位知名主厨联名打造机上菜单，融合东方饮食哲学与现代烹饪技术，节假日限定节令料理。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+      </div>
+      <h3 class="feature-card__title">数字化服务，便捷出行</h3>
+      <p class="feature-card__text">App全流程无纸化出行，智能客服"星星"7x24小时四语交互，人脸识别通道平均18分钟完成登机。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </div>
+      <h3 class="feature-card__title">特殊旅客关怀</h3>
+      <p class="feature-card__text">婴幼儿推车寄存、轮椅全程陪同、宠物随行计划，"星空关爱"服务柜台为特殊需求旅客提供全程协助。</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROMO -->
+<section class="section">
+  <div class="promo">
+    <div class="promo__text">
+      <h3 class="promo__title">夏季出行季 -- 特惠机票开抢</h3>
+      <div class="promo__routes">
+        <span class="promo__route">杭州 - 三亚 399元起</span>
+        <span class="promo__route">杭州 - 大阪 1,299元起</span>
+        <span class="promo__route">杭州 - 伦敦 3,899元起</span>
+      </div>
+      <p class="promo__note">优惠有效期至2026年6月30日，数量有限，先订先得</p>
+    </div>
+    <button class="btn btn--primary">查看全部特惠</button>
+  </div>
+</section>
+
+<!-- DESTINATIONS -->
+<section class="section destinations">
+  <div class="section__header">
+    <div class="section__eyebrow">Featured Destinations</div>
+    <h2 class="section__title">精选目的地</h2>
+  </div>
+  <div class="destinations__grid">
+    <div class="dest-card">
+      <div class="dest-card__bg" style="background: linear-gradient(135deg, #0891b2, #06b6d4);"></div>
+      <div class="dest-card__overlay"></div>
+      <div class="dest-card__content">
+        <div class="dest-card__name">三亚</div>
+        <div class="dest-card__tagline">阳光与海浪的完美邂逅</div>
+        <div class="dest-card__info">最快1小时45分直达 / 每日4班</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <div class="dest-card__bg" style="background: linear-gradient(135deg, #059669, #10b981);"></div>
+      <div class="dest-card__overlay"></div>
+      <div class="dest-card__content">
+        <div class="dest-card__name">成都</div>
+        <div class="dest-card__tagline">慢下来，遇见巴蜀</div>
+        <div class="dest-card__info">每日8班 / 支持中转西藏</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <div class="dest-card__bg" style="background: linear-gradient(135deg, #e11d48, #f43f5e);"></div>
+      <div class="dest-card__overlay"></div>
+      <div class="dest-card__content">
+        <div class="dest-card__name">东京</div>
+        <div class="dest-card__tagline">赏樱季专属航班</div>
+        <div class="dest-card__info">每日2班 / 双机场</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <div class="dest-card__bg" style="background: linear-gradient(135deg, #d97706, #f59e0b);"></div>
+      <div class="dest-card__overlay"></div>
+      <div class="dest-card__content">
+        <div class="dest-card__name">迪拜</div>
+        <div class="dest-card__tagline">沙漠奢旅的起点</div>
+        <div class="dest-card__info">每日1班 / 商务舱全程平躺</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <div class="dest-card__bg" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);"></div>
+      <div class="dest-card__overlay"></div>
+      <div class="dest-card__content">
+        <div class="dest-card__name">巴黎</div>
+        <div class="dest-card__tagline">艺术与浪漫在等你</div>
+        <div class="dest-card__info">每周5班 / CDG直航</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERSHIP -->
+<section class="section">
+  <div class="section__header">
+    <div class="section__eyebrow">Skystar Frequent Flyer</div>
+    <h2 class="section__title">星辰会员计划</h2>
+    <p class="section__desc">每一次飞行都在积累，里程可兑换免费机票、升舱、酒店住宿及300+合作品牌礼遇</p>
+  </div>
+  <div class="membership__grid">
+    <div class="member-card">
+      <div class="member-card__tier">Silver</div>
+      <div class="member-card__name">银卡</div>
+      <div class="member-card__req">年飞 25,000 里程</div>
+      <ul class="member-card__benefits">
+        <li>优先值机</li>
+        <li>额外行李额度</li>
+        <li>里程累积加速</li>
+      </ul>
+    </div>
+    <div class="member-card member-card--featured">
+      <div class="member-card__tier">Gold</div>
+      <div class="member-card__name">金卡</div>
+      <div class="member-card__req">年飞 50,000 里程</div>
+      <ul class="member-card__benefits">
+        <li>贵宾休息室</li>
+        <li>优先登机</li>
+        <li>银卡全部权益</li>
+      </ul>
+    </div>
+    <div class="member-card">
+      <div class="member-card__tier">Platinum</div>
+      <div class="member-card__name">白金卡</div>
+      <div class="member-card__req">年飞 100,000 里程</div>
+      <ul class="member-card__benefits">
+        <li>专属出行顾问</li>
+        <li>头等舱升级券</li>
+        <li>金卡全部权益</li>
+      </ul>
+    </div>
+    <div class="member-card">
+      <div class="member-card__tier">Diamond</div>
+      <div class="member-card__name">钻石卡</div>
+      <div class="member-card__req">邀请制</div>
+      <ul class="member-card__benefits">
+        <li>全部权益</li>
+        <li>私人定制服务</li>
+        <li>全球机场贵宾通道</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="section about">
+  <div class="about__content">
+    <div class="about__text">
+      <div class="section__eyebrow">About Skystar Airlines</div>
+      <h3>关于星空航空</h3>
+      <p>星空航空成立于2008年，总部位于杭州萧山国际机场。机队规模达186架，平均机龄仅5.2年，是国内机队最年轻的航空公司之一。</p>
+      <p>我们相信，航空出行不应该只是从A到B的位移，而应该是一段有温度的旅程。</p>
+    </div>
+    <div class="about__highlight">
+      <h4>可持续承诺</h4>
+      <p>2026年起全面加入CORSIA国际碳抵消机制，承诺2035年实现单位客公里碳排放较2019年基准下降40%。新引进机型全部选用新一代节能发动机，三大基地机场地面车辆全面电动化。</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section cta-section">
+  <div class="section__header">
+    <div class="section__eyebrow">Join Skystar</div>
+    <h2 class="section__title">立即注册星辰会员</h2>
+    <p class="section__desc">注册即送2,000里程开户礼，开启您的星辰之旅</p>
+  </div>
+  <button class="btn btn--primary" style="font-size: var(--font-size-lg); padding: 18px 48px;">免费注册</button>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer__top">
+    <div>
+      <div class="footer__brand-name">星空航空 Skystar Airlines</div>
+      <p class="footer__brand-desc">杭州萧山国际机场运营基地<br>客服热线：400-800-9988（7x24小时）<br>CATA中国航空运输协会会员<br>IATA国际航空运输协会认证</p>
+    </div>
+    <div>
+      <div class="footer__col-title">快速链接</div>
+      <ul class="footer__links">
+        <li><a href="#">航班状态查询</a></li>
+        <li><a href="#">行李规定</a></li>
+        <li><a href="#">退改签政策</a></li>
+        <li><a href="#">旅行保险</a></li>
+        <li><a href="#">常见问题</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer__col-title">服务</div>
+      <ul class="footer__links">
+        <li><a href="#">企业商务服务</a></li>
+        <li><a href="#">宠物随行计划</a></li>
+        <li><a href="#">特殊旅客关怀</a></li>
+        <li><a href="#">机场服务</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer__col-title">关注我们</div>
+      <ul class="footer__links">
+        <li><a href="#">微信公众号「星空航空」</a></li>
+        <li><a href="#">微博 @星空航空官方</a></li>
+        <li><a href="#">抖音 @skystarairlines</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer__bottom">
+    <span>&copy; 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号 保留所有权利</span>
+    <span>隐私政策 | 用户协议 | Cookie设置</span>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll effect
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('nav--scrolled', window.scrollY > 80);
+  }, { passive: true });
+
+  // Intersection Observer for fade-in
+  const observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.feature-card, .stat-card, .dest-card, .member-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)';
+    observer.observe(el);
+  });
+
+  // Stagger animation
+  document.querySelectorAll('.features__grid, .stats__grid, .destinations__grid, .membership__grid').forEach(grid => {
+    const children = grid.children;
+    Array.from(children).forEach((child, i) => {
+      child.style.transitionDelay = `${i * 80}ms`;
+    });
+  });
+</script>
+</body>
+</html>

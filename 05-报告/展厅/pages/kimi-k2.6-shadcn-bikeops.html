@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>城市运营管理后台 - 共享两轮</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            border: 'hsl(var(--border))',
+            input: 'hsl(var(--input))',
+            ring: 'hsl(var(--ring))',
+            background: 'hsl(var(--background))',
+            foreground: 'hsl(var(--foreground))',
+            primary: {
+              DEFAULT: 'hsl(var(--primary))',
+              foreground: 'hsl(var(--primary-foreground))',
+            },
+            secondary: {
+              DEFAULT: 'hsl(var(--secondary))',
+              foreground: 'hsl(var(--secondary-foreground))',
+            },
+            destructive: {
+              DEFAULT: 'hsl(var(--destructive))',
+              foreground: 'hsl(var(--destructive-foreground))',
+            },
+            muted: {
+              DEFAULT: 'hsl(var(--muted))',
+              foreground: 'hsl(var(--muted-foreground))',
+            },
+            accent: {
+              DEFAULT: 'hsl(var(--accent))',
+              foreground: 'hsl(var(--accent-foreground))',
+            },
+            popover: {
+              DEFAULT: 'hsl(var(--popover))',
+              foreground: 'hsl(var(--popover-foreground))',
+            },
+            card: {
+              DEFAULT: 'hsl(var(--card))',
+              foreground: 'hsl(var(--card-foreground))',
+            },
+          },
+          borderRadius: {
+            lg: 'var(--radius)',
+            md: 'calc(var(--radius) - 2px)',
+            sm: 'calc(var(--radius) - 4px)',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 84% 4.9%;
+      --primary: 221.2 83.2% 53.3%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      --muted: 210 40% 96.1%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 96.1%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 221.2 83.2% 53.3%;
+      --radius: 0.75rem;
+    }
+    html, body { font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif; background: hsl(var(--background)); }
+    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; position: fixed; left: 0; top: 0; z-index: 50; }
+    .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin: 0 8px; border-radius: calc(var(--radius) - 2px); color: hsl(var(--muted-foreground)); font-size: 14px; cursor: pointer; transition: all 0.15s; }
+    .sidebar-item:hover { color: hsl(var(--foreground)); background: hsl(var(--accent)); }
+    .sidebar-item.active { color: hsl(var(--primary-foreground)); background: hsl(var(--primary)); }
+    .main-content { margin-left: 240px; min-height: 100vh; background: hsl(var(--background)); }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius); box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04); }
+    .card-header { padding: 24px 24px 0; }
+    .card-title { font-size: 1rem; font-weight: 600; line-height: 1.25; color: hsl(var(--card-foreground)); }
+    .card-description { font-size: 0.875rem; color: hsl(var(--muted-foreground)); margin-top: 4px; }
+    .card-content { padding: 24px; }
+    .card-footer { padding: 0 24px 24px; display: flex; align-items: center; gap: 0.5rem; }
+    .badge { display: inline-flex; align-items: center; border-radius: calc(var(--radius) - 4px); padding: 0.125rem 0.625rem; font-size: 0.75rem; font-weight: 500; line-height: 1; border: 1px solid transparent; }
+    .badge-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); border-color: hsl(var(--border)); }
+    .badge-destructive { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+    .badge-outline { border-color: hsl(var(--border)); color: hsl(var(--foreground)); background: transparent; }
+    .separator { height: 1px; background: hsl(var(--border)); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: calc(var(--radius) - 2px); font-size: 0.875rem; font-weight: 500; padding: 0.5rem 1rem; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+    .btn-ghost:hover { background: hsl(var(--accent)); }
+    .btn-outline { border: 1px solid hsl(var(--border)); background: transparent; }
+    .table-row:hover { background: hsl(var(--muted)); }
+    .alert { display: flex; gap: 0.75rem; padding: 0.875rem; border-radius: calc(var(--radius) - 2px); border: 1px solid hsl(var(--border)); }
+    .alert-destructive { background: hsl(0 84% 60% / 0.05); border-color: hsl(0 84% 60% / 0.2); color: hsl(var(--destructive)); }
+    .alert-warning { background: hsl(38 92% 50% / 0.05); border-color: hsl(38 92% 50% / 0.2); color: hsl(32 95% 44%); }
+    .alert-success { background: hsl(142 71% 45% / 0.05); border-color: hsl(142 71% 45% / 0.2); color: hsl(142 71% 35%); }
+    .avatar { position: relative; display: flex; size: 2rem; shrink: 0; overflow: hidden; border-radius: 50%; }
+    .avatar-fallback { display: flex; size: 100%; align-items: center; justify-content: center; border-radius: 50%; background: hsl(var(--muted)); font-size: 0.875rem; font-weight: 500; }
+    .progress { height: 0.5rem; width: 100%; overflow: hidden; border-radius: 9999px; background: hsl(var(--secondary)); }
+    .progress-bar { height: 100%; transition: all 0.3s; border-radius: 9999px; }
+    .tabs-list { display: inline-flex; height: 2.5rem; items-center; justify-center; rounded-lg bg-muted p-1; color: muted-foreground; }
+    .tabs-trigger { display: inline-flex; items-center; justify-center; white-space: nowrap; rounded-md px-3 py-1 text-sm font-medium; transition: all 0.15s; }
+    .tabs-trigger-active { background: hsl(var(--background)); color: hsl(var(--foreground)); shadow-sm; }
+    .chart-bar { background: linear-gradient(to top, hsl(var(--primary)), hsl(217 91% 70%)); border-radius: 4px 4px 0 0; }
+    .chart-bar-muted { background: hsl(var(--muted)); border-radius: 4px 4px 0 0; }
+    .truncate-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="flex">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="p-5 flex items-center gap-3">
+        <div class="size-8 rounded-lg bg-blue-500 flex items-center justify-center text-white font-bold text-sm">运</div>
+        <div>
+          <div class="text-white font-semibold text-sm">城市运营后台</div>
+          <div class="text-white/40 text-xs">北京市</div>
+        </div>
+      </div>
+      <nav class="mt-2">
+        <div class="sidebar-item active">
+          <i data-lucide="layout-dashboard" class="size-[18px]"></i>
+          <span>运营总览</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="map" class="size-[18px]"></i>
+          <span>地图调度中心</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="bike" class="size-[18px]"></i>
+          <span>车队资产</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="battery-charging" class="size-[18px]"></i>
+          <span>电池与能源</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="wrench" class="size-[18px]"></i>
+          <span>运维工单</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="map-pin" class="size-[18px]"></i>
+          <span>规则与区域</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="shield-check" class="size-[18px]"></i>
+          <span>合规监管</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="bar-chart-3" class="size-[18px]"></i>
+          <span>数据报表</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="users" class="size-[18px]"></i>
+          <span>组织与权限</span>
+        </div>
+        <div class="sidebar-item">
+          <i data-lucide="settings" class="size-[18px]"></i>
+          <span>系统配置</span>
+        </div>
+      </nav>
+      <div class="absolute bottom-0 left-0 right-0 p-4">
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+          <div class="avatar size-8">
+            <div class="avatar-fallback size-8 bg-blue-500 text-white text-xs">李</div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm text-white truncate-text">李经理</div>
+            <div class="text-xs text-white/40">城市运营经理</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 顶部栏 -->
+      <header class="bg-white border-b border-border px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>运营总览</span>
+            <i data-lucide="chevron-right" class="size-3.5"></i>
+            <span class="text-foreground font-medium">Dashboard</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-md text-sm">
+            <i data-lucide="calendar" class="size-3.5"></i>
+            <span>今日</span>
+            <i data-lucide="chevron-down" class="size-3.5"></i>
+          </div>
+          <button class="btn btn-ghost size-9 p-0 relative">
+            <i data-lucide="bell" class="size-[18px]"></i>
+            <span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="p-6">
+        <!-- 核心KPI -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="card">
+            <div class="card-content pb-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">今日订单数</span>
+                <span class="badge badge-secondary">+12.5%</span>
+              </div>
+              <div class="text-3xl font-bold mt-2">28,456</div>
+              <div class="text-xs text-muted-foreground mt-1">较昨日 +3,156</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-content pb-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">今日GMV</span>
+                <span class="badge badge-secondary">+8.3%</span>
+              </div>
+              <div class="text-3xl font-bold mt-2">¥142,380</div>
+              <div class="text-xs text-muted-foreground mt-1">较昨日 +10,920</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-content pb-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">车辆可用率</span>
+                <span class="badge badge-destructive">-2.1%</span>
+              </div>
+              <div class="text-3xl font-bold mt-2">87.2%</div>
+              <div class="text-xs text-muted-foreground mt-1">目标 90%</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-content pb-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">活跃用户(DAU)</span>
+                <span class="badge badge-secondary">+5.7%</span>
+              </div>
+              <div class="text-3xl font-bold mt-2">18,932</div>
+              <div class="text-xs text-muted-foreground mt-1">较昨日 +1,024</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第二行 -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <!-- 车辆状态分布 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">车辆状态分布</div>
+              <div class="card-description">实时车队健康状态</div>
+            </div>
+            <div class="card-content">
+              <div class="flex items-center gap-6">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="hsl(var(--muted))" stroke-width="12"/>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="hsl(142 71% 45%)" stroke-width="12" stroke-dasharray="219 314" stroke-dashoffset="0" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="hsl(38 92% 50%)" stroke-width="12" stroke-dasharray="63 314" stroke-dashoffset="-219" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="hsl(0 84% 60%)" stroke-width="12" stroke-dasharray="19 314" stroke-dashoffset="-282" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
+                  <text x="60" y="55" text-anchor="middle" font-size="20" font-weight="700" fill="hsl(var(--foreground))">25,000</text>
+                  <text x="60" y="72" text-anchor="middle" font-size="11" fill="hsl(var(--muted-foreground))">总车辆</text>
+                </svg>
+                <div class="flex-1 flex flex-col gap-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-green-500"></span>
+                      <span class="text-sm text-foreground">可用</span>
+                    </div>
+                    <span class="text-sm font-medium">17,400</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-orange-500"></span>
+                      <span class="text-sm text-foreground">使用中</span>
+                    </div>
+                    <span class="text-sm font-medium">5,000</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-red-500"></span>
+                      <span class="text-sm text-foreground">故障/离线</span>
+                    </div>
+                    <span class="text-sm font-medium">1,500</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-gray-300"></span>
+                      <span class="text-sm text-foreground">低电/回收</span>
+                    </div>
+                    <span class="text-sm font-medium">1,100</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 电量分布 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">电单车电量分布</div>
+              <div class="card-description">按SOC分段统计</div>
+            </div>
+            <div class="card-content">
+              <div class="flex flex-col gap-4">
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span class="text-foreground">60% - 100%</span>
+                    <span class="font-medium">8,500辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar bg-green-500" style="width: 68%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span class="text-foreground">30% - 60%</span>
+                    <span class="font-medium">3,200辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar bg-blue-500" style="width: 26%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span class="text-foreground">10% - 30%</span>
+                    <span class="font-medium">600辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar bg-orange-500" style="width: 5%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span class="text-foreground">0% - 10%</span>
+                    <span class="font-medium">180辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar bg-red-500" style="width: 1.5%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="alert alert-warning mt-4">
+                <i data-lucide="alert-triangle" class="size-4 shrink-0 mt-0.5"></i>
+                <div class="text-sm">低电车辆 780 辆，建议优先换电</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 实时告警 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <div class="card-title">实时告警</div>
+                <span class="badge badge-destructive">12 未处理</span>
+              </div>
+              <div class="card-description">最近触发的异常事件</div>
+            </div>
+            <div class="card-content pt-4">
+              <div class="flex flex-col gap-3">
+                <div class="alert alert-destructive">
+                  <i data-lucide="alert-circle" class="size-4 shrink-0 mt-0.5"></i>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-medium">越界告警</span>
+                      <span class="text-xs opacity-70">2分钟前</span>
+                    </div>
+                    <p class="text-xs mt-0.5 opacity-80">车辆 #BJ202400123 超出运营围栏</p>
+                  </div>
+                </div>
+                <div class="alert alert-warning">
+                  <i data-lucide="battery-warning" class="size-4 shrink-0 mt-0.5"></i>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-medium">低电告警</span>
+                      <span class="text-xs opacity-70">5分钟前</span>
+                    </div>
+                    <p class="text-xs mt-0.5 opacity-80">车辆 #BJ202400456 电量低于10%</p>
+                  </div>
+                </div>
+                <div class="alert alert-warning">
+                  <i data-lucide="map-pin-off" class="size-4 shrink-0 mt-0.5"></i>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-medium">禁停告警</span>
+                      <span class="text-xs opacity-70">8分钟前</span>
+                    </div>
+                    <p class="text-xs mt-0.5 opacity-80">车辆 #BJ202400789 违规停放</p>
+                  </div>
+                </div>
+                <div class="alert alert-success">
+                  <i data-lucide="check-circle-2" class="size-4 shrink-0 mt-0.5"></i>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-medium">离线恢复</span>
+                      <span class="text-xs opacity-70">12分钟前</span>
+                    </div>
+                    <p class="text-xs mt-0.5 opacity-80">车辆 #BJ202400321 已重新上线</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第三行 -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <!-- 订单趋势 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <div class="card-title">今日订单趋势</div>
+                <div class="flex items-center gap-4 text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="size-2.5 rounded-sm bg-blue-500"></span>
+                    <span class="text-muted-foreground">今日</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="size-2.5 rounded-sm bg-muted"></span>
+                    <span class="text-muted-foreground">昨日</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-content">
+              <div class="flex items-end gap-2 h-40">
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 40px"></div>
+                    <div class="flex-1 chart-bar" style="height: 55px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">06:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 80px"></div>
+                    <div class="flex-1 chart-bar" style="height: 110px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">08:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 60px"></div>
+                    <div class="flex-1 chart-bar" style="height: 75px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">10:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 45px"></div>
+                    <div class="flex-1 chart-bar" style="height: 50px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">12:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 70px"></div>
+                    <div class="flex-1 chart-bar" style="height: 90px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">14:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 120px"></div>
+                    <div class="flex-1 chart-bar" style="height: 145px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">17:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 100px"></div>
+                    <div class="flex-1 chart-bar" style="height: 130px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">19:00</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full flex items-end gap-0.5">
+                    <div class="flex-1 chart-bar-muted" style="height: 55px"></div>
+                    <div class="flex-1 chart-bar" style="height: 70px"></div>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground">21:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 工单概览 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <div class="card-title">工单与人效概览</div>
+                <button class="text-sm text-blue-600 hover:underline">查看全部</button>
+              </div>
+              <div class="card-description">今日工单执行状态统计</div>
+            </div>
+            <div class="card-content">
+              <div class="grid grid-cols-4 gap-3 mb-5">
+                <div class="text-center p-3 bg-muted rounded-lg">
+                  <div class="text-lg font-bold text-foreground">45</div>
+                  <div class="text-xs text-muted-foreground mt-1">待派单</div>
+                </div>
+                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                  <div class="text-lg font-bold text-blue-600">128</div>
+                  <div class="text-xs text-muted-foreground mt-1">执行中</div>
+                </div>
+                <div class="text-center p-3 bg-orange-50 rounded-lg">
+                  <div class="text-lg font-bold text-orange-600">18</div>
+                  <div class="text-xs text-muted-foreground mt-1">临近超时</div>
+                </div>
+                <div class="text-center p-3 bg-green-50 rounded-lg">
+                  <div class="text-lg font-bold text-green-600">342</div>
+                  <div class="text-xs text-muted-foreground mt-1">今日完成</div>
+                </div>
+              </div>
+              <div class="separator mb-4"></div>
+              <h4 class="text-sm font-medium text-foreground mb-3">人效排行</h4>
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="size-6 rounded bg-orange-500 text-white text-xs flex items-center justify-center font-bold shrink-0">1</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-foreground">王师傅</span>
+                      <span class="text-sm font-medium">28单</span>
+                    </div>
+                    <div class="progress mt-1.5">
+                      <div class="progress-bar bg-orange-500" style="width: 93%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="size-6 rounded bg-muted text-muted-foreground text-xs flex items-center justify-center font-bold shrink-0">2</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-foreground">李师傅</span>
+                      <span class="text-sm font-medium">24单</span>
+                    </div>
+                    <div class="progress mt-1.5">
+                      <div class="progress-bar bg-blue-400" style="width: 80%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="size-6 rounded bg-muted text-muted-foreground text-xs flex items-center justify-center font-bold shrink-0">3</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-foreground">张师傅</span>
+                      <span class="text-sm font-medium">21单</span>
+                    </div>
+                    <div class="progress mt-1.5">
+                      <div class="progress-bar bg-blue-400" style="width: 70%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第四行 -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 供需调度 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <div class="card-title">供需与调度态势</div>
+                <span class="badge badge-secondary">早高峰预警</span>
+              </div>
+              <div class="card-description">实时供需缺口与调度建议</div>
+            </div>
+            <div class="card-content">
+              <div class="flex flex-col gap-4">
+                <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100">
+                  <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                      <i data-lucide="plus" class="size-5"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-foreground">缺车区域</div>
+                      <div class="text-xs text-muted-foreground">朝阳区国贸 · 三里屯</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-lg font-bold text-red-600">12个</div>
+                    <div class="text-xs text-muted-foreground">建议补车 340辆</div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100">
+                  <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+                      <i data-lucide="minus" class="size-5"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-foreground">堆车区域</div>
+                      <div class="text-xs text-muted-foreground">海淀区中关村 · 西二旗</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-lg font-bold text-green-600">8个</div>
+                    <div class="text-xs text-muted-foreground">建议调离 210辆</div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="text-center p-3 bg-muted rounded-lg">
+                    <div class="text-base font-bold text-foreground">85%</div>
+                    <div class="text-xs text-muted-foreground mt-1">调度完成率</div>
+                  </div>
+                  <div class="text-center p-3 bg-muted rounded-lg">
+                    <div class="text-base font-bold text-foreground">6</div>
+                    <div class="text-xs text-muted-foreground mt-1">未完成任务</div>
+                  </div>
+                  <div class="text-center p-3 bg-muted rounded-lg">
+                    <div class="text-base font-bold text-foreground">2</div>
+                    <div class="text-xs text-muted-foreground mt-1">超时任务</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 合规概览 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <div class="card-title">合规与治理概览</div>
+                <span class="badge badge-secondary">正常</span>
+              </div>
+              <div class="card-description">城市级合规矩阵与监管数据</div>
+            </div>
+            <div class="card-content">
+              <div class="flex flex-col gap-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="p-4 border border-border rounded-lg">
+                    <div class="text-xs text-muted-foreground">今日禁停次数</div>
+                    <div class="text-2xl font-bold text-foreground mt-1">23</div>
+                    <div class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <i data-lucide="trending-down" class="size-3"></i>
+                      -15% 较昨日
+                    </div>
+                  </div>
+                  <div class="p-4 border border-border rounded-lg">
+                    <div class="text-xs text-muted-foreground">今日越界次数</div>
+                    <div class="text-2xl font-bold text-foreground mt-1">8</div>
+                    <div class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <i data-lucide="trending-down" class="size-3"></i>
+                      -30% 较昨日
+                    </div>
+                  </div>
+                </div>
+                <div class="p-4 border border-border rounded-lg">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-foreground">投放量 vs 许可上限</span>
+                    <span class="text-sm font-medium">25,000 / 30,000</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar bg-blue-500" style="width: 83%"></div>
+                  </div>
+                  <div class="text-xs text-muted-foreground mt-1.5">使用率 83.3%，未超投</div>
+                </div>
+                <div class="p-4 border border-border rounded-lg">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-sm text-foreground">数据共享接口状态</div>
+                      <div class="text-xs text-muted-foreground mt-0.5">MDS/GBFS 政务接口</div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="size-2 rounded-full bg-green-500"></span>
+                      <span class="text-sm font-medium text-green-600">正常</span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-muted-foreground mt-2">最近上报：2分钟前 · 成功率 99.8%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

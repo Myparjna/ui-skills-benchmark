@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>两轮数据中枢 - Canvas Design Philosophy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Canvas Design Philosophy: "Geometric Systems" - Grid-based precision with bold geometric forms */
+        :root {
+            --system-black: #0a0a0a;
+            --system-white: #ffffff;
+            --system-gray: #2a2a2a;
+            --system-light: #f0f0f0;
+            --accent-orange: #ff6b35;
+            --accent-green: #00ff88;
+            --accent-blue: #0088ff;
+            --grid-unit: 8px;
+            --golden-ratio: 1.618;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--system-white);
+            color: var(--system-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Grid System Overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.03;
+            background-image: 
+                linear-gradient(var(--system-black) 1px, transparent 1px),
+                linear-gradient(90deg, var(--system-black) 1px, transparent 1px);
+            background-size: var(--grid-unit) var(--grid-unit);
+        }
+        
+        /* Monumental Header - Geometric Mass */
+        .header-monument {
+            background: var(--system-black);
+            min-height: 40vh;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            position: relative;
+        }
+        
+        .header-left {
+            background: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .header-center {
+            padding: calc(var(--grid-unit) * 8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .header-right {
+            background: var(--system-gray);
+            display: flex;
+            align-items: flex-end;
+            padding: calc(var(--grid-unit) * 4);
+        }
+        
+        .brand-massive {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(48px, 10vw, 96px);
+            font-weight: 700;
+            color: var(--system-white);
+            letter-spacing: -4px;
+            line-height: 0.9;
+            margin-bottom: calc(var(--grid-unit) * 2);
+        }
+        
+        .system-label {
+            font-size: 12px;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: calc(var(--grid-unit) * 6);
+        }
+        
+        .geometric-accent {
+            width: calc(var(--grid-unit) * 3);
+            height: calc(var(--grid-unit) * 3);
+            background: var(--accent-green);
+        }
+        
+        /* Data Grid - Precise Layout */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--system-light);
+            border-bottom: 4px solid var(--system-black);
+        }
+        
+        .data-cell {
+            padding: calc(var(--grid-unit) * 6);
+            border-right: 1px solid rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .data-cell:last-child {
+            border-right: none;
+        }
+        
+        .data-label {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--system-gray);
+            margin-bottom: calc(var(--grid-unit) * 2);
+        }
+        
+        .data-value {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: calc(var(--grid-unit));
+        }
+        
+        .data-value.orange { color: var(--accent-orange); }
+        .data-value.green { color: var(--accent-green); }
+        .data-value.blue { color: var(--accent-blue); }
+        
+        .data-delta {
+            font-size: 11px;
+            color: var(--accent-green);
+        }
+        
+        .data-delta.negative {
+            color: var(--accent-orange);
+        }
+        
+        /* Control Panel - Asymmetric Grid */
+        .control-panel {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            min-height: 60vh;
+        }
+        
+        .map-geometric {
+            background: var(--system-black);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        .map-marker {
+            position: absolute;
+            border-radius: 50%;
+        }
+        
+        .map-marker.active {
+            width: 16px;
+            height: 16px;
+            background: var(--accent-green);
+            box-shadow: 0 0 20px var(--accent-green);
+        }
+        
+        .map-marker.warning {
+            width: 12px;
+            height: 12px;
+            background: var(--accent-orange);
+            box-shadow: 0 0 15px var(--accent-orange);
+        }
+        
+        .map-marker.idle {
+            width: 8px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .data-sidebar {
+            background: var(--system-gray);
+            padding: calc(var(--grid-unit) * 6);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-title {
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: calc(var(--grid-unit) * 4);
+            padding-bottom: calc(var(--grid-unit) * 2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .ticket-geometric {
+            background: rgba(255,255,255,0.05);
+            padding: calc(var(--grid-unit) * 3);
+            margin-bottom: calc(var(--grid-unit) * 2);
+            border-left: 3px solid var(--accent-orange);
+        }
+        
+        .ticket-id {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: calc(var(--grid-unit));
+        }
+        
+        .ticket-title {
+            font-size: 14px;
+            color: var(--system-white);
+            margin-bottom: calc(var(--grid-unit));
+        }
+        
+        .ticket-meta {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .ticket-status {
+            padding: calc(var(--grid-unit) / 2) calc(var(--grid-unit) * 2);
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .ticket-status.urgent {
+            background: var(--accent-orange);
+            color: var(--system-black);
+        }
+        
+        .ticket-status.processing {
+            background: var(--accent-blue);
+            color: var(--system-white);
+        }
+        
+        .ticket-status.resolved {
+            background: var(--accent-green);
+            color: var(--system-black);
+        }
+        
+        /* System Matrix - Tabular Precision */
+        .system-matrix {
+            padding: calc(var(--grid-unit) * 8);
+            background: var(--system-light);
+        }
+        
+        .matrix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(var(--grid-unit) * 6);
+        }
+        
+        .matrix-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            border: 2px solid var(--system-black);
+        }
+        
+        .matrix-cell {
+            padding: calc(var(--grid-unit) * 3);
+            border: 1px solid rgba(0,0,0,0.1);
+            font-size: 13px;
+        }
+        
+        .matrix-header-cell {
+            background: var(--system-black);
+            color: var(--system-white);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .matrix-row:hover .matrix-cell {
+            background: rgba(0,0,0,0.02);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.active {
+            background: var(--accent-green);
+        }
+        
+        .status-indicator.warning {
+            background: var(--accent-orange);
+        }
+        
+        .status-indicator.offline {
+            background: var(--system-gray);
+        }
+        
+        /* Feed Stream - Linear Data */
+        .feed-stream {
+            background: var(--system-black);
+            padding: calc(var(--grid-unit) * 6);
+        }
+        
+        .feed-title {
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: calc(var(--grid-unit) * 4);
+        }
+        
+        .feed-item {
+            display: grid;
+            grid-template-columns: 100px 120px 1fr;
+            gap: calc(var(--grid-unit) * 4);
+            padding: calc(var(--grid-unit) * 2) 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+        }
+        
+        .feed-time {
+            color: rgba(255,255,255,0.3);
+        }
+        
+        .feed-type {
+            color: var(--accent-orange);
+        }
+        
+        .feed-content {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* Footer Block - Geometric Closure */
+        .footer-block {
+            background: var(--system-black);
+            color: var(--system-white);
+            padding: calc(var(--grid-unit) * 8);
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: calc(var(--grid-unit) * 8);
+            border-top: 4px solid var(--accent-orange);
+        }
+        
+        .footer-brand {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: calc(var(--grid-unit) * 2);
+        }
+        
+        .footer-text {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+        }
+        
+        .footer-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--grid-unit) * 2);
+        }
+        
+        .footer-link {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: calc(var(--grid-unit)) 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .footer-link:hover {
+            color: var(--accent-orange);
+        }
+        
+        .footer-system {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+        }
+        
+        .system-code {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: calc(var(--grid-unit));
+        }
+        
+        .geometric-closing {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .geo-block {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .geo-block:nth-child(1) { background: var(--accent-orange); }
+        .geo-block:nth-child(2) { background: var(--accent-green); }
+        .geo-block:nth-child(3) { background: var(--accent-blue); }
+        .geo-block:nth-child(4) { background: var(--system-white); }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .header-monument {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-left,
+            .header-right {
+                display: none;
+            }
+            
+            .data-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .matrix-grid {
+                overflow-x: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-block {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-system {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay"></div>
+    
+    <header class="header-monument">
+        <div class="header-left">
+            <div class="geometric-accent"></div>
+        </div>
+        <div class="header-center">
+            <div class="system-label">SYSTEM CONTROL CENTER</div>
+            <h1 class="brand-massive">两轮数据<br>中枢</h1>
+        </div>
+        <div class="header-right">
+            <div class="geometric-accent"></div>
+        </div>
+    </header>
+    
+    <section class="data-grid">
+        <div class="data-cell">
+            <div class="data-label">Active Units</div>
+            <div class="data-value orange">2,847</div>
+            <div class="data-delta">↑ 12.4%</div>
+        </div>
+        <div class="data-cell">
+            <div class="data-label">Daily Trips</div>
+            <div class="data-value green">1,459</div>
+            <div class="data-delta">↑ 8.2%</div>
+        </div>
+        <div class="data-cell">
+            <div class="data-label">Open Tickets</div>
+            <div class="data-value blue">23</div>
+            <div class="data-delta negative">↑ 3</div>
+        </div>
+        <div class="data-cell">
+            <div class="data-label">Revenue</div>
+            <div class="data-value">¥18,420</div>
+            <div class="data-delta">↑ 15.6%</div>
+        </div>
+    </section>
+    
+    <section class="control-panel">
+        <div class="map-geometric">
+            <div class="map-grid-lines"></div>
+            <div class="map-marker active" style="top: 25%; left: 30%;"></div>
+            <div class="map-marker active" style="top: 40%; left: 55%;"></div>
+            <div class="map-marker warning" style="top: 60%; left: 45%;"></div>
+            <div class="map-marker active" style="top: 35%; left: 70%;"></div>
+            <div class="map-marker active" style="top: 75%; left: 60%;"></div>
+            <div class="map-marker warning" style="top: 45%; left: 25%;"></div>
+            <div class="map-marker idle" style="top: 55%; left: 80%;"></div>
+            <div class="map-marker idle" style="top: 65%; left: 35%;"></div>
+            <div class="map-marker idle" style="top: 30%; left: 50%;"></div>
+        </div>
+        
+        <div class="data-sidebar">
+            <div class="sidebar-title">Open Tickets</div>
+            
+            <div class="ticket-geometric">
+                <div class="ticket-id">#T-2847</div>
+                <div class="ticket-title">Battery fault - Unit #2847</div>
+                <div class="ticket-meta">
+                    <span>Chaoyang District</span>
+                    <span class="ticket-status urgent">Urgent</span>
+                </div>
+            </div>
+            
+            <div class="ticket-geometric">
+                <div class="ticket-id">#T-2848</div>
+                <div class="ticket-title">GPS Signal Lost - Unit #1923</div>
+                <div class="ticket-meta">
+                    <span>Haidian District</span>
+                    <span class="ticket-status processing">Active</span>
+                </div>
+            </div>
+            
+            <div class="ticket-geometric">
+                <div class="ticket-id">#T-2849</div>
+                <div class="ticket-title">Scheduled Maintenance - Batch #B45</div>
+                <div class="ticket-meta">
+                    <span>Xicheng District</span>
+                    <span class="ticket-status resolved">Done</span>
+                </div>
+            </div>
+            
+            <div class="ticket-geometric">
+                <div class="ticket-id">#T-2850</div>
+                <div class="ticket-title">User complaint - Billing error</div>
+                <div class="ticket-meta">
+                    <span>User #U892</span>
+                    <span class="ticket-status urgent">Urgent</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="system-matrix">
+        <div class="matrix-header">
+            <h2 class="matrix-title">Fleet Matrix</h2>
+        </div>
+        
+        <div class="matrix-grid">
+            <div class="matrix-cell matrix-header-cell">ID</div>
+            <div class="matrix-cell matrix-header-cell">Zone</div>
+            <div class="matrix-cell matrix-header-cell">Battery</div>
+            <div class="matrix-cell matrix-header-cell">Last Active</div>
+            <div class="matrix-cell matrix-header-cell">Status</div>
+            <div class="matrix-cell matrix-header-cell">Alert</div>
+            
+            <div class="matrix-row">
+                <div class="matrix-cell">#EV-2847</div>
+                <div class="matrix-cell">Chaoyang CBD</div>
+                <div class="matrix-cell">85%</div>
+                <div class="matrix-cell">5 min ago</div>
+                <div class="matrix-cell"><span class="status-indicator active"></span>Active</div>
+                <div class="matrix-cell">-</div>
+            </div>
+            
+            <div class="matrix-row">
+                <div class="matrix-cell">#EV-2848</div>
+                <div class="matrix-cell">Haidian Zhongguancun</div>
+                <div class="matrix-cell">12%</div>
+                <div class="matrix-cell">1 hour ago</div>
+                <div class="matrix-cell"><span class="status-indicator warning"></span>Low Battery</div>
+                <div class="matrix-cell">!</div>
+            </div>
+            
+            <div class="matrix-row">
+                <div class="matrix-cell">#EV-2849</div>
+                <div class="matrix-cell">Xicheng Finance St</div>
+                <div class="matrix-cell">67%</div>
+                <div class="matrix-cell">30 min ago</div>
+                <div class="matrix-cell"><span class="status-indicator active"></span>Active</div>
+                <div class="matrix-cell">-</div>
+            </div>
+            
+            <div class="matrix-row">
+                <div class="matrix-cell">#EV-2850</div>
+                <div class="matrix-cell">Dongcheng Wangfujing</div>
+                <div class="matrix-cell">45%</div>
+                <div class="matrix-cell">45 min ago</div>
+                <div class="matrix-cell"><span class="status-indicator active"></span>Active</div>
+                <div class="matrix-cell">-</div>
+            </div>
+            
+            <div class="matrix-row">
+                <div class="matrix-cell">#EV-2851</div>
+                <div class="matrix-cell">Fengtai Fangzhuang</div>
+                <div class="matrix-cell">3%</div>
+                <div class="matrix-cell">2 hours ago</div>
+                <div class="matrix-cell"><span class="status-indicator offline"></span>Offline</div>
+                <div class="matrix-cell">!!</div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="feed-stream">
+        <div class="feed-title">Live Data Stream</div>
+        
+        <div class="feed-item">
+            <div class="feed-time">14:23:15</div>
+            <div class="feed-type">TRIP_COMPLETE</div>
+            <div class="feed-content">User #U782 completed trip - Unit #EV-2847 - Revenue ¥3.5</div>
+        </div>
+        
+        <div class="feed-item">
+            <div class="feed-time">14:22:58</div>
+            <div class="feed-type">UNIT_UNLOCK</div>
+            <div class="feed-content">User #U451 unlocked Unit #EV-2849 - Location: Haidian</div>
+        </div>
+        
+        <div class="feed-item">
+            <div class="feed-time">14:22:30</div>
+            <div class="feed-type">CHARGE_COMPLETE</div>
+            <div class="feed-content">Unit #EV-2852 charged to 95% - Station: Wangjing SOHO</div>
+        </div>
+        
+        <div class="feed-item">
+            <div class="feed-time">14:21:45</div>
+            <div class="feed-type">TICKET_UPDATE</div>
+            <div class="feed-content">Ticket #T-284 assigned to technician Zhang San</div>
+        </div>
+        
+        <div class="feed-item">
+            <div class="feed-time">14:21:12</div>
+            <div class="feed-type">ALERT</div>
+            <div class="feed-content">Unit #EV-2851 GPS signal lost - Last position: Fengtai</div>
+        </div>
+    </section>
+    
+    <footer class="footer-block">
+        <div>
+            <div class="footer-brand">两轮数据中枢</div>
+            <div class="footer-text">Operational Intelligence Platform<br>Real-time monitoring & fleet management</div>
+        </div>
+        
+        <div class="footer-links">
+            <a href="#" class="footer-link">Dashboard</a>
+            <a href="#" class="footer-link">Fleet Map</a>
+            <a href="#" class="footer-link">Ticket System</a>
+            <a href="#" class="footer-link">Analytics</a>
+            <a href="#" class="footer-link">User Management</a>
+            <a href="#" class="footer-link">Revenue Reports</a>
+        </div>
+        
+        <div class="footer-system">
+            <div class="system-code">SYS:2026.04.14 // v2.4.1</div>
+            <div class="geometric-closing">
+                <div class="geo-block"></div>
+                <div class="geo-block"></div>
+                <div class="geo-block"></div>
+                <div class="geo-block"></div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

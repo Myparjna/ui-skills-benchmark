@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stitch Design — 共享两轮运营后台 Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+  <style>
+    :root {
+      /* Stitch design tokens — Enterprise precision */
+      --primary: #165DFF;
+      --primary-50: #E8F3FF;
+      --primary-100: #D6E4FF;
+      --primary-600: #0B47D9;
+      --success: #00B42A;
+      --success-bg: #F6FFED;
+      --warning: #FF7D00;
+      --warning-bg: #FFF7E6;
+      --error: #F53F3F;
+      --error-bg: #FFECE8;
+      --info: #0FC6C2;
+      --info-bg: #E8FFFA;
+      --gray-50: #F7F8FA;
+      --gray-100: #F2F3F5;
+      --gray-200: #E5E6EB;
+      --gray-300: #C9CDD4;
+      --gray-400: #86909C;
+      --gray-500: #4E5969;
+      --gray-600: #272E3B;
+      --gray-800: #1D2129;
+      --gray-900: #0D1117;
+      --white: #FFFFFF;
+      /* Shadows */
+      --shadow-xs: 0 1px 2px rgba(13,17,23,0.04);
+      --shadow-sm: 0 1px 3px rgba(13,17,23,0.08), 0 1px 2px rgba(13,17,23,0.04);
+      --shadow-md: 0 4px 10px -2px rgba(13,17,23,0.06);
+      --shadow-lg: 0 10px 20px -4px rgba(13,17,23,0.08);
+      --shadow-xl: 0 16px 32px -6px rgba(13,17,23,0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans SC', -apple-system, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      font-size: 14px;
+      line-height: 1.55;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== Sidebar Navigation ===== */
+    .sidebar {
+      width: 248px;
+      min-height: 100vh;
+      background: var(--white);
+      border-right: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+    }
+    .sb-brand {
+      padding: 22px 20px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .sb-logo-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), #4096FF);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+    }
+    .sb-brand-text { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+    .sb-brand-tag { font-size: 10px; color: var(--gray-400); letter-spacing: 0.5px; }
+
+    .sb-nav { padding: 12px 10px; flex: 1; overflow-y: auto; }
+    .sb-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--gray-400);
+      padding: 12px 10px 6px;
+    }
+    .sb-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px;
+      cursor: pointer; transition: all 0.15s ease;
+      color: var(--gray-500); font-size: 13.5px; font-weight: 500;
+      text-decoration: none; margin-bottom: 2px;
+    }
+    .sb-item:hover { background: var(--gray-50); color: var(--gray-800); }
+    .sb-item.active {
+      background: var(--primary-50); color: var(--primary);
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+    .sb-icon { font-size: 18px; width: 20px; text-align: center; }
+    .sb-badge {
+      margin-left: auto; font-size: 11px; font-weight: 600;
+      padding: 1px 7px; border-radius: 10px;
+      background: var(--error-bg); color: var(--error);
+    }
+
+    .sb-footer {
+      padding: 16px 18px;
+      border-top: 1px solid var(--gray-100);
+    }
+    .sb-user-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sb-avatar {
+      width:34px; height:34px; border-radius:8px;
+      background:linear-gradient(135deg,var(--primary),var(--info));
+      color:white; font-size:13px; font-weight:600;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .sb-user-name { font-size:13px; font-weight:600; }
+    .sb-user-role { font-size:11px; color:var(--gray-400); }
+
+    /* ===== Main Content Area ===== */
+    .main-area {
+      flex: 1; margin-left: 248px;
+      display: flex; flex-direction: column;
+    }
+
+    /* Top bar */
+    .topbar {
+      height: 64px;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .tb-left {
+      display:flex; align-items:center; gap:16px;
+    }
+    .tb-title { font-size: 18px; font-weight: 700; color: var(--gray-800); letter-spacing: -0.3px; }
+    .tb-breadcrumb { font-size: 12px; color: var(--gray-400); }
+    .tb-breadcrumb span { margin: 0 4px; color: var(--gray-300); }
+
+    .tb-right { display:flex; align-items:center; gap:12px; }
+    .tb-search-box {
+      display:flex; align-items:center; gap:8px;
+      background:var(--gray-50); border:1px solid var(--gray-200);
+      border-radius:8px; padding:7px 12px; width:220px;
+    }
+    .tb-search-box input {
+      border:none; outline:none; background:none;
+      font-family:inherit; font-size:13px;
+      width:100%; color:var(--gray-800);
+    }
+    .tb-search-box input::placeholder{color:var(--gray-400);}
+    .tb-icon-btn {
+      width:36px; height:36px; border-radius:8px;
+      border:1px solid var(--gray-200); background:var(--white);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--gray-500); font-size:17px;
+      transition:all 0.15s;
+    }
+    .tb-icon-btn:hover{border-color:var(--primary);color:var(--primary);}
+
+    /* Dashboard content */
+    .dash-content { padding: 24px 28px; flex: 1; }
+
+    /* Filter bar */
+    .filter-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:20px;
+    }
+    .fb-left{display:flex;gap:8px;}
+    .fb-pill{
+      padding:7px 16px; border-radius:8px; font-size:13px; font-weight:500;
+      border:1px solid var(--gray-200); background:var(--white);
+      cursor:pointer; transition:all 0.15s; color:var(--gray-500);
+    }
+    .fb-pill:hover{border-color:var(--gray-300);color:var(--gray-800);}
+    .fb-pill.active{background:var(--primary);color:white;border-color:var(--primary);}
+
+    .fb-right{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-400);}
+
+    /* KPI Cards Row */
+    .kpi-row {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:18px;
+      margin-bottom:24px;
+    }
+    @media(max-width:1100px){ .kpi-row{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:650px){ .kpi-row{grid-template-columns:1fr;} }
+
+    .kpi-card {
+      background:var(--white); border-radius:14px;
+      padding:22px; border:1px solid var(--gray-200);
+      box-shadow:var(--shadow-xs); transition:all 0.2s;
+      position:relative; overflow:hidden;
+    }
+    .kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+    .kc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .kc-label{font-size:13px;color:var(--gray-500);font-weight:500;display:flex;align-items:center;gap:6px;}
+    .kc-icon-wrap{
+      width:38px;height:38px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;font-size:18px;
+    }
+    .kci-order{background:rgba(22,93,255,0.08);color:var(--primary);}
+    .kci-revenue{background:rgba(0,180,42,0.08);color:var(--success);}
+    .kci-vehicle{background:rgba(15,198,194,0.08);color:var(--info);}
+    .kci-alert{background:rgba(245,63,63,0.08);color:var(--error);}
+
+    .kc-value{font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1.1;margin-bottom:8px;}
+    .kv-primary{color:var(--primary);} .kv-success{color:var(--success);}
+    .kv-info{color:var(--info);} .kv-error{color:var(--error);}
+
+    .kc-change{
+      display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+      border-radius:6px;font-size:12px;font-weight:600;
+    }
+    .cc-up{color:var(--success);background:var(--success-bg);}
+    .cc-down{color:var(--error);background:var(--error-bg);}
+
+    .kc-deco-circle{
+      position:absolute;bottom:-25px;right:-25px;
+      width:90px;height:90px;border-radius:50%;opacity:0.03;
+    }
+    .kd-c1{background:var(--primary);} .kd-c2{background:var(--success);}
+    .kd-c3{background:var(--info);} .kd-c4{background:var(--error);}
+
+    /* Data Table Section */
+    .table-section { background:var(--white); border-radius:14px; border:1px solid var(--gray-200); overflow:hidden; box-shadow:var(--shadow-xs); }
+    .ts-header {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 22px; border-bottom:1px solid var(--gray-100);
+    }
+    .ts-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+    .ts-actions{display:flex;gap:8px;}
+
+    .ts-action-btn{
+      padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;
+      border:1px solid var(--gray-200);background:var(--white);cursor:pointer;
+      display:flex;align-items:center;gap:5px;color:var(--gray-500);transition:all 0.15s;
+    }
+    .ts-action-btn:hover{border-color:var(--gray-300);color:var(--gray-800);}
+    .ts-action-btn.primary{background:var(--primary);color:white;border-color:var(--primary);}
+    .ts-action-btn.primary:hover{background:var(--primary-600);}
+
+    .data-table{width:100%;border-collapse:collapse;}
+    .dt-head th{
+      text-align:left;padding:12px 18px;
+      font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
+      color:var(--gray-400);background:var(--gray-50);border-bottom:1px solid var(--gray-200);
+    }
+    .dt-body tr{border-bottom:1px solid var(--gray-100);transition:background 0.12s;}
+    .dt-body tr:hover{background:var(--gray-50);}
+    .dt-body td{
+      padding:14px 18px;font-size:13px;color:var(--gray-600);
+    }
+    .dt-body td:first-child{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gray-400);}
+    .dt-cell-bold{font-weight:600!important;color:var(--gray-800)!important;}
+
+    /* Status tags in table */
+    .status-tag {
+      display:inline-flex;align-items:center;gap:4px;
+      padding:3px 10px;border-radius:6px;font-size:11.5px;font-weight:600;
+    }
+    .st-online{background:var(--success-bg);color:var(--success);}
+    .st-offline{background:var(--error-bg);color:var(--error);}
+    .st-charging{background:var(--warning-bg);color:var(--warning);}
+    .st-idle{background:var(--info-bg);color:var(--info);}
+    .st-maintain{background:#F5F0FF;color:#7C3AED;}
+
+    /* Action buttons */
+    .action-btns{display:flex;gap:6px;}
+    .abtn{
+      width:30px;height:30px;border-radius:7px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:15px;cursor:pointer;transition:all 0.15s;
+    }
+    .abtn-view{background:rgba(22,93,255,0.08);color:var(--primary);}
+    .abtn-view:hover{background:var(--primary);color:white;}
+    .abtn-edit{background:rgba(255,125,0,0.08);color:var(--warning);}
+    .abtn-edit:hover{background:var(--warning);color:white;}
+
+    /* Pagination */
+    .pagination{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 22px;border-top:1px solid var(--gray-100);
+    }
+    .pg-info{font-size:12px;color:var(--gray-400);}
+    .pg-controls{display:flex;gap:4px;}
+    .pg-btn{
+      width:32px;height:32px;border-radius:7px;border:1px solid var(--gray-200);
+      background:var(--white);font-family:inherit;font-size:13px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      color:var(--gray-500);transition:all 0.15s;
+    }
+    .pg-btn:hover{border-color:var(--primary);color:var(--primary);}
+    .pg-btn.active{background:var(--primary);color:white;border-color:var(--primary);}
+
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px;}
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo-icon">⚡</div>
+    <div><div class="sb-brand-text">FleetOps</div><div class="sb-brand-tag">城市运营中枢 v2.4</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">概览</div>
+    <a class="sb-item active"><span class="iconify sb-icon" data-icon="mdi:view-dashboard-outline"></span> 运营总览</a>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:chart-line"></span> 数据分析</a>
+
+    <div class="sb-section-label">车辆管理</div>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:bicycle"></span> 车辆列表</a>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:map-marker-multiple"></span> 实时定位</a>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:battery-charging-high"></span> 充电管理</a>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:wrench-outline"></span> 维保记录</a>
+
+    <div class="sb-section-label">站点管理</div>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:map-marker-radius-outline"></span> 站点地图</a>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:office-building-outline"></span> 站点台账</a>
+
+    <div class="sb-section-label">系统</div>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:bell-ring-outline"></span> 告警中心<span class="sb-badge">17</span></a>
+    <a class="sb-item"><span class="iconify sb-icon" data-icon="mdi:cog-outline"></span> 系统设置</a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user-row">
+      <div class="sb-avatar">运</div>
+      <div><div class="sb-user-name">袁嘉运</div><div class="sb-user-role">超级管理员</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-area">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="tb-left">
+      <h1 class="tb-title">运营总览</h1>
+      <span class="tb-breadcrumb">首页<span>/</span>Dashboards<span>/</span>实时监控</span>
+    </div>
+    <div class="tb-right">
+      <div class="tb-search-box">
+        <span class="iconify" data-icon="mdi:magnify" style="color:var(--gray-400);font-size:16px;"></span>
+        <input type="text" placeholder="搜索车辆、站点...">
+        <kbd style="font-size:10px;background:var(--gray-100);padding:1px 5px;border-radius:3px;color:var(--gray-400);font-family:'JetBrains Mono',monospace;">⌘K</kbd>
+      </div>
+      <button class="tb-icon-btn"><span class="iconify" data-icon="mdi:bell-outline"></span></button>
+      <button class="tb-icon-btn"><span class="iconify" data-icon="mdi:cog-outline"></span></button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="dash-content">
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="fb-left">
+        <button class="fb-pill active">今日</button>
+        <button class="fb-pill">本周</button>
+        <button class="fb-pill">本月</button>
+        <button class="fb-pill">自定义范围</button>
+      </div>
+      <div class="fb-right">
+        <span>更新于 23:56:42</span>
+        <span style="cursor:pointer;"><span class="iconify" data-icon="mdi:refresh" style="vertical-align:middle;margin-right:2px;"></span> 刷新</span>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+
+      <div class="kpi-card">
+        <div class="kc-top">
+          <div class="kc-label"><span class="iconify" data-icon="mdi:clipboard-check-outline"></span> 订单总量</div>
+          <div class="kc-icon-wrap kci-order"><span class="iconify" data-icon="mdi:file-document-outline"></span></div>
+        </div>
+        <div class="kc-value kv-primary">12,847</div>
+        <div class="kc-change cc-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:13px;"></span> +18.2% vs 昨日</div>
+        <div class="kc-deco-circle kd-c1"></div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kc-top">
+          <div class="kc-label"><span class="iconify" data-icon="mdi:currency-cny"></span> 营收总额</div>
+          <div class="kc-icon-wrap kci-revenue"><span class="iconify" data-icon="mdi:sack-outline"></span></div>
+        </div>
+        <div class="kc-value kv-success">¥89.4万</div>
+        <div class="kc-change cc-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:13px;"></span> +23.5% vs 昨日</div>
+        <div class="kc-deco-circle kd-c2"></div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kc-top">
+          <div class="kc-label"><span class="iconify" data-icon="mdi:bicycle"></span> 车辆可用率</div>
+          <div class="kc-icon-wrap kci-vehicle"><span class="iconify" data-icon="mdi:gauge"></span></div>
+        </div>
+        <div class="kc-value kv-info">94.7%</div>
+        <div class="kc-change cc-down"><span class="iconify" data-icon="mdi:trending-down" style="font-size:13px;"></span> -1.2% vs 昨日</div>
+        <div class="kc-deco-circle kd-c3"></div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kc-top">
+          <div class="kc-label"><span class="iconify" data-icon="mdi:alert-circle-outline"></span> 活跃告警</div>
+          <div class="kc-icon-wrap kci-alert"><span class="iconify" data-icon="mdi:alarm-light-outline"></span></div>
+        </div>
+        <div class="kc-value kv-error">17</div>
+        <div class="kc-change cc-down"><span class="iconify" data-icon="mdi:arrow-up-bold" style="font-size:13px;"></span> +3 条新增</div>
+        <div class="kc-deco-circle kd-c4"></div>
+      </div>
+
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="ts-header">
+        <div class="ts-title"><span class="iconify" data-icon="mdi:bike-fast" style="color:var(--primary);"></span> 车辆状态一览</div>
+        <div class="ts-actions">
+          <button class="ts-action-btn"><span class="iconify" data-icon="mdi:filter-variant"></span> 筛选</button>
+          <button class="ts-action-btn"><span class="iconify" data-icon="mdi:download-outline"></span> 导出</button>
+          <button class="ts-action-btn primary"><span class="iconify" data-icon="mdi:plus"></span> 新增车辆</button>
+        </div>
+      </div>
+
+      <table class="data-table">
+        <thead class="dt-head">
+          <th>ID</th><th>车辆编号</th><th>当前位置</th><th>电量</th><th>当前状态</th><th>最后活跃</th><th style="text-align:right;">操作</th>
+        </thead>
+        <tbody class="dt-body">
+          <tr>
+            <td>#001</td>
+            <td class="dt-cell-bold">A-7824</td>
+            <td>高新区科技园北门</td>
+            <td><strong>87%</strong></td>
+            <td><span class="status-tag st-online"><span class="iconify" data-icon="mdi:bicycle" style="font-size:12px;"></span> 运行中</span></td>
+            <td>刚刚</td>
+            <td style="text-align:right;">
+              <div class="action-btns">
+                <div class="abtn abtn-view"><span class="iconify" data-icon="mdi:eye-outline"></span></div>
+                <div class="abtn abtn-edit"><span class="iconify" data-icon="mdi:pencil-outline"></span></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>#002</td>
+            <td class="dt-cell-bold">B-3391</td>
+            <td>万达广场东侧停车场</td>
+            <td><strong>12%</strong></td>
+            <td><span class="status-tag st-offline"><span class="iconify" data-icon="mdi:close-circle-outline" style="font-size:12px;"></span> 离线</span></td>
+            <td>7 分钟前</td>
+            <td style="text-align:right;">
+              <div class="action-btns">
+                <div class="abtn abtn-view"><span class="iconify" data-icon="mdi:eye-outline"></span></div>
+                <div class="abtn abtn-edit"><span class="iconify" data-icon="mdi:pencil-outline"></span></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>#003</td>
+            <td class="dt-cell-bold">C-1056</td>
+            <td>世纪大道地铁站口</td>
+            <td><strong>充电中 62%</strong></td>
+            <td><span class="status-tag st-charging"><span class="iconify" data-icon="mdi:battery-charging" style="font-size:12px;"></span> 充电中</span></td>
+            <td>23 分钟前</td>
+            <td style="text-align:right;">
+              <div class="action-btns">
+                <div class="abtn abtn-view"><span class="iconify" data-icon="mdi:eye-outline"></span></div>
+                <div class="abtn abtn-edit"><span class="iconify" data-icon="mdi:pencil-outline"></span></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>#004</td>
+            <td class="dt-cell-bold">D-4420</td>
+            <td>大学城图书馆前</td>
+            <td><strong>95%</strong></td>
+            <td><span class="status-tag st-idle"><span class="iconify" data-icon="mdi:parking" style="font-size:12px;"></span> 空闲停放</span></td>
+            <td>35 分钟前</td>
+            <td style="text-align:right;">
+              <div class="action-btns">
+                <div class="abtn abtn-view"><span class="iconify" data-icon="mdi:eye-outline"></span></div>
+                <div class="abtn abtn-edit"><span class="iconify" data-icon="mdi:pencil-outline"></span></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>#005</td>
+            <td class="dt-cell-bold">E-2187</td>
+            <td>南港码头入口</td>
+            <td><strong>78%</strong></td>
+            <td><span class="status-tag st-online"><span class="iconify" data-icon="mdi:bicycle" style="font-size:12px;"></span> 骑行中</span></td>
+            <td>1 分钟前</td>
+            <td style="text-align:right;">
+              <div class="action-btns">
+                <div class="abtn abtn-view"><span class="iconify" data-icon="mdi:eye-outline"></span></div>
+                <div class="abtn abtn-edit"><span class="iconify" data-icon="mdi:pencil-outline"></span></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>#006</td>
+            <td class="dt-cell-bold">F-6613</td>
+            <td>高新区维修中心</td>
+            <td>—</td>
+            <td><span class="status-tag st-maintain"><span class="iconify" data-icon="mdi:wrench" style="font-size:12px;"></span> 维护中</span></td>
+            <td>2 小时前</td>
+            <td style="text-align:right;">
+              <div class="action-btns">
+                <div class="abtn abtn-view"><span class="iconify" data-icon="mdi:eye-outline"></span></div>
+                <div class="abtn abtn-edit"><span class="iconify" data-icon="mdi:pencil-outline"></span></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pg-info">显示 1-6 / 共 8,462 条记录</div>
+        <div class="pg-controls">
+          <button class="pg-btn"><span class="iconify" data-icon="mdi:chevron-left"></span></button>
+          <button class="pg-btn active">1</button>
+          <button class="pg-btn">2</button>
+          <button class="pg-btn">3</button>
+          <button class="pg-btn">...</button>
+          <button class="pg-btn">1411</button>
+          <button class="pg-btn"><span class="iconify" data-icon="mdi:chevron-right"></span></button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

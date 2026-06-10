@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>智充 EV Charging</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Primary */
+      --color-electric-cobalt: #1677FF;
+      --color-electric-light: #E6F4FF;
+      --color-electric-dark: #0958D9;
+      
+      /* Success */
+      --color-fresh-mint: #52C41A;
+      --color-mint-light: #F6FFED;
+      --color-mint-dark: #389E0D;
+      
+      /* Warning */
+      --color-caution-tangerine: #FA8C16;
+      --color-tangerine-light: #FFF7E6;
+      --color-tangerine-dark: #D46B08;
+      
+      /* Surfaces */
+      --color-bg-page: #F5F7FA;
+      --color-bg-elevated: #FFFFFF;
+      --color-bg-muted: #F0F2F5;
+      
+      /* Text */
+      --color-text-primary: #1A1A1A;
+      --color-text-secondary: #595959;
+      --color-text-muted: #8C8C8C;
+      --color-text-inverse: #FFFFFF;
+      
+      /* Border & Divider */
+      --color-border: #E4E7ED;
+      --color-divider: #F0F0F0;
+      
+      /* Semantic */
+      --color-danger: #FF4D4F;
+      --color-danger-light: #FFF2F0;
+      
+      /* Typography */
+      --font-display: 'Noto Sans SC', 'Inter', sans-serif;
+      --font-body: 'Noto Sans SC', 'Inter', sans-serif;
+      --text-xs: 0.625rem;
+      --text-sm: 0.75rem;
+      --text-base: 0.875rem;
+      --text-lg: 1rem;
+      --text-xl: 1.125rem;
+      --text-2xl: 1.25rem;
+      --text-3xl: 1.5rem;
+      
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      
+      /* Radius */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --radius-full: 9999px;
+      
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(22, 119, 255, 0.06);
+      --shadow-md: 0 4px 12px rgba(22, 119, 255, 0.1);
+      --shadow-lg: 0 8px 24px rgba(22, 119, 255, 0.14);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    html, body {
+      font-family: var(--font-body);
+      background-color: #E8ECF0;
+      color: var(--color-text-primary);
+      height: 100%;
+    }
+    
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    /* Mobile container simulation */
+    .mobile-frame {
+      width: 100%;
+      max-width: 400px;
+      min-height: 780px;
+      background-color: var(--color-bg-page);
+      border-radius: 32px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.18);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .screen {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    
+    .screen::-webkit-scrollbar {
+      display: none;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      font-weight: 600;
+    }
+    
+    .tab-bar {
+      display: flex;
+      background-color: var(--color-bg-elevated);
+      border-top: 1px solid var(--color-divider);
+      padding-bottom: env(safe-area-inset-bottom, 12px);
+    }
+    
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2) 0;
+      gap: 3px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .tab-item.active .tab-icon {
+      color: var(--color-electric-cobalt);
+    }
+    
+    .tab-item.active .tab-label {
+      color: var(--color-electric-cobalt);
+      font-weight: 600;
+    }
+    
+    .tab-icon {
+      color: var(--color-text-muted);
+      transition: color 0.15s ease;
+    }
+    
+    .tab-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      transition: color 0.15s ease;
+    }
+    
+    .card {
+      background-color: var(--color-bg-elevated);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      background: linear-gradient(135deg, var(--color-electric-cobalt) 0%, var(--color-electric-dark) 100%);
+      color: var(--color-text-inverse);
+      font-size: var(--text-base);
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .btn-mint {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      background: linear-gradient(135deg, var(--color-fresh-mint) 0%, var(--color-mint-dark) 100%);
+      color: var(--color-text-inverse);
+      font-size: var(--text-base);
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(82, 196, 26, 0.25);
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border-radius: var(--radius-full);
+    }
+    
+    .badge-available {
+      background-color: var(--color-mint-light);
+      color: var(--color-mint-dark);
+    }
+    
+    .badge-busy {
+      background-color: var(--color-tangerine-light);
+      color: var(--color-tangerine-dark);
+    }
+    
+    .badge-offline {
+      background-color: var(--color-bg-muted);
+      color: var(--color-text-muted);
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+    }
+    
+    .scan-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--color-electric-cobalt) 0%, var(--color-electric-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-lg);
+      margin-top: -28px;
+      border: 4px solid var(--color-bg-elevated);
+    }
+    
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+    
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.35s;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-frame">
+    <!-- Status Bar Simulation -->
+    <div style="height: 44px; background-color: var(--color-bg-elevated); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--color-divider);">
+      <span style="font-size: 14px; font-weight: 600;">9:41</span>
+      <div style="display: flex; gap: 5px;">
+        <i data-lucide="signal" style="width: 16px; height: 16px;"></i>
+        <i data-lucide="wifi" style="width: 16px; height: 16px;"></i>
+        <i data-lucide="battery-full" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- Screen Content -->
+    <div class="screen">
+      <!-- Header -->
+      <div style="padding: var(--space-4) var(--space-4) 0; background-color: var(--color-bg-elevated);">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted);">下午好</p>
+            <h1 style="font-size: var(--text-xl); font-weight: 700;">智充 EV Charging</h1>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: var(--radius-full); overflow: hidden; border: 2px solid var(--color-electric-light);">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Screen Content -->
+      <div style="padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4);">
+        <!-- Location & Weather -->
+        <div class="card" style="padding: var(--space-4); display: flex; align-items: center; justify-content: space-between;">
+          <div class="flex items-center gap-3">
+            <div style="width: 40px; height: 40px; background-color: var(--color-electric-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="map-pin" style="width: 20px; height: 20px; color: var(--color-electric-cobalt);"></i>
+            </div>
+            <div>
+              <p style="font-size: var(--text-sm); color: var(--color-text-secondary);">当前位置</p>
+              <p style="font-size: var(--text-base); font-weight: 600;">杭州市西湖区 · 文三路</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p style="font-size: var(--text-lg); font-weight: 600;">24°C</p>
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted);">适宜充电</p>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card" style="padding: var(--space-4); background: linear-gradient(135deg, var(--color-electric-cobalt) 0%, var(--color-electric-dark) 100%); color: white;">
+          <div class="flex items-center justify-between mb-3">
+            <span style="font-size: var(--text-sm); opacity: 0.9;">附近可用充电桩</span>
+            <i data-lucide="zap" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div class="flex items-end gap-1 mb-3">
+            <span style="font-size: var(--text-3xl); font-weight: 700;">23</span>
+            <span style="font-size: var(--text-sm); opacity: 0.8; margin-bottom: 6px;">个站点</span>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex items-center gap-2" style="font-size: var(--text-xs); opacity: 0.9;">
+              <span class="status-dot" style="background-color: var(--color-fresh-mint);"></span>
+              空闲 18
+            </div>
+            <div class="flex items-center gap-2" style="font-size: var(--text-xs); opacity: 0.9;">
+              <span class="status-dot" style="background-color: var(--color-caution-tangerine);"></span>
+              繁忙 5
+            </div>
+          </div>
+        </div>
+
+        <!-- Map Preview Card -->
+        <div class="card" style="overflow: hidden;">
+          <div style="position: relative; height: 160px;">
+            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80" alt="Map" style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%);"></div>
+            <div style="position: absolute; bottom: var(--space-3); left: var(--space-4); right: var(--space-4); display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: white; font-size: var(--text-sm); font-weight: 500;">查看附近充电地图</span>
+              <div style="width: 32px; height: 32px; background-color: var(--color-bg-elevated); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="navigation" style="width: 16px; height: 16px; color: var(--color-electric-cobalt);"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nearby Stations -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 style="font-size: var(--text-base); font-weight: 600;">附近推荐站点</h3>
+            <span style="font-size: var(--text-xs); color: var(--color-electric-cobalt);">查看全部</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <!-- Station 1 -->
+            <div class="card" style="padding: var(--space-4);">
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <h4 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">西湖国际科技大厦充电站</h4>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">直线距离 280m · 文三路 478 号</p>
+                </div>
+                <span class="badge badge-available">
+                  <span class="status-dot" style="background-color: var(--color-fresh-mint); width: 6px; height: 6px;"></span>
+                  空闲 8/12
+                </span>
+              </div>
+              <div class="flex items-center gap-4 mb-3">
+                <div class="flex items-center gap-1" style="font-size: var(--text-xs); color: var(--color-text-secondary);">
+                  <i data-lucide="zap" style="width: 12px; height: 12px; color: var(--color-electric-cobalt);"></i>
+                  快充 120kW
+                </div>
+                <div class="flex items-center gap-1" style="font-size: var(--text-xs); color: var(--color-text-secondary);">
+                  <i data-lucide="banknote" style="width: 12px; height: 12px; color: var(--color-fresh-mint);"></i>
+                  ¥1.08/度
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-primary" style="flex: 1; padding: var(--space-2) 0; font-size: var(--text-sm);">立即导航</button>
+                <button class="btn-mint" style="flex: 1; padding: var(--space-2) 0; font-size: var(--text-sm);">
+                  <i data-lucide="scan-line" style="width: 14px; height: 14px;"></i>
+                  扫码充电
+                </button>
+              </div>
+            </div>
+
+            <!-- Station 2 -->
+            <div class="card" style="padding: var(--space-4);">
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <h4 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">黄龙万科中心超充站</h4>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">直线距离 1.2km · 学院路 77 号</p>
+                </div>
+                <span class="badge badge-busy">
+                  <span class="status-dot" style="background-color: var(--color-caution-tangerine); width: 6px; height: 6px;"></span>
+                  繁忙 2/10
+                </span>
+              </div>
+              <div class="flex items-center gap-4 mb-3">
+                <div class="flex items-center gap-1" style="font-size: var(--text-xs); color: var(--color-text-secondary);">
+                  <i data-lucide="zap" style="width: 12px; height: 12px; color: var(--color-electric-cobalt);"></i>
+                  超充 480kW
+                </div>
+                <div class="flex items-center gap-1" style="font-size: var(--text-xs); color: var(--color-text-secondary);">
+                  <i data-lucide="banknote" style="width: 12px; height: 12px; color: var(--color-fresh-mint);"></i>
+                  ¥1.35/度
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-primary" style="flex: 1; padding: var(--space-2) 0; font-size: var(--text-sm);">立即导航</button>
+                <button class="btn-mint" style="flex: 1; padding: var(--space-2) 0; font-size: var(--text-sm);">
+                  <i data-lucide="scan-line" style="width: 14px; height: 14px;"></i>
+                  扫码充电
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Membership Banner -->
+        <div class="card" style="padding: var(--space-4); background: linear-gradient(135deg, #FFF7E6 0%, #FFE7BA 100%); border: 1px solid rgba(250, 140, 22, 0.15);">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--color-caution-tangerine) 0%, var(--color-tangerine-dark) 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="crown" style="width: 24px; height: 24px; color: white;"></i>
+              </div>
+              <div>
+                <h4 style="font-size: var(--text-base); font-weight: 600; color: var(--color-tangerine-dark);">智充 PLUS 会员</h4>
+                <p style="font-size: var(--text-xs); color: var(--color-text-secondary);">充电 9.5 折 · 专属客服 · 免服务费</p>
+              </div>
+            </div>
+            <button style="padding: var(--space-2) var(--space-4); background-color: var(--color-caution-tangerine); color: white; font-size: var(--text-xs); font-weight: 600; border-radius: var(--radius-md); border: none;">立即开通</button>
+          </div>
+        </div>
+
+        <!-- Charging Progress (Demo) -->
+        <div class="card" style="padding: var(--space-4);">
+          <div class="flex items-center justify-between mb-4">
+            <h3 style="font-size: var(--text-base); font-weight: 600;">当前充电</h3>
+            <span class="badge" style="background-color: var(--color-electric-light); color: var(--color-electric-dark);">进行中</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <div style="position: relative; width: 72px; height: 72px; flex-shrink: 0;">
+              <svg class="progress-ring" width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="30" fill="none" stroke="var(--color-electric-light)" stroke-width="6"></circle>
+                <circle class="progress-ring-circle" cx="36" cy="36" r="30" fill="none" stroke="var(--color-electric-cobalt)" stroke-width="6" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="47"></circle>
+              </svg>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: var(--text-sm); font-weight: 700; color: var(--color-electric-cobalt);">75%</div>
+            </div>
+            <div class="flex-1">
+              <p style="font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: 4px;">西湖国际科技大厦 · B2-08</p>
+              <p style="font-size: var(--text-xl); font-weight: 700; color: var(--color-text-primary); margin-bottom: 4px;">45.2 kWh</p>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted);">预计剩余 18 分钟 · 已充 32 分钟</p>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-4">
+            <button style="flex: 1; padding: var(--space-2) 0; background-color: var(--color-danger-light); color: var(--color-danger); font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-md); border: none;">结束充电</button>
+            <button style="flex: 1; padding: var(--space-2) 0; background-color: var(--color-electric-light); color: var(--color-electric-dark); font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-md); border: none;">查看详情</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bottom padding for scroll -->
+      <div style="height: 100px;"></div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar" style="padding: 6px 0 20px;">
+      <div class="tab-item active">
+        <i data-lucide="home" class="tab-icon" style="width: 22px; height: 22px;"></i>
+        <span class="tab-label">首页</span>
+      </div>
+      <div class="tab-item">
+        <i data-lucide="ticket-percent" class="tab-icon" style="width: 22px; height: 22px;"></i>
+        <span class="tab-label">优惠</span>
+      </div>
+      <div class="tab-item" style="position: relative;">
+        <div class="scan-btn">
+          <i data-lucide="scan-line" style="width: 24px; height: 24px; color: white;"></i>
+        </div>
+        <span class="tab-label" style="margin-top: 6px;">扫码</span>
+      </div>
+      <div class="tab-item">
+        <i data-lucide="file-text" class="tab-icon" style="width: 22px; height: 22px;"></i>
+        <span class="tab-label">订单</span>
+      </div>
+      <div class="tab-item">
+        <i data-lucide="user" class="tab-icon" style="width: 22px; height: 22px;"></i>
+        <span class="tab-label">我的</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

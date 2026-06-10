@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星空航空 - Canvas Design Philosophy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Canvas Design Philosophy: "Aeronautical Cartography" - Technical precision meets celestial navigation */
+        :root {
+            --navy-deep: #0a1628;
+            --navy-medium: #1a2a4a;
+            --navy-light: #2a3a5a;
+            --gold-primary: #c9a962;
+            --gold-light: #e8d5a3;
+            --cream: #f8f6f0;
+            --white: #ffffff;
+            --black: #000000;
+            --line-weight: 0.5px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--navy-deep);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Celestial Chart Header */
+        .celestial-header {
+            position: relative;
+            height: 100vh;
+            min-height: 800px;
+            background: var(--navy-deep);
+            overflow: hidden;
+        }
+        
+        .chart-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at center, rgba(201, 169, 98, 0.05) 0%, transparent 50%),
+                linear-gradient(rgba(201, 169, 98, 0.03) var(--line-weight), transparent var(--line-weight)),
+                linear-gradient(90deg, rgba(201, 169, 98, 0.03) var(--line-weight), transparent var(--line-weight));
+            background-size: 100%, 80px 80px, 80px 80px;
+        }
+        
+        .compass-rose {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            opacity: 0.1;
+        }
+        
+        .compass-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid var(--gold-primary);
+            border-radius: 50%;
+        }
+        
+        .compass-ring:nth-child(1) { width: 600px; height: 600px; }
+        .compass-ring:nth-child(2) { width: 500px; height: 500px; }
+        .compass-ring:nth-child(3) { width: 400px; height: 400px; }
+        .compass-ring:nth-child(4) { width: 300px; height: 300px; }
+        
+        .compass-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 1px;
+            background: var(--gold-primary);
+            transform-origin: left center;
+            opacity: 0.3;
+        }
+        
+        .compass-line:nth-child(5) { transform: rotate(0deg); }
+        .compass-line:nth-child(6) { transform: rotate(45deg); }
+        .compass-line:nth-child(7) { transform: rotate(90deg); }
+        .compass-line:nth-child(8) { transform: rotate(135deg); }
+        .compass-line:nth-child(9) { transform: rotate(180deg); }
+        .compass-line:nth-child(10) { transform: rotate(225deg); }
+        .compass-line:nth-child(11) { transform: rotate(270deg); }
+        .compass-line:nth-child(12) { transform: rotate(315deg); }
+        
+        .header-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .airline-code {
+            font-size: 11px;
+            letter-spacing: 8px;
+            color: var(--gold-primary);
+            margin-bottom: 40px;
+        }
+        
+        .airline-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(48px, 10vw, 120px);
+            font-weight: 300;
+            letter-spacing: 10px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light), var(--gold-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .airline-subtitle {
+            font-size: 14px;
+            letter-spacing: 6px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+        }
+        
+        .coordinate-marker {
+            position: absolute;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--gold-primary);
+            opacity: 0.4;
+        }
+        
+        .coordinate-marker.top-left { top: 80px; left: 80px; }
+        .coordinate-marker.top-right { top: 80px; right: 80px; }
+        .coordinate-marker.bottom-left { bottom: 80px; left: 80px; }
+        .coordinate-marker.bottom-right { bottom: 80px; right: 80px; }
+        
+        /* Route Chart Section */
+        .route-chart {
+            padding: 120px 80px;
+            background: var(--navy-medium);
+            position: relative;
+        }
+        
+        .chart-header {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 80px;
+            margin-bottom: 80px;
+        }
+        
+        .chart-title {
+            font-size: 11px;
+            letter-spacing: 4px;
+            color: var(--gold-primary);
+            margin-bottom: 20px;
+        }
+        
+        .chart-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 400;
+            line-height: 1.2;
+        }
+        
+        .route-visual {
+            position: relative;
+            height: 400px;
+            border: 1px solid rgba(201, 169, 98, 0.2);
+            background: var(--navy-deep);
+        }
+        
+        .route-visual::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(201, 169, 98, 0.05) var(--line-weight), transparent var(--line-weight)),
+                linear-gradient(90deg, rgba(201, 169, 98, 0.05) var(--line-weight), transparent var(--line-weight));
+            background-size: 40px 40px;
+        }
+        
+        .flight-path {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+            animation: fly 3s infinite ease-in-out;
+        }
+        
+        @keyframes fly {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .city-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--gold-primary);
+            border-radius: 50%;
+        }
+        
+        .city-dot::after {
+            content: attr(data-city);
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            letter-spacing: 2px;
+            white-space: nowrap;
+            color: var(--gold-light);
+        }
+        
+        /* Cabin Configuration */
+        .cabin-config {
+            padding: 120px 80px;
+            background: var(--navy-deep);
+        }
+        
+        .config-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+        
+        .config-title {
+            font-size: 11px;
+            letter-spacing: 6px;
+            color: var(--gold-primary);
+            margin-bottom: 20px;
+        }
+        
+        .config-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 400;
+        }
+        
+        .cabin-schematic {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+        
+        .cabin-diagram {
+            background: var(--navy-medium);
+            border: 1px solid rgba(201, 169, 98, 0.2);
+            padding: 40px;
+            position: relative;
+        }
+        
+        .diagram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(201, 169, 98, 0.2);
+        }
+        
+        .diagram-code {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--gold-primary);
+        }
+        
+        .diagram-tier {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .diagram-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        
+        .diagram-description {
+            font-size: 13px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+        }
+        
+        .diagram-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .spec-item {
+            padding: 15px 0;
+            border-top: 1px solid rgba(201, 169, 98, 0.1);
+        }
+        
+        .spec-label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 8px;
+        }
+        
+        .spec-value {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            color: var(--gold-primary);
+        }
+        
+        .diagram-price {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(201, 169, 98, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .price-label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .price-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            color: var(--gold-light);
+        }
+        
+        /* Flight Schedule */
+        .flight-schedule {
+            padding: 120px 80px;
+            background: var(--navy-medium);
+        }
+        
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+        
+        .schedule-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+        }
+        
+        .schedule-date {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--gold-primary);
+        }
+        
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .schedule-table th {
+            text-align: left;
+            padding: 20px;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--gold-primary);
+            border-bottom: 2px solid rgba(201, 169, 98, 0.3);
+            font-weight: 500;
+        }
+        
+        .schedule-table td {
+            padding: 25px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(201, 169, 98, 0.1);
+        }
+        
+        .schedule-table tr:hover {
+            background: rgba(201, 169, 98, 0.05);
+        }
+        
+        .flight-number {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: var(--gold-primary);
+        }
+        
+        .route-points {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .route-point {
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .route-arrow {
+            width: 30px;
+            height: 1px;
+            background: var(--gold-primary);
+            position: relative;
+        }
+        
+        .route-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -3px;
+            width: 6px;
+            height: 6px;
+            border-right: 1px solid var(--gold-primary);
+            border-top: 1px solid var(--gold-primary);
+            transform: rotate(45deg);
+        }
+        
+        .flight-status {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            background: rgba(201, 169, 98, 0.2);
+            color: var(--gold-primary);
+        }
+        
+        .flight-status.on-time {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+        
+        .flight-status.boarding {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+        
+        /* Footer Navigation */
+        .footer-navigation {
+            padding: 80px;
+            background: var(--navy-deep);
+            border-top: 1px solid rgba(201, 169, 98, 0.2);
+        }
+        
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+        
+        .nav-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-description {
+            font-size: 13px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .nav-column h4 {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--gold-primary);
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+        
+        .nav-links {
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-bottom: 12px;
+        }
+        
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--gold-primary);
+        }
+        
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(201, 169, 98, 0.1);
+        }
+        
+        .footer-copyright {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 1px;
+        }
+        
+        .footer-code {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--gold-primary);
+            opacity: 0.5;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .chart-header,
+            .cabin-schematic,
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                padding: 0 40px;
+            }
+            
+            .compass-rose {
+                width: 400px;
+                height: 400px;
+            }
+            
+            .compass-ring:nth-child(1) { width: 400px; height: 400px; }
+            .compass-ring:nth-child(2) { width: 330px; height: 330px; }
+            .compass-ring:nth-child(3) { width: 260px; height: 260px; }
+            .compass-ring:nth-child(4) { width: 190px; height: 190px; }
+            
+            .compass-line {
+                width: 200px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .celestial-header {
+                min-height: 600px;
+            }
+            
+            .route-chart,
+            .cabin-config,
+            .flight-schedule,
+            .footer-navigation {
+                padding: 60px 40px;
+            }
+            
+            .schedule-table {
+                font-size: 12px;
+            }
+            
+            .footer-bottom {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Celestial Header -->
+    <header class="celestial-header">
+        <div class="chart-grid"></div>
+        
+        <div class="compass-rose">
+            <div class="compass-ring"></div>
+            <div class="compass-ring"></div>
+            <div class="compass-ring"></div>
+            <div class="compass-ring"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+            <div class="compass-line"></div>
+        </div>
+        
+        <div class="header-content">
+            <div class="airline-code">IATA: SL // ICAO: SLA</div>
+            <h1 class="airline-name">星空航空</h1>
+            <div class="airline-subtitle">Starlight Airlines</div>
+        </div>
+        
+        <div class="coordinate-marker top-left">N 39°54' E 116°23'</div>
+        <div class="coordinate-marker top-right">ELEV: 43.5m</div>
+        <div class="coordinate-marker bottom-left">HEADING: 045°</div>
+        <div class="coordinate-marker bottom-right">CHART: STAR-2026</div>
+    </header>
+    
+    <!-- Route Chart -->
+    <section class="route-chart">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">ROUTE NETWORK</div>
+                <h2 class="chart-heading">全球航线网络<br>连接六大洲</h2>
+            </div>
+        </div>
+        
+        <div class="route-visual">
+            <div class="city-dot" style="top: 40%; left: 70%;" data-city="SHANGHAI"></div>
+            <div class="city-dot" style="top: 30%; left: 35%;" data-city="PARIS"></div>
+            <div class="city-dot" style="top: 28%; left: 20%;" data-city="LONDON"></div>
+            <div class="city-dot" style="top: 45%; left: 85%;" data-city="TOKYO"></div>
+            <div class="city-dot" style="top: 70%; left: 90%;" data-city="SYDNEY"></div>
+            <div class="city-dot" style="top: 35%; left: 10%;" data-city="NEW YORK"></div>
+            
+            <div class="flight-path" style="top: 35%; left: 20%; width: 50%; transform: rotate(5deg);"></div>
+            <div class="flight-path" style="top: 35%; left: 20%; width: 60%; transform: rotate(15deg);"></div>
+            <div class="flight-path" style="top: 40%; left: 70%; width: 25%; transform: rotate(-30deg);"></div>
+            <div class="flight-path" style="top: 40%; left: 70%; width: 40%; transform: rotate(50deg);"></div>
+        </div>
+    </section>
+    
+    <!-- Cabin Configuration -->
+    <section class="cabin-config">
+        <div class="config-header">
+            <div class="config-title">CABIN CONFIGURATION</div>
+            <h2 class="config-heading">客舱配置规格</h2>
+        </div>
+        
+        <div class="cabin-schematic">
+            <div class="cabin-diagram">
+                <div class="diagram-header">
+                    <span class="diagram-code">F</span>
+                    <span class="diagram-tier">FIRST CLASS</span>
+                </div>
+                <h3 class="diagram-name">头等舱套房</h3>
+                <p class="diagram-description">
+                    私人套房配备180度平躺座椅，独立餐饮服务，
+                    顶级洗漱用品，专属空乘服务。
+                </p>
+                <div class="diagram-specs">
+                    <div class="spec-item">
+                        <div class="spec-label">座椅宽度</div>
+                        <div class="spec-value">86cm</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">座椅间距</div>
+                        <div class="spec-value">200cm</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">舱位数量</div>
+                        <div class="spec-value">8</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">娱乐系统</div>
+                        <div class="spec-value">32" 4K</div>
+                    </div>
+                </div>
+                <div class="diagram-price">
+                    <span class="price-label">FROM</span>
+                    <span class="price-value">¥45,000</span>
+                </div>
+            </div>
+            
+            <div class="cabin-diagram">
+                <div class="diagram-header">
+                    <span class="diagram-code">J</span>
+                    <span class="diagram-tier">BUSINESS CLASS</span>
+                </div>
+                <h3 class="diagram-name">商务舱</h3>
+                <p class="diagram-description">
+                    可调节座椅转换为全平躺床铺，优先登机，
+                    贵宾室服务，精选餐饮。
+                </p>
+                <div class="diagram-specs">
+                    <div class="spec-item">
+                        <div class="spec-label">座椅宽度</div>
+                        <div class="spec-value">66cm</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">座椅间距</div>
+                        <div class="spec-value">150cm</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">舱位数量</div>
+                        <div class="spec-value">28</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">娱乐系统</div>
+                        <div class="spec-value">18" HD</div>
+                    </div>
+                </div>
+                <div class="diagram-price">
+                    <span class="price-label">FROM</span>
+                    <span class="price-value">¥18,000</span>
+                </div>
+            </div>
+            
+            <div class="cabin-diagram">
+                <div class="diagram-header">
+                    <span class="diagram-code">Y</span>
+                    <span class="diagram-tier">ECONOMY CLASS</span>
+                </div>
+                <h3 class="diagram-name">经济舱</h3>
+                <p class="diagram-description">
+                    人体工程学座椅设计，宽敞腿部空间，
+                    个人娱乐系统，精选餐饮服务。
+                </p>
+                <div class="diagram-specs">
+                    <div class="spec-item">
+                        <div class="spec-label">座椅宽度</div>
+                        <div class="spec-value">46cm</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">座椅间距</div>
+                        <div class="spec-value">81cm</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">舱位数量</div>
+                        <div class="spec-value">268</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">娱乐系统</div>
+                        <div class="spec-value">11" HD</div>
+                    </div>
+                </div>
+                <div class="diagram-price">
+                    <span class="price-label">FROM</span>
+                    <span class="price-value">¥3,800</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Flight Schedule -->
+    <section class="flight-schedule">
+        <div class="schedule-header">
+            <h2 class="schedule-title">航班时刻表</h2>
+            <span class="schedule-date">2026.04.14</span>
+        </div>
+        
+        <table class="schedule-table">
+            <thead>
+                <tr>
+                    <th>航班号</th>
+                    <th>航线</th>
+                    <th>出发时间</th>
+                    <th>到达时间</th>
+                    <th>状态</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="flight-number">SL 101</span></td>
+                    <td>
+                        <div class="route-points">
+                            <span class="route-point">SHA</span>
+                            <span class="route-arrow"></span>
+                            <span class="route-point">CDG</span>
+                        </div>
+                    </td>
+                    <td>08:30</td>
+                    <td>14:45</td>
+                    <td><span class="flight-status on-time">ON TIME</span></td>
+                </tr>
+                <tr>
+                    <td><span class="flight-number">SL 202</span></td>
+                    <td>
+                        <div class="route-points">
+                            <span class="route-point">PEK</span>
+                            <span class="route-arrow"></span>
+                            <span class="route-point">LHR</span>
+                        </div>
+                    </td>
+                    <td>10:15</td>
+                    <td>16:30</td>
+                    <td><span class="flight-status boarding">BOARDING</span></td>
+                </tr>
+                <tr>
+                    <td><span class="flight-number">SL 303</span></td>
+                    <td>
+                        <div class="route-points">
+                            <span class="route-point">PVG</span>
+                            <span class="route-arrow"></span>
+                            <span class="route-point">NRT</span>
+                        </div>
+                    </td>
+                    <td>12:00</td>
+                    <td>15:20</td>
+                    <td><span class="flight-status on-time">ON TIME</span></td>
+                </tr>
+                <tr>
+                    <td><span class="flight-number">SL 404</span></td>
+                    <td>
+                        <div class="route-points">
+                            <span class="route-point">CAN</span>
+                            <span class="route-arrow"></span>
+                            <span class="route-point">SYD</span>
+                        </div>
+                    </td>
+                    <td>14:45</td>
+                    <td>02:30+1</td>
+                    <td><span class="flight-status">SCHEDULED</span></td>
+                </tr>
+                <tr>
+                    <td><span class="flight-number">SL 505</span></td>
+                    <td>
+                        <div class="route-points">
+                            <span class="route-point">HKG</span>
+                            <span class="route-arrow"></span>
+                            <span class="route-point">JFK</span>
+                        </div>
+                    </td>
+                    <td>23:30</td>
+                    <td>07:45+1</td>
+                    <td><span class="flight-status">SCHEDULED</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+    
+    <!-- Footer Navigation -->
+    <footer class="footer-navigation">
+        <div class="nav-grid">
+            <div>
+                <div class="nav-brand">星空航空</div>
+                <p class="nav-description">
+                    星空航空致力于为全球旅客提供卓越的飞行体验，
+                    连接世界最美的目的地，让每一次旅行都成为难忘的回忆。
+                </p>
+            </div>
+            
+            <div class="nav-column">
+                <h4>预订服务</h4>
+                <ul class="nav-links">
+                    <li><a href="#">航班查询</a></li>
+                    <li><a href="#">在线预订</a></li>
+                    <li><a href="#">在线值机</a></li>
+                    <li><a href="#">机票验真</a></li>
+                </ul>
+            </div>
+            
+            <div class="nav-column">
+                <h4>乘客服务</h4>
+                <ul class="nav-links">
+                    <li><a href="#">行李服务</a></li>
+                    <li><a href="#">特殊旅客</a></li>
+                    <li><a href="#">贵宾室</a></li>
+                    <li><a href="#">客服热线</a></li>
+                </ul>
+            </div>
+            
+            <div class="nav-column">
+                <h4>关于我们</h4>
+                <ul class="nav-links">
+                    <li><a href="#">公司介绍</a></li>
+                    <li><a href="#">新闻动态</a></li>
+                    <li><a href="#">加入我们</a></li>
+                    <li><a href="#">联系方式</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <span class="footer-copyright">© 2026 星空航空 Starlight Airlines. All rights reserved.</span>
+            <span class="footer-code">CHART: STAR-FOOTER-2026</span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyStar Airlines — 优雅旅程，从这里起飞</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  :root {
+    --sky-deep: #0C2D6F;
+    --sky-mid: #1E4FB5;
+    --sky-light: #4A7FE8;
+    --sky-pale: #B8D4FF;
+    --cloud-white: rgba(255,255,255,.92);
+    --gold-accent: #D4A853;
+    --fg-dark: #0A1628;
+    --fg-primary: #1A2E52;
+    --fg-secondary: #4A6085;
+    --fg-light: #7B93BD;
+    --card-bg: rgba(255,255,255,.88);
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --shadow-card: 0 8px 40px rgba(10,22,40,.08);
+    --shadow-elevated: 0 20px 60px rgba(10,22,40,.15);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--fg-primary); overflow-x: hidden;
+  }
+
+  /* ── Flight Trajectory Arc (全局装饰) ── */
+  .flight-trajectory {
+    position: absolute; pointer-events: none; z-index: 1;
+  }
+  .trajectory-arc {
+    fill: none; stroke-linecap: round;
+    opacity: .18;
+  }
+
+  /* ═════════════════ NAVBAR ═════════════════ */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(10,22,40,0);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all .4s ease;
+    padding: 16px 48px;
+  }
+  .navbar.scrolled {
+    background: rgba(255,255,255,.9); box-shadow: 0 1px 30px rgba(0,0,0,.06);
+  }
+  .navbar-inner { display: flex; justify-content: space-between; align-items: center; max-width: 1280px; margin: 0 auto; }
+
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo-icon {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-light));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(28,79,181,.35);
+  }
+  .nav-logo-icon .iconify { font-size: 22px; color: white; }
+  .nav-logo-text { font-family:'Playfair Display',serif; font-size: 24px; font-weight: 800; color: white; letter-spacing: -.5px; }
+  .navbar.scrolled .nav-logo-text { color: var(--sky-deep); }
+  .nav-logo-text span { color: var(--gold-accent); font-style: italic; }
+
+  .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+  .nav-links a {
+    text-decoration: none; font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,.82); transition: all .25s ease;
+    position: relative;
+  }
+  .navbar.scrolled .nav-links a { color: var(--fg-secondary); }
+  .nav-links a:hover { color: white; }
+  .navbar.scrolled .nav-links a:hover { color: var(--sky-mid); }
+  .nav-links a::after {
+    content:''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px;
+    background: var(--gold-accent); transition: width .3s ease; border-radius: 9999px;
+  }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    padding: 10px 24px; border-radius: 9999px; border: 1.5px solid rgba(255,255,255,.4);
+    background: transparent; color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .3s ease; font-family: inherit;
+  }
+  .navbar.scrolled .nav-cta {
+    background: var(--sky-mid); color: white; border-color: var(--sky-mid);
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(212,168,83,.3); border-color: var(--gold-accent); background: linear-gradient(135deg, var(--sky-mid), var(--sky-deep)); }
+
+  /* ═════════════════ HERO SECTION ═════════════════ */
+  .hero {
+    min-height: 100vh; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 70% 20%, rgba(74,127,232,.25) 0%, transparent 55%),
+      radial-gradient(ellipse at 20% 80%, rgba(184,212,255,.2) 0%, transparent 45%),
+      linear-gradient(175deg,
+        #0A1E42 0%,
+        #123366 25%,
+        #1E4FB5 50%,
+        #3A72CC 75%,
+        #6BA3EE 100%
+      );
+  }
+
+  /* CSS Clouds Animation */
+  .cloud-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .cloud {
+    position: absolute; background: rgba(255,255,255,.07);
+    border-radius: 100px; filter: blur(2px);
+  }
+  .cloud-1 { width:300px;height:80px;top:15%;left:-10%; animation: cloudFloat 28s linear infinite; opacity:.5; }
+  .cloud-2 { width:450px;height:100px;top:28%;left:-15%; animation: cloudFloat 38s linear infinite 5s; opacity:.35; }
+  .cloud-3 { width:280px;height:70px;top:45%;left:-8%; animation: cloudFloat 33s linear infinite 12s; opacity:.25; }
+  .cloud-4 { width:380px;height:90px;top:65%;left:-12%; animation: cloudFloat 42s linear infinite 8s; opacity:.2; }
+
+  @keyframes cloudFloat {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(calc(100vw + 100%)); }
+  }
+
+  /* Flight trajectory SVG in hero */
+  .hero-traj-svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 2;
+  }
+
+  .hero-content {
+    position: relative; z-index: 10; text-align: center;
+    padding: 0 32px; max-width: 800px;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.12); backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 8px 20px; border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,.15);
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,.9);
+    margin-bottom: 28px;
+    animation: fadeSlideDown .8s ease both;
+  }
+  @keyframes fadeSlideDown { from{opacity:0;transform:translateY(-20px);} to{opacity:1;transform:none;} }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif; font-size: clamp(44px, 7vw, 78px);
+    font-weight: 800; line-height: 1.08; color: white;
+    letter-spacing: -1.5px; margin-bottom: 20px;
+    animation: fadeSlideUp .9s ease .15s both;
+  }
+  .hero-title span.accent { color: var(--gold-accent); font-style: italic; }
+  @keyframes fadeSlideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:none;} }
+
+  .hero-subtitle {
+    font-size: 19px; color: rgba(255,255,255,.75);
+    font-weight: 400; line-height: 1.6; max-width: 600px; margin: 0 auto 40px;
+    animation: fadeSlideUp .9s ease .3s both;
+  }
+
+  /* Search Form Card */
+  .search-form-card {
+    background: var(--card-bg); backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border-radius: var(--radius-lg); padding: 32px 36px;
+    box-shadow: var(--shadow-elevated);
+    display: grid; grid-template-columns: 1fr 1fr auto auto;
+    gap: 20px; align-items: end; max-width: 780px; margin: 0 auto;
+    animation: fadeSlideUp .9s ease .45s both;
+    border: 1px solid rgba(255,255,255,.5);
+  }
+  .form-group { text-align: left; }
+  .form-label {
+    font-size: 12px; font-weight: 700; color: var(--fg-light);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block;
+  }
+  .form-input-wrapper {
+    position: relative; display: flex; align-items: center;
+    gap: 8px; padding: 10px 0; border-bottom: 2px solid #E2E8F0;
+    transition: border-color .25s ease;
+  }
+  .form-input-wrapper:focus-within { border-bottom-color: var(--sky-mid); }
+  .form-input-wrapper .iconify { font-size: 20px; color: var(--fg-light); }
+  .form-input {
+    border: none; outline: none; background: none; font-size: 17px;
+    font-weight: 600; color: var(--fg-primary); width: 100%;
+    font-family: inherit;
+  }
+  .form-input::placeholder { color: var(--fg-light); font-weight: 500; }
+
+  .swap-btn {
+    align-self: center; width: 44px; height: 44px; border-radius: 50%;
+    background: #EFF4FF; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .swap-btn:hover { background: var(--sky-mid); transform: rotate(180deg) scale(1.1); }
+  .swap-btn:hover .iconify { color: white; }
+  .swap-btn .iconify { font-size: 20px; color: var(--sky-mid); transition: color .3s; }
+
+  .search-submit-btn {
+    padding: 14px 36px; border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-deep));
+    color: white; border: none; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all .3s ease; font-family: inherit;
+    display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .search-submit-btn:hover {
+    transform: translateY(-2px); box-shadow: 0 8px 28px rgba(28,79,181,.4);
+  }
+
+  /* ═════════════════ FEATURES SECTION ═════════════════ */
+  .features-section {
+    padding: 120px 48px; position: relative;
+    background: linear-gradient(180deg, #F0F5FF, #FAFCFF);
+  }
+  .section-header { text-align: center; margin-bottom: 64px; position: relative; }
+  .section-tag {
+    font-size: 12px; font-weight: 700; color: var(--sky-mid);
+    text-transform: uppercase; letter-spacing: 3px; margin-bottom: 14px;
+    display: inline-block;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif; font-size: clamp(32px, 4vw, 46px);
+    font-weight: 750; color: var(--fg-dark); letter-spacing: -.8px;
+  }
+  .section-desc {
+    font-size: 17px; color: var(--fg-secondary); max-width: 560px; margin: 14px auto 0; line-height: 1.7;
+  }
+
+  /* Feature arc decoration */
+  .feature-arc-svg { position: absolute; top: -60px; left: 0; right: 0; width: 100%; height: 200px; pointer-events: none; z-index: 0; }
+
+  .features-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 28px; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1;
+  }
+  .feature-card {
+    background: white; border-radius: var(--radius-md);
+    padding: 36px 28px; text-align: center;
+    box-shadow: var(--shadow-card);
+    border: 1px solid rgba(26,46,82,.04);
+    transition: all .4s cubic-bezier(.4,0,.2,1);
+    position: relative; overflow: hidden;
+  }
+  .feature-card::before {
+    content:''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, var(--sky-light), var(--gold-accent));
+    transform: scaleX(0); transition: transform .4s ease; transform-origin: left;
+  }
+  .feature-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-elevated); }
+  .feature-card:hover::before { transform: scaleX(1); }
+
+  .feat-icon-wrap {
+    width: 68px; height: 68px; border-radius: 20px;
+    margin: 0 auto 22px; display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .feat-icon-wrap.blue   { background: linear-gradient(135deg, #EFF6FF, #DBEAFE); }
+  .feat-icon-wrap.green  { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); }
+  .feat-icon-wrap.gold   { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); }
+  .feat-icon-wrap.purple { background: linear-gradient(135deg, #F5F3FF, #EDE9FE); }
+  .feat-icon-wrap .iconify { font-size: 30px; }
+
+  .feat-title { font-size: 19px; font-weight: 750; color: var(--fg-dark); margin-bottom: 10px; letter-spacing: -.3px; }
+  .feat-desc { font-size: 14px; color: var(--fg-secondary); line-height: 1.65; }
+
+  /* ═════════════════ DESTINATIONS SCROLL ═════════════════ */
+  .destinations-section { padding: 100px 0; overflow: hidden; position: relative; }
+  .dest-header { padding: 0 48px; text-align: center; margin-bottom: 48px; }
+
+  .dest-scroll-track {
+    display: flex; gap: 24px; padding: 0 48px;
+    overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory;
+  }
+  .dest-scroll-track::-webkit-scrollbar { display: none; }
+
+  .dest-card {
+    flex-shrink: 0; width: 300px; border-radius: var(--radius-md);
+    overflow: hidden; box-shadow: var(--shadow-card);
+    scroll-snap-align: start; transition: all .4s cubic-bezier(.4,0,.2,1);
+    cursor: pointer; position: relative;
+    background: white;
+  }
+  .dest-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: var(--shadow-elevated); }
+
+  .dest-img-area {
+    height: 200px; position: relative;
+    overflow: hidden;
+  }
+  .dest-img-placeholder {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 22px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.3);
+  }
+  .dest-img-placeholder.tokyo { background: linear-gradient(145deg, #FF6B6B, #EE5A24, #F79F1F); }
+  .dest-img-placeholder.paris { background: linear-gradient(145deg, #6C5CE7, #A29BFE, #FD79A8); }
+  .dest-img-placeholder.nyc { background: linear-gradient(145deg, #0984E3, #74B9FF, #00CEC9); }
+  .dest-img-placeholder.sydney { background: linear-gradient(145deg, #00B894, #55EFC4, #81ECEC); }
+  .dest-img-placeholder.dubai { background: linear-gradient(145deg, #E17055, #FDCB6E, #FAB1A0); }
+  .dest-img-placeholder.london { background: linear-gradient(145deg, #2D3436, #636E72, #B2BEC3); }
+  .dest-price-tag {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
+    padding: 6px 14px; border-radius: 9999px;
+    color: white; font-size: 14px; font-weight: 700;
+  }
+
+  .dest-body { padding: 20px 22px 22px; }
+  .dest-city { font-size: 11px; font-weight: 700; color: var(--sky-mid); text-transform: uppercase; letter-spacing: 1.5px; }
+  .dest-name { font-size: 20px; font-weight: 800; color: var(--fg-dark); margin: 4px 0 10px; letter-spacing: -.3px; }
+  .dest-meta-row { display: flex; gap: 16px; font-size: 13px; color: var(--fg-secondary); }
+  .dest-meta-item { display: flex; align-items: center; gap: 4px; }
+  .dest-meta-item .iconify { font-size: 14px; color: var(--fg-light); }
+
+  /* ═════════════════ FOOTER ═════════════════ */
+  .footer {
+    background: var(--fg-dark); color: rgba(255,255,255,.6);
+    padding: 64px 48px 32px;
+    position: relative; overflow: hidden;
+  }
+  .footer::before {
+    content:''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-accent), transparent);
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .footer-brand .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .footer-brand p { font-size: 14px; line-height: 1.7; max-width: 360px; }
+  .footer-col h4 { color: white; font-size: 14px; font-weight: 700; margin-bottom: 20px; letter-spacing: .5px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col a { color: rgba(255,255,255,.5); text-decoration: none; font-size: 13.5px; transition: color .2s ease; }
+  .footer-col a:hover { color: var(--gold-accent); }
+
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    max-width: 1200px; margin: 48px auto 0; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    font-size: 12px;
+  }
+  .social-icons { display: flex; gap: 14px; }
+  .social-icons a {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.5); text-decoration: none;
+    transition: all .25s ease;
+  }
+  .social-icons a:hover { background: var(--sky-mid); color: white; transform: translateY(-2px); }
+  .social-icons a .iconify { font-size: 16px; }
+
+  /* ═════════════════ RESPONSIVE ═════════════════ */
+  @media (max-width: 1024px) {
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .navbar { padding: 12px 20px; }
+    .nav-links { display: none; }
+    .search-form-card { grid-template-columns: 1fr; padding: 24px; gap: 4px; }
+    .swap-btn { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .features-section { padding: 80px 20px; }
+    .dest-scroll-track { padding: 0 20px; }
+    .footer { padding: 48px 20px 24px; }
+    .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+    .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar" id="navbar">
+  <div class="navbar-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon"><span class="iconify" data-icon="lucide:plane"></span></div>
+      <div class="nav-logo-text">Sky<span>Star</span></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">航班预订</a></li>
+      <li><a href="#">航线网络</a></li>
+      <li><a href="#">常旅客计划</a></li>
+      <li><a href="#">旅行服务</a></li>
+      <li><a href="#">关于我们</a></li>
+    </ul>
+    <button class="nav-cta">立即预订 ✈</button>
+  </div>
+</nav>
+
+<!-- ══ HERO SECTION ══ -->
+<section class="hero">
+  <!-- Cloud Animation Layer -->
+  <div class="cloud-layer">
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+  </div>
+
+  <!-- Flight Trajectory Arc (SVG) -->
+  <svg class="hero-traj-svg" viewBox="0 0 1440 900" preserveAspectRatio="none">
+    <!-- Main flight path arc -->
+    <path class="trajectory-arc" d="M-100,650 Q300,350 720,380 T1540,250"
+          stroke="#B8D4FF" stroke-width="1.5"/>
+    <path class="trajectory-arc" d="M-50,700 Q400,420 800,450 T1500,320"
+          stroke="#D4A853" stroke-width=".8" style="opacity:.1"/>
+    <!-- Decorative arcs -->
+    <path class="trajectory-arc" d="M100,550 C400,480 700,520 1100,420 S1400,350 1500,300"
+          stroke="rgba(184,212,255,.3)" stroke-width="1"/>
+    <!-- Small plane icon along the arc -->
+    <g transform="translate(720,380)" opacity=".3">
+      <circle r="4" fill="#D4A853"><animate attributeName="r" values="3;6;3" dur="2.5s" repeatCount="indefinite"/></circle>
+      <text x="-12" y="4" fill="#D4A853" font-size="16">✈</text>
+    </g>
+  </svg>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="iconify" data-icon="lucide:sparkles" style="font-size:15px"></span>
+      2026 夏秋航季 · 全新航线已上线
+    </div>
+
+    <h1 class="hero-title">
+      让每一次飞行<br>
+      成为一段<span class="accent">优雅旅程</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      SkyStar 航空连接全球超过 160 个目的地，以卓越的客舱体验与贴心服务，
+      为您开启每一段难忘的空中之旅。
+    </p>
+
+    <!-- Search Form Card -->
+    <div class="search-form-card">
+      <div class="form-group">
+        <label class="form-label">出发城市</label>
+        <div class="form-input-wrapper">
+          <span class="iconify" data-icon="lucide:plane-takeoff"></span>
+          <input type="text" class="form-input" value="宁波 (NGB)" readonly>
+        </div>
+      </div>
+
+      <button class="swap-btn" aria-label="交换起降地">
+        <span class="iconify" data-icon="lucide:arrow-up-down"></span>
+      </button>
+
+      <div class="form-group">
+        <label class="form-label">目的城市</label>
+        <div class="form-input-wrapper">
+          <span class="iconify" data-icon="lucide:plane-landing"></span>
+          <input type="text" class="form-input" placeholder="输入目的地..." readonly>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">日期</label>
+        <div class="form-input-wrapper">
+          <span class="iconify" data-icon="lucide:calendar"></span>
+          <input type="text" class="form-input" value="2026-04-20" readonly>
+        </div>
+      </div>
+
+      <button class="search-submit-btn">
+        <span class="iconify" data-icon="lucide:search"></span> 搜索航班
+      </button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ FEATURES SECTION ══ -->
+<section class="features-section">
+  <!-- Feature arc decoration SVG -->
+  <svg class="feature-arc-svg" viewBox="0 0 1440 200" preserveAspectRatio="none">
+    <path d="M0,100 Q360,10 720,90 T1440,60" stroke="rgba(74,127,232,.08)" stroke-width="2" fill="none"/>
+    <path d="M0,140 Q400,60 800,120 T1440,90" stroke="rgba(212,168,83,.06)" stroke-width="1.5" fill="none"/>
+  </svg>
+
+  <div class="section-header">
+    <div class="section-tag">Why Choose Us</div>
+    <h2 class="section-title">为什么选择 SkyStar</h2>
+    <p class="section-desc">我们致力于将每一趟旅程升华为值得铭记的体验，从登机到落地，处处彰显品质与关怀。</p>
+  </div>
+
+  <div class="features-grid">
+    <!-- Safety -->
+    <div class="feature-card">
+      <div class="feat-icon-wrap blue">
+        <span class="iconify" data-icon="lucide:shield-check" style="color:#2563EB"></span>
+      </div>
+      <h3 class="feat-title">安全至上</h3>
+      <p class="feat-desc">全球领先的航空安全管理体系，连续 18 年零重大事故记录，让您的旅途安心无忧。</p>
+    </div>
+
+    <!-- Routes -->
+    <div class="feature-card">
+      <div class="feat-icon-wrap green">
+        <span class="iconify" data-icon="lucide:globe" style="color:#059669"></span>
+      </div>
+      <h3 class="feat-title">广泛航线</h3>
+      <p class="feat-desc">覆盖亚洲、欧洲、美洲、大洋洲 160+ 航点，每周超 2,000 班次，灵活满足您的出行需求。</p>
+    </div>
+
+    <!-- Cabin -->
+    <div class="feature-card">
+      <div class="feat-icon-wrap gold">
+        <span class="iconify" data-icon="lucide:armchair" style="color:#D97706"></span>
+      </div>
+      <h3 class="feat-title">极致客舱</h3>
+      <p class="feat-desc">全新 A350 与 B787 机队，平躺座椅、降噪技术、个性化娱乐系统，重新定义舒适标准。</p>
+    </div>
+
+    <!-- Dining -->
+    <div class="feature-card">
+      <div class="feat-icon-wrap purple">
+        <span class="iconify" data-icon="lucide:chef-hat" style="color:#7C3AED"></span>
+      </div>
+      <h3 class="feat-title">米其林餐饮</h3>
+      <p class="feat-desc">携手国际名厨打造云端美食菜单，精选当季食材，提供多元文化与特殊餐食定制服务。</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ DESTINATIONS SCROLL ══ -->
+<section class="destinations-section">
+  <div class="dest-header">
+    <div class="section-tag">Explore The World</div>
+    <h2 class="section-title">热门目的地</h2>
+  </div>
+
+  <div class="dest-scroll-track">
+    <!-- Tokyo -->
+    <article class="dest-card">
+      <div class="dest-img-area">
+        <div class="dest-img-placeholder tokyo">
+          <span class="iconify" data-icon="lucide:landmark" style="font-size:48px;margin-bottom:8px;"></span>
+          东京
+        </div>
+        <span class="dest-price-tag">¥2,680 起</span>
+      </div>
+      <div class="dest-body">
+        <div class="dest-city">日本</div>
+        <h3 class="dest-name">东京成田/羽田</h3>
+        <div class="dest-meta-row">
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:clock"></span> 约 2h 45m</span>
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:plane"></span> 每日 4 班</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Paris -->
+    <article class="dest-card">
+      <div class="dest-img-area">
+        <div class="dest-img-placeholder paris">
+          <span class="iconify" data-icon="lucide:building-2" style="font-size:48px;margin-bottom:8px;"></span>
+          巴黎
+        </div>
+        <span class="dest-price-tag">¥5,200 起</span>
+      </div>
+      <div class="dest-body">
+        <div class="dest-city">法国</div>
+        <h3 class="dest-name">巴黎戴高乐</h3>
+        <div class="dest-meta-row">
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:clock"></span> 约 13h 20m</span>
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:plane"></span> 每周 5 班</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- NYC -->
+    <article class="dest-card">
+      <div class="dest-img-area">
+        <div class="dest-img-placeholder nyc">
+          <span class="iconify" data-icon="lucide:landmark" style="font-size:48px;margin-bottom:8px;"></span>
+          纽约
+        </div>
+        <span class="dest-price-tag">¥5,800 起</span>
+      </div>
+      <div class="dest-body">
+        <div class="dest-city">美国</div>
+        <h3 class="dest-name">纽约肯尼迪</h3>
+        <div class="dest-meta-row">
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:clock"></span> 约 15h 10m</span>
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:plane"></span> 每日 1 班</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Sydney -->
+    <article class="dest-card">
+      <div class="dest-img-area">
+        <div class="dest-img-placeholder sydney">
+          <span class="iconify" data-icon="lucide:tent" style="font-size:48px;margin-bottom:8px;"></span>
+          悉尼
+        </div>
+        <span class="dest-price-tag">¥4,100 起</span>
+      </div>
+      <div class="dest-body">
+        <div class="dest-city">澳大利亚</div>
+        <h3 class="dest-name">悉尼金斯福德</h3>
+        <div class="dest-meta-row">
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:clock"></span> 约 10h 30m</span>
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:plane"></span> 每周 3 班</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Dubai -->
+    <article class="dest-card">
+      <div class="dest-img-area">
+        <div class="dest-img-placeholder dubai">
+          <span class="iconify" data-icon="lucide:building" style="font-size:48px;margin-bottom:8px;"></span>
+          迪拜
+        </div>
+        <span class="dest-price-tag">¥4,600 起</span>
+      </div>
+      <div class="dest-body">
+        <div class="dest-city">阿联酋</div>
+        <h3 class="dest-name">迪拜国际机场</h3>
+        <div class="dest-meta-row">
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:clock"></span> 约 9h 15m</span>
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:plane"></span> 每日 2 班</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- London -->
+    <article class="dest-card">
+      <div class="dest-img-area">
+        <div class="dest-img-placeholder london">
+          <span class="iconify" data-icon="lucide:crown" style="font-size:48px;margin-bottom:8px;"></span>
+          伦敦
+        </div>
+        <span class="dest-price-tag">¥4,850 起</span>
+      </div>
+      <div class="dest-body">
+        <div class="dest-city">英国</div>
+        <h3 class="dest-name">伦敦希思罗</h3>
+        <div class="dest-meta-row">
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:clock"></span> 约 12h 40m</span>
+          <span class="dest-meta-item"><span class="iconify" data-icon="lucide:plane"></span> 每日 2 班</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="logo-row">
+        <div class="nav-logo-icon" style="width:36px;height:36px;border-radius:50%;">
+          <span class="iconify" data-icon="lucide:plane" style="font-size:18px;color:white;"></span>
+        </div>
+        <div class="nav-logo-text" style="font-size:20px;">Sky<span>Star</span></div>
+      </div>
+      <p>SkyStar 航空成立于 2010 年，始终秉持「优雅旅程」的品牌理念，为全球旅客提供安全、舒适、便捷的航空出行服务。星空联盟成员。</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>产品服务</h4>
+      <ul>
+        <li><a href="#">机票预订</a></li>
+        <li><a href="#">酒店套餐</a></li>
+        <li><a href="#">租车服务</a></li>
+        <li><a href="#">旅行保险</a></li>
+        <li><a href="#">签证服务</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>旅客支持</h4>
+      <ul>
+        <li><a href="#">在线值机</a></li>
+        <li><a href="#">行李须知</a></li>
+        <li><a href="#">特殊旅客</a></li>
+        <li><a href="#">退改政策</a></li>
+        <li><a href="#">常见问题</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>关于 SkyStar</h4>
+      <ul>
+        <li><a href="#">公司简介</a></li>
+        <li><a href="#">新闻中心</a></li>
+        <li><a href="#">招贤纳士</a></li>
+        <li><a href="#">可持续发展</a></li>
+        <li><a href="#">联系我们</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 SkyStar Airlines. All rights reserved.</span>
+    <div class="social-icons">
+      <a href="#"><span class="iconify" data-icon="simple-icons:x"></span></a>
+      <a href="#"><span class="iconify" data-icon="simple-icons:instagram"></span></a>
+      <a href="#"><span class="iconify" data-icon="simple-icons:facebook"></span></a>
+      <a href="#"><span class="iconify" data-icon="simple-icons:wechat"></span></a>
+    </div>
+  </div>
+</footer>
+
+
+<!-- Navbar scroll effect script -->
+<script>
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+</script>
+
+</body>
+</html>

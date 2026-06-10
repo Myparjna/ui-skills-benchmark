@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chromatic Language — 城市运营中枢</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0B0E14;
+      --bg-card: #141820;
+      --bg-card-hover: #1A1F2C;
+      --border: #1E2432;
+      --text-primary: #F0F2F5;
+      --text-secondary: #7D8594;
+      --text-dim: #4A5266;
+      /* Chromatic palette */
+      --c-order: #6366F1;       /* Indigo — Orders */
+      --c-revenue: #10B981;     /* Emerald — Revenue */
+      --c-vehicle: #06B6D4;     /* Cyan — Vehicle */
+      --c-alert: #F43F5E;       /* Rose — Alerts */
+      --c-growth: #F59E0B;      /* Amber — Growth */
+      --c-utilization: #8B5CF6; /* Purple — Util */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ===== Layout ===== */
+    .dashboard {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 32px 40px;
+    }
+
+    /* Header */
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 36px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--c-order), var(--c-utilization));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: white;
+    }
+    .brand-text h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .brand-text span {
+      font-size: 11px;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .header-btn {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 18px;
+    }
+    .header-btn:hover { color: var(--text-primary); border-color: var(--c-order); }
+    .header-btn.avatar { background: linear-gradient(135deg, var(--c-order), var(--c-revenue)); color: white; border: none; font-weight: 700; font-size: 13px; }
+
+    /* Section Title */
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 18px;
+    }
+
+    /* ===== KPI Cards Grid ===== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 800px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .dashboard { padding: 20px 16px; }
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border-radius: 18px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      border: 1px solid transparent;
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.05);
+      background: var(--bg-card-hover);
+    }
+
+    /* Color accent bar at top of each KPI card */
+    .kpi-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .accent-order { background: var(--c-order); }
+    .accent-revenue { background: var(--c-revenue); }
+    .accent-vehicle { background: var(--c-vehicle); }
+    .accent-alert { background: var(--c-alert); }
+    .accent-growth { background: var(--c-growth); }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kpi-value {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .value-order { color: var(--c-order); }
+    .value-revenue { color: var(--c-revenue); }
+    .value-vehicle { color: var(--c-vehicle); }
+    .value-alert { color: var(--c-alert); }
+    .value-growth { color: var(--c-growth); }
+
+    .kpi-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .trend-up { color: var(--c-revenue); background: rgba(16,185,129,0.08); }
+    .trend-down { color: var(--c-alert); background: rgba(244,63,94,0.08); }
+
+    /* Decorative shape behind each kpi */
+    .kpi-deco {
+      position: absolute;
+      bottom: -20px; right: -20px;
+      width: 90px; height: 90px;
+      opacity: 0.04;
+      border-radius: 50%;
+    }
+    .deco-order { background: var(--c-order); }
+    .deco-revenue { background: var(--c-revenue); }
+    .deco-vehicle { background: var(--c-vehicle); }
+    .deco-alert { background: var(--c-alert); }
+    .deco-growth { background: var(--c-growth); }
+
+    /* ===== Main Content Grid ===== */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr 360px;
+      gap: 20px;
+    }
+    @media (max-width: 1200px) {
+      .content-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 800px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border-radius: 18px;
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .panel-title-lg {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* ===== Pie Chart — CSS Only ===== */
+    .pie-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .pie-chart {
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: conic-gradient(
+        from 0deg,
+        var(--c-revenue) 0deg 140deg,
+        var(--c-order) 140deg 230deg,
+        var(--c-vehicle) 230deg 280deg,
+        var(--c-alert) 280deg 310deg,
+        var(--c-growth) 310deg 360deg
+      );
+      animation: pieSpin 30s linear infinite;
+    }
+    .pie-inner {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .pie-total-label { font-size: 11px; color: var(--text-secondary); }
+    .pie-total-num { font-size: 26px; font-weight: 700; }
+
+    @keyframes pieSpin {
+      from { filter: hue-rotate(0deg); }
+      to { filter: hue-rotate(360deg); }
+    }
+
+    .pie-legend {
+      width: 100%;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: 13px;
+    }
+    .legend-item:last-child { border-bottom: none; }
+    .legend-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .dot-running { background: var(--c-revenue); }
+    .dot-idle { background: var(--c-order); }
+    .dot-charging { background: var(--c-vehicle); }
+    .dot-maintenance { background: var(--c-alert); }
+    .dot-offline { background: var(--c-growth); }
+
+    /* ===== Heatmap Simulation ===== */
+    .heatmap-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .heatmap-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .hm-label {
+      width: 28px;
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+    }
+    .hm-cells {
+      display: flex;
+      gap: 3px;
+      flex: 1;
+    }
+    .hm-cell {
+      width: 100%;
+      aspect-ratio: 1.6;
+      border-radius: 3px;
+      transition: all 0.15s;
+    }
+    .hm-cell:hover { transform: scale(1.3); z-index: 2; }
+
+    /* Heat intensity levels */
+    .hm-0 { background: #1a1f2e; }
+    .hm-1 { background: rgba(99,102,241,0.15); }
+    .hm-2 { background: rgba(99,102,241,0.3); }
+    .hm-3 { background: rgba(99,102,241,0.5); }
+    .hm-4 { background: rgba(99,102,241,0.75); }
+    .hm-5 { background: var(--c-order); }
+
+    /* ===== Alert Stream ===== */
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .alert-item {
+      display: flex;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .alert-item:hover { background: rgba(255,255,255,0.02); }
+    .alert-item.critical { border-left-color: var(--c-alert); }
+    .alert-item.warning { border-left-color: var(--c-growth); }
+    .alert-item.info { border-left-color: var(--c-vehicle); }
+
+    .alert-icon-wrap {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 17px;
+    }
+    .icon-critical { background: rgba(244,63,94,0.12); color: var(--c-alert); }
+    .icon-warning { background: rgba(245,158,11,0.12); color: var(--c-growth); }
+    .icon-info { background: rgba(6,182,212,0.12); color: var(--c-vehicle); }
+
+    .alert-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .alert-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .alert-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .alert-time {
+      font-size: 10px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+      align-self: flex-start;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Ambient glow */
+    .ambient {
+      position: fixed;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      filter: blur(150px);
+      pointer-events: none;
+      opacity: 0.04;
+      z-index: 0;
+    }
+    .amb-1 { background: var(--c-order); top: -200px; left: -200px; }
+    .amb-2 { background: var(--c-revenue); bottom: -200px; right: -200px; }
+  </style>
+</head>
+<body>
+
+<div class="ambient amb-1"></div>
+<div class="ambient amb-2"></div>
+
+<div class="dashboard">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div class="brand">
+      <div class="brand-icon"><span class="iconify" data-icon="mdi:bike-fast"></span></div>
+      <div class="brand-text">
+        <h1>城市运营中枢</h1>
+        <span>Chromatic Dashboard</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="header-btn"><span class="iconify" data-icon="mdi:bell-outline"></span></div>
+      <div class="header-btn"><span class="iconify" data-icon="mdi:cog-outline"></span></div>
+      <div class="header-btn avatar">运</div>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="section-title">核心指标 · 今日实时</div>
+  <div class="kpi-grid">
+
+    <!-- Order KPI -->
+    <div class="kpi-card">
+      <div class="kpi-accent accent-order"></div>
+      <div class="kpi-label"><span class="iconify" data-icon="mdi:clipboard-check-outline"></span> 订单总量</div>
+      <div class="kpi-value value-order">12,847</div>
+      <div class="kpi-trend trend-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:14px;"></span> +18.2% 较昨日</div>
+      <div class="kpi-deco deco-order"></div>
+    </div>
+
+    <!-- Revenue KPI -->
+    <div class="kpi-card">
+      <div class="kpi-accent accent-revenue"></div>
+      <div class="kpi-label"><span class="iconify" data-icon="mdi:currency-cny"></span> 营收总额</div>
+      <div class="kpi-value value-revenue">¥89.4<span style="font-size:18px;font-weight:600;color:#7D8594;">万</span></div>
+      <div class="kpi-trend trend-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:14px;"></span> +23.5% 较昨日</div>
+      <div class="kpi-deco deco-revenue"></div>
+    </div>
+
+    <!-- Vehicle KPI -->
+    <div class="kpi-card">
+      <div class="kpi-accent accent-vehicle"></div>
+      <div class="kpi-label"><span class="iconify" data-icon="mdi:bicycle"></span> 车辆可用率</div>
+      <div class="kpi-value value-vehicle">94.7<span style="font-size:18px;font-weight:600;color:#7D8594;">%</span></div>
+      <div class="kpi-trend trend-down"><span class="iconify" data-icon="mdi:trending-down" style="font-size:14px;"></span> -1.2% 较昨日</div>
+      <div class="kpi-deco deco-vehicle"></div>
+    </div>
+
+    <!-- Alert KPI -->
+    <div class="kpi-card">
+      <div class="kpi-accent accent-alert"></div>
+      <div class="kpi-label"><span class="iconify" data-icon="mdi:alert-circle-outline"></span> 活跃告警</div>
+      <div class="kpi-value value-alert">17</div>
+      <div class="kpi-trend trend-up"><span class="iconify" data-icon="mdi:arrow-up-bold" style="font-size:14px;"></span> 3 条新增</div>
+      <div class="kpi-deco deco-alert"></div>
+    </div>
+
+    <!-- Growth KPI -->
+    <div class="kpi-card">
+      <div class="kpi-accent accent-growth"></div>
+      <div class="kpi-label"><span class="iconify" data-icon="mdi:account-group-outline"></span> 日活用户</div>
+      <div class="kpi-value value-growth">45.2<span style="font-size:18px;font-weight:600;color:#7D8594;">K</span></div>
+      <div class="kpi-trend trend-up"><span class="iconify" data-icon="mdi:trending-up" style="font-size:14px;"></span> +8.7% 较上周</div>
+      <div class="kpi-deco deco-growth"></div>
+    </div>
+
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+
+    <!-- Left: Pie Chart -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-lg"><span class="iconify" data-icon="mdi:chart-pie" style="color:var(--c-utilization);margin-right:6px;"></span>车辆状态分布</div>
+      </div>
+      <div class="pie-container">
+        <div class="pie-chart">
+          <div class="pie-inner">
+            <span class="pie-total-label">总车辆数</span>
+            <span class="pie-total-num">8,462</span>
+          </div>
+        </div>
+        <div class="pie-legend">
+          <div class="legend-item">
+            <div class="legend-left"><div class="legend-dot dot-running"></div><span>运行中</span></div>
+            <strong>4,218</strong>
+          </div>
+          <div class="legend-item">
+            <div class="legend-left"><div class="legend-dot dot-idle"></div><span>空闲停放</span></div>
+            <strong>2,104</strong>
+          </div>
+          <div class="legend-item">
+            <div class="legend-left"><div class="legend-dot dot-charging"></div><span>充电中</span></div>
+            <strong>1,268</strong>
+          </div>
+          <div class="legend-item">
+            <div class="legend-left"><div class="legend-dot dot-maintenance"></div><span>维护检修</span></div>
+            <strong>562</strong>
+          </div>
+          <div class="legend-item">
+            <div class="legend-left"><div class="legend-dot dot-offline"></div><span>离线/丢失</span></div>
+            <strong>310</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Heatmap -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-lg"><span class="iconify" data-icon="mdi:heatmap" style="color:var(--c-order);margin-right:6px;"></span>区域热力分布</div>
+        <span style="font-size:11px;color:var(--text-dim);cursor:pointer;">查看详情 →</span>
+      </div>
+      <div class="heatmap-area">
+        <div class="heatmap-row"><span class="hm-label">北城</span><div class="hm-cells"><div class="hm-cell hm-1"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-5"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-1"></div></div></div>
+        <div class="heatmap-row"><span class="hm-label">中心</span><div class="hm-cells"><div class="hm-cell hm-3"></div><div class="hm-cell hm-5"></div><div class="hm-cell hm-5"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-5"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-2"></div></div></div>
+        <div class="heatmap-row"><span class="hm-label">东郊</span><div class="hm-cells"><div class="hm-cell hm-2"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-1"></div><div class="hm-cell hm-0"></div></div></div>
+        <div class="heatmap-row"><span class="hm-label">南港</span><div class="hm-cells"><div class="hm-cell hm-1"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-1"></div></div></div>
+        <div class="heatmap-row"><span class="hm-label">西新</span><div class="hm-cells"><div class="hm-cell hm-0"></div><div class="hm-cell hm-1"></div><div class="hm-cell hm-1"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-1"></div><div class="hm-cell hm-0"></div><div class="hm-cell hm-0"></div></div></div>
+        <div class="heatmap-row"><span class="hm-label">高新</span><div class="hm-cells"><div class="hm-cell hm-2"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-5"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-1"></div></div></div>
+        <div class="heatmap-row"><span class="hm-label">大学</span><div class="hm-cells"><div class="hm-cell hm-3"></div><div class="hm-cell hm-5"></div><div class="hm-cell hm-4"></div><div class="hm-cell hm-3"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-1"></div><div class="hm-cell hm-0"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Right: Alert Stream -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-lg"><span class="iconify" data-icon="mdi:bell-ring-outline" style="color:var(--c-alert);margin-right:6px;"></span>告警流</div>
+        <span style="font-size:11px;color:var(--text-dim);cursor:pointer;">全部告警 →</span>
+      </div>
+      <div class="alert-list">
+        <div class="alert-item critical">
+          <div class="alert-icon-wrap icon-critical"><span class="iconify" data-icon="mdi:alert-octagon"></span></div>
+          <div class="alert-body">
+            <div class="alert-title">电池温度超标 — 车辆 #A-7824</div>
+            <div class="alert-desc">当前温度 67°C，阈值 55°C，位置：高新区科技园</div>
+          </div>
+          <div class="alert-time">23:41</div>
+        </div>
+        <div class="alert-item warning">
+          <div class="alert-icon-wrap icon-warning"><span class="iconify" data-icon="mdi:alert-circle"></span></div>
+          <div class="alert-body">
+            <div class="alert-title">站点 #S-014 电量低于 15%</div>
+            <div class="alert-desc">仅剩 12% 电量，预计 2 小时后停服</div>
+          </div>
+          <div class="alert-time">23:35</div>
+        </div>
+        <div class="alert-item critical">
+          <div class="alert-icon-wrap icon-critical"><span class="iconify" data-icon="mdi:lock-open-variant-outline"></span></div>
+          <div class="alert-body">
+            <div class="alert-title">异常解锁尝试 — 车辆 #B-3391</div>
+            <div class="alert-desc">连续 5 次蓝牙解锁失败，疑似设备故障</div>
+          </div>
+          <div class="alert-time">23:28</div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon-wrap icon-info"><span class="iconify" data-icon="mdi:information-outline"></span></div>
+          <div class="alert-body">
+            <div class="alert-title">区域调度完成 — 东郊片区</div>
+            <div class="alert-desc">已调度 47 辆车至热点区域</div>
+          </div>
+          <div class="alert-time">23:15</div>
+        </div>
+        <div class="alert-item warning">
+          <div class="alert-icon-wrap icon-warning"><span class="iconify" data-icon="mdi:speedometer-slow"></span></div>
+          <div class="alert-body">
+            <div class="alert-title">车辆超速预警 — 车辆 #C-1056</div>
+            <div class="alert-desc">瞬时速度 32km/h，限速 25km/h</div>
+          </div>
+          <div class="alert-time">22:58</div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon-wrap icon-info"><span class="iconify" data-icon="mdi:check-circle-outline"></span></div>
+          <div class="alert-body">
+            <div class="alert-title">固件批量更新完成</div>
+            <div class="alert-desc">已更新 1,204 辆车辆至 v3.2.1</div>
+          </div>
+          <div class="alert-time">22:40</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

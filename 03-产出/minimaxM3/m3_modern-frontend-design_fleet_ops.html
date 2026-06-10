@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440, initial-scale=1">
+<title>派城智运 · Modern Frontend — Fleet Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0b14;
+    --bg-2:#0f1020;
+    --surface:rgba(255,255,255,.04);
+    --surface-2:rgba(255,255,255,.07);
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.16);
+    --text:#f5f5fa;
+    --text-2:#a8aac0;
+    --text-3:#6b6e85;
+    --accent:#a78bfa;
+    --accent-2:#22d3ee;
+    --accent-3:#f472b6;
+    --good:#34d399;
+    --warn:#fbbf24;
+    --bad:#f87171;
+    --grad-1:linear-gradient(135deg,#a78bfa 0%,#22d3ee 50%,#f472b6 100%);
+    --grad-2:linear-gradient(135deg,#22d3ee 0%,#a78bfa 100%);
+    --grad-soft:radial-gradient(ellipse at top left,rgba(167,139,250,.18),transparent 50%),radial-gradient(ellipse at bottom right,rgba(34,211,238,.12),transparent 50%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    background-image:var(--grad-soft);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Top app bar */
+  .topbar{
+    height:60px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 24px;
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(20px);
+    background:rgba(10,11,20,.6);
+    position:sticky;top:0;z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px}
+  .brand .logo{
+    width:28px;height:28px;border-radius:8px;
+    background:var(--grad-1);
+    display:grid;place-items:center;font-size:14px;font-weight:700;color:#0a0b14;
+    box-shadow:0 0 24px rgba(167,139,250,.4);
+  }
+  .topnav{display:flex;gap:4px;font-size:12.5px}
+  .topnav a{color:var(--text-2);text-decoration:none;padding:6px 12px;border-radius:8px;transition:.2s}
+  .topnav a.on{background:var(--surface-2);color:var(--text)}
+  .topnav a:hover{background:var(--surface)}
+  .topright{display:flex;align-items:center;gap:14px}
+  .topright .pill{font-size:11px;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+  .topright .live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--good)}
+  .topright .live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);animation:blink 1.6s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* Hero */
+  .hero{
+    padding:36px 24px 24px;
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    gap:24px;
+  }
+  .hero .lhs h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:46px;
+    line-height:1.05;
+    font-weight:600;
+    letter-spacing:-.02em;
+  }
+  .hero .lhs h1 span{
+    background:var(--grad-1);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero .lhs p{margin-top:10px;color:var(--text-2);max-width:580px;font-size:13.5px}
+  .hero .rhs{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+  .hero-stat{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:16px 18px;
+    backdrop-filter:blur(10px);
+    position:relative;overflow:hidden;
+  }
+  .hero-stat::before{content:"";position:absolute;inset:0;background:var(--grad-1);opacity:0;transition:.3s}
+  .hero-stat:hover::before{opacity:.05}
+  .hero-stat .l{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-3);font-weight:500}
+  .hero-stat .v{font-family:'Space Grotesk',sans-serif;font-size:30px;line-height:1;font-weight:600;margin:6px 0 4px;letter-spacing:-.02em}
+  .hero-stat .v.accent{background:var(--grad-2);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-stat .s{font-size:11px;color:var(--text-2)}
+
+  /* Container */
+  .container{padding:0 24px 40px}
+  .section-title{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:8px 0 14px;
+  }
+  .section-title h2{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .section-title .meta{font-size:11px;color:var(--text-3);display:flex;gap:14px;align-items:center}
+  .section-title .meta a{color:var(--text-2);text-decoration:none;padding:4px 10px;border-radius:8px;background:var(--surface-2);font-size:11px}
+
+  /* KPI grid */
+  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  .kpi{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px 16px;
+    backdrop-filter:blur(10px);
+    transition:.3s;
+  }
+  .kpi:hover{border-color:var(--line-2);background:var(--surface-2);transform:translateY(-2px)}
+  .kpi .l{font-size:10.5px;color:var(--text-3);letter-spacing:.14em;text-transform:uppercase}
+  .kpi .v{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;letter-spacing:-.01em;margin:4px 0 4px}
+  .kpi .v .u{font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px}
+  .kpi .bar{height:3px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-top:8px}
+  .kpi .bar i{display:block;height:100%;background:var(--grad-1);border-radius:99px}
+  .kpi.up .v::after{content:" ↑";font-size:11px;color:var(--good)}
+  .kpi.dn .v::after{content:" ↓";font-size:11px;color:var(--bad)}
+
+  /* Main grid */
+  .main-grid{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:14px;
+    margin-top:14px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px 20px;
+    backdrop-filter:blur(10px);
+  }
+  .card h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .card h3::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--grad-1)}
+  .card .sub{font-size:11px;color:var(--text-3);margin-top:2px}
+  .c-map{grid-column:span 8}
+  .c-tickets{grid-column:span 4}
+  .c-trend{grid-column:span 7}
+  .c-ai{grid-column:span 5}
+  .c-hot{grid-column:span 7}
+  .c-comp{grid-column:span 5}
+
+  /* Map */
+  .map-wrap{margin-top:12px;height:280px;border-radius:14px;background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(167,139,250,.05));border:1px solid var(--line);position:relative;overflow:hidden}
+  .map-wrap svg{position:absolute;inset:0;width:100%;height:100%}
+  .map-pin{position:absolute;display:flex;align-items:center;gap:6px;font-size:10.5px;background:rgba(10,11,20,.85);border:1px solid var(--line-2);padding:4px 8px;border-radius:10px;backdrop-filter:blur(8px)}
+  .map-pin .dot{width:6px;height:6px;border-radius:50%}
+  .map-pin.green .dot{background:var(--good);box-shadow:0 0 6px var(--good)}
+  .map-pin.red .dot{background:var(--bad);box-shadow:0 0 6px var(--bad);animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+
+  /* Tickets */
+  .tk{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
+  .tk:last-child{border-bottom:none}
+  .tk .avatar{width:28px;height:28px;border-radius:8px;background:var(--grad-1);display:grid;place-items:center;font-size:11px;font-weight:600;color:#0a0b14;flex-shrink:0}
+  .tk .body{flex:1;min-width:0}
+  .tk .body .t{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tk .body .s{font-size:10.5px;color:var(--text-3)}
+  .tk .badge{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:2px 7px;border-radius:99px;font-weight:600}
+  .tk .badge.h{background:rgba(248,113,113,.16);color:var(--bad);border:1px solid rgba(248,113,113,.3)}
+  .tk .badge.m{background:rgba(251,191,36,.16);color:var(--warn);border:1px solid rgba(251,191,36,.3)}
+  .tk .badge.l{background:var(--surface-2);color:var(--text-2);border:1px solid var(--line)}
+
+  /* Trend chart */
+  .trend-grid{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:12px}
+  .y-axis{display:flex;flex-direction:column;justify-content:space-between;height:160px;font-size:10px;color:var(--text-3);text-align:right}
+  .bars{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;height:160px;align-items:flex-end;position:relative}
+  .bars::before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);pointer-events:none}
+  .bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative}
+  .bar-col .bar{width:80%;background:var(--surface-2);border-radius:4px 4px 0 0;position:relative;overflow:hidden}
+  .bar-col .bar i{position:absolute;left:0;top:0;width:100%;background:var(--grad-1);border-radius:4px 4px 0 0}
+  .bar-col .bar.hot i{background:linear-gradient(180deg,#f472b6,#a78bfa)}
+  .bar-col .lbl{font-size:9.5px;color:var(--text-3);margin-top:4px;font-family:'Space Grotesk',sans-serif}
+
+  /* AI insights */
+  .ai-list{margin-top:12px;display:grid;gap:8px}
+  .ai{
+    display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;
+    padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  }
+  .ai .ic{width:32px;height:32px;border-radius:10px;background:var(--grad-1);display:grid;place-items:center;font-size:14px;color:#0a0b14;font-weight:700}
+  .ai .t{font-size:12.5px}
+  .ai .t small{display:block;color:var(--text-3);font-size:10.5px;margin-top:2px}
+  .ai .conf{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--accent)}
+  .ai .conf small{font-size:9.5px;color:var(--text-3);font-weight:400;margin-left:2px}
+
+  /* Hot spots */
+  .hot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .hot{
+    padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+    display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;
+  }
+  .hot::after{content:"";position:absolute;left:0;bottom:0;height:2px;background:var(--grad-1);width:var(--w,50%)}
+  .hot .rk{position:absolute;top:10px;right:12px;font-family:'Space Grotesk',sans-serif;font-size:20px;color:var(--text-3);font-weight:600}
+  .hot .name{font-size:13px;font-weight:500}
+  .hot .meta{font-size:10.5px;color:var(--text-3)}
+
+  /* Compliance */
+  .comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .comp{
+    padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  }
+  .comp .l{font-size:10.5px;color:var(--text-3);letter-spacing:.14em;text-transform:uppercase}
+  .comp .v{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:4px}
+  .comp .v.good{color:var(--good)}
+  .comp .v.warn{color:var(--warn)}
+  .comp .v.bad{color:var(--bad)}
+  .comp .s{font-size:10.5px;color:var(--text-3);margin-top:2px}
+
+  /* Side panel nav (left rail) */
+  .layout{display:grid;grid-template-columns:64px 1fr;min-height:100vh}
+  .rail{
+    background:rgba(255,255,255,.02);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;
+  }
+  .rail .item{
+    width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+    color:var(--text-2);cursor:pointer;transition:.2s;
+  }
+  .rail .item:hover{background:var(--surface-2);color:var(--text)}
+  .rail .item.on{background:var(--grad-1);color:#0a0b14}
+  .rail .divider{width:24px;height:1px;background:var(--line);margin:6px 0}
+  .rail .ico{width:18px;height:18px}
+
+  /* Footer */
+  .footer{
+    padding:24px;border-top:1px solid var(--line);margin-top:24px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;color:var(--text-3);
+  }
+  .footer .links{display:flex;gap:14px}
+  .footer a{color:var(--text-2);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="rail">
+    <div class="item on" title="总览"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+    <div class="item" title="车辆"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3v-4l2-5h9l4 5h2v4h-2"/><path d="M9 17h6"/></svg></div>
+    <div class="item" title="调度"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9c2.4 0 4.6 1 6.3 2.6"/><path d="M21 3v6h-6"/></svg></div>
+    <div class="item" title="电池"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="10" rx="1"/><path d="M22 11v2"/><path d="M6 10v4M10 10v4M14 10v4"/></svg></div>
+    <div class="item" title="站点"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+    <div class="item" title="工单"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+    <div class="divider"></div>
+    <div class="item" title="分析"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+    <div class="item" title="设置"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">P</div>
+        <span>派城智运</span>
+        <span style="color:var(--text-3);font-weight:400;margin-left:4px">/ Fleet Ops</span>
+      </div>
+      <nav class="topnav">
+        <a class="on" href="#">总览</a>
+        <a href="#">车辆</a>
+        <a href="#">调度</a>
+        <a href="#">电池</a>
+        <a href="#">站点</a>
+        <a href="#">工单</a>
+        <a href="#">分析</a>
+      </nav>
+      <div class="topright">
+        <span class="pill">admin</span>
+        <span class="live">实时 · 30s</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="lhs">
+        <h1>把两轮车运营，<br>做成<span>可被感知的实时艺术</span>。</h1>
+        <p>每一次解锁、每一次调度、每一次低电回仓，都是这座城市与我们的对话。派城智运的运营总览，让 20 000 辆车的状态、需求与风险，以毫秒级精度呈现在你面前。</p>
+      </div>
+      <div class="rhs">
+        <div class="hero-stat"><div class="l">在线车辆</div><div class="v accent">19 720</div><div class="s">98.6% · 较昨日 +0.4%</div></div>
+        <div class="hero-stat"><div class="l">今日订单</div><div class="v">87 432</div><div class="s">+12% · 历史峰值</div></div>
+        <div class="hero-stat"><div class="l">营收 (CNY)</div><div class="v">¥ 1.26<small style="font-size:14px;color:var(--text-3)">M</small></div><div class="s">+8.4% WoW</div></div>
+        <div class="hero-stat"><div class="l">寻车平均</div><div class="v">42<small style="font-size:14px;color:var(--text-3)">s</small></div><div class="s">−6 s · 调度 v3.2</div></div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="section-title">
+        <h2>核心指标</h2>
+        <div class="meta"><a href="#">导出 CSV</a><a href="#">自定义面板</a></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi up"><div class="l">车辆在线率</div><div class="v">98.6<span class="u">%</span></div><div class="bar"><i style="width:98.6%"></i></div></div>
+        <div class="kpi up"><div class="l">订单总数</div><div class="v">87 432</div><div class="bar"><i style="width:78%"></i></div></div>
+        <div class="kpi up"><div class="l">日营收</div><div class="v">¥ 1.26<span class="u">M</span></div><div class="bar"><i style="width:68%"></i></div></div>
+        <div class="kpi dn"><div class="l">寻车时长</div><div class="v">42<span class="u">s</span></div><div class="bar"><i style="width:32%"></i></div></div>
+        <div class="kpi up"><div class="l">复购率</div><div class="v">62.8<span class="u">%</span></div><div class="bar"><i style="width:62%"></i></div></div>
+        <div class="kpi dn"><div class="l">违规事件</div><div class="v">7</div><div class="bar"><i style="width:14%;background:linear-gradient(90deg,#fbbf24,#f87171)"></i></div></div>
+      </div>
+
+      <div class="main-grid">
+        <div class="card c-map">
+          <h3>城市实时分布</h3>
+          <div class="sub">2 312 辆 · 朝阳 / 1 022 辆 · 通州 / 428 辆 · 排队告警</div>
+          <div class="map-wrap">
+            <svg viewBox="0 0 700 280" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".5"/><stop offset="1" stop-color="#a78bfa" stop-opacity=".5"/></linearGradient>
+              </defs>
+              <path d="M20 200 C 120 160, 220 220, 320 160 S 520 120, 680 180" stroke="url(#g1)" stroke-width="2" fill="none"/>
+              <path d="M0 80 C 100 60, 200 100, 300 80 S 500 60, 700 100" stroke="#a78bfa" stroke-width="1" fill="none" opacity=".3"/>
+              <circle cx="180" cy="100" r="32" fill="#a78bfa" opacity=".15"/><circle cx="180" cy="100" r="14" fill="#a78bfa" opacity=".3"/>
+              <circle cx="420" cy="180" r="48" fill="#f472b6" opacity=".15"/><circle cx="420" cy="180" r="20" fill="#f472b6" opacity=".3"/>
+              <circle cx="540" cy="80" r="22" fill="#22d3ee" opacity=".3"/>
+            </svg>
+            <div class="map-pin green" style="left:18%;top:25%"><div class="dot"></div>2 312 · 朝阳</div>
+            <div class="map-pin red" style="left:55%;top:60%"><div class="dot"></div>428 · 告警</div>
+            <div class="map-pin green" style="left:75%;top:25%"><div class="dot"></div>1 022 · 通州</div>
+          </div>
+        </div>
+
+        <div class="card c-tickets">
+          <h3>待处理工单</h3>
+          <div class="sub">共 23 起 · 12 起自动分派</div>
+          <div style="margin-top:10px">
+            <div class="tk"><div class="avatar" style="background:linear-gradient(135deg,#f87171,#fbbf24)">!</div><div class="body"><div class="t">朝阳 SOHO 西侧 · 车辆倒地</div><div class="s">2 分钟前 · 王师傅</div></div><div class="badge h">高</div></div>
+            <div class="tk"><div class="avatar" style="background:linear-gradient(135deg,#fbbf24,#22d3ee)">M</div><div class="body"><div class="t">五道口地铁 A 口 · 围栏外</div><div class="s">5 分钟前 · 自动侦测</div></div><div class="badge m">中</div></div>
+            <div class="tk"><div class="avatar" style="background:linear-gradient(135deg,#fbbf24,#f472b6)">B</div><div class="body"><div class="t">通州万达 · 电池告警 12%</div><div class="s">8 分钟前 · 车载上报</div></div><div class="badge m">中</div></div>
+            <div class="tk"><div class="avatar">P</div><div class="body"><div class="t">中关村 E 座 · 违停</div><div class="s">11 分钟前 · 巡检</div></div><div class="badge l">低</div></div>
+            <div class="tk"><div class="avatar">X</div><div class="body"><div class="t">西单大悦城 · 调度失败</div><div class="s">14 分钟前 · 系统</div></div><div class="badge l">低</div></div>
+          </div>
+        </div>
+
+        <div class="card c-trend">
+          <h3>近 14 日订单与营收</h3>
+          <div class="sub">峰值 12.0k · 今日 / 周同比 +18.2%</div>
+          <div class="trend-grid">
+            <div class="y-axis"><span>15k</span><span>10k</span><span>5k</span><span>0</span></div>
+            <div class="bars">
+              <div class="bar-col"><div class="bar" style="height:38%"><i style="height:62%"></i></div><div class="lbl">05-20</div></div>
+              <div class="bar-col"><div class="bar" style="height:46%"><i style="height:58%"></i></div><div class="lbl">05-21</div></div>
+              <div class="bar-col"><div class="bar" style="height:42%"><i style="height:60%"></i></div><div class="lbl">05-22</div></div>
+              <div class="bar-col"><div class="bar" style="height:54%"><i style="height:64%"></i></div><div class="lbl">05-23</div></div>
+              <div class="bar-col"><div class="bar" style="height:60%"><i style="height:66%"></i></div><div class="lbl">05-24</div></div>
+              <div class="bar-col"><div class="bar" style="height:78%"><i style="height:70%"></i></div><div class="lbl">05-25</div></div>
+              <div class="bar-col"><div class="bar" style="height:88%"><i style="height:72%"></i></div><div class="lbl">05-26</div></div>
+              <div class="bar-col"><div class="bar" style="height:66%"><i style="height:68%"></i></div><div class="lbl">05-27</div></div>
+              <div class="bar-col"><div class="bar" style="height:72%"><i style="height:66%"></i></div><div class="lbl">05-28</div></div>
+              <div class="bar-col"><div class="bar" style="height:80%"><i style="height:70%"></i></div><div class="lbl">05-29</div></div>
+              <div class="bar-col"><div class="bar" style="height:74%"><i style="height:68%"></i></div><div class="lbl">05-30</div></div>
+              <div class="bar-col"><div class="bar" style="height:82%"><i style="height:70%"></i></div><div class="lbl">05-31</div></div>
+              <div class="bar-col"><div class="bar" style="height:88%"><i style="height:72%"></i></div><div class="lbl">06-01</div></div>
+              <div class="bar-col"><div class="bar hot" style="height:100%"><i style="height:78%"></i></div><div class="lbl" style="color:var(--text);font-weight:600">今日</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card c-ai">
+          <h3>AI 调度建议</h3>
+          <div class="sub">由派城调度大模型生成 · 实时</div>
+          <div class="ai-list">
+            <div class="ai"><div class="ic">A</div><div class="t">朝阳 SOHO 排队预警 — 调度 12 辆车从通州分流<small>预计缓解 4 分钟内</small></div><div class="conf">96<small>%</small></div></div>
+            <div class="ai"><div class="ic">B</div><div class="t">通州万达电池 12% — 调度运维换电<small>3 公里内空闲技师 2 名</small></div><div class="conf">92<small>%</small></div></div>
+            <div class="ai"><div class="ic">C</div><div class="t">五道口围栏越界 — 触发语音劝离<small>已减少 80% 重复越界</small></div><div class="conf">88<small>%</small></div></div>
+            <div class="ai"><div class="ic">D</div><div class="t">晚高峰预调度：建议 17:30 提前 30 分钟<small>历史数据 + 天气</small></div><div class="conf">84<small>%</small></div></div>
+          </div>
+        </div>
+
+        <div class="card c-hot">
+          <h3>本周热点站点</h3>
+          <div class="sub">按订单量排序 · 仅展示前 6</div>
+          <div class="hot-grid">
+            <div class="hot" style="--w:96%"><div class="rk">01</div><div class="name">国贸三期</div><div class="meta">4 230 单 · +24%</div></div>
+            <div class="hot" style="--w:88%"><div class="rk">02</div><div class="name">五道口地铁</div><div class="meta">3 902 单 · +19%</div></div>
+            <div class="hot" style="--w:80%"><div class="rk">03</div><div class="name">西单大悦城</div><div class="meta">3 482 单 · +12%</div></div>
+            <div class="hot" style="--w:74%"><div class="rk">04</div><div class="name">朝阳 SOHO</div><div class="meta">3 211 单 · +8%</div></div>
+            <div class="hot" style="--w:66%"><div class="rk">05</div><div class="name">中关村 E 座</div><div class="meta">2 904 单 · +5%</div></div>
+            <div class="hot" style="--w:58%"><div class="rk">06</div><div class="name">通州万达</div><div class="meta">2 612 单 · +2%</div></div>
+          </div>
+        </div>
+
+        <div class="card c-comp">
+          <h3>合规与监管</h3>
+          <div class="sub">本月指标 · 监管系统直连</div>
+          <div class="comp-grid">
+            <div class="comp"><div class="l">车辆备案</div><div class="v good">19 720</div><div class="s">100% 完成</div></div>
+            <div class="comp"><div class="l">保险在保</div><div class="v good">99.8%</div><div class="s">28 份待续</div></div>
+            <div class="comp"><div class="l">本月违规</div><div class="v warn">7</div><div class="s">同比 −62%</div></div>
+            <div class="comp"><div class="l">用户投诉</div><div class="v warn">12</div><div class="s">已 100% 处理</div></div>
+            <div class="comp"><div class="l">监管通报</div><div class="v good">0</div><div class="s">已连续 32 天</div></div>
+            <div class="comp"><div class="l">数据上报</div><div class="v good">100%</div><div class="s">实时直连</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>派城智运 · 2026 © PAICHENG · 数据实时 · 调度更智能</div>
+      <div class="links">
+        <a href="#">隐私</a>
+        <a href="#">服务条款</a>
+        <a href="#">API 文档</a>
+        <a href="#">帮助中心</a>
+      </div>
+    </footer>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>智充家 - 电动汽车充电</title>
+  <style>
+    :root {
+      --brand: oklch(55% 0.2 255);
+      --brand-light: oklch(62% 0.18 255);
+      --brand-soft: oklch(95% 0.03 255);
+      --success: oklch(68% 0.22 145);
+      --warning: oklch(72% 0.18 75);
+      --danger: oklch(60% 0.18 25);
+      --unknown: oklch(70% 0.01 255);
+      --bg: oklch(96% 0.005 255);
+      --surface: oklch(100% 0 0);
+      --ink: oklch(22% 0.02 255);
+      --ink-secondary: oklch(38% 0.04 255);
+      --muted: oklch(58% 0.05 255);
+      --border: oklch(88% 0.01 255);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.06);
+      --shadow-md: 0 4px 14px oklch(0% 0 0 / 0.1);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      color: var(--ink);
+      background: #e8e8e8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Phone frame */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 40px;
+      box-shadow: 0 24px 60px oklch(0% 0 0 / 0.18), 0 0 0 10px #1a1a1a;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 44px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    /* Mini-program nav */
+    .mp-nav {
+      height: 44px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .mp-nav-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .mp-nav-left {
+      position: absolute;
+      left: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .mp-nav-right {
+      position: absolute;
+      right: 12px;
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      scrollbar-width: none;
+    }
+    .main::-webkit-scrollbar { display: none; }
+
+    /* Search bar */
+    .search-bar {
+      padding: 12px 16px;
+      background: var(--surface);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      height: 38px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0 12px;
+      font-size: 14px;
+      font-family: var(--font);
+      color: var(--ink);
+    }
+
+    .search-input:focus { outline: none; border-color: var(--brand); }
+
+    .search-input::placeholder { color: var(--muted); }
+
+    .loc-btn {
+      width: 38px; height: 38px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    /* Filter chips */
+    .filters {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 12px;
+      background: var(--surface);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+
+    .chip {
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chip.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    /* Map area */
+    .map-wrap {
+      position: relative;
+      height: 320px;
+      background: oklch(92% 0.01 220);
+      overflow: hidden;
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(oklch(100% 0 0 / 0.7) 2px, transparent 2px),
+        linear-gradient(90deg, oklch(100% 0 0 / 0.7) 2px, transparent 2px);
+      background-size: 48px 48px;
+      opacity: 0.6;
+    }
+
+    .map-water {
+      position: absolute;
+      right: -20px; top: -20px;
+      width: 180px; height: 260px;
+      background: oklch(85% 0.03 230 / 0.45);
+      border-radius: 60% 40% 50% 50%;
+    }
+
+    .map-park {
+      position: absolute;
+      left: 20px; bottom: 30px;
+      width: 120px; height: 100px;
+      background: oklch(80% 0.06 140 / 0.25);
+      border-radius: 50% 50% 40% 40%;
+    }
+
+    .map-building {
+      position: absolute;
+      background: oklch(75% 0.01 255 / 0.35);
+      border-radius: 4px;
+    }
+
+    .map-user {
+      position: absolute;
+      left: 50%; top: 55%;
+      transform: translate(-50%, -50%);
+      width: 18px; height: 18px;
+      background: var(--brand);
+      border: 3px solid #fff;
+      border-radius: 50%;
+      box-shadow: var(--shadow-md);
+      z-index: 5;
+    }
+
+    .map-user::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid var(--brand);
+      opacity: 0.35;
+      animation: pulse 2s ease-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.35; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .map-pin {
+      position: absolute;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      z-index: 3;
+      transition: transform 0.15s ease;
+    }
+
+    .map-pin:active { transform: scale(0.92); }
+
+    .map-pin.green { background: var(--success); }
+    .map-pin.orange { background: var(--warning); }
+    .map-pin.gray { background: var(--unknown); }
+
+    .map-pin::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+    }
+
+    .map-pin.green::after { border-top: 8px solid var(--success); }
+    .map-pin.orange::after { border-top: 8px solid var(--warning); }
+    .map-pin.gray::after { border-top: 8px solid var(--unknown); }
+
+    .map-legend {
+      position: absolute;
+      right: 12px; top: 12px;
+      background: oklch(100% 0 0 / 0.92);
+      backdrop-filter: blur(6px);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--ink-secondary);
+      box-shadow: var(--shadow-sm);
+      z-index: 4;
+    }
+
+    .legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    /* Station list sheet */
+    .sheet {
+      background: var(--surface);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      margin-top: -16px;
+      position: relative;
+      z-index: 6;
+      padding-bottom: 90px;
+    }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 10px auto 6px;
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 12px;
+    }
+
+    .sheet-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .sheet-sort {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Station card */
+    .station-card {
+      margin: 0 16px 12px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      transition: box-shadow 0.15s ease;
+    }
+
+    .station-card:active {
+      box-shadow: var(--shadow-md);
+    }
+
+    .station-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .station-name {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.35;
+      max-width: 220px;
+    }
+
+    .station-dist {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .station-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .tag-blue { background: var(--brand-soft); color: var(--brand); }
+    .tag-green { background: oklch(95% 0.04 145); color: var(--success); }
+    .tag-orange { background: oklch(95% 0.04 75); color: var(--warning); }
+
+    .station-status {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-dot.green { background: var(--success); }
+    .status-dot.orange { background: var(--warning); }
+    .status-dot.gray { background: var(--unknown); }
+
+    .station-price {
+      margin-left: auto;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .station-price span {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .station-action {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-sm {
+      flex: 1;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .btn-sm-primary {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .btn-sm-ghost {
+      background: var(--bg);
+      color: var(--ink-secondary);
+      border: 1px solid var(--border);
+    }
+
+    /* Detail modal */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: oklch(0% 0 0 / 0.45);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-sheet {
+      width: 100%;
+      background: var(--surface);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 16px 16px 28px;
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .modal-overlay.active .modal-sheet {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: none;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .pile-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pile-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    .pile-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pile-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .pile-power {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .pile-state {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    .pile-state.free { background: oklch(95% 0.04 145); color: var(--success); }
+    .pile-state.busy { background: oklch(95% 0.04 75); color: var(--warning); }
+    .pile-state.fault { background: oklch(95% 0.03 25); color: var(--danger); }
+
+    /* Tab bar */
+    .tab-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 84px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding-top: 8px;
+      z-index: 20;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .tab-item.active { color: var(--brand); }
+
+    .tab-icon {
+      width: 24px; height: 24px;
+      display: grid;
+      place-items: center;
+    }
+
+    .tab-icon svg {
+      width: 22px; height: 22px;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke: currentColor;
+    }
+
+    .tab-scan {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      margin-top: -18px;
+      box-shadow: 0 4px 14px oklch(55% 0.2 255 / 0.35);
+      border: 3px solid var(--surface);
+    }
+
+    .tab-scan svg {
+      width: 26px; height: 26px;
+      stroke: #fff;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .map-user::after { animation: none; }
+      .modal-sheet { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="phone">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12"><path fill="currentColor" d="M1 8.5h2v2H1zm4-3h2v5H5zm4-3h2v8H9zm4-2h2v10h-2z"/></svg>
+        <svg width="14" height="10" viewBox="0 0 14 10"><path fill="currentColor" d="M7 0a5 5 0 0 1 5 5H8a1 1 0 0 0-1 1v4a5 5 0 0 1-5-5 5 5 0 0 1 5-5z"/></svg>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="mp-nav">
+      <div class="mp-nav-left">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>杭州市</span>
+      </div>
+      <div class="mp-nav-title">智充家</div>
+      <div class="mp-nav-right">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main" id="main">
+      <div class="search-bar">
+        <input class="search-input" type="text" placeholder="搜索充电站、地址">
+        <div class="loc-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="chip active">全部</div>
+        <div class="chip">快充</div>
+        <div class="chip">慢充</div>
+        <div class="chip">免费停车</div>
+        <div class="chip">PLUS会员</div>
+        <div class="chip">高速路站</div>
+      </div>
+
+      <!-- Map -->
+      <div class="map-wrap">
+        <div class="map-grid"></div>
+        <div class="map-water"></div>
+        <div class="map-park"></div>
+        <div class="map-building" style="left:60px;top:40px;width:40px;height:30px;"></div>
+        <div class="map-building" style="left:120px;top:70px;width:50px;height:40px;"></div>
+        <div class="map-building" style="left:260px;top:120px;width:35px;height:28px;"></div>
+        <div class="map-building" style="left:200px;top:200px;width:45px;height:35px;"></div>
+        <div class="map-user"></div>
+
+        <div class="map-pin green" style="left:90px;top:100px;" data-id="1">4</div>
+        <div class="map-pin orange" style="left:220px;top:80px;" data-id="2">1</div>
+        <div class="map-pin green" style="left:160px;top:160px;" data-id="3">6</div>
+        <div class="map-pin gray" style="left:280px;top:180px;" data-id="4">0</div>
+        <div class="map-pin green" style="left:60px;top:220px;" data-id="5">3</div>
+
+        <div class="map-legend">
+          <div><span class="legend-dot" style="background:var(--success);"></span>空闲充足</div>
+          <div><span class="legend-dot" style="background:var(--warning);"></span>少量空闲</div>
+          <div><span class="legend-dot" style="background:var(--unknown);"></span>暂无数据</div>
+        </div>
+      </div>
+
+      <!-- Station list -->
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">附近充电站</div>
+          <div class="sheet-sort">按距离排序 ▼</div>
+        </div>
+
+        <div class="station-card" data-id="1">
+          <div class="station-header">
+            <div>
+              <div class="station-name">滨江银泰超充站</div>
+              <div class="station-dist">1.2km · 滨江区江南大道</div>
+            </div>
+          </div>
+          <div class="station-tags">
+            <span class="tag tag-blue">快充</span>
+            <span class="tag tag-green">免费停车2h</span>
+            <span class="tag tag-blue">PLUS会员站</span>
+          </div>
+          <div class="station-status">
+            <div class="status-item"><span class="status-dot green"></span>空闲 4/8</div>
+            <div class="status-item"><span class="status-dot orange"></span>充电中 3/8</div>
+            <div class="station-price">0.98<span>元/度</span></div>
+          </div>
+          <div class="station-action">
+            <button class="btn-sm btn-sm-ghost">导航前往</button>
+            <button class="btn-sm btn-sm-primary">扫码充电</button>
+          </div>
+        </div>
+
+        <div class="station-card" data-id="2">
+          <div class="station-header">
+            <div>
+              <div class="station-name">星光大道地下充电站</div>
+              <div class="station-dist">1.8km · 滨江区星光大道一期B2</div>
+            </div>
+          </div>
+          <div class="station-tags">
+            <span class="tag tag-blue">快充</span>
+            <span class="tag tag-orange">停车需付费</span>
+          </div>
+          <div class="station-status">
+            <div class="status-item"><span class="status-dot orange"></span>空闲 1/6</div>
+            <div class="status-item"><span class="status-dot orange"></span>充电中 4/6</div>
+            <div class="station-price">1.15<span>元/度</span></div>
+          </div>
+          <div class="station-action">
+            <button class="btn-sm btn-sm-ghost">导航前往</button>
+            <button class="btn-sm btn-sm-primary">扫码充电</button>
+          </div>
+        </div>
+
+        <div class="station-card" data-id="3">
+          <div class="station-header">
+            <div>
+              <div class="station-name">杭州东站P3停车场充电站</div>
+              <div class="station-dist">3.5km · 上城区东站枢纽P3</div>
+            </div>
+          </div>
+          <div class="station-tags">
+            <span class="tag tag-blue">超充</span>
+            <span class="tag tag-green">免费停车1h</span>
+            <span class="tag tag-blue">高速路站</span>
+          </div>
+          <div class="station-status">
+            <div class="status-item"><span class="status-dot green"></span>空闲 6/12</div>
+            <div class="status-item"><span class="status-dot orange"></span>充电中 5/12</div>
+            <div class="station-price">1.05<span>元/度</span></div>
+          </div>
+          <div class="station-action">
+            <button class="btn-sm btn-sm-ghost">导航前往</button>
+            <button class="btn-sm btn-sm-primary">扫码充电</button>
+          </div>
+        </div>
+
+        <div class="station-card" data-id="5">
+          <div class="station-header">
+            <div>
+              <div class="station-name">龙湖天街慢充区</div>
+              <div class="station-dist">2.4km · 滨江区江汉路</div>
+            </div>
+          </div>
+          <div class="station-tags">
+            <span class="tag tag-green">慢充</span>
+            <span class="tag tag-green">免费停车</span>
+          </div>
+          <div class="station-status">
+            <div class="status-item"><span class="status-dot green"></span>空闲 3/10</div>
+            <div class="status-item"><span class="status-dot orange"></span>充电中 6/10</div>
+            <div class="station-price">0.65<span>元/度</span></div>
+          </div>
+          <div class="station-action">
+            <button class="btn-sm btn-sm-ghost">导航前往</button>
+            <button class="btn-sm btn-sm-primary">扫码充电</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <div class="modal-title" id="modal-title">站点详情</div>
+          <button class="modal-close" id="modal-close">×</button>
+        </div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;" id="modal-addr">地址信息</div>
+        <div class="pile-list" id="modal-list">
+          <!-- filled by JS -->
+        </div>
+        <button class="btn-sm btn-sm-primary" style="width:100%;margin-top:16px;height:42px;font-size:14px;">扫码启动充电</button>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <div class="tab-item active">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span>首页</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <span>省钱</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-scan">
+          <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+        </div>
+        <span style="margin-top:-2px;">扫码</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <span>订单</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <span>我的</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalAddr = document.getElementById('modal-addr');
+    const modalList = document.getElementById('modal-list');
+    const modalClose = document.getElementById('modal-close');
+
+    const stationData = {
+      1: {
+        name: '滨江银泰超充站',
+        addr: '滨江区江南大道1088号银泰百货地面停车场',
+        piles: [
+          { name: '1号枪', power: '120kW', state: 'free' },
+          { name: '2号枪', power: '120kW', state: 'free' },
+          { name: '3号枪', power: '120kW', state: 'busy' },
+          { name: '4号枪', power: '120kW', state: 'free' },
+          { name: '5号枪', power: '60kW', state: 'busy' },
+          { name: '6号枪', power: '60kW', state: 'free' },
+          { name: '7号枪', power: '60kW', state: 'busy' },
+          { name: '8号枪', power: '60kW', state: 'free' },
+        ]
+      },
+      2: {
+        name: '星光大道地下充电站',
+        addr: '滨江区星光大道一期B2层E区',
+        piles: [
+          { name: '1号枪', power: '120kW', state: 'busy' },
+          { name: '2号枪', power: '120kW', state: 'free' },
+          { name: '3号枪', power: '120kW', state: 'busy' },
+          { name: '4号枪', power: '60kW', state: 'busy' },
+          { name: '5号枪', power: '60kW', state: 'busy' },
+          { name: '6号枪', power: '60kW', state: 'fault' },
+        ]
+      },
+      3: {
+        name: '杭州东站P3停车场充电站',
+        addr: '上城区东站枢纽P3停车场C区',
+        piles: [
+          { name: '1号枪', power: '180kW', state: 'free' },
+          { name: '2号枪', power: '180kW', state: 'free' },
+          { name: '3号枪', power: '180kW', state: 'busy' },
+          { name: '4号枪', power: '180kW', state: 'free' },
+          { name: '5号枪', power: '120kW', state: 'free' },
+          { name: '6号枪', power: '120kW', state: 'busy' },
+          { name: '7号枪', power: '120kW', state: 'free' },
+          { name: '8号枪', power: '120kW', state: 'busy' },
+          { name: '9号枪', power: '60kW', state: 'free' },
+          { name: '10号枪', power: '60kW', state: 'busy' },
+          { name: '11号枪', power: '60kW', state: 'free' },
+          { name: '12号枪', power: '60kW', state: 'free' },
+        ]
+      },
+      4: {
+        name: '西兴物美充电站',
+        addr: '滨江区西兴街道物美超市地面停车场',
+        piles: [
+          { name: '1号枪', power: '120kW', state: 'fault' },
+          { name: '2号枪', power: '120kW', state: 'fault' },
+          { name: '3号枪', power: '60kW', state: 'fault' },
+          { name: '4号枪', power: '60kW', state: 'fault' },
+        ]
+      },
+      5: {
+        name: '龙湖天街慢充区',
+        addr: '滨江区江汉路1515号龙湖天街B1',
+        piles: [
+          { name: '1号枪', power: '7kW', state: 'free' },
+          { name: '2号枪', power: '7kW', state: 'busy' },
+          { name: '3号枪', power: '7kW', state: 'free' },
+          { name: '4号枪', power: '7kW', state: 'busy' },
+          { name: '5号枪', power: '7kW', state: 'free' },
+          { name: '6号枪', power: '7kW', state: 'busy' },
+          { name: '7号枪', power: '7kW', state: 'busy' },
+          { name: '8号枪', power: '7kW', state: 'free' },
+          { name: '9号枪', power: '7kW', state: 'busy' },
+          { name: '10号枪', power: '7kW', state: 'free' },
+        ]
+      }
+    };
+
+    const stateLabels = { free: '空闲', busy: '充电中', fault: '故障' };
+
+    function openModal(id) {
+      const data = stationData[id];
+      if (!data) return;
+      modalTitle.textContent = data.name;
+      modalAddr.textContent = data.addr;
+      modalList.innerHTML = data.piles.map(p => `
+        <div class="pile-row">
+          <div class="pile-info">
+            <div>
+              <div class="pile-name">${p.name}</div>
+              <div class="pile-power">${p.power}</div>
+            </div>
+          </div>
+          <div class="pile-state ${p.state}">${stateLabels[p.state]}</div>
+        </div>
+      `).join('');
+      modal.classList.add('active');
+    }
+
+    document.querySelectorAll('.map-pin').forEach(pin => {
+      pin.addEventListener('click', () => openModal(pin.dataset.id));
+    });
+
+    document.querySelectorAll('.station-card').forEach(card => {
+      card.addEventListener('click', () => openModal(card.dataset.id));
+    });
+
+    modalClose.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+
+    // Chips
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

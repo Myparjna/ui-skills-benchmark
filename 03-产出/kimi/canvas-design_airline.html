@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skystar Airlines</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Serif+SC:wght@200;300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sky-top: #a8d8ff;
+      --sky-mid: #e8f4fc;
+      --sky-bottom: #ffffff;
+      --cloud-1: rgba(255,255,255,0.9);
+      --cloud-2: rgba(240,248,255,0.7);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow-x: hidden; }
+    body {
+      font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 45%, var(--sky-bottom) 100%);
+      color: #2c3e50;
+    }
+    #sky-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .glass-panel {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+    .float-slow {
+      animation: floatSlow 12s ease-in-out infinite;
+    }
+    .float-medium {
+      animation: floatMedium 8s ease-in-out infinite;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-30px) translateX(15px); }
+    }
+    @keyframes floatMedium {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-20px) translateX(-10px); }
+    }
+    .drift-right {
+      animation: driftRight 25s linear infinite;
+    }
+    @keyframes driftRight {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(120vw); }
+    }
+    .text-reveal {
+      animation: textReveal 2s ease-out forwards;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    @keyframes textReveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .delay-1 { animation-delay: 0.3s; }
+    .delay-2 { animation-delay: 0.8s; }
+    .delay-3 { animation-delay: 1.3s; }
+    .route-card {
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .route-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      background: rgba(255,255,255,0.35);
+    }
+    .wing-stroke {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: drawWing 3s ease-out forwards;
+    }
+    @keyframes drawWing {
+      to { stroke-dashoffset: 0; }
+    }
+    .thin-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(44,62,80,0.3), transparent);
+    }
+  </style>
+</head>
+<body class="relative">
+  <canvas id="sky-canvas"></canvas>
+
+  <!-- Floating Cloud SVGs -->
+  <svg class="fixed top-20 left-0 w-96 h-48 opacity-60 drift-right float-slow" style="z-index:1;" viewBox="0 0 400 200">
+    <path d="M50,120 Q80,80 120,100 T200,90 T280,100 T350,120" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+    <ellipse cx="150" cy="110" rx="80" ry="30" fill="rgba(255,255,255,0.4)"/>
+    <ellipse cx="220" cy="100" rx="60" ry="25" fill="rgba(255,255,255,0.3)"/>
+  </svg>
+  <svg class="fixed top-40 left-0 w-80 h-40 opacity-40 drift-right float-medium" style="z-index:1; animation-delay:-10s;" viewBox="0 0 400 200">
+    <ellipse cx="120" cy="100" rx="70" ry="28" fill="rgba(255,255,255,0.35)"/>
+    <ellipse cx="200" cy="95" rx="50" ry="22" fill="rgba(255,255,255,0.25)"/>
+    <ellipse cx="260" cy="105" rx="40" ry="18" fill="rgba(255,255,255,0.2)"/>
+  </svg>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 px-8 py-6 flex justify-between items-center">
+    <div class="text-xl font-light tracking-[0.3em] text-slate-700">SKYSTAR</div>
+    <div class="hidden md:flex gap-10 text-sm tracking-widest font-light text-slate-600">
+      <a href="#" class="hover:text-slate-900 transition-colors">FLIGHTS</a>
+      <a href="#" class="hover:text-slate-900 transition-colors">EXPERIENCE</a>
+      <a href="#" class="hover:text-slate-900 transition-colors">DESTINATIONS</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative z-10 min-h-screen flex flex-col justify-center items-center px-6 text-center">
+    <svg class="w-32 h-32 mb-8 opacity-40" viewBox="0 0 100 100">
+      <path class="wing-stroke" d="M10,60 Q30,40 50,55 T90,45" fill="none" stroke="#2c3e50" stroke-width="0.5"/>
+      <path class="wing-stroke" d="M15,70 Q35,50 55,65 T95,55" fill="none" stroke="#2c3e50" stroke-width="0.3" style="animation-delay:0.5s;"/>
+    </svg>
+    <h1 class="text-5xl md:text-7xl lg:text-8xl font-extralight tracking-[0.15em] text-slate-800 text-reveal">
+      星空航空
+    </h1>
+    <p class="mt-8 text-lg md:text-2xl font-light tracking-[0.4em] text-slate-600 text-reveal delay-1">
+      每一次起飞，都是一次全新的抵达
+    </p>
+    <div class="mt-16 thin-line w-24 text-reveal delay-2"></div>
+    <p class="mt-8 text-sm tracking-[0.2em] text-slate-500 font-light text-reveal delay-2">
+      SINCE 2008 &nbsp;·&nbsp; HANGZHOU
+    </p>
+  </section>
+
+  <!-- Stats -->
+  <section class="relative z-10 py-32 px-6">
+    <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16 text-center">
+      <div class="text-reveal delay-1">
+        <div class="text-6xl md:text-7xl font-extralight text-slate-700">82</div>
+        <div class="mt-4 text-xs tracking-[0.3em] text-slate-500 uppercase">Domestic Routes</div>
+      </div>
+      <div class="text-reveal delay-2">
+        <div class="text-6xl md:text-7xl font-extralight text-slate-700">47</div>
+        <div class="mt-4 text-xs tracking-[0.3em] text-slate-500 uppercase">International</div>
+      </div>
+      <div class="text-reveal delay-3">
+        <div class="text-6xl md:text-7xl font-extralight text-slate-700">16</div>
+        <div class="mt-4 text-xs tracking-[0.3em] text-slate-500 uppercase">Years of Trust</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values -->
+  <section class="relative z-10 py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="flex flex-wrap justify-center gap-8 md:gap-16">
+        <div class="glass-panel px-8 py-6 rounded-full text-reveal delay-1">
+          <span class="text-sm tracking-[0.2em] font-light text-slate-700">SAFETY</span>
+        </div>
+        <div class="glass-panel px-8 py-6 rounded-full text-reveal delay-2">
+          <span class="text-sm tracking-[0.2em] font-light text-slate-700">EXTENSIVE ROUTES</span>
+        </div>
+        <div class="glass-panel px-8 py-6 rounded-full text-reveal delay-3">
+          <span class="text-sm tracking-[0.2em] font-light text-slate-700">CABIN EXPERIENCE</span>
+        </div>
+        <div class="glass-panel px-8 py-6 rounded-full text-reveal delay-1">
+          <span class="text-sm tracking-[0.2em] font-light text-slate-700">IN-FLIGHT DINING</span>
+        </div>
+        <div class="glass-panel px-8 py-6 rounded-full text-reveal delay-2">
+          <span class="text-sm tracking-[0.2em] font-light text-slate-700">DIGITAL SERVICES</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Promotions -->
+  <section class="relative z-10 py-32 px-6">
+    <div class="max-w-6xl mx-auto">
+      <p class="text-center text-xs tracking-[0.4em] text-slate-500 mb-20 uppercase">Selected Journeys</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="route-card glass-panel p-10 rounded-2xl text-center cursor-pointer">
+          <div class="text-xs tracking-[0.3em] text-slate-500 mb-6">HANGZHOU</div>
+          <svg class="w-full h-8 mb-6" viewBox="0 0 200 20">
+            <line x1="20" y1="10" x2="180" y2="10" stroke="rgba(44,62,80,0.2)" stroke-width="1" stroke-dasharray="4,4"/>
+            <circle cx="20" cy="10" r="3" fill="rgba(44,62,80,0.4)"/>
+            <circle cx="180" cy="10" r="3" fill="rgba(44,62,80,0.4)"/>
+          </svg>
+          <div class="text-xs tracking-[0.3em] text-slate-500 mb-8">SANYA</div>
+          <div class="text-4xl font-extralight text-slate-700">¥399</div>
+        </div>
+        <div class="route-card glass-panel p-10 rounded-2xl text-center cursor-pointer">
+          <div class="text-xs tracking-[0.3em] text-slate-500 mb-6">HANGZHOU</div>
+          <svg class="w-full h-8 mb-6" viewBox="0 0 200 20">
+            <line x1="20" y1="10" x2="180" y2="10" stroke="rgba(44,62,80,0.2)" stroke-width="1" stroke-dasharray="4,4"/>
+            <circle cx="20" cy="10" r="3" fill="rgba(44,62,80,0.4)"/>
+            <circle cx="180" cy="10" r="3" fill="rgba(44,62,80,0.4)"/>
+          </svg>
+          <div class="text-xs tracking-[0.3em] text-slate-500 mb-8">OSAKA</div>
+          <div class="text-4xl font-extralight text-slate-700">¥1,299</div>
+        </div>
+        <div class="route-card glass-panel p-10 rounded-2xl text-center cursor-pointer">
+          <div class="text-xs tracking-[0.3em] text-slate-500 mb-6">HANGZHOU</div>
+          <svg class="w-full h-8 mb-6" viewBox="0 0 200 20">
+            <line x1="20" y1="10" x2="180" y2="10" stroke="rgba(44,62,80,0.2)" stroke-width="1" stroke-dasharray="4,4"/>
+            <circle cx="20" cy="10" r="3" fill="rgba(44,62,80,0.4)"/>
+            <circle cx="180" cy="10" r="3" fill="rgba(44,62,80,0.4)"/>
+          </svg>
+          <div class="text-xs tracking-[0.3em] text-slate-500 mb-8">LONDON</div>
+          <div class="text-4xl font-extralight text-slate-700">¥3,899</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="relative z-10 py-20 px-6 text-center">
+    <div class="thin-line w-16 mx-auto mb-8"></div>
+    <p class="text-xs tracking-[0.3em] text-slate-400 font-light">SKYSTAR AIRLINES</p>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('sky-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let birds = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.radius = Math.random() * 2 + 0.5;
+        this.alpha = Math.random() * 0.3 + 0.1;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.fill();
+      }
+    }
+
+    class Bird {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = -50;
+        this.y = Math.random() * height * 0.6;
+        this.speed = Math.random() * 0.8 + 0.4;
+        this.size = Math.random() * 2 + 1;
+        this.wingSpan = Math.random() * 10 + 8;
+      }
+      update() {
+        this.x += this.speed;
+        this.y += Math.sin(this.x * 0.01) * 0.3;
+        if (this.x > width + 50) this.reset();
+      }
+      draw() {
+        const wingY = Math.sin(this.x * 0.15) * 3;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.quadraticCurveTo(this.x - this.wingSpan/2, this.y - wingY - 3, this.x - this.wingSpan, this.y + wingY);
+        ctx.moveTo(this.x, this.y);
+        ctx.quadraticCurveTo(this.x + this.wingSpan/2, this.y - wingY - 3, this.x + this.wingSpan, this.y + wingY);
+        ctx.strokeStyle = `rgba(44,62,80,${0.15 + this.speed * 0.1})`;
+        ctx.lineWidth = this.size * 0.5;
+        ctx.stroke();
+      }
+    }
+
+    for (let i = 0; i < 60; i++) particles.push(new Particle());
+    for (let i = 0; i < 5; i++) birds.push(new Bird());
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      birds.forEach(b => { b.update(); b.draw(); });
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.text-reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

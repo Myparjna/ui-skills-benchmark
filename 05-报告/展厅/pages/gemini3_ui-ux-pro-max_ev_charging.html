@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charging Pro - Ultimate UX Experience</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --ux-primary: #1677FF;
+            --ux-success: #52C41A;
+            --ux-warning: #FA8C16;
+            --ux-error: #F5222D;
+            --ux-bg: #F5F7FA;
+            --ux-text: #1F2937;
+            --touch-target: 44px;
+        }
+        body { background-color: var(--ux-bg); color: var(--ux-text); font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* WCAG AA Contrast Ratios Enforced */
+        .text-main { color: #111827; }
+        .text-sub { color: #4B5563; } /* Contrast 5.4:1 against white */
+        
+        /* Touch Friendly Targets */
+        .touch-btn { min-height: var(--touch-target); min-width: var(--touch-target); display: flex; items-center: center; justify-content: center; }
+        .card { background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1.5px solid #E5E7EB; }
+        
+        /* No-Seam Loading States */
+        .shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+        
+        /* Seamless Pull-down/Sheet UI */
+        .bottom-sheet { border-top-left-radius: 24px; border-top-right-radius: 24px; background: white; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
+        .handle { width: 36px; height: 4px; border-radius: 2px; background: #D1D5DB; margin: 12px auto; }
+        
+        /* Accessibility Focus Ring */
+        *:focus-visible { outline: 3px solid var(--ux-primary); outline-offset: 2px; }
+    </style>
+</head>
+<body class="max-w-md mx-auto min-h-screen relative overflow-x-hidden">
+    <!-- Status Bar Area (Aria-hidden for screen readers unless functional) -->
+    <header class="p-4 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-30 border-b border-gray-100">
+        <button class="touch-btn text-ux-primary" aria-label="返回首页">
+            <i data-lucide="chevron-left" class="size-6"></i>
+        </button>
+        <h1 class="text-base font-bold text-main">充电详情</h1>
+        <button class="touch-btn text-main" aria-label="更多操作">
+            <i data-lucide="more-horizontal" class="size-6"></i>
+        </button>
+    </header>
+
+    <main class="p-4 space-y-6 pb-40">
+        <!-- Live Status Card -->
+        <div class="card p-6 space-y-6">
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-sub uppercase tracking-widest">当前状态</span>
+                    <span class="text-lg font-black text-main flex items-center gap-2">
+                        <span class="size-2.5 rounded-full bg-ux-success animate-pulse" aria-hidden="true"></span>
+                        正在充电中
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                    <i data-lucide="zap" class="size-4 text-ux-warning"></i>
+                    <span class="text-xs font-bold text-main">快充 · 105kW</span>
+                </div>
+            </div>
+
+            <!-- Battery Real-time Feedback Visual -->
+            <div class="relative py-8 flex flex-col items-center">
+                <div class="relative size-48">
+                    <!-- Progress Ring (SVG for accuracy and a11y) -->
+                    <svg class="size-full -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#F3F4F6" stroke-width="8"></circle>
+                        <circle id="batteryProgress" cx="50" cy="50" r="45" fill="none" stroke="var(--ux-primary)" stroke-width="8" stroke-dasharray="282.7" stroke-dashoffset="56.5" stroke-linecap="round" class="transition-all duration-1000 ease-out"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-5xl font-black text-main tabular-nums">80<span class="text-xl">%</span></span>
+                        <span class="text-[10px] font-bold text-sub uppercase mt-1">已充电量</span>
+                    </div>
+                </div>
+                <!-- Dynamic Wave Effect (Visual feedback for energy flow) -->
+                <div class="mt-4 flex gap-1 items-center" aria-hidden="true">
+                    <div class="w-1 h-3 bg-ux-primary rounded-full animate-[bounce_1s_infinite]"></div>
+                    <div class="w-1 h-5 bg-ux-primary rounded-full animate-[bounce_1.2s_infinite]"></div>
+                    <div class="w-1 h-2 bg-ux-primary rounded-full animate-[bounce_0.8s_infinite]"></div>
+                    <div class="w-1 h-4 bg-ux-primary rounded-full animate-[bounce_1.1s_infinite]"></div>
+                    <span class="text-[10px] font-bold text-ux-primary ml-2 uppercase tracking-widest">能量注入中</span>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
+                <div>
+                    <p class="text-[10px] font-bold text-sub uppercase">已充度数 (kWh)</p>
+                    <p class="text-lg font-bold text-main mt-1 tabular-nums">42.58</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-sub uppercase">实时费用 (元)</p>
+                    <p class="text-lg font-bold text-main mt-1 tabular-nums">53.20</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-sub uppercase">预计充满时长</p>
+                    <p class="text-lg font-bold text-main mt-1">24 分钟</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-sub uppercase">当前电压 (V)</p>
+                    <p class="text-lg font-bold text-main mt-1 tabular-nums">398.5</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battery Health & Safety Pass -->
+        <div class="card p-4 bg-ux-success/5 border-ux-success/20 flex items-center gap-4">
+            <div class="size-10 rounded-full bg-ux-success/10 flex items-center justify-center text-ux-success">
+                <i data-lucide="shield-check" class="size-6"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-main">电池健康卫士检测中</h4>
+                <p class="text-[10px] text-ux-success font-medium">当前电池温度 32°C，电压稳定，安全通行中。</p>
+            </div>
+            <button class="touch-btn text-ux-success" aria-label="查看详情">
+                <i data-lucide="chevron-right" class="size-5"></i>
+            </button>
+        </div>
+
+        <!-- Station Info Section -->
+        <div class="space-y-3">
+            <h3 class="text-sm font-black text-main px-2">电站信息</h3>
+            <div class="card p-4 flex gap-4 items-center">
+                <div class="size-16 rounded-xl overflow-hidden shimmer" id="imageContainer">
+                    <img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&q=80&w=200" class="object-cover size-full opacity-0 transition-opacity duration-500" onload="this.classList.remove('opacity-0'); document.getElementById('imageContainer').classList.remove('shimmer')">
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-main">星空航站楼超充 A1</h4>
+                    <p class="text-xs text-sub mt-1">萧山国际机场 T3 停车场 B2 层</p>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 rounded text-sub">免费停车</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 bg-ux-primary/10 rounded text-ux-primary">24小时营业</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Fixed Action Bar (Sticky Bottom) -->
+    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-white/90 backdrop-blur-xl border-t border-gray-100 z-40">
+        <div class="flex gap-4">
+            <button class="touch-btn flex-1 bg-gray-100 hover:bg-gray-200 text-main rounded-2xl font-bold text-sm transition-all active:scale-95">
+                取消充电
+            </button>
+            <button class="touch-btn flex-1 bg-ux-primary hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-xl shadow-blue-200 transition-all active:scale-95" id="stopBtn">
+                结束并结算
+            </button>
+        </div>
+        <div class="h-5"></div> <!-- Safe area for home indicator -->
+    </div>
+
+    <!-- Feedback Toast (Programmatic Overlay) -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 bg-gray-900 text-white text-xs font-bold rounded-full shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none">
+        操作成功
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Simulate Seamless Loading for Battery
+        const progressCircle = document.getElementById('batteryProgress');
+        let percent = 80;
+        const totalDash = 282.7;
+
+        function updateProgress(p) {
+            const offset = totalDash - (p / 100) * totalDash;
+            progressCircle.style.strokeDashoffset = offset;
+        }
+
+        // Initialize progress
+        updateProgress(80);
+
+        // Interaction Feedback
+        document.getElementById('stopBtn').onclick = function() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100', 'translate-y-[-10px]');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                toast.classList.remove('opacity-100', 'translate-y-[-10px]');
+            }, 3000);
+        };
+
+        // Add bounce animation style
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes bounce {
+                0%, 100% { transform: scaleY(1); opacity: 0.5; }
+                50% { transform: scaleY(1.5); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

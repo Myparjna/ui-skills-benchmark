@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>城市骑行运营管理后台 | CityRide Ops</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --ink: #0a0a0b;
+      --stone: #f5f5f4;
+      --warm-gray: #e7e5e4;
+      --accent: #2563eb;
+      --text-primary: #1c1917;
+      --text-secondary: #57534e;
+      --text-tertiary: #a8a29e;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--stone);
+      color: var(--text-primary);
+    }
+    .micro-label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+    .metric-card {
+      background: white;
+      border: 1px solid var(--warm-gray);
+      transition: box-shadow 0.2s ease;
+    }
+    .metric-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      transition: all 0.15s ease;
+    }
+    .nav-item:hover { background: var(--stone); color: var(--text-primary); }
+    .nav-item.active { background: var(--ink); color: white; }
+    table { border-collapse: collapse; width: 100%; }
+    th { font-weight: 500; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--warm-gray); background: var(--stone); }
+    td { font-size: 13px; padding: 14px 16px; border-bottom: 1px solid var(--warm-gray); color: var(--text-primary); }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-online { background: var(--accent); }
+    .status-warning { background: #d97706; }
+    .status-offline { background: #a8a29e; }
+  </style>
+</head>
+<body class="antialiased min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-56 bg-white border-r border-[var(--warm-gray)] flex flex-col fixed h-full">
+    <div class="h-16 flex items-center px-5 border-b border-[var(--warm-gray)]">
+      <div class="w-7 h-7 bg-[var(--ink)] text-white rounded flex items-center justify-center mr-2.5">
+        <i data-lucide="bike" class="w-4 h-4"></i>
+      </div>
+      <span class="text-sm font-semibold tracking-tight">CityRide Ops</span>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="#" class="nav-item active"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> 总览</a>
+      <a href="#" class="nav-item"><i data-lucide="map" class="w-4 h-4"></i> 车辆调度</a>
+      <a href="#" class="nav-item"><i data-lucide="users" class="w-4 h-4"></i> 用户运营</a>
+      <a href="#" class="nav-item"><i data-lucide="wrench" class="w-4 h-4"></i> 运维工单</a>
+      <a href="#" class="nav-item"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> 数据报表</a>
+      <a href="#" class="nav-item"><i data-lucide="settings" class="w-4 h-4"></i> 系统设置</a>
+    </nav>
+    <div class="p-4 border-t border-[var(--warm-gray)]">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-[var(--stone)] flex items-center justify-center text-xs font-medium">OP</div>
+        <div>
+          <div class="text-xs font-medium">运营管理员</div>
+          <div class="text-[10px] text-[var(--text-tertiary)]">杭州分公司</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 ml-56">
+    <!-- Top bar -->
+    <header class="h-16 bg-white border-b border-[var(--warm-gray)] flex items-center justify-between px-8 sticky top-0 z-10">
+      <div>
+        <h1 class="text-sm font-semibold">运营总览</h1>
+        <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">数据更新至 2026-04-15 09:42</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="px-3 py-1.5 text-xs font-medium border border-[var(--warm-gray)] rounded hover:border-[var(--text-tertiary)] transition">导出报表</button>
+        <button class="px-3 py-1.5 text-xs font-medium bg-[var(--ink)] text-white rounded hover:bg-[var(--accent)] transition">新建工单</button>
+      </div>
+    </header>
+
+    <div class="p-8">
+      <!-- Metrics -->
+      <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4 mb-8">
+        <div class="metric-card p-5 rounded-lg">
+          <div class="micro-label mb-2">在运车辆</div>
+          <div class="text-2xl font-semibold tracking-tight">12,846</div>
+          <div class="text-[11px] text-[var(--text-tertiary)] mt-1">较昨日 <span class="text-emerald-600">+124</span></div>
+        </div>
+        <div class="metric-card p-5 rounded-lg">
+          <div class="micro-label mb-2">今日订单</div>
+          <div class="text-2xl font-semibold tracking-tight">48,293</div>
+          <div class="text-[11px] text-[var(--text-tertiary)] mt-1">较昨日 <span class="text-emerald-600">+3.2%</span></div>
+        </div>
+        <div class="metric-card p-5 rounded-lg">
+          <div class="micro-label mb-2">平均周转率</div>
+          <div class="text-2xl font-semibold tracking-tight">4.8</div>
+          <div class="text-[11px] text-[var(--text-tertiary)] mt-1">次/车/日 · <span class="text-emerald-600">+0.3</span></div>
+        </div>
+        <div class="metric-card p-5 rounded-lg">
+          <div class="micro-label mb-2">待处理工单</div>
+          <div class="text-2xl font-semibold tracking-tight">37</div>
+          <div class="text-[11px] text-[var(--text-tertiary)] mt-1">紧急 <span class="text-amber-600">5</span> · 常规 32</div>
+        </div>
+      </div>
+
+      <!-- Content Grid -->
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Chart Area -->
+        <div class="lg:col-span-2 bg-white border border-[var(--warm-gray)] rounded-lg p-5">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <div class="text-sm font-semibold">24h 订单趋势</div>
+              <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">按小时粒度统计</div>
+            </div>
+            <div class="flex gap-2">
+              <span class="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)]"><span class="w-2 h-2 rounded-full bg-[var(--accent)]"></span> 订单量</span>
+              <span class="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)]"><span class="w-2 h-2 rounded-full bg-[var(--warm-gray)]"></span> 上周同期</span>
+            </div>
+          </div>
+          <div class="h-48 flex items-end gap-2">
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 35%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">1,240</div>
+            </div>
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 28%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">980</div>
+            </div>
+            <div class="flex-1 bg-[var(--accent)] rounded-t hover:bg-blue-600 transition relative group" style="height: 62%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">2,860</div>
+            </div>
+            <div class="flex-1 bg-[var(--accent)] rounded-t hover:bg-blue-600 transition relative group" style="height: 78%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">3,540</div>
+            </div>
+            <div class="flex-1 bg-[var(--accent)] rounded-t hover:bg-blue-600 transition relative group" style="height: 92%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">4,120</div>
+            </div>
+            <div class="flex-1 bg-[var(--accent)] rounded-t hover:bg-blue-600 transition relative group" style="height: 85%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">3,890</div>
+            </div>
+            <div class="flex-1 bg-[var(--accent)] rounded-t hover:bg-blue-600 transition relative group" style="height: 70%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">3,240</div>
+            </div>
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 45%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">1,980</div>
+            </div>
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 38%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">1,560</div>
+            </div>
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 30%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">1,210</div>
+            </div>
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 25%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">980</div>
+            </div>
+            <div class="flex-1 bg-[var(--stone)] rounded-t hover:bg-[var(--warm-gray)] transition relative group" style="height: 20%">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition">760</div>
+            </div>
+          </div>
+          <div class="flex justify-between mt-3 text-[10px] text-[var(--text-tertiary)]">
+            <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div class="bg-white border border-[var(--warm-gray)] rounded-lg p-5">
+          <div class="text-sm font-semibold mb-4">实时告警</div>
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div class="text-xs font-medium">西湖区车辆周转率异常</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">较均值下降 18%，建议调度</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-1">09:35</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div class="text-xs font-medium">滨江道站点电量低</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">3 辆单车电量 &lt; 20%</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-1">09:28</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div class="text-xs font-medium">早高峰调度完成</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">已完成 12 个热点区域补车</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-1">08:45</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div class="text-xs font-medium">系统备份成功</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">昨日数据已归档</div>
+                <div class="text-[10px] text-[var(--text-tertiary)] mt-1">03:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="mt-6 bg-white border border-[var(--warm-gray)] rounded-lg overflow-hidden">
+        <div class="px-5 py-4 border-b border-[var(--warm-gray)] flex items-center justify-between">
+          <div class="text-sm font-semibold">车辆状态监控</div>
+          <div class="flex items-center gap-2">
+            <input type="text" placeholder="搜索车牌/区域" class="px-3 py-1.5 text-xs border border-[var(--warm-gray)] rounded w-40 focus:outline-none focus:border-[var(--text-tertiary)]">
+            <button class="px-3 py-1.5 text-xs font-medium border border-[var(--warm-gray)] rounded hover:bg-[var(--stone)] transition">筛选</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th>车辆编号</th>
+                <th>所在区域</th>
+                <th>电量</th>
+                <th>今日订单</th>
+                <th>最后上报</th>
+                <th>状态</th>
+                <th class="text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-mono text-xs">HZ-78291</td>
+                <td>滨江区 · 星光大道</td>
+                <td>84%</td>
+                <td>6</td>
+                <td class="text-[var(--text-secondary)]">2 分钟前</td>
+                <td><span class="status-dot status-online"></span>运营中</td>
+                <td class="text-right"><button class="text-xs text-[var(--accent)] hover:underline">详情</button></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-xs">HZ-78292</td>
+                <td>西湖区 · 龙翔桥</td>
+                <td>12%</td>
+                <td>4</td>
+                <td class="text-[var(--text-secondary)]">5 分钟前</td>
+                <td><span class="status-dot status-warning"></span>待换电</td>
+                <td class="text-right"><button class="text-xs text-[var(--accent)] hover:underline">详情</button></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-xs">HZ-78293</td>
+                <td>上城区 · 城站</td>
+                <td>67%</td>
+                <td>8</td>
+                <td class="text-[var(--text-secondary)]">1 分钟前</td>
+                <td><span class="status-dot status-online"></span>运营中</td>
+                <td class="text-right"><button class="text-xs text-[var(--accent)] hover:underline">详情</button></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-xs">HZ-78294</td>
+                <td>拱墅区 · 武林广场</td>
+                <td>—</td>
+                <td>0</td>
+                <td class="text-[var(--text-secondary)]">2 小时前</td>
+                <td><span class="status-dot status-offline"></span>离线</td>
+                <td class="text-right"><button class="text-xs text-[var(--accent)] hover:underline">详情</button></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-xs">HZ-78295</td>
+                <td>余杭区 · 未来科技城</td>
+                <td>91%</td>
+                <td>3</td>
+                <td class="text-[var(--text-secondary)]">3 分钟前</td>
+                <td><span class="status-dot status-online"></span>运营中</td>
+                <td class="text-right"><button class="text-xs text-[var(--accent)] hover:underline">详情</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 border-t border-[var(--warm-gray)] flex items-center justify-between">
+          <span class="text-[10px] text-[var(--text-tertiary)]">显示 1-5 / 12,846 条</span>
+          <div class="flex items-center gap-2">
+            <button class="px-2 py-1 text-[10px] border border-[var(--warm-gray)] rounded hover:bg-[var(--stone)] transition">上一页</button>
+            <button class="px-2 py-1 text-[10px] border border-[var(--warm-gray)] rounded hover:bg-[var(--stone)] transition">下一页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

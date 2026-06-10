@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChargeFlow — 极简充电</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* OKLCH Token System — AI Minimalism */
+    --bg: oklch(98% 0.01 240);
+    --fg: oklch(15% 0.02 240);
+    --muted: oklch(60% 0.02 240);
+    --primary: oklch(55% 0.2 250);
+    --primary-dim: oklch(55% 0.08 250);
+    --accent-green: oklch(65% 0.18 155);
+    --card: oklch(100% 0.005 250);
+    --border: oklch(92% 0.01 250);
+    --glass-bg: oklch(100% 0 0 / .65);
+    --glass-border: oklch(95% 0.01 250 / .5);
+    --radius-sm: 14px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-full: 9999px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 430px; margin: 0 auto;
+    min-height: 100vh; overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── Grain Texture Overlay ── */
+  body::before {
+    content:''; position: fixed; inset: 0;
+    pointer-events: none; z-index: 9999; opacity: .032;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+
+  /* ── Liquid Glass Navigation ── */
+  .glass-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid var(--glass-border);
+    margin: 16px 16px 0;
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+  }
+  .nav-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .brand {
+    font-size: 18px; font-weight: 700; letter-spacing: -.4px;
+    color: var(--fg);
+  }
+  .brand span { color: var(--primary); }
+
+  /* Liquid Glass Search */
+  .glass-search {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card);
+    border-radius: var(--radius-full);
+    padding: 13px 18px;
+    border: 1.5px solid var(--border);
+    box-shadow:
+      0 1px 3px rgba(0,0,0,.04),
+      inset 0 1px 2px rgba(255,255,255,.7),
+      inset 0 -1px 0 rgba(0,0,0,.02);
+    transition: all .3s cubic-bezier(.25,.46,.45,.94);
+  }
+  .glass-search:focus-within {
+    border-color: var(--primary-dim);
+    box-shadow:
+      0 4px 20px rgba(0,0,0,.06),
+      inset 0 1px 2px rgba(255,255,255,.8),
+      0 0 0 3px oklch(55% 0.15 250 / .08);
+  }
+  .glass-search .iconify { font-size: 19px; color: var(--muted); flex-shrink: 0; }
+  .glass-search input {
+    border: none; outline: none; background: none;
+    font-size: 15px; color: var(--fg); width: 100%;
+    font-family: inherit; letter-spacing: .15px;
+  }
+  .glass-search input::placeholder { color: var(--muted); font-weight: 400; }
+
+  /* ── Main Content Area ── */
+  main { padding: 24px 20px; position: relative; z-index: 1; }
+
+  /* ── Section Header (极简) ── */
+  .section-head {
+    margin-bottom: 20px;
+  }
+  .section-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .section-title {
+    font-size: 22px; font-weight: 700; letter-spacing: -.5px;
+    line-height: 1.25; color: var(--fg);
+  }
+
+  /* ── Minimal Station List (每项一行) ── */
+  .station-list {
+    display: flex; flex-direction: column;
+    gap: 8px; margin-bottom: 32px;
+  }
+  .station-item {
+    display: flex; align-items: center;
+    gap: 14px; padding: 16px 18px;
+    background: var(--card);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: all .35s cubic-bezier(.25,.46,.45,.94);
+    cursor: pointer;
+    animation: revealUp .6s ease both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 100%;
+  }
+  .station-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 6px 28px rgba(0,0,0,.055);
+    border-color: oklch(55% 0.1 250 / .3);
+  }
+  @keyframes revealUp {
+    from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+    to   { opacity: 1; transform: none; filter: none; }
+  }
+
+  /* Status dot */
+  .st-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .st-dot.super { background: var(--primary); box-shadow: 0 0 8px oklch(55% 0.2 250 / .35); }
+  .st-dot.fast  { background: var(--accent-green); box-shadow: 0 0 8px oklch(65% 0.18 155 / .3); }
+  .st-dot.slow  { background: var(--muted); }
+
+  .st-info { flex: 1; min-width: 0; }
+  .st-name {
+    font-size: 15px; font-weight: 600; color: var(--fg);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .st-meta {
+    font-size: 12.5px; color: var(--muted); font-weight: 500; margin-top: 2px;
+  }
+
+  .st-right { text-align: right; flex-shrink: 0; }
+  .st-price { font-size: 17px; font-weight: 700; color: var(--fg); }
+  .st-price span { font-size: 11px; font-weight: 500; color: var(--muted); }
+  .st-dist { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  /* ── Large Scan Button (渐变圆形按钮) ── */
+  .scan-section {
+    display: flex; justify-content: center; align-items: center;
+    padding: 40px 20px 120px; position: relative; z-index: 1;
+  }
+  .scan-btn-wrapper {
+    position: relative;
+    animation: revealScale .8s ease both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+  @keyframes revealScale {
+    from { opacity: 0; transform: scale(.88); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .scan-btn {
+    width: 96px; height: 96px; border-radius: 50%;
+    border: none; cursor: pointer;
+    background: linear-gradient(135deg,
+      oklch(60% 0.22 230),
+      oklch(58% 0.2 190)
+    );
+    display: flex; align-items: center; justify-content: center;
+    transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:
+      0 8px 32px oklch(55% 0.2 230 / .3),
+      0 2px 8px oklch(55% 0.2 230 / .15);
+    position: relative; z-index: 2;
+  }
+  .scan-btn::before {
+    content:''; position: absolute; inset: -3px;
+    border-radius: 50%; border: 1.5px solid oklch(55% 0.15 230 / .25);
+    animation: scanGlow 2.5s ease-in-out infinite;
+  }
+  @keyframes scanGlow {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0; }
+  }
+  .scan-btn:hover {
+    transform: scale(1.1) translateY(-3px);
+    box-shadow:
+      0 14px 44px oklch(55% 0.22 230 / .4),
+      0 4px 14px oklch(55% 0.22 230 / .2);
+  }
+  .scan-btn:active { transform: scale(.98); }
+  .scan-btn .iconify { font-size: 34px; color: white; }
+
+  .scan-label {
+    text-align: center; margin-top: 14px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    letter-spacing: .5px;
+  }
+
+  /* Ambient ring behind button */
+  .ambient-ring {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 140px; height: 140px; border-radius: 50%;
+    background: radial-gradient(circle, oklch(55% 0.15 230 / .08), transparent 70%);
+    pointer-events: none; z-index: 1;
+    animation: ambientPulse 3s ease-in-out infinite;
+  }
+  @keyframes ambientPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: .6; }
+    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  }
+
+  /* ── Bottom Tab (Liquid Glass) ── */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 32px); max-width: 398px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border-top: 1px solid var(--glass-border);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 12px 0 26px; z-index: 200;
+    margin: 0 16px;
+  }
+  .tab-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; padding: 6px 14px; border-radius: var(--radius-sm);
+    transition: all .25s ease;
+  }
+  .tab-item .iconify { font-size: 22px; color: var(--muted); transition: all .3s ease; }
+  .tab-item span.label { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .3px; }
+  .tab-item.active .iconify { color: var(--primary); transform: scale(1.08); }
+  .tab-item.active span.label { color: var(--primary); font-weight: 700; }
+  .tab-item:hover .iconify { transform: translateY(-1px); }
+
+  /* ══ Responsive ══ */
+  @media (max-width: 420px) {
+    body { max-width: 100%; }
+    .tab-bar { width: calc(100% - 24px); margin: 0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Liquid Glass Nav -->
+<nav class="glass-nav">
+  <div class="nav-row">
+    <div class="brand">charge<span>flow</span></div>
+    <span class="iconify" data-icon="lucide:bell" style="font-size:21px;color:var(--muted);cursor:pointer;"></span>
+  </div>
+
+  <div class="glass-search">
+    <span class="iconify" data-icon="lucide:search"></span>
+    <input type="text" placeholder="搜索充电站..." readonly>
+  </div>
+</nav>
+
+<!-- Main -->
+<main>
+  <!-- Header -->
+  <section class="section-head">
+    <p class="section-label">Nearby</p>
+    <h2 class="section-title">附近充电站</h2>
+  </section>
+
+  <!-- Minimal Station List -->
+  <div class="station-list">
+
+    <article class="station-item">
+      <div class="st-dot super"></div>
+      <div class="st-info">
+        <div class="st-name">特斯拉超充 · 银泰城站</div>
+        <div class="st-meta">V3 · 空闲5/8 · 350m</div>
+      </div>
+      <div class="st-right">
+        <div class="st-price">¥1.45<span>/kWh</span></div>
+        <div class="st-dist">4分钟步行</div>
+      </div>
+    </article>
+
+    <article class="station-item">
+      <div class="st-dot fast"></div>
+      <div class="st-info">
+        <div class="st-name">特来电 · 万达广场</div>
+        <div class="st-meta">快充 · 空闲3/12 · 0.8km</div>
+      </div>
+      <div class="st-right">
+        <div class="st-price">¥1.28<span>/kWh</span></div>
+        <div class="st-dist">3分钟车程</div>
+      </div>
+    </article>
+
+    <article class="station-item">
+      <div class="st-dot slow"></div>
+      <div class="st-info">
+        <div class="st-name">星星充电 · 新城停车场</div>
+        <div class="st-meta">慢充 · 空闲14/20 · 1.2km</div>
+      </div>
+      <div class="st-right">
+        <div class="st-price">¥0.98<span>/kWh</span></div>
+        <div class="st-dist">5分钟车程</div>
+      </div>
+    </article>
+
+    <article class="station-item">
+      <div class="st-dot super"></div>
+      <div class="st-info">
+        <div class="st-name">小鹏S4超充 · 文化广场</div>
+        <div class="st-meta">S4 · 空闲2/6 · 2.1km</div>
+      </div>
+      <div class="st-right">
+        <div class="st-price">¥1.38<span>/kWh</span></div>
+        <div class="st-dist">8分钟车程</div>
+      </div>
+    </article>
+
+    <article class="station-item">
+      <div class="st-dot fast"></div>
+      <div class="st-info">
+        <div class="st-name">国网e充电 · 客运中心</div>
+        <div class="st-meta">快充 · 空闲10/16 · 3.5km</div>
+      </div>
+      <div class="st-right">
+        <div class="st-price">¥1.20<span>/kWh</span></div>
+        <div class="st-dist">12分钟车程</div>
+      </div>
+    </article>
+
+    <article class="station-item">
+      <div class="st-dot slow"></div>
+      <div class="st-info">
+        <div class="st-name">蔚来换电站 · 东部新城</div>
+        <div class="st-meta">换电 · 可用 · 2.8km</div>
+      </div>
+      <div class="st-right">
+        <div class="st-price">换电<span></span></div>
+        <div class="st-dist">10分钟车程</div>
+      </div>
+    </article>
+
+  </div><!-- /.station-list -->
+
+  <!-- Big Gradient Scan Button -->
+  <section class="scan-section">
+    <div class="scan-btn-wrapper">
+      <div class="ambient-ring"></div>
+      <button class="scan-btn" aria-label="扫码充电">
+        <span class="iconify" data-icon="lucide:qr-code"></span>
+      </button>
+      <p class="scan-label">扫码即充</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Bottom Tab Bar -->
+<nav class="tab-bar">
+  <div class="tab-item active">
+    <span class="iconify" data-icon="lucide:map-pin"></span>
+    <span class="label">首页</span>
+  </div>
+  <div class="tab-item">
+    <span class="iconify" data-icon="lucide:route"></span>
+    <span class="label">行程</span>
+  </div>
+  <div class="tab-item">
+    <span class="iconify" data-icon="lucide:wallet"></span>
+    <span class="label">钱包</span>
+  </div>
+  <div class="tab-item">
+    <span class="iconify" data-icon="lucide:user-circle"></span>
+    <span class="label">我的</span>
+  </div>
+</nav>
+
+</body>
+</html>

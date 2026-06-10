@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快充聚合 - 模拟小程序</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1677FF;
+      --primary-light: #e6f4ff;
+      --success: #52C41A;
+      --warning: #FA8C16;
+      --danger: #F5222D;
+      --gray: #8c8c8c;
+      --bg: #F5F7FA;
+      --card-radius: 12px;
+      --btn-radius: 8px;
+      --tab-radius: 16px;
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 50%, #e0f2fe 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Phone Frame */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #000;
+      border-radius: 48px;
+      padding: 12px;
+      box-shadow: 0 48px 96px -12px rgba(0,0,0,0.25), 0 24px 48px -12px rgba(0,0,0,0.15);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: 24px; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 32px;
+      background: #000; border-radius: 0 0 20px 20px;
+      z-index: 20;
+    }
+    .screen {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      height: 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 28px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1f2937;
+      background: transparent;
+      position: relative; z-index: 10;
+    }
+    .status-bar .time { letter-spacing: 0.5px; }
+    .status-bar .icons { display: flex; gap: 5px; align-items: center; }
+    .signal, .wifi, .battery {
+      display: inline-block;
+    }
+    .signal span { display: block; width: 3px; background: #1f2937; border-radius: 1px; margin-right: 1px; float: left; }
+    .signal span:nth-child(1) { height: 4px; margin-top: 5px; opacity: 0.4; }
+    .signal span:nth-child(2) { height: 6px; margin-top: 3px; opacity: 0.6; }
+    .signal span:nth-child(3) { height: 8px; margin-top: 1px; }
+    .wifi svg { width: 14px; height: 10px; }
+    .battery { width: 20px; height: 10px; border: 1.5px solid #1f2937; border-radius: 3px; position: relative; padding: 1.5px; }
+    .battery::after { content: ''; position: absolute; right: -3px; top: 2.5px; width: 2px; height: 5px; background: #1f2937; border-radius: 0 1px 1px 0; }
+    .battery-inner { width: 70%; height: 100%; background: #1f2937; border-radius: 1px; }
+
+    /* Page Container */
+    .pages {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      scrollbar-width: none;
+    }
+    .pages::-webkit-scrollbar { display: none; }
+    .page {
+      display: none;
+      padding: 0 16px 20px;
+      min-height: 100%;
+      animation: pageIn 0.3s var(--ease-out);
+    }
+    .page.active { display: block; }
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Glass Card */
+    .glass-card {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px) saturate(150%);
+      -webkit-backdrop-filter: blur(12px) saturate(150%);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02);
+      border-radius: var(--card-radius);
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      height: 84px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-top: 1px solid rgba(0,0,0,0.04);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-around;
+      padding-top: 8px;
+      position: relative; z-index: 10;
+      flex-shrink: 0;
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 12px;
+      color: #8c8c8c;
+      font-size: 10px;
+      transition: color 0.2s ease;
+      cursor: pointer;
+      user-select: none;
+      border: none; background: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-item:active { transform: scale(0.92); }
+    .tab-item.active { color: var(--primary); }
+    .tab-item svg { width: 22px; height: 22px; stroke-width: 2; }
+    .tab-item.active svg { stroke: var(--primary); }
+    .tab-scan {
+      position: relative;
+      top: -22px;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1677FF 0%, #52C41A 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 24px rgba(22,119,255,0.35);
+      transition: transform 0.2s var(--ease-spring);
+      cursor: pointer; border: 3px solid white;
+    }
+    .tab-scan:active { transform: scale(0.88); }
+    .tab-scan svg { width: 26px; height: 26px; color: white; stroke-width: 2.5; }
+
+    /* Micro interactions */
+    .tap-scale {
+      transition: transform 0.15s var(--ease-spring);
+      cursor: pointer;
+    }
+    .tap-scale:active { transform: scale(0.96); }
+
+    /* Home Page */
+    .home-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0 12px;
+    }
+    .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .search-box {
+      flex: 1;
+      margin-left: 12px;
+      height: 36px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 13px;
+      color: #8c8c8c;
+      border: 1px solid rgba(0,0,0,0.04);
+      backdrop-filter: blur(8px);
+    }
+    .banner {
+      width: 100%;
+      height: 120px;
+      border-radius: var(--card-radius);
+      background: linear-gradient(135deg, #1677FF 0%, #096dd9 100%);
+      padding: 16px 20px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .banner::after {
+      content: '';
+      position: absolute;
+      right: -20px; top: -20px;
+      width: 140px; height: 140px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .banner::before {
+      content: '';
+      position: absolute;
+      right: 40px; bottom: -40px;
+      width: 100px; height: 100px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .banner-title { font-size: 18px; font-weight: 700; position: relative; z-index: 1; }
+    .banner-sub { font-size: 12px; opacity: 0.85; margin-top: 4px; position: relative; z-index: 1; }
+    .banner-btn {
+      margin-top: 10px;
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(8px);
+      padding: 5px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.15);
+      position: relative; z-index: 1;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .quick-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 4px;
+    }
+    .quick-icon {
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .quick-icon svg { width: 22px; height: 22px; }
+    .quick-label { font-size: 11px; color: #4b5563; font-weight: 500; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-title h3 { font-size: 15px; font-weight: 700; color: #1f2937; }
+    .section-title a { font-size: 12px; color: var(--primary); font-weight: 500; }
+
+    .station-card {
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
+    }
+    .station-card:active { transform: scale(0.98); }
+    .station-img {
+      width: 72px; height: 72px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .station-img svg { width: 32px; height: 32px; color: var(--primary); }
+    .station-info { flex: 1; min-width: 0; }
+    .station-name { font-size: 14px; font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .station-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+    .station-meta span { font-size: 11px; color: #8c8c8c; }
+    .station-price { margin-top: 6px; display: flex; align-items: baseline; gap: 4px; }
+    .price { font-size: 16px; font-weight: 700; color: var(--danger); }
+    .unit { font-size: 11px; color: #8c8c8c; }
+    .station-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .tag-green { background: #f0fdf4; color: #16a34a; }
+    .tag-blue { background: #eff6ff; color: #2563eb; }
+    .tag-orange { background: #fff7ed; color: #ea580c; }
+    .station-status {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    }
+    .status-dot { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; }
+    .status-dot::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
+    .status-free { color: var(--success); }
+    .status-free::before { background: var(--success); box-shadow: 0 0 0 2px rgba(82,196,26,0.2); }
+    .status-busy { color: var(--warning); }
+    .status-busy::before { background: var(--warning); }
+    .status-num { font-size: 18px; font-weight: 700; color: #1f2937; }
+
+    /* Save Page */
+    .coupon-card {
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .coupon-left {
+      width: 64px; height: 64px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .coupon-left svg { width: 30px; height: 30px; }
+    .coupon-right { flex: 1; }
+    .coupon-title { font-size: 14px; font-weight: 700; color: #1f2937; }
+    .coupon-desc { font-size: 11px; color: #8c8c8c; margin-top: 2px; }
+    .coupon-btn {
+      margin-left: auto;
+      padding: 5px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s var(--ease-spring);
+    }
+    .coupon-btn:active { transform: scale(0.92); }
+
+    /* Scan Page */
+    .scan-page { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 60px; }
+    .scan-frame {
+      width: 240px; height: 240px;
+      border: 2px dashed var(--primary);
+      border-radius: 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px;
+      position: relative;
+      background: rgba(22,119,255,0.03);
+    }
+    .scan-corner {
+      position: absolute;
+      width: 24px; height: 24px;
+      border-color: var(--primary);
+      border-style: solid;
+    }
+    .scan-corner.tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-radius: 16px 0 0 0; }
+    .scan-corner.tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-radius: 0 16px 0 0; }
+    .scan-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-radius: 0 0 0 16px; }
+    .scan-corner.br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-radius: 0 0 16px 0; }
+    .scan-line {
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      animation: scanMove 2s ease-in-out infinite;
+    }
+    @keyframes scanMove {
+      0%, 100% { top: 10%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      50% { top: 90%; }
+    }
+    .scan-input {
+      width: 100%;
+      margin-top: 32px;
+      height: 48px;
+      border-radius: var(--btn-radius);
+      border: 1px solid rgba(0,0,0,0.08);
+      padding: 0 16px;
+      font-size: 14px;
+      text-align: center;
+      background: rgba(255,255,255,0.9);
+      outline: none;
+    }
+    .scan-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22,119,255,0.1); }
+
+    /* Order Page */
+    .order-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 2px;
+      background: rgba(0,0,0,0.03);
+      border-radius: 10px;
+    }
+    .order-tab {
+      flex: 1;
+      text-align: center;
+      padding: 7px 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: #8c8c8c;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .order-tab.active { background: white; color: #1f2937; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+    .order-card {
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .order-station { font-size: 14px; font-weight: 600; color: #1f2937; }
+    .order-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 10px;
+    }
+    .order-status.charging { background: #fff7ed; color: var(--warning); }
+    .order-status.done { background: #f0fdf4; color: var(--success); }
+    .order-detail {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0,0,0,0.04);
+    }
+    .order-d-item { text-align: center; }
+    .order-d-label { font-size: 10px; color: #8c8c8c; margin-bottom: 2px; }
+    .order-d-value { font-size: 14px; font-weight: 700; color: #1f2937; }
+
+    /* Profile Page */
+    .profile-header {
+      padding: 24px 16px 20px;
+      margin: -16px -16px 16px;
+      background: linear-gradient(135deg, #1677FF 0%, #0958d9 100%);
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-header::after {
+      content: '';
+      position: absolute; right: -40px; top: -40px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .profile-user {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative; z-index: 1;
+    }
+    .avatar {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255,255,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700;
+    }
+    .profile-name { font-size: 18px; font-weight: 700; }
+    .profile-level {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      font-size: 11px;
+      background: rgba(255,255,255,0.15);
+      padding: 3px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .wallet-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .wallet-item {
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .wallet-value { font-size: 18px; font-weight: 700; color: #1f2937; }
+    .wallet-label { font-size: 11px; color: #8c8c8c; margin-top: 4px; }
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+    }
+    .tool-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 4px;
+      border-radius: 10px;
+      transition: background 0.15s ease;
+      cursor: pointer;
+    }
+    .tool-item:active { background: rgba(0,0,0,0.03); }
+    .tool-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tool-icon svg { width: 20px; height: 20px; }
+    .tool-label { font-size: 11px; color: #4b5563; }
+
+    /* Scroll reveal for glass cards */
+    .glass-card {
+      opacity: 0;
+      transform: translateY(8px);
+      animation: glassIn 0.4s var(--ease-out) forwards;
+    }
+    .glass-card:nth-child(1) { animation-delay: 0.05s; }
+    .glass-card:nth-child(2) { animation-delay: 0.1s; }
+    .glass-card:nth-child(3) { animation-delay: 0.15s; }
+    .glass-card:nth-child(4) { animation-delay: 0.2s; }
+    @keyframes glassIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="screen">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span class="time" id="clock">14:32</span>
+        <div class="icons">
+          <div class="signal"><span></span><span></span><span></span></div>
+          <div class="wifi"><svg viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3C5.5 0.5 10.5 0.5 14 3"/><path d="M4.5 6C7 4.5 9 4.5 11.5 6"/><path d="M7 9L8 8L9 9"/></svg></div>
+          <div class="battery"><div class="battery-inner"></div></div>
+        </div>
+      </div>
+
+      <!-- Pages -->
+      <div class="pages" id="pages">
+        <!-- 首页 -->
+        <div class="page active" id="page-home">
+          <div class="home-header">
+            <div class="location">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              朝阳区国贸
+            </div>
+            <div class="search-box tap-scale">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;opacity:0.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              搜索充电站/桩号
+            </div>
+          </div>
+
+          <div class="banner tap-scale">
+            <div class="banner-title">夏日充电能量包</div>
+            <div class="banner-sub">100度电仅需 ¥68，锁定低价</div>
+            <div class="banner-btn">立即购买</div>
+          </div>
+
+          <div class="quick-actions">
+            <div class="quick-item tap-scale">
+              <div class="quick-icon" style="background:#e6f4ff;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"/><path d="M17 21v-8"/><path d="M7 21v-8"/><path d="M7 3v5h10V3"/><path d="M10 8V3"/><path d="M14 8V3"/></svg>
+              </div>
+              <span class="quick-label">扫码充电</span>
+            </div>
+            <div class="quick-item tap-scale">
+              <div class="quick-icon" style="background:#f0fdf4;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <span class="quick-label">我的订单</span>
+            </div>
+            <div class="quick-item tap-scale">
+              <div class="quick-icon" style="background:#fff7ed;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+              </div>
+              <span class="quick-label">钱包</span>
+            </div>
+            <div class="quick-item tap-scale">
+              <div class="quick-icon" style="background:#f5f3ff;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <span class="quick-label">客服</span>
+            </div>
+          </div>
+
+          <div class="section-title">
+            <h3>附近充电站</h3>
+            <a href="#">更多 ></a>
+          </div>
+
+          <div class="glass-card station-card tap-scale">
+            <div class="station-img">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.09 12.11a2.23 2.23 0 0 0 .14 3.07l.16.15a2.24 2.24 0 0 0 3.06.14L16 8"/><path d="M11.5 8 16 3l5 5-4.5 4.5"/><path d="M16 8v13H3V8"/><path d="m22 15-3-3"/></svg>
+            </div>
+            <div class="station-info">
+              <div class="station-name">特来电国贸超级充电站</div>
+              <div class="station-meta">
+                <span>0.8km</span>
+                <span>·</span>
+                <span>评分 4.9</span>
+                <span>·</span>
+                <span>停车费减免</span>
+              </div>
+              <div class="station-price"><span class="price">¥0.98</span><span class="unit">/度 (含服务费)</span></div>
+              <div class="station-tags">
+                <span class="tag tag-green">空闲 8/12</span>
+                <span class="tag tag-blue">PLUS 6折</span>
+                <span class="tag tag-orange">快充</span>
+              </div>
+            </div>
+            <div class="station-status">
+              <span class="status-dot status-free">空闲中</span>
+              <span class="status-num">8</span>
+              <span style="font-size:10px;color:#8c8c8c;">个空闲桩</span>
+            </div>
+          </div>
+
+          <div class="glass-card station-card tap-scale">
+            <div class="station-img" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.09 12.11a2.23 2.23 0 0 0 .14 3.07l.16.15a2.24 2.24 0 0 0 3.06.14L16 8"/><path d="M11.5 8 16 3l5 5-4.5 4.5"/><path d="M16 8v13H3V8"/><path d="m22 15-3-3"/></svg>
+            </div>
+            <div class="station-info">
+              <div class="station-name">星星充电 SOHO 站</div>
+              <div class="station-meta">
+                <span>1.2km</span>
+                <span>·</span>
+                <span>评分 4.7</span>
+              </div>
+              <div class="station-price"><span class="price">¥1.15</span><span class="unit">/度 (含服务费)</span></div>
+              <div class="station-tags">
+                <span class="tag tag-orange">充电中 6/10</span>
+                <span class="tag tag-blue">超充</span>
+              </div>
+            </div>
+            <div class="station-status">
+              <span class="status-dot status-busy">较忙</span>
+              <span class="status-num">4</span>
+              <span style="font-size:10px;color:#8c8c8c;">个空闲桩</span>
+            </div>
+          </div>
+
+          <div class="glass-card station-card tap-scale">
+            <div class="station-img" style="background:linear-gradient(135deg,#eff6ff,#e0f2fe);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.09 12.11a2.23 2.23 0 0 0 .14 3.07l.16.15a2.24 2.24 0 0 0 3.06.14L16 8"/><path d="M11.5 8 16 3l5 5-4.5 4.5"/><path d="M16 8v13H3V8"/><path d="m22 15-3-3"/></svg>
+            </div>
+            <div class="station-info">
+              <div class="station-name">云快充大望路停车场</div>
+              <div class="station-meta">
+                <span>2.1km</span>
+                <span>·</span>
+                <span>评分 4.5</span>
+                <span>·</span>
+                <span>免费停车2h</span>
+              </div>
+              <div class="station-price"><span class="price">¥0.85</span><span class="unit">/度 (含服务费)</span></div>
+              <div class="station-tags">
+                <span class="tag tag-green">空闲 15/20</span>
+                <span class="tag tag-orange">慢充</span>
+              </div>
+            </div>
+            <div class="station-status">
+              <span class="status-dot status-free">空闲中</span>
+              <span class="status-num">15</span>
+              <span style="font-size:10px;color:#8c8c8c;">个空闲桩</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 省钱 -->
+        <div class="page" id="page-save">
+          <div class="section-title" style="padding-top:8px;">
+            <h3>我的优惠券</h3>
+            <a href="#">查看全部 ></a>
+          </div>
+          <div class="glass-card coupon-card tap-scale">
+            <div class="coupon-left" style="background:linear-gradient(135deg,#1677FF,#0958d9);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div class="coupon-right">
+              <div class="coupon-title">满20减5元充电券</div>
+              <div class="coupon-desc">全场通用 · 有效期至 2026-06-30</div>
+            </div>
+            <button class="coupon-btn" style="background:var(--primary);color:white;">去使用</button>
+          </div>
+          <div class="glass-card coupon-card tap-scale">
+            <div class="coupon-left" style="background:linear-gradient(135deg,#52C41A,#389e0d);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+            </div>
+            <div class="coupon-right">
+              <div class="coupon-title">PLUS会员8折券</div>
+              <div class="coupon-desc">PLUS专属 · 每月限用5张</div>
+            </div>
+            <button class="coupon-btn" style="background:var(--success);color:white;">去使用</button>
+          </div>
+
+          <div class="section-title" style="margin-top:8px;">
+            <h3>能量包</h3>
+            <a href="#">购买 ></a>
+          </div>
+          <div class="glass-card coupon-card tap-scale">
+            <div class="coupon-left" style="background:linear-gradient(135deg,#FA8C16,#d46b08);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M2 12h20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m19.07 4.93-14.14 14.14"/></svg>
+            </div>
+            <div class="coupon-right">
+              <div class="coupon-title">100度能量包</div>
+              <div class="coupon-desc">剩余 68 度 · 有效期至 2026-08-01</div>
+            </div>
+            <button class="coupon-btn" style="background:var(--warning);color:white;">充值</button>
+          </div>
+
+          <div class="section-title" style="margin-top:8px;">
+            <h3>限时活动</h3>
+          </div>
+          <div class="glass-card tap-scale" style="padding:16px;margin-bottom:10px;">
+            <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:4px;">邀请好友得充电金</div>
+            <div style="font-size:12px;color:#8c8c8c;">每成功邀请1位好友，双方各得 ¥10 充电余额</div>
+          </div>
+        </div>
+
+        <!-- 扫码 -->
+        <div class="page" id="page-scan">
+          <div class="scan-page">
+            <div style="font-size:18px;font-weight:700;color:#1f2937;margin-bottom:32px;">扫码充电</div>
+            <div class="scan-frame">
+              <div class="scan-corner tl"></div>
+              <div class="scan-corner tr"></div>
+              <div class="scan-corner bl"></div>
+              <div class="scan-corner br"></div>
+              <div class="scan-line"></div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="6" height="6" x="9" y="9" rx="1"/></svg>
+              <div style="font-size:13px;color:#8c8c8c;">将二维码放入框内</div>
+            </div>
+            <input type="text" class="scan-input glass-card" placeholder="或输入充电桩编号">
+            <div style="margin-top:16px;font-size:12px;color:#8c8c8c;">支持微信扫码 / NFC感应 / 桩号输入</div>
+          </div>
+        </div>
+
+        <!-- 订单 -->
+        <div class="page" id="page-order">
+          <div style="padding-top:8px;">
+            <div class="order-tabs">
+              <button class="order-tab active" onclick="switchOrderTab(this,0)">充电中</button>
+              <button class="order-tab" onclick="switchOrderTab(this,1)">已完成</button>
+              <button class="order-tab" onclick="switchOrderTab(this,2)">待支付</button>
+            </div>
+          </div>
+
+          <div class="glass-card order-card">
+            <div class="order-top">
+              <span class="order-station">特来电国贸超级充电站</span>
+              <span class="order-status charging">充电中</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="width:60px;height:60px;position:relative;">
+                <svg width="60" height="60" viewBox="0 0 60 60">
+                  <circle cx="30" cy="30" r="26" fill="none" stroke="#f3f4f6" stroke-width="5"/>
+                  <circle cx="30" cy="30" r="26" fill="none" stroke="#FA8C16" stroke-width="5" stroke-dasharray="120 163" stroke-linecap="round" transform="rotate(-90 30 30)"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                  <span style="font-size:12px;font-weight:700;color:#1f2937;">62%</span>
+                </div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;color:#1f2937;">已充 18.5 度</div>
+                <div style="font-size:12px;color:#8c8c8c;margin-top:2px;">预计还需 18 分钟</div>
+              </div>
+            </div>
+            <div class="order-detail">
+              <div class="order-d-item">
+                <div class="order-d-label">实时功率</div>
+                <div class="order-d-value" style="color:var(--primary);">65kW</div>
+              </div>
+              <div class="order-d-item">
+                <div class="order-d-label">已用时长</div>
+                <div class="order-d-value">32分钟</div>
+              </div>
+              <div class="order-d-item">
+                <div class="order-d-label">当前费用</div>
+                <div class="order-d-value" style="color:var(--danger);">¥18.13</div>
+              </div>
+            </div>
+            <button style="width:100%;margin-top:12px;height:40px;border-radius:10px;border:1px solid #fee2e2;background:#fef2f2;color:#dc2626;font-size:14px;font-weight:600;cursor:pointer;">停止充电</button>
+          </div>
+
+          <div class="glass-card order-card tap-scale">
+            <div class="order-top">
+              <span class="order-station">星星充电 SOHO 站</span>
+              <span class="order-status done">已完成</span>
+            </div>
+            <div class="order-detail">
+              <div class="order-d-item">
+                <div class="order-d-label">充电量</div>
+                <div class="order-d-value">42.3度</div>
+              </div>
+              <div class="order-d-item">
+                <div class="order-d-label">时长</div>
+                <div class="order-d-value">48分钟</div>
+              </div>
+              <div class="order-d-item">
+                <div class="order-d-label">实付</div>
+                <div class="order-d-value" style="color:var(--danger);">¥35.80</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:#8c8c8c;">2026-06-05 18:32 · 已开具电子发票</div>
+          </div>
+        </div>
+
+        <!-- 我的 -->
+        <div class="page" id="page-profile">
+          <div class="profile-header">
+            <div class="profile-user">
+              <div class="avatar">陈</div>
+              <div>
+                <div class="profile-name">陈先生</div>
+                <div class="profile-level">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  PLUS 金卡会员
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wallet-bar">
+            <div class="glass-card wallet-item tap-scale">
+              <div class="wallet-value" style="color:var(--danger);">¥128.50</div>
+              <div class="wallet-label">余额</div>
+            </div>
+            <div class="glass-card wallet-item tap-scale">
+              <div class="wallet-value" style="color:var(--primary);">3</div>
+              <div class="wallet-label">卡券</div>
+            </div>
+            <div class="glass-card wallet-item tap-scale">
+              <div class="wallet-value" style="color:var(--warning);">680</div>
+              <div class="wallet-label">积分</div>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding:14px;margin-bottom:12px;">
+            <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:10px;">我的车辆</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:#e6f4ff;display:flex;align-items:center;justify-content:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#1f2937;">京A·D12345</div>
+                <div style="font-size:11px;color:#8c8c8c;">特斯拉 Model 3 · 续航剩余 186km</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8c8c8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding:14px;">
+            <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:10px;">常用工具</div>
+            <div class="tools-grid">
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#e6f4ff;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                </div>
+                <span class="tool-label">发票</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#f0fdf4;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                </div>
+                <span class="tool-label">充值</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#fff7ed;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                </div>
+                <span class="tool-label">收藏</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#fef2f2;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+                </div>
+                <span class="tool-label">客服</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#f5f3ff;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </div>
+                <span class="tool-label">意见反馈</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#ecfdf5;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                </div>
+                <span class="tool-label">能量报告</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#fff1f2;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <span class="tool-label">电池卫士</span>
+              </div>
+              <div class="tool-item">
+                <div class="tool-icon" style="background:#f0f9ff;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                </div>
+                <span class="tool-label">帮助</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-item active" onclick="switchTab('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          首页
+        </button>
+        <button class="tab-item" onclick="switchTab('save')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          省钱
+        </button>
+        <div class="tab-scan" onclick="switchTab('scan')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="6" height="6" x="9" y="9" rx="1"/></svg>
+        </div>
+        <button class="tab-item" onclick="switchTab('order')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          订单
+        </button>
+        <button class="tab-item" onclick="switchTab('profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          我的
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+
+      const map = { home: 0, save: 1, scan: 2, order: 3, profile: 4 };
+      const tabs = document.querySelectorAll('.tab-item');
+      if (tab !== 'scan') tabs[map[tab]].classList.add('active');
+      else tabs[2].classList.add('active');
+
+      document.getElementById('page-' + tab).classList.add('active');
+    }
+
+    function switchOrderTab(btn, idx) {
+      document.querySelectorAll('.order-tab').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = h + ':' + m;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>

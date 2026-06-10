@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityFleet BikeOps | 城市级运营管理后台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --oled-black: #000000;
+      --oled-surface: #0a0a0a;
+      --oled-elevated: #111111;
+      --oled-border: #1a1a1a;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-electric: #06b6d4;
+      --accent-rose: #f43f5e;
+      --font-display: 'Sora', sans-serif;
+      --font-data: 'Chakra Petch', sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--oled-black);
+    }
+
+    body {
+      font-family: var(--font-display);
+      color: #e5e5e5;
+      overflow-x: hidden;
+    }
+
+    /* Velvet texture overlay */
+    .velvet {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* Typography */
+    .font-display {
+      font-family: var(--font-display);
+    }
+
+    .font-data {
+      font-family: var(--font-data);
+    }
+
+    /* OLED Card */
+    .oled-card {
+      background: var(--oled-elevated);
+      border: 1px solid var(--oled-border);
+      border-radius: 16px;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .oled-card:hover {
+      border-color: #262626;
+      transform: translateY(-2px);
+    }
+
+    /* Glow effects */
+    .glow-emerald {
+      box-shadow: 0 0 40px -10px rgba(16, 185, 129, 0.15);
+    }
+
+    .glow-amber {
+      box-shadow: 0 0 40px -10px rgba(245, 158, 11, 0.15);
+    }
+
+    .glow-electric {
+      box-shadow: 0 0 40px -10px rgba(6, 182, 212, 0.15);
+    }
+
+    .glow-rose {
+      box-shadow: 0 0 40px -10px rgba(244, 63, 94, 0.15);
+    }
+
+    .text-glow-emerald {
+      text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    }
+
+    .text-glow-amber {
+      text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    }
+
+    .text-glow-electric {
+      text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+    }
+
+    /* Nav item */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #737373;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-display);
+    }
+
+    .nav-item:hover {
+      color: #e5e5e5;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .nav-item.active {
+      color: var(--accent-electric);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    .nav-item:focus-visible {
+      outline: 2px solid var(--accent-electric);
+      outline-offset: 2px;
+    }
+
+    /* Alert pulse - signature detail */
+    .alert-pulse {
+      animation: alertPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+    }
+
+    /* Chart bars animation */
+    .chart-bar {
+      animation: barGrow 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transform-origin: bottom;
+    }
+
+    @keyframes barGrow {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+
+    /* KPI number ticker style */
+    .kpi-value {
+      font-family: var(--font-data);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    /* Live indicator */
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      animation: liveBlink 2s ease-in-out infinite;
+    }
+
+    @keyframes liveBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--oled-black);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #262626;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #404040;
+    }
+
+    /* Table styles */
+    .data-table th {
+      font-size: 11px;
+      font-weight: 600;
+      color: #737373;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--oled-border);
+    }
+
+    .data-table td {
+      padding: 14px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--oled-border);
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badge styles */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-data);
+    }
+
+    /* Button focus */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent-electric);
+      outline-offset: 2px;
+    }
+
+    /* Cinematic entrance */
+    .cinematic {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: cinematicIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes cinematicIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .delay-6 { animation-delay: 0.6s; }
+
+    /* Progress track */
+    .progress-track {
+      background: var(--oled-border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Heatmap grid cell */
+    .heat-cell {
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .heat-cell:hover {
+      transform: scale(1.15);
+      z-index: 10;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-black min-h-screen">
+  <div class="velvet"></div>
+
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#0a0a0a] border-r border-[#1a1a1a] fixed h-full z-40 hidden lg:block">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-10">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+            <i data-lucide="bike" class="w-5 h-5 text-black"></i>
+          </div>
+          <div>
+            <h1 class="font-display font-bold text-white text-lg tracking-tight">CityFleet</h1>
+            <p class="text-[10px] text-neutral-500 font-data uppercase tracking-widest">BikeOps</p>
+          </div>
+        </div>
+
+        <nav class="space-y-1" role="navigation" aria-label="主导航">
+          <button class="nav-item active">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i>
+            运营总览
+          </button>
+          <button class="nav-item">
+            <i data-lucide="map" class="w-[18px] h-[18px]"></i>
+            地图调度中心
+          </button>
+          <button class="nav-item">
+            <i data-lucide="truck" class="w-[18px] h-[18px]"></i>
+            车队资产
+          </button>
+          <button class="nav-item">
+            <i data-lucide="battery-charging" class="w-[18px] h-[18px]"></i>
+            电池与能源
+          </button>
+          <button class="nav-item">
+            <i data-lucide="clipboard-list" class="w-[18px] h-[18px]"></i>
+            运维工单
+          </button>
+          <button class="nav-item">
+            <i data-lucide="hexagon" class="w-[18px] h-[18px]"></i>
+            规则与区域
+          </button>
+          <button class="nav-item">
+            <i data-lucide="shield-check" class="w-[18px] h-[18px]"></i>
+            合规监管
+          </button>
+          <button class="nav-item">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px]"></i>
+            数据报表
+          </button>
+        </nav>
+
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-[#1a1a1a]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-[#1a1a1a] flex items-center justify-center">
+              <span class="text-sm font-bold text-cyan-400">张</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-white truncate">张运营</p>
+              <p class="text-xs text-neutral-500">城市运营经理</p>
+            </div>
+            <button class="text-neutral-500 hover:text-white transition-colors" aria-label="设置">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64">
+      <!-- Top Header -->
+      <header class="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-[#1a1a1a]">
+        <div class="flex items-center justify-between px-6 lg:px-10 py-4">
+          <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2 lg:hidden">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+                <i data-lucide="bike" class="w-4 h-4 text-black"></i>
+              </div>
+            </div>
+            <div>
+              <h2 class="font-display text-xl font-semibold text-white">运营总览</h2>
+              <p class="text-xs text-neutral-500 font-data mt-0.5">杭州市 · 运营日 2026.04.14</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#111] border border-[#1a1a1a]">
+              <span class="live-dot"></span>
+              <span class="text-xs text-neutral-400 font-data">实时数据更新中</span>
+            </div>
+            <button class="w-10 h-10 rounded-xl bg-[#111] border border-[#1a1a1a] flex items-center justify-center hover:border-neutral-700 transition-colors relative">
+              <i data-lucide="bell" class="w-4 h-4 text-neutral-400"></i>
+              <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full alert-pulse"></span>
+            </button>
+            <button class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#111] border border-[#1a1a1a] hover:border-neutral-700 transition-colors text-sm text-neutral-300">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              导出报表
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="p-6 lg:p-10 space-y-6">
+        
+        <!-- KPI Row - Asymmetric Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="oled-card p-5 glow-emerald cinematic delay-1">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
+              </div>
+              <span class="badge bg-emerald-500/10 text-emerald-400">+12.4%</span>
+            </div>
+            <p class="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">今日订单数</p>
+            <p class="kpi-value text-3xl text-white text-glow-emerald">28,493</p>
+            <p class="text-xs text-neutral-600 mt-2 font-data">昨日同比 25,346</p>
+          </div>
+
+          <div class="oled-card p-5 glow-electric cinematic delay-2">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                <i data-lucide="users" class="w-5 h-5 text-cyan-400"></i>
+              </div>
+              <span class="badge bg-cyan-500/10 text-cyan-400">+8.2%</span>
+            </div>
+            <p class="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">今日活跃用户数</p>
+            <p class="kpi-value text-3xl text-white text-glow-electric">18,204</p>
+            <p class="text-xs text-neutral-600 mt-2 font-data">DAU 峰值 19,100</p>
+          </div>
+
+          <div class="oled-card p-5 glow-amber cinematic delay-3">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <i data-lucide="gauge" class="w-5 h-5 text-amber-400"></i>
+              </div>
+              <span class="badge bg-rose-500/10 text-rose-400">-2.1%</span>
+            </div>
+            <p class="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">单车日均骑行</p>
+            <p class="kpi-value text-3xl text-white text-glow-amber">4.82</p>
+            <p class="text-xs text-neutral-600 mt-2 font-data">目标 ≥ 5.0</p>
+          </div>
+
+          <div class="oled-card p-5 glow-rose cinematic delay-4">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                <i data-lucide="wrench" class="w-5 h-5 text-rose-400"></i>
+              </div>
+              <span class="badge bg-rose-500/10 text-rose-400">P1</span>
+            </div>
+            <p class="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">可用率</p>
+            <p class="kpi-value text-3xl text-white">87.3%</p>
+            <p class="text-xs text-neutral-600 mt-2 font-data">阈值 85%，需关注</p>
+          </div>
+        </div>
+
+        <!-- Middle Section: Charts & Alerts -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          <!-- Fleet Health Chart -->
+          <div class="lg:col-span-2 oled-card p-6 cinematic delay-5">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="font-display font-semibold text-white">车队健康分布</h3>
+                <p class="text-xs text-neutral-500 mt-1">实时车辆状态 · 总数 23,612 辆</p>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1.5 rounded-lg bg-[#1a1a1a] text-xs text-neutral-400 hover:text-white transition-colors">自行车</button>
+                <button class="px-3 py-1.5 rounded-lg bg-cyan-500/10 text-xs text-cyan-400">电单车</button>
+              </div>
+            </div>
+
+            <!-- Custom Bar Chart -->
+            <div class="relative h-48 flex items-end gap-3 px-2">
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="flex items-end gap-1 h-32">
+                  <div class="flex-1 bg-emerald-500/80 rounded-t chart-bar" style="height: 65%; animation-delay: 0.1s;"></div>
+                  <div class="flex-1 bg-cyan-500/80 rounded-t chart-bar" style="height: 45%; animation-delay: 0.2s;"></div>
+                  <div class="flex-1 bg-amber-500/80 rounded-t chart-bar" style="height: 25%; animation-delay: 0.3s;"></div>
+                  <div class="flex-1 bg-rose-500/80 rounded-t chart-bar" style="height: 15%; animation-delay: 0.4s;"></div>
+                </div>
+                <p class="text-[10px] text-neutral-500 text-center font-data">00:00</p>
+              </div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="flex items-end gap-1 h-32">
+                  <div class="flex-1 bg-emerald-500/80 rounded-t chart-bar" style="height: 72%; animation-delay: 0.15s;"></div>
+                  <div class="flex-1 bg-cyan-500/80 rounded-t chart-bar" style="height: 38%; animation-delay: 0.25s;"></div>
+                  <div class="flex-1 bg-amber-500/80 rounded-t chart-bar" style="height: 30%; animation-delay: 0.35s;"></div>
+                  <div class="flex-1 bg-rose-500/80 rounded-t chart-bar" style="height: 12%; animation-delay: 0.45s;"></div>
+                </div>
+                <p class="text-[10px] text-neutral-500 text-center font-data">06:00</p>
+              </div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="flex items-end gap-1 h-32">
+                  <div class="flex-1 bg-emerald-500/80 rounded-t chart-bar" style="height: 45%; animation-delay: 0.2s;"></div>
+                  <div class="flex-1 bg-cyan-500/80 rounded-t chart-bar" style="height: 82%; animation-delay: 0.3s;"></div>
+                  <div class="flex-1 bg-amber-500/80 rounded-t chart-bar" style="height: 35%; animation-delay: 0.4s;"></div>
+                  <div class="flex-1 bg-rose-500/80 rounded-t chart-bar" style="height: 18%; animation-delay: 0.5s;"></div>
+                </div>
+                <p class="text-[10px] text-neutral-500 text-center font-data">12:00</p>
+              </div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="flex items-end gap-1 h-32">
+                  <div class="flex-1 bg-emerald-500/80 rounded-t chart-bar" style="height: 58%; animation-delay: 0.25s;"></div>
+                  <div class="flex-1 bg-cyan-500/80 rounded-t chart-bar" style="height: 55%; animation-delay: 0.35s;"></div>
+                  <div class="flex-1 bg-amber-500/80 rounded-t chart-bar" style="height: 42%; animation-delay: 0.45s;"></div>
+                  <div class="flex-1 bg-rose-500/80 rounded-t chart-bar" style="height: 20%; animation-delay: 0.55s;"></div>
+                </div>
+                <p class="text-[10px] text-neutral-500 text-center font-data">18:00</p>
+              </div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="flex items-end gap-1 h-32">
+                  <div class="flex-1 bg-emerald-500/80 rounded-t chart-bar" style="height: 70%; animation-delay: 0.3s;"></div>
+                  <div class="flex-1 bg-cyan-500/80 rounded-t chart-bar" style="height: 48%; animation-delay: 0.4s;"></div>
+                  <div class="flex-1 bg-amber-500/80 rounded-t chart-bar" style="height: 28%; animation-delay: 0.5s;"></div>
+                  <div class="flex-1 bg-rose-500/80 rounded-t chart-bar" style="height: 14%; animation-delay: 0.6s;"></div>
+                </div>
+                <p class="text-[10px] text-neutral-500 text-center font-data">24:00</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-center gap-6 mt-4">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded bg-emerald-500/80"></div>
+                <span class="text-xs text-neutral-400">可用</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded bg-cyan-500/80"></div>
+                <span class="text-xs text-neutral-400">使用中</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded bg-amber-500/80"></div>
+                <span class="text-xs text-neutral-400">低电/待换</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded bg-rose-500/80"></div>
+                <span class="text-xs text-neutral-400">故障/离线</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert Center - Signature glowing panel -->
+          <div class="oled-card p-6 glow-rose cinematic delay-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex items-center justify-between mb-5 relative z-10">
+              <h3 class="font-display font-semibold text-white flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
+                告警中心
+              </h3>
+              <span class="badge bg-rose-500/10 text-rose-400 alert-pulse">12 未处理</span>
+            </div>
+
+            <div class="space-y-3 relative z-10">
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a] hover:border-rose-500/30 transition-colors cursor-pointer group">
+                <div class="flex items-start gap-3">
+                  <div class="w-2 h-2 rounded-full bg-rose-500 mt-1.5 alert-pulse"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-white group-hover:text-rose-200 transition-colors">P0 · 大规模离线</p>
+                      <span class="text-[10px] text-neutral-500 font-data">2分钟前</span>
+                    </div>
+                    <p class="text-xs text-neutral-500 mt-1">滨江区 · 327辆车突然离线</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a] hover:border-amber-500/30 transition-colors cursor-pointer group">
+                <div class="flex items-start gap-3">
+                  <div class="w-2 h-2 rounded-full bg-amber-500 mt-1.5"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-white group-hover:text-amber-200 transition-colors">P1 · 低电车辆堆积</p>
+                      <span class="text-[10px] text-neutral-500 font-data">8分钟前</span>
+                    </div>
+                    <p class="text-xs text-neutral-500 mt-1">西湖区 · 低电车辆 892 辆</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a] hover:border-amber-500/30 transition-colors cursor-pointer group">
+                <div class="flex items-start gap-3">
+                  <div class="w-2 h-2 rounded-full bg-amber-500 mt-1.5"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-white group-hover:text-amber-200 transition-colors">P1 · 禁停区违停</p>
+                      <span class="text-[10px] text-neutral-500 font-data">15分钟前</span>
+                    </div>
+                    <p class="text-xs text-neutral-500 mt-1">上城区 · 龙翔桥周边 46 辆</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a] hover:border-cyan-500/30 transition-colors cursor-pointer group">
+                <div class="flex items-start gap-3">
+                  <div class="w-2 h-2 rounded-full bg-cyan-500 mt-1.5"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-white group-hover:text-cyan-200 transition-colors">P2 · 换电任务超时</p>
+                      <span class="text-[10px] text-neutral-500 font-data">32分钟前</span>
+                    </div>
+                    <p class="text-xs text-neutral-500 mt-1">萧山区 · 3个工单超 SLA</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="w-full mt-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-colors">
+              查看全部告警
+            </button>
+          </div>
+        </div>
+
+        <!-- Battery Status & Supply-Demand Row -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          <!-- Battery Status -->
+          <div class="oled-card p-6 cinematic delay-5">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-display font-semibold text-white">电池电量分布</h3>
+              <span class="text-xs text-neutral-500 font-data">电单车 14,208 辆</span>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-xs mb-2">
+                  <span class="text-neutral-400">60% - 100% 充足</span>
+                  <span class="font-data text-emerald-400">8,532 辆</span>
+                </div>
+                <div class="progress-track h-2">
+                  <div class="progress-fill bg-gradient-to-r from-emerald-600 to-emerald-400" style="width: 60%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-2">
+                  <span class="text-neutral-400">30% - 60% 正常</span>
+                  <span class="font-data text-cyan-400">3,842 辆</span>
+                </div>
+                <div class="progress-track h-2">
+                  <div class="progress-fill bg-gradient-to-r from-cyan-600 to-cyan-400" style="width: 27%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-2">
+                  <span class="text-neutral-400">10% - 30% 偏低</span>
+                  <span class="font-data text-amber-400">1,420 辆</span>
+                </div>
+                <div class="progress-track h-2">
+                  <div class="progress-fill bg-gradient-to-r from-amber-600 to-amber-400" style="width: 10%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-2">
+                  <span class="text-neutral-400">0% - 10% 急需换电</span>
+                  <span class="font-data text-rose-400">414 辆</span>
+                </div>
+                <div class="progress-track h-2">
+                  <div class="progress-fill bg-gradient-to-r from-rose-600 to-rose-400" style="width: 3%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 p-4 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-neutral-500">今日换电完成</p>
+                  <p class="kpi-value text-2xl text-white mt-1">1,842</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-neutral-500">平均耗时</p>
+                  <p class="kpi-value text-2xl text-cyan-400 mt-1">4.2<span class="text-sm text-neutral-400">min</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Supply-Demand Heatmap -->
+          <div class="lg:col-span-2 oled-card p-6 cinematic delay-6">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="font-display font-semibold text-white">供需缺口热力图</h3>
+                <p class="text-xs text-neutral-500 mt-1">基于栅格化实时数据分析 · 15分钟更新</p>
+              </div>
+              <div class="flex gap-3 text-xs">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded heat-cell bg-rose-500/80"></div>
+                  <span class="text-neutral-400">严重缺车</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded heat-cell bg-amber-500/80"></div>
+                  <span class="text-neutral-400">轻度缺车</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded heat-cell bg-emerald-500/60"></div>
+                  <span class="text-neutral-400">供需平衡</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded heat-cell bg-cyan-500/80"></div>
+                  <span class="text-neutral-400">车辆堆积</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Simulated Heatmap Grid -->
+            <div class="grid grid-cols-12 gap-1.5 h-48">
+              <!-- Row 1 -->
+              <div class="heat-cell bg-emerald-500/40 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/30 col-span-2"></div>
+              <div class="heat-cell bg-amber-500/60 col-span-2"></div>
+              <div class="heat-cell bg-rose-500/80 col-span-2"></div>
+              <div class="heat-cell bg-amber-500/50 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/20 col-span-2"></div>
+              <!-- Row 2 -->
+              <div class="heat-cell bg-emerald-500/30 col-span-2"></div>
+              <div class="heat-cell bg-cyan-500/70 col-span-2"></div>
+              <div class="heat-cell bg-cyan-500/50 col-span-2"></div>
+              <div class="heat-cell bg-rose-500/90 col-span-2"></div>
+              <div class="heat-cell bg-amber-500/40 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/40 col-span-2"></div>
+              <!-- Row 3 -->
+              <div class="heat-cell bg-emerald-500/50 col-span-2"></div>
+              <div class="heat-cell bg-cyan-500/60 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/40 col-span-2"></div>
+              <div class="heat-cell bg-amber-500/70 col-span-2"></div>
+              <div class="heat-cell bg-rose-500/70 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/30 col-span-2"></div>
+              <!-- Row 4 -->
+              <div class="heat-cell bg-emerald-500/20 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/40 col-span-2"></div>
+              <div class="heat-cell bg-amber-500/50 col-span-2"></div>
+              <div class="heat-cell bg-emerald-500/30 col-span-2"></div>
+              <div class="heat-cell bg-cyan-500/80 col-span-2"></div>
+              <div class="heat-cell bg-cyan-500/60 col-span-2"></div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-4 mt-5">
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="text-xs text-neutral-500">缺车区域</p>
+                <p class="kpi-value text-xl text-rose-400 mt-1">23</p>
+              </div>
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="text-xs text-neutral-500">堆车区域</p>
+                <p class="kpi-value text-xl text-cyan-400 mt-1">18</p>
+              </div>
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="text-xs text-neutral-500">建议调度</p>
+                <p class="kpi-value text-xl text-amber-400 mt-1">1,240</p>
+              </div>
+              <div class="p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="text-xs text-neutral-500">调度完成率</p>
+                <p class="kpi-value text-xl text-emerald-400 mt-1">84%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work Orders & Compliance -->
+        <div class="grid lg:grid-cols-2 gap-6">
+          <!-- Work Orders -->
+          <div class="oled-card p-6 cinematic delay-6">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-display font-semibold text-white">运维工单看板</h3>
+              <button class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-medium">跳转工单池 →</button>
+            </div>
+
+            <div class="grid grid-cols-5 gap-3 mb-6">
+              <div class="text-center p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="kpi-value text-xl text-white">47</p>
+                <p class="text-[10px] text-neutral-500 mt-1">待派</p>
+              </div>
+              <div class="text-center p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="kpi-value text-xl text-amber-400">32</p>
+                <p class="text-[10px] text-neutral-500 mt-1">执行中</p>
+              </div>
+              <div class="text-center p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="kpi-value text-xl text-rose-400">8</p>
+                <p class="text-[10px] text-neutral-500 mt-1">超时</p>
+              </div>
+              <div class="text-center p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="kpi-value text-xl text-cyan-400">156</p>
+                <p class="text-[10px] text-neutral-500 mt-1">今日完成</p>
+              </div>
+              <div class="text-center p-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <p class="kpi-value text-xl text-emerald-400">92%</p>
+                <p class="text-[10px] text-neutral-500 mt-1">准时率</p>
+              </div>
+            </div>
+
+            <table class="w-full data-table">
+              <thead>
+                <tr>
+                  <th>工单类型</th>
+                  <th>区域</th>
+                  <th>状态</th>
+                  <th>负责人</th>
+                  <th class="text-right">剩余时间</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="battery-warning" class="w-4 h-4 text-amber-400"></i>
+                      <span>换电</span>
+                    </div>
+                  </td>
+                  <td class="text-neutral-400">西湖区 · 文三路</td>
+                  <td><span class="badge bg-amber-500/10 text-amber-400">执行中</span></td>
+                  <td class="text-neutral-400">王师傅</td>
+                  <td class="text-right font-data text-rose-400">-12min</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="map-pin-off" class="w-4 h-4 text-rose-400"></i>
+                      <span>违停处置</span>
+                    </div>
+                  </td>
+                  <td class="text-neutral-400">上城区 · 龙翔桥</td>
+                  <td><span class="badge bg-rose-500/10 text-rose-400">待派</span></td>
+                  <td class="text-neutral-400">--</td>
+                  <td class="text-right font-data text-rose-400">-8min</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="truck" class="w-4 h-4 text-cyan-400"></i>
+                      <span>调度搬运</span>
+                    </div>
+                  </td>
+                  <td class="text-neutral-400">滨江区 · 星光大道</td>
+                  <td><span class="badge bg-cyan-500/10 text-cyan-400">执行中</span></td>
+                  <td class="text-neutral-400">李师傅</td>
+                  <td class="text-right font-data text-emerald-400">42min</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="wrench" class="w-4 h-4 text-purple-400"></i>
+                      <span>故障维修</span>
+                    </div>
+                  </td>
+                  <td class="text-neutral-400">萧山区 · 钱江世纪城</td>
+                  <td><span class="badge bg-emerald-500/10 text-emerald-400">待验收</span></td>
+                  <td class="text-neutral-400">赵师傅</td>
+                  <td class="text-right font-data text-neutral-400">--</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Compliance -->
+          <div class="oled-card p-6 cinematic delay-6">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-display font-semibold text-white">合规监管概览</h3>
+              <span class="badge bg-emerald-500/10 text-emerald-400">本月合规率 96.2%</span>
+            </div>
+
+            <div class="space-y-5">
+              <div class="p-4 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm text-neutral-300">投放量 vs 许可上限</span>
+                  <span class="font-data text-sm text-emerald-400">合规</span>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="flex-1 progress-track h-3">
+                    <div class="progress-fill bg-gradient-to-r from-emerald-600 to-emerald-400" style="width: 94%;"></div>
+                  </div>
+                  <span class="text-xs text-neutral-500 font-data w-24 text-right">23,612 / 25,000</span>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm text-neutral-300">数据共享接口健康度 (MDS)</span>
+                  <span class="font-data text-sm text-emerald-400">正常</span>
+                </div>
+                <div class="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p class="kpi-value text-lg text-white">12ms</p>
+                    <p class="text-[10px] text-neutral-500">上报延迟</p>
+                  </div>
+                  <div>
+                    <p class="kpi-value text-lg text-white">99.9%</p>
+                    <p class="text-[10px] text-neutral-500">成功率</p>
+                  </div>
+                  <div>
+                    <p class="kpi-value text-lg text-white">2min</p>
+                    <p class="text-[10px] text-neutral-500">最近上报</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                  <p class="text-xs text-neutral-500 mb-1">本月禁停次数</p>
+                  <p class="kpi-value text-2xl text-rose-400">142</p>
+                  <p class="text-[10px] text-neutral-600 mt-1">环比下降 18%</p>
+                </div>
+                <div class="p-4 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                  <p class="text-xs text-neutral-500 mb-1">本月越界次数</p>
+                  <p class="kpi-value text-2xl text-amber-400">67</p>
+                  <p class="text-[10px] text-neutral-600 mt-1">环比下降 12%</p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                      <i data-lucide="file-check" class="w-4 h-4 text-cyan-400"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-white">监管月报自动生成</p>
+                      <p class="text-xs text-neutral-500">下次生成：05-01 00:00</p>
+                    </div>
+                  </div>
+                  <span class="badge bg-cyan-500/10 text-cyan-400">已配置</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Bar -->
+        <div class="oled-card p-5 cinematic delay-6">
+          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+            <h3 class="font-display font-semibold text-white whitespace-nowrap">快捷操作</h3>
+            <div class="flex flex-wrap gap-3">
+              <button class="px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#262626] hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all text-sm text-neutral-300 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400"></i>
+                创建调度任务
+              </button>
+              <button class="px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#262626] hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all text-sm text-neutral-300 flex items-center gap-2">
+                <i data-lucide="battery-charging" class="w-4 h-4 text-emerald-400"></i>
+                创建换电任务
+              </button>
+              <button class="px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#262626] hover:border-amber-500/50 hover:bg-amber-500/5 transition-all text-sm text-neutral-300 flex items-center gap-2">
+                <i data-lucide="scan-line" class="w-4 h-4 text-amber-400"></i>
+                车辆检索
+              </button>
+              <button class="px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#262626] hover:border-rose-500/50 hover:bg-rose-500/5 transition-all text-sm text-neutral-300 flex items-center gap-2">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-rose-400"></i>
+                批量指令
+              </button>
+              <button class="px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#262626] hover:border-purple-500/50 hover:bg-purple-500/5 transition-all text-sm text-neutral-300 flex items-center gap-2">
+                <i data-lucide="route" class="w-4 h-4 text-purple-400"></i>
+                路线规划
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="pt-8 pb-4 border-t border-[#1a1a1a]">
+          <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-neutral-600">
+            <p>© 2026 CityFleet BikeOps. All rights reserved.</p>
+            <div class="flex gap-6">
+              <a href="#" class="hover:text-neutral-400 transition-colors">系统日志</a>
+              <a href="#" class="hover:text-neutral-400 transition-colors">操作审计</a>
+              <a href="#" class="hover:text-neutral-400 transition-colors">API 文档</a>
+              <a href="#" class="hover:text-neutral-400 transition-colors">技术支持</a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Simulate live data updates
+    setInterval(() => {
+      const liveDot = document.querySelector('.live-dot');
+      if (liveDot) {
+        liveDot.style.opacity = '1';
+        setTimeout(() => { liveDot.style.opacity = '0.3'; }, 500);
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

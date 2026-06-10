@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityFleet 运营管理后台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+    .sidebar-link { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all; }
+    .sidebar-link.active { @apply bg-slate-800 text-white; }
+    .metric-card { @apply bg-white border border-slate-200 rounded-xl p-5; }
+    .chart-bar { transition: all 0.3s ease; }
+    .chart-bar:hover { opacity: 0.8; }
+    .status-dot { @apply w-2 h-2 rounded-full; }
+    .badge { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 flex flex-col shrink-0">
+      <div class="h-16 flex items-center px-6 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <i data-lucide="bike" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="text-white font-semibold tracking-tight">CityFleet</span>
+        </div>
+      </div>
+      
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <a href="#" class="sidebar-link active">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          数据概览
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="map" class="w-4 h-4"></i>
+          调度中心
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="package" class="w-4 h-4"></i>
+          车辆资产
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="battery-charging" class="w-4 h-4"></i>
+          电池能源
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+          工单管理
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+          规则与围栏
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          合规管理
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          数据分析
+        </a>
+      </nav>
+
+      <div class="p-4 border-t border-slate-800">
+        <div class="flex items-center gap-3">
+          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80" alt="Admin" class="w-9 h-9 rounded-full object-cover">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white truncate">张运营</p>
+            <p class="text-xs text-slate-500 truncate">运营总监 · 杭州</p>
+          </div>
+          <i data-lucide="log-out" class="w-4 h-4 text-slate-500 hover:text-white cursor-pointer"></i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      
+      <!-- Top Header -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+        <div>
+          <h1 class="text-lg font-semibold text-slate-900">数据概览</h1>
+          <p class="text-xs text-slate-500">实时监控城市运营状态 · 数据每 5 分钟更新</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
+            <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+            <span>2024年6月14日</span>
+          </div>
+          <button class="p-2 hover:bg-slate-100 rounded-lg relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Dashboard -->
+      <div class="flex-1 overflow-y-auto p-8">
+        
+        <!-- City Selector & Alerts -->
+        <div class="flex flex-col lg:flex-row gap-6 mb-8">
+          <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+            <i data-lucide="map-pin" class="w-5 h-5 text-blue-600"></i>
+            <div>
+              <p class="text-xs text-slate-500">当前运营城市</p>
+              <p class="text-sm font-semibold text-slate-900">杭州市</p>
+            </div>
+            <div class="w-px h-8 bg-slate-200 mx-2"></div>
+            <div class="flex items-center gap-4 text-sm">
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot bg-blue-500"></span>
+                <span class="text-slate-600">单车 <span class="font-semibold text-slate-900">18,420</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot bg-emerald-500"></span>
+                <span class="text-slate-600">电单车 <span class="font-semibold text-slate-900">12,680</span></span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex-1 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-rose-900">P0 紧急告警 · 西湖区运力严重不足</p>
+                <p class="text-xs text-rose-600">可用车辆低于阈值 15%，建议立即调度</p>
+              </div>
+            </div>
+            <button class="text-xs font-medium text-rose-700 bg-white px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50">立即处理</button>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-sm text-slate-500">今日订单量</p>
+              <span class="badge bg-emerald-50 text-emerald-600">+12.4%</span>
+            </div>
+            <p class="text-2xl font-semibold text-slate-900">84,293</p>
+            <p class="text-xs text-slate-400 mt-1">昨日同期 75,024</p>
+          </div>
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-sm text-slate-500">今日骑行次数</p>
+              <span class="badge bg-emerald-50 text-emerald-600">+8.7%</span>
+            </div>
+            <p class="text-2xl font-semibold text-slate-900">76,104</p>
+            <p class="text-xs text-slate-400 mt-1">平均骑行 2.8 km</p>
+          </div>
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-sm text-slate-500">今日营收</p>
+              <span class="badge bg-emerald-50 text-emerald-600">+15.2%</span>
+            </div>
+            <p class="text-2xl font-semibold text-slate-900">¥186,420</p>
+            <p class="text-xs text-slate-400 mt-1">客单价 ¥2.45</p>
+          </div>
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-sm text-slate-500">单辆日周转</p>
+              <span class="badge bg-amber-50 text-amber-600">-2.1%</span>
+            </div>
+            <p class="text-2xl font-semibold text-slate-900">2.4 次</p>
+            <p class="text-xs text-slate-400 mt-1">目标 3.0 次</p>
+          </div>
+        </div>
+
+        <!-- Middle Section: Charts & Fleet Health -->
+        <div class="grid lg:grid-cols-3 gap-6 mb-8">
+          
+          <!-- Hourly Trend Chart -->
+          <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-semibold text-slate-900">今日骑行趋势</h3>
+              <div class="flex items-center gap-4 text-xs">
+                <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-blue-500 rounded-sm"></span> 单车</div>
+                <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-500 rounded-sm"></span> 电单车</div>
+              </div>
+            </div>
+            <div class="relative h-56">
+              <!-- SVG Bar Chart -->
+              <svg class="w-full h-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.8"/>
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.3"/>
+                  </linearGradient>
+                  <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.8"/>
+                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.3"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid lines -->
+                <line x1="0" y1="20%" x2="100%" y2="20%" stroke="#e2e8f0" stroke-dasharray="4"/>
+                <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#e2e8f0" stroke-dasharray="4"/>
+                <line x1="0" y1="80%" x2="100%" y2="80%" stroke="#e2e8f0" stroke-dasharray="4"/>
+                
+                <!-- Bars: 7am to 10pm, 16 data points -->
+                <!-- 7 -->
+                <rect x="2%" y="70%" width="2%" height="30%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="4.5%" y="65%" width="2%" height="35%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 8 -->
+                <rect x="8%" y="30%" width="2%" height="70%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="10.5%" y="25%" width="2%" height="75%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 9 -->
+                <rect x="14%" y="35%" width="2%" height="65%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="16.5%" y="30%" width="2%" height="70%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 10 -->
+                <rect x="20%" y="55%" width="2%" height="45%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="22.5%" y="50%" width="2%" height="50%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 11 -->
+                <rect x="26%" y="50%" width="2%" height="50%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="28.5%" y="45%" width="2%" height="55%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 12 -->
+                <rect x="32%" y="40%" width="2%" height="60%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="34.5%" y="35%" width="2%" height="65%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 13 -->
+                <rect x="38%" y="45%" width="2%" height="55%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="40.5%" y="40%" width="2%" height="60%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 14 -->
+                <rect x="44%" y="50%" width="2%" height="50%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="46.5%" y="45%" width="2%" height="55%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 15 -->
+                <rect x="50%" y="48%" width="2%" height="52%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="52.5%" y="42%" width="2%" height="58%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 16 -->
+                <rect x="56%" y="45%" width="2%" height="55%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="58.5%" y="40%" width="2%" height="60%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 17 -->
+                <rect x="62%" y="35%" width="2%" height="65%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="64.5%" y="28%" width="2%" height="72%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 18 -->
+                <rect x="68%" y="20%" width="2%" height="80%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="70.5%" y="15%" width="2%" height="85%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 19 -->
+                <rect x="74%" y="30%" width="2%" height="70%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="76.5%" y="25%" width="2%" height="75%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 20 -->
+                <rect x="80%" y="50%" width="2%" height="50%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="82.5%" y="45%" width="2%" height="55%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 21 -->
+                <rect x="86%" y="60%" width="2%" height="40%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="88.5%" y="55%" width="2%" height="45%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+                <!-- 22 -->
+                <rect x="92%" y="75%" width="2%" height="25%" fill="url(#blueGrad)" rx="2" class="chart-bar"/>
+                <rect x="94.5%" y="70%" width="2%" height="30%" fill="url(#greenGrad)" rx="2" class="chart-bar"/>
+              </svg>
+              <!-- X Axis Labels -->
+              <div class="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-slate-400 px-1">
+                <span>07:00</span><span>10:00</span><span>13:00</span><span>16:00</span><span>19:00</span><span>22:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fleet Health -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 class="font-semibold text-slate-900 mb-6">车辆健康状态</h3>
+            <div class="space-y-5">
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="text-slate-600">可用率</span>
+                  <span class="font-semibold text-slate-900">87.3%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width: 87.3%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="text-slate-600">故障率</span>
+                  <span class="font-semibold text-slate-900">4.2%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-rose-500 rounded-full" style="width: 4.2%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="text-slate-600">低电量</span>
+                  <span class="font-semibold text-slate-900">8.5%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-amber-500 rounded-full" style="width: 8.5%"></div>
+                </div>
+              </div>
+              <div class="pt-4 border-t border-slate-100">
+                <div class="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p class="text-xl font-semibold text-slate-900">1,452</p>
+                    <p class="text-xs text-slate-500">待维修车辆</p>
+                  </div>
+                  <div>
+                    <p class="text-xl font-semibold text-slate-900">2,840</p>
+                    <p class="text-xs text-slate-500">需换电车辆</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Battery, Alerts, Work Orders -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          
+          <!-- Battery SOC Distribution -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">电池 SOC 分布</h3>
+              <span class="badge bg-amber-50 text-amber-600">2,840 低电量告警</span>
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-500 w-10">0-20%</span>
+                <div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-rose-500 rounded-full" style="width: 8%"></div>
+                </div>
+                <span class="text-xs font-medium text-slate-700 w-10 text-right">8%</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-500 w-10">21-40%</span>
+                <div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-amber-500 rounded-full" style="width: 14%"></div>
+                </div>
+                <span class="text-xs font-medium text-slate-700 w-10 text-right">14%</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-500 w-10">41-60%</span>
+                <div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-blue-400 rounded-full" style="width: 26%"></div>
+                </div>
+                <span class="text-xs font-medium text-slate-700 w-10 text-right">26%</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-500 w-10">61-80%</span>
+                <div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-blue-500 rounded-full" style="width: 32%"></div>
+                </div>
+                <span class="text-xs font-medium text-slate-700 w-10 text-right">32%</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-500 w-10">81-100%</span>
+                <div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width: 20%"></div>
+                </div>
+                <span class="text-xs font-medium text-slate-700 w-10 text-right">20%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert Center -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">告警中心</h3>
+              <span class="text-xs text-slate-400">共 23 条未处理</span>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-start gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                <span class="badge bg-rose-500 text-white shrink-0">P0</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">西湖区运力严重不足</p>
+                  <p class="text-xs text-slate-500">10分钟前 · 可用率 12%</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                <span class="badge bg-amber-500 text-white shrink-0">P1</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">滨江区大量车辆需换电</p>
+                  <p class="text-xs text-slate-500">18分钟前 · 涉及 842 辆</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                <span class="badge bg-amber-500 text-white shrink-0">P1</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">上城区故障车辆堆积</p>
+                  <p class="text-xs text-slate-500">32分钟前 · 涉及 156 辆</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span class="badge bg-slate-500 text-white shrink-0">P2</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">萧山区供需缺口扩大</p>
+                  <p class="text-xs text-slate-500">1小时前 · 缺口 23%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Work Orders -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">今日工单概览</h3>
+              <button class="text-xs text-blue-600 font-medium hover:text-blue-700">查看全部</button>
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <i data-lucide="truck" class="w-4 h-4 text-blue-600"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-slate-900">车辆调度</p>
+                    <p class="text-xs text-slate-500">进行中 42 / 计划 68</p>
+                  </div>
+                </div>
+                <span class="text-sm font-semibold text-blue-600">61.8%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                    <i data-lucide="battery-charging" class="w-4 h-4 text-emerald-600"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-slate-900">电池更换</p>
+                    <p class="text-xs text-slate-500">进行中 128 / 计划 320</p>
+                  </div>
+                </div>
+                <span class="text-sm font-semibold text-emerald-600">40.0%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-rose-50 rounded-lg flex items-center justify-center">
+                    <i data-lucide="wrench" class="w-4 h-4 text-rose-600"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-slate-900">故障维修</p>
+                    <p class="text-xs text-slate-500">进行中 35 / 计划 89</p>
+                  </div>
+                </div>
+                <span class="text-sm font-semibold text-rose-600">39.3%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-purple-600"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-slate-900">违停清理</p>
+                    <p class="text-xs text-slate-500">进行中 18 / 计划 45</p>
+                  </div>
+                </div>
+                <span class="text-sm font-semibold text-purple-600">40.0%</span>
+              </div>
+            </div>
+            <div class="mt-5 pt-4 border-t border-slate-100">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">工单完成率</span>
+                <span class="font-semibold text-slate-900">46.2%</span>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden mt-2">
+                <div class="h-full bg-slate-900 rounded-full" style="width: 46.2%"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Compliance Table -->
+        <div class="mt-8 bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="font-semibold text-slate-900">合规管理</h3>
+            <span class="badge bg-emerald-50 text-emerald-600">今日评分 94.5</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                <tr>
+                  <th class="px-6 py-3 font-medium">检查项</th>
+                  <th class="px-6 py-3 font-medium">标准</th>
+                  <th class="px-6 py-3 font-medium">当前数值</th>
+                  <th class="px-6 py-3 font-medium">状态</th>
+                  <th class="px-6 py-3 font-medium">更新时间</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50">
+                  <td class="px-6 py-4 font-medium text-slate-900">车辆投放总量</td>
+                  <td class="px-6 py-4 text-slate-500">≤ 35,000 辆</td>
+                  <td class="px-6 py-4 text-slate-900">31,100 辆</td>
+                  <td class="px-6 py-4"><span class="badge bg-emerald-50 text-emerald-600">合规</span></td>
+                  <td class="px-6 py-4 text-slate-400">2分钟前</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-6 py-4 font-medium text-slate-900">头盔配备率</td>
+                  <td class="px-6 py-4 text-slate-500">≥ 95%</td>
+                  <td class="px-6 py-4 text-slate-900">97.2%</td>
+                  <td class="px-6 py-4"><span class="badge bg-emerald-50 text-emerald-600">合规</span></td>
+                  <td class="px-6 py-4 text-slate-400">10分钟前</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-6 py-4 font-medium text-slate-900">淤积清理响应</td>
+                  <td class="px-6 py-4 text-slate-500">≤ 30 分钟</td>
+                  <td class="px-6 py-4 text-slate-900">18 分钟</td>
+                  <td class="px-6 py-4"><span class="badge bg-emerald-50 text-emerald-600">合规</span></td>
+                  <td class="px-6 py-4 text-slate-400">25分钟前</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-6 py-4 font-medium text-slate-900">用户投诉处理</td>
+                  <td class="px-6 py-4 text-slate-500">≤ 24 小时</td>
+                  <td class="px-6 py-4 text-slate-900">6.5 小时</td>
+                  <td class="px-6 py-4"><span class="badge bg-emerald-50 text-emerald-600">合规</span></td>
+                  <td class="px-6 py-4 text-slate-400">1小时前</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="h-8"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

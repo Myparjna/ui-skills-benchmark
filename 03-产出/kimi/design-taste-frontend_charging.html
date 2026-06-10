@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>智充家 - EV Charging</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Geist', 'sans-serif'] },
+          colors: {
+            tech: '#1677FF',
+            success: '#52C41A',
+            warn: '#FA8C16',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Geist', sans-serif; background: #f0f2f5; }
+    .phone-frame {
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 640px) {
+      .phone-frame {
+        min-height: auto;
+        height: 880px;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        border-radius: 2.5rem;
+        box-shadow: 0 25px 60px -15px rgba(0,0,0,0.15);
+        border: 10px solid #18181b;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0;
+      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .delay-1 { animation-delay: 0.08s; }
+    .delay-2 { animation-delay: 0.16s; }
+    .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; }
+    .delay-5 { animation-delay: 0.4s; }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .pulse-ring::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(22, 119, 255, 0.35);
+      animation: pulse-ring 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .float-anim { animation: float 4s ease-in-out infinite; }
+
+    @keyframes slideX {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .slide-track {
+      animation: slideX 16s linear infinite;
+    }
+
+    .magnetic-btn {
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .magnetic-btn:hover { transform: scale(1.08); }
+    .magnetic-btn:active { transform: scale(0.95); }
+
+    .bento-tile {
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.7);
+      border-radius: 1.25rem;
+      box-shadow: 0 10px 25px -8px rgba(0,0,0,0.04);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .bento-tile:active { transform: scale(0.98); }
+
+    .liquid-tab {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.4);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 -4px 20px rgba(0,0,0,0.03);
+    }
+
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeInUp 0.3s ease both; }
+  </style>
+</head>
+<body class="text-zinc-900 antialiased">
+
+  <div class="phone-frame">
+    <!-- Header -->
+    <div class="px-5 pt-8 pb-4 flex items-center justify-between bg-white sticky top-0 z-30">
+      <div class="reveal">
+        <div class="text-xs text-zinc-400 font-medium">下午好</div>
+        <div class="text-lg font-semibold tracking-tight">Alex Chen</div>
+      </div>
+      <div class="reveal delay-1 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600">
+          <i class="ph-bold ph-bell"></i>
+        </div>
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border border-zinc-100" alt="Avatar">
+      </div>
+    </div>
+
+    <!-- Main scrollable -->
+    <div class="pb-28 px-5 overflow-y-auto h-full hide-scrollbar">
+
+      <!-- Tab: Home -->
+      <div id="tab-home" class="tab-content active">
+        <!-- Quick Stats -->
+        <div class="reveal delay-1 grid grid-cols-2 gap-3 mb-5">
+          <div class="bento-tile p-4 relative overflow-hidden">
+            <div class="text-xs text-zinc-400 mb-1">剩余电量</div>
+            <div class="text-2xl font-semibold tracking-tight">62<span class="text-sm text-zinc-400 font-normal">%</span></div>
+            <div class="mt-2 h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+              <div class="h-full bg-tech rounded-full" style="width: 62%"></div>
+            </div>
+            <i class="ph-fill ph-battery-charging text-tech/20 text-5xl absolute -bottom-2 -right-2"></i>
+          </div>
+          <div class="bento-tile p-4 relative overflow-hidden">
+            <div class="text-xs text-zinc-400 mb-1">预计续航</div>
+            <div class="text-2xl font-semibold tracking-tight">328<span class="text-sm text-zinc-400 font-normal">km</span></div>
+            <div class="mt-2 text-xs text-zinc-500">基于当前路况</div>
+            <i class="ph-fill ph-road-horizon text-tech/20 text-5xl absolute -bottom-2 -right-2"></i>
+          </div>
+        </div>
+
+        <!-- Map Card -->
+        <div class="reveal delay-2 bento-tile mb-5 overflow-hidden relative h-48 group">
+          <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&auto=format&fit=crop&q=80" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Map">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+          <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+            附近 12 个空闲桩
+          </div>
+          <button class="absolute bottom-3 left-3 right-3 magnetic-btn bg-white text-zinc-900 py-2.5 rounded-xl text-sm font-medium shadow-lg flex items-center justify-center gap-2">
+            <i class="ph-bold ph-map-pin"></i> 查看附近充电站
+          </button>
+        </div>
+
+        <!-- Horizontal Stations -->
+        <div class="reveal delay-3 mb-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-semibold tracking-tight">推荐电站</h3>
+            <span class="text-xs text-zinc-400">滑动查看更多</span>
+          </div>
+          <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 snap-x">
+            <!-- Station 1 -->
+            <div class="snap-start min-w-[240px] bento-tile p-4 flex flex-col justify-between">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="text-sm font-semibold">华润万象城超充站</div>
+                  <div class="text-xs text-zinc-400 mt-0.5">距离 1.2km · 0.89元/度</div>
+                </div>
+                <span class="px-2 py-0.5 bg-green-50 text-success text-[10px] font-semibold rounded-full">空闲</span>
+              </div>
+              <div class="mt-4 flex items-center gap-3">
+                <div class="flex -space-x-1.5">
+                  <div class="w-6 h-6 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-500">120</div>
+                  <div class="w-6 h-6 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-500">kW</div>
+                </div>
+                <div class="text-xs text-zinc-500">快充 x 8</div>
+              </div>
+            </div>
+            <!-- Station 2 -->
+            <div class="snap-start min-w-[240px] bento-tile p-4 flex flex-col justify-between">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="text-sm font-semibold">滨江龙湖天街电站</div>
+                  <div class="text-xs text-zinc-400 mt-0.5">距离 2.4km · 1.05元/度</div>
+                </div>
+                <span class="px-2 py-0.5 bg-orange-50 text-warn text-[10px] font-semibold rounded-full">繁忙</span>
+              </div>
+              <div class="mt-4 flex items-center gap-3">
+                <div class="flex -space-x-1.5">
+                  <div class="w-6 h-6 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-500">60</div>
+                  <div class="w-6 h-6 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-500">kW</div>
+                </div>
+                <div class="text-xs text-zinc-500">慢充 x 12</div>
+              </div>
+            </div>
+            <!-- Station 3 -->
+            <div class="snap-start min-w-[240px] bento-tile p-4 flex flex-col justify-between">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="text-sm font-semibold">西湖银泰充电站</div>
+                  <div class="text-xs text-zinc-400 mt-0.5">距离 3.8km · 0.95元/度</div>
+                </div>
+                <span class="px-2 py-0.5 bg-green-50 text-success text-[10px] font-semibold rounded-full">空闲</span>
+              </div>
+              <div class="mt-4 flex items-center gap-3">
+                <div class="flex -space-x-1.5">
+                  <div class="w-6 h-6 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-500">180</div>
+                  <div class="w-6 h-6 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-500">kW</div>
+                </div>
+                <div class="text-xs text-zinc-500">超充 x 4</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLUS Banner -->
+        <div class="reveal delay-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-tech to-blue-600 text-white p-5 mb-5 float-anim">
+          <div class="relative z-10">
+            <div class="inline-block px-2.5 py-1 bg-white/20 backdrop-blur rounded-md text-[10px] font-semibold mb-2">智充家 PLUS</div>
+            <h3 class="text-lg font-semibold tracking-tight mb-1">每月省下一杯咖啡</h3>
+            <p class="text-xs text-blue-100 mb-4">加入会员，享受专属电价与优先排队权益。</p>
+            <button class="px-4 py-2 bg-white text-tech text-xs font-semibold rounded-lg magnetic-btn">立即开通</button>
+          </div>
+          <i class="ph-fill ph-lightning absolute -bottom-4 -right-4 text-8xl text-white/10"></i>
+        </div>
+      </div>
+
+      <!-- Tab: Deals -->
+      <div id="tab-deals" class="tab-content">
+        <div class="reveal mb-4">
+          <h2 class="text-xl font-semibold tracking-tight">优惠专区</h2>
+          <p class="text-xs text-zinc-400 mt-1">限时折扣与联名福利</p>
+        </div>
+        <div class="space-y-3">
+          <div class="bento-tile p-4 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-orange-100 text-warn flex items-center justify-center text-2xl">
+              <i class="ph-fill ph-ticket"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-sm font-semibold">新用户立减 20 元</div>
+              <div class="text-xs text-zinc-400">首次充电满 30 元可用</div>
+            </div>
+            <button class="px-3 py-1.5 bg-zinc-950 text-white text-xs font-medium rounded-lg">领取</button>
+          </div>
+          <div class="bento-tile p-4 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-blue-100 text-tech flex items-center justify-center text-2xl">
+              <i class="ph-fill ph-coffee"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-sm font-semibold">星巴克联名券包</div>
+              <div class="text-xs text-zinc-400">充电满 50 元送中杯券</div>
+            </div>
+            <button class="px-3 py-1.5 bg-zinc-950 text-white text-xs font-medium rounded-lg">查看</button>
+          </div>
+          <div class="bento-tile p-4 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-green-100 text-success flex items-center justify-center text-2xl">
+              <i class="ph-fill ph-coin"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-sm font-semibold">积分双倍返</div>
+              <div class="text-xs text-zinc-400">周末充电享 2x 积分</div>
+            </div>
+            <button class="px-3 py-1.5 bg-zinc-950 text-white text-xs font-medium rounded-lg">参与</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Orders -->
+      <div id="tab-orders" class="tab-content">
+        <div class="reveal mb-4">
+          <h2 class="text-xl font-semibold tracking-tight">充电订单</h2>
+        </div>
+        <div class="space-y-3">
+          <div class="bento-tile p-4">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <div class="text-sm font-semibold">华润万象城超充站</div>
+                <div class="text-xs text-zinc-400">2026-04-12 14:32</div>
+              </div>
+              <span class="text-sm font-semibold">¥34.50</span>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-zinc-500">
+              <span>38.6 kWh</span>
+              <span class="w-1 h-1 rounded-full bg-zinc-300"></span>
+              <span>42 分钟</span>
+              <span class="w-1 h-1 rounded-full bg-zinc-300"></span>
+              <span class="text-success">已完成</span>
+            </div>
+          </div>
+          <div class="bento-tile p-4">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <div class="text-sm font-semibold">滨江龙湖天街电站</div>
+                <div class="text-xs text-zinc-400">2026-04-10 09:15</div>
+              </div>
+              <span class="text-sm font-semibold">¥28.00</span>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-zinc-500">
+              <span>31.2 kWh</span>
+              <span class="w-1 h-1 rounded-full bg-zinc-300"></span>
+              <span>55 分钟</span>
+              <span class="w-1 h-1 rounded-full bg-zinc-300"></span>
+              <span class="text-success">已完成</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Profile -->
+      <div id="tab-profile" class="tab-content">
+        <div class="reveal flex items-center gap-4 mb-6">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" class="w-16 h-16 rounded-full object-cover border border-zinc-100" alt="Avatar">
+          <div>
+            <div class="text-lg font-semibold">Alex Chen</div>
+            <div class="text-xs text-zinc-400">普通会员 · 积分 1,240</div>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="bento-tile p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="ph-bold ph-wallet text-zinc-400 text-xl"></i>
+              <span class="text-sm font-medium">钱包余额</span>
+            </div>
+            <span class="text-sm font-semibold">¥128.50</span>
+          </div>
+          <div class="bento-tile p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="ph-bold ph-car text-zinc-400 text-xl"></i>
+              <span class="text-sm font-medium">我的车辆</span>
+            </div>
+            <span class="text-xs text-zinc-400">特斯拉 Model 3</span>
+          </div>
+          <div class="bento-tile p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="ph-bold ph-gear text-zinc-400 text-xl"></i>
+              <span class="text-sm font-medium">设置</span>
+            </div>
+            <i class="ph-bold ph-caret-right text-zinc-300"></i>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="absolute bottom-0 left-0 right-0 liquid-tab px-2 pb-6 pt-3 z-40">
+      <div class="flex items-end justify-around">
+        <button onclick="switchTab('home')" class="nav-btn flex flex-col items-center gap-1 text-tech" data-tab="home">
+          <i class="ph-fill ph-house text-xl"></i>
+          <span class="text-[10px] font-medium">首页</span>
+        </button>
+        <button onclick="switchTab('deals')" class="nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-zinc-600 transition-colors" data-tab="deals">
+          <i class="ph-fill ph-gift text-xl"></i>
+          <span class="text-[10px] font-medium">优惠</span>
+        </button>
+
+        <!-- Scan Button -->
+        <div class="relative -top-5">
+          <button class="magnetic-btn relative w-14 h-14 rounded-full bg-tech text-white shadow-lg shadow-blue-200 flex items-center justify-center pulse-ring">
+            <i class="ph-bold ph-qr-code text-2xl"></i>
+          </button>
+          <div class="text-[10px] font-medium text-center mt-1 text-zinc-500">扫码</div>
+        </div>
+
+        <button onclick="switchTab('orders')" class="nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-zinc-600 transition-colors" data-tab="orders">
+          <i class="ph-fill ph-receipt text-xl"></i>
+          <span class="text-[10px] font-medium">订单</span>
+        </button>
+        <button onclick="switchTab('profile')" class="nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-zinc-600 transition-colors" data-tab="profile">
+          <i class="ph-fill ph-user text-xl"></i>
+          <span class="text-[10px] font-medium">我的</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isActive = btn.dataset.tab === tabId;
+        btn.classList.toggle('text-tech', isActive);
+        btn.classList.toggle('text-zinc-400', !isActive);
+      });
+    }
+  </script>
+</body>
+</html>

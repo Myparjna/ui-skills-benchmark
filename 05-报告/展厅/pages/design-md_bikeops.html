@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityFleet BikeOps - 城市共享两轮运营管理后台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Surface */
+      --color-slate-graphite: #2D3748;
+      --color-slate-mid: #3D4A5C;
+      --color-slate-light: #4A5568;
+      --color-surface-elevated: #FFFFFF;
+      --color-surface-subtle: #F7FAFC;
+      --color-surface-hover: #EDF2F7;
+      
+      /* Data & Feedback */
+      --color-signal-teal: #38B2AC;
+      --color-teal-light: #E6FFFA;
+      --color-teal-dark: #2C7A7B;
+      --color-alert-coral: #ED8936;
+      --color-coral-light: #FFFAF0;
+      --color-coral-dark: #C05621;
+      --color-danger-rose: #E53E3E;
+      --color-rose-light: #FFF5F5;
+      
+      /* Text */
+      --color-text-primary: #1A202C;
+      --color-text-secondary: #4A5568;
+      --color-text-muted: #718096;
+      --color-text-inverse: #FFFFFF;
+      
+      /* Border */
+      --color-border: #E2E8F0;
+      --color-divider: #CBD5E0;
+      
+      /* Typography */
+      --font-display: 'Noto Sans SC', 'Inter', sans-serif;
+      --font-body: 'Noto Sans SC', 'Inter', sans-serif;
+      --font-mono: 'SF Mono', 'Monaco', monospace;
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --text-base: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;
+      --text-3xl: 1.875rem;
+      
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      
+      /* Radius */
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
+      --radius-full: 9999px;
+      
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(45, 55, 72, 0.05);
+      --shadow-md: 0 4px 6px rgba(45, 55, 72, 0.07);
+      --shadow-lg: 0 10px 15px rgba(45, 55, 72, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-surface-subtle);
+      color: var(--color-text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      font-weight: 600;
+    }
+    
+    .sidebar {
+      width: 240px;
+      background-color: var(--color-slate-graphite);
+      min-height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+    }
+    
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-5);
+      color: rgba(255,255,255,0.7);
+      font-size: var(--text-sm);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      margin: 2px 12px;
+      transition: all 0.15s ease;
+    }
+    
+    .nav-item:hover {
+      background-color: rgba(255,255,255,0.06);
+      color: var(--color-text-inverse);
+    }
+    
+    .nav-item.active {
+      background-color: rgba(56, 178, 172, 0.15);
+      color: var(--color-signal-teal);
+    }
+    
+    .main-content {
+      margin-left: 240px;
+      min-height: 100vh;
+    }
+    
+    .card {
+      background-color: var(--color-surface-elevated);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background-color: var(--color-slate-graphite);
+      color: var(--color-text-inverse);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--color-slate-mid);
+    }
+    
+    .btn-teal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background-color: var(--color-signal-teal);
+      color: var(--color-text-inverse);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .btn-teal:hover {
+      background-color: var(--color-teal-dark);
+    }
+    
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background-color: transparent;
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .btn-ghost:hover {
+      background-color: var(--color-surface-hover);
+      border-color: var(--color-divider);
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border-radius: var(--radius-full);
+    }
+    
+    .badge-teal {
+      background-color: var(--color-teal-light);
+      color: var(--color-teal-dark);
+    }
+    
+    .badge-coral {
+      background-color: var(--color-coral-light);
+      color: var(--color-coral-dark);
+    }
+    
+    .badge-rose {
+      background-color: var(--color-rose-light);
+      color: var(--color-danger-rose);
+    }
+    
+    .badge-slate {
+      background-color: var(--color-surface-hover);
+      color: var(--color-text-muted);
+    }
+    
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    
+    .metric-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+    
+    .trend-up {
+      color: var(--color-signal-teal);
+    }
+    
+    .trend-down {
+      color: var(--color-danger-rose);
+    }
+    
+    .chart-bar {
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+    }
+    
+    .chart-bar:hover {
+      opacity: 0.85;
+    }
+    
+    .alert-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      border-left: 3px solid transparent;
+    }
+    
+    .alert-item.high {
+      background-color: var(--color-rose-light);
+      border-left-color: var(--color-danger-rose);
+    }
+    
+    .alert-item.medium {
+      background-color: var(--color-coral-light);
+      border-left-color: var(--color-alert-coral);
+    }
+    
+    .alert-item.low {
+      background-color: var(--color-teal-light);
+      border-left-color: var(--color-signal-teal);
+    }
+    
+    .table-row:hover {
+      background-color: var(--color-surface-hover);
+    }
+    
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div style="padding: var(--space-5) var(--space-6); border-bottom: 1px solid rgba(255,255,255,0.08);">
+      <div class="flex items-center gap-3">
+        <div style="width: 36px; height: 36px; background-color: var(--color-signal-teal); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="bike" style="width: 20px; height: 20px; color: white;"></i>
+        </div>
+        <div>
+          <p style="font-size: var(--text-base); font-weight: 700; color: white;">CityFleet</p>
+          <p style="font-size: var(--text-xs); color: rgba(255,255,255,0.5);">BikeOps 运营平台</p>
+        </div>
+      </div>
+    </div>
+    <nav style="padding: var(--space-4) 0; flex: 1; display: flex; flex-direction: column; gap: 2px;">
+      <a href="#" class="nav-item active">
+        <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
+        总览看板
+      </a>
+      <a href="#" class="nav-item">
+        <i data-lucide="map" style="width: 18px; height: 18px;"></i>
+        车辆分布
+      </a>
+      <a href="#" class="nav-item">
+        <i data-lucide="battery-charging" style="width: 18px; height: 18px;"></i>
+        电池管理
+      </a>
+      <a href="#" class="nav-item">
+        <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
+        告警中心
+      </a>
+      <a href="#" class="nav-item">
+        <i data-lucide="clipboard-list" style="width: 18px; height: 18px;"></i>
+        工单管理
+      </a>
+      <a href="#" class="nav-item">
+        <i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i>
+        供需分析
+      </a>
+      <a href="#" class="nav-item">
+        <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+        合规监管
+      </a>
+      <div style="margin-top: auto; padding-top: var(--space-4); border-top: 1px solid rgba(255,255,255,0.08);">
+        <a href="#" class="nav-item">
+          <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+          系统设置
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top Header -->
+    <header style="height: 64px; background-color: var(--color-surface-elevated); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-6); position: sticky; top: 0; z-index: 40;">
+      <div class="flex items-center gap-4">
+        <h1 style="font-size: var(--text-xl); font-weight: 600;">运营总览</h1>
+        <span class="badge badge-slate">
+          <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
+          杭州市
+        </span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background-color: var(--color-surface-subtle); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+          <i data-lucide="calendar" style="width: 14px; height: 14px; color: var(--color-text-muted);"></i>
+          <span style="font-size: var(--text-sm); color: var(--color-text-secondary);">2024年12月18日</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: var(--space-2);">
+          <div style="width: 8px; height: 8px; background-color: var(--color-signal-teal); border-radius: var(--radius-full);"></div>
+          <span style="font-size: var(--text-sm); color: var(--color-text-secondary);">系统正常</span>
+        </div>
+        <div style="width: 36px; height: 36px; border-radius: var(--radius-full); overflow: hidden; border: 2px solid var(--color-border);">
+          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80" alt="Admin" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div style="padding: var(--space-6);">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div class="card" style="padding: var(--space-5);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="metric-label">在运车辆总数</div>
+            <div style="width: 32px; height: 32px; background-color: var(--color-teal-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="bike" style="width: 16px; height: 16px; color: var(--color-teal-dark);"></i>
+            </div>
+          </div>
+          <div class="metric-value">42,856</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="trend-up" style="font-size: var(--text-xs); font-weight: 500;">+2.4%</span>
+            <span style="font-size: var(--text-xs); color: var(--color-text-muted);">较昨日</span>
+          </div>
+        </div>
+        <div class="card" style="padding: var(--space-5);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="metric-label">今日订单量</div>
+            <div style="width: 32px; height: 32px; background-color: var(--color-electric-light, #E6F4FF); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="receipt" style="width: 16px; height: 16px; color: var(--color-electric-cobalt, #1677FF);"></i>
+            </div>
+          </div>
+          <div class="metric-value">128,394</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="trend-up" style="font-size: var(--text-xs); font-weight: 500;">+5.8%</span>
+            <span style="font-size: var(--text-xs); color: var(--color-text-muted);">较昨日</span>
+          </div>
+        </div>
+        <div class="card" style="padding: var(--space-5);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="metric-label">车辆周转率</div>
+            <div style="width: 32px; height: 32px; background-color: var(--color-coral-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="activity" style="width: 16px; height: 16px; color: var(--color-coral-dark);"></i>
+            </div>
+          </div>
+          <div class="metric-value">3.2</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="trend-down" style="font-size: var(--text-xs); font-weight: 500;">-0.1</span>
+            <span style="font-size: var(--text-xs); color: var(--color-text-muted);">较昨日</span>
+          </div>
+        </div>
+        <div class="card" style="padding: var(--space-5);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="metric-label">平均客单价</div>
+            <div style="width: 32px; height: 32px; background-color: #F3E8FF; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="wallet" style="width: 16px; height: 16px; color: #7C3AED;"></i>
+            </div>
+          </div>
+          <div class="metric-value">¥2.85</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="trend-up" style="font-size: var(--text-xs); font-weight: 500;">+1.2%</span>
+            <span style="font-size: var(--text-xs); color: var(--color-text-muted);">较昨日</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Row: Fleet Health + Battery -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Fleet Health -->
+        <div class="card lg:col-span-2" style="padding: var(--space-5);">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">车辆健康状态分布</h3>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted);">实时监测在运车辆各状态占比</p>
+            </div>
+            <button class="btn-ghost">
+              <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+              导出报表
+            </button>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div style="padding: var(--space-4); background-color: var(--color-teal-light); border-radius: var(--radius-md);">
+              <div class="flex items-center gap-2 mb-2">
+                <span style="width: 10px; height: 10px; background-color: var(--color-signal-teal); border-radius: var(--radius-full);"></span>
+                <span style="font-size: var(--text-xs); color: var(--color-text-secondary); font-weight: 500;">正常运行</span>
+              </div>
+              <p style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-teal-dark);">38,420</p>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">占比 89.6%</p>
+            </div>
+            <div style="padding: var(--space-4); background-color: var(--color-coral-light); border-radius: var(--radius-md);">
+              <div class="flex items-center gap-2 mb-2">
+                <span style="width: 10px; height: 10px; background-color: var(--color-alert-coral); border-radius: var(--radius-full);"></span>
+                <span style="font-size: var(--text-xs); color: var(--color-text-secondary); font-weight: 500;">待维修</span>
+              </div>
+              <p style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-coral-dark);">2,156</p>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">占比 5.0%</p>
+            </div>
+            <div style="padding: var(--space-4); background-color: var(--color-rose-light); border-radius: var(--radius-md);">
+              <div class="flex items-center gap-2 mb-2">
+                <span style="width: 10px; height: 10px; background-color: var(--color-danger-rose); border-radius: var(--radius-full);"></span>
+                <span style="font-size: var(--text-xs); color: var(--color-text-secondary); font-weight: 500;">低电量</span>
+              </div>
+              <p style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-danger-rose);">1,842</p>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">占比 4.3%</p>
+            </div>
+            <div style="padding: var(--space-4); background-color: var(--color-surface-hover); border-radius: var(--radius-md);">
+              <div class="flex items-center gap-2 mb-2">
+                <span style="width: 10px; height: 10px; background-color: var(--color-text-muted); border-radius: var(--radius-full);"></span>
+                <span style="font-size: var(--text-xs); color: var(--color-text-secondary); font-weight: 500;">离线失联</span>
+              </div>
+              <p style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-text-secondary);">438</p>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">占比 1.1%</p>
+            </div>
+          </div>
+          <!-- Mini Bar Chart -->
+          <div class="mt-6">
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3);">近 7 日车辆故障趋势</p>
+            <div style="display: flex; align-items: flex-end; gap: 8px; height: 100px; padding-top: var(--space-2);">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 45%; background-color: var(--color-signal-teal); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/12</span>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 52%; background-color: var(--color-signal-teal); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/13</span>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 38%; background-color: var(--color-signal-teal); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/14</span>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 61%; background-color: var(--color-signal-teal); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/15</span>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 55%; background-color: var(--color-alert-coral); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/16</span>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 48%; background-color: var(--color-signal-teal); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/17</span>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="chart-bar" style="width: 100%; height: 42%; background-color: var(--color-signal-teal); border-radius: 4px 4px 0 0;"></div>
+                <span style="font-size: 10px; color: var(--color-text-muted);">12/18</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery Status -->
+        <div class="card" style="padding: var(--space-5);">
+          <div class="mb-5">
+            <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">电池状态监控</h3>
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted);">全车队电池健康度实时统计</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+              <div class="flex items-center justify-between mb-2">
+                <span style="font-size: var(--text-sm); font-weight: 500;">高电量 (>60%)</span>
+                <span style="font-size: var(--text-sm); font-weight: 600; color: var(--color-signal-teal);">28,450</span>
+              </div>
+              <div style="height: 8px; background-color: var(--color-surface-hover); border-radius: var(--radius-full); overflow: hidden;">
+                <div style="width: 66.4%; height: 100%; background-color: var(--color-signal-teal); border-radius: var(--radius-full);"></div>
+              </div>
+            </div>
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+              <div class="flex items-center justify-between mb-2">
+                <span style="font-size: var(--text-sm); font-weight: 500;">中等电量 (20-60%)</span>
+                <span style="font-size: var(--text-sm); font-weight: 600; color: var(--color-alert-coral);">12,564</span>
+              </div>
+              <div style="height: 8px; background-color: var(--color-surface-hover); border-radius: var(--radius-full); overflow: hidden;">
+                <div style="width: 29.3%; height: 100%; background-color: var(--color-alert-coral); border-radius: var(--radius-full);"></div>
+              </div>
+            </div>
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+              <div class="flex items-center justify-between mb-2">
+                <span style="font-size: var(--text-sm); font-weight: 500;">低电量 (<20%)</span>
+                <span style="font-size: var(--text-sm); font-weight: 600; color: var(--color-danger-rose);">1,842</span>
+              </div>
+              <div style="height: 8px; background-color: var(--color-surface-hover); border-radius: var(--radius-full); overflow: hidden;">
+                <div style="width: 4.3%; height: 100%; background-color: var(--color-danger-rose); border-radius: var(--radius-full);"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
+            <div class="flex items-center justify-between">
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted);">平均电池健康度</span>
+              <span style="font-size: var(--text-lg); font-weight: 700; color: var(--color-signal-teal);">87.3%</span>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted);">今日换电完成量</span>
+              <span style="font-size: var(--text-lg); font-weight: 700; color: var(--color-text-primary);">3,284</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Supply-Demand + Alerts + Work Orders -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Supply-Demand Gaps -->
+        <div class="card" style="padding: var(--space-5);">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">供需缺口 TOP5</h3>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted);">需求高于供给的重点区域</p>
+            </div>
+            <button class="btn-ghost" style="padding: var(--space-1) var(--space-2);">
+              <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <div class="flex items-center justify-between p-3 rounded-md hover:bg-gray-50 transition-colors">
+              <div class="flex items-center gap-3">
+                <span style="width: 24px; height: 24px; background-color: var(--color-rose-light); color: var(--color-danger-rose); font-size: 11px; font-weight: 700; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">1</span>
+                <div>
+                  <p style="font-size: var(--text-sm); font-weight: 500;">西湖文化广场地铁站</p>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">需求/供给比: 3.8</p>
+                </div>
+              </div>
+              <span class="badge badge-rose">缺口 142</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-md hover:bg-gray-50 transition-colors">
+              <div class="flex items-center gap-3">
+                <span style="width: 24px; height: 24px; background-color: var(--color-coral-light); color: var(--color-coral-dark); font-size: 11px; font-weight: 700; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">2</span>
+                <div>
+                  <p style="font-size: var(--text-sm); font-weight: 500;">黄龙万科中心</p>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">需求/供给比: 3.2</p>
+                </div>
+              </div>
+              <span class="badge badge-coral">缺口 98</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-md hover:bg-gray-50 transition-colors">
+              <div class="flex items-center gap-3">
+                <span style="width: 24px; height: 24px; background-color: var(--color-coral-light); color: var(--color-coral-dark); font-size: 11px; font-weight: 700; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">3</span>
+                <div>
+                  <p style="font-size: var(--text-sm); font-weight: 500;">钱江新城万象城</p>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">需求/供给比: 2.9</p>
+                </div>
+              </div>
+              <span class="badge badge-coral">缺口 86</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-md hover:bg-gray-50 transition-colors">
+              <div class="flex items-center gap-3">
+                <span style="width: 24px; height: 24px; background-color: var(--color-teal-light); color: var(--color-teal-dark); font-size: 11px; font-weight: 700; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">4</span>
+                <div>
+                  <p style="font-size: var(--text-sm); font-weight: 500;">杭州东站北广场</p>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">需求/供给比: 2.4</p>
+                </div>
+              </div>
+              <span class="badge badge-teal">缺口 64</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-md hover:bg-gray-50 transition-colors">
+              <div class="flex items-center gap-3">
+                <span style="width: 24px; height: 24px; background-color: var(--color-teal-light); color: var(--color-teal-dark); font-size: 11px; font-weight: 700; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">5</span>
+                <div>
+                  <p style="font-size: var(--text-sm); font-weight: 500;">滨江天街</p>
+                  <p style="font-size: var(--text-xs); color: var(--color-text-muted);">需求/供给比: 2.1</p>
+                </div>
+              </div>
+              <span class="badge badge-teal">缺口 52</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Center -->
+        <div class="card" style="padding: var(--space-5);">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">告警中心</h3>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted);">待处理告警 12 条</p>
+            </div>
+            <div class="flex gap-2">
+              <span class="badge badge-rose">高 3</span>
+              <span class="badge badge-coral">中 5</span>
+              <span class="badge badge-teal">低 4</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <div class="alert-item high">
+              <div style="width: 32px; height: 32px; background-color: rgba(229, 62, 62, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="alert-octagon" style="width: 16px; height: 16px; color: var(--color-danger-rose);"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <p style="font-size: var(--text-sm); font-weight: 600; color: var(--color-danger-rose);">大面积车辆离线</p>
+                  <span style="font-size: 10px; color: var(--color-text-muted);">10:23</span>
+                </div>
+                <p style="font-size: var(--text-xs); color: var(--color-text-secondary); margin-top: 2px;">余杭区 · 47 辆车信号中断超 30 分钟</p>
+              </div>
+            </div>
+            <div class="alert-item high">
+              <div style="width: 32px; height: 32px; background-color: rgba(229, 62, 62, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="battery-warning" style="width: 16px; height: 16px; color: var(--color-danger-rose);"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <p style="font-size: var(--text-sm); font-weight: 600; color: var(--color-danger-rose);">电池异常高温</p>
+                  <span style="font-size: 10px; color: var(--color-text-muted);">09:56</span>
+                </div>
+                <p style="font-size: var(--text-xs); color: var(--color-text-secondary); margin-top: 2px;">西湖区 · 车辆 HZ-28491 电池温度 52°C</p>
+              </div>
+            </div>
+            <div class="alert-item medium">
+              <div style="width: 32px; height: 32px; background-color: rgba(237, 137, 54, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="map-pin-off" style="width: 16px; height: 16px; color: var(--color-alert-coral);"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <p style="font-size: var(--text-sm); font-weight: 600; color: var(--color-coral-dark);">禁停区淤积</p>
+                  <span style="font-size: 10px; color: var(--color-text-muted);">09:41</span>
+                </div>
+                <p style="font-size: var(--text-xs); color: var(--color-text-secondary); margin-top: 2px;">上城区 · 湖滨步行街淤积 89 辆车</p>
+              </div>
+            </div>
+            <div class="alert-item medium">
+              <div style="width: 32px; height: 32px; background-color: rgba(237, 137, 54, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="wrench" style="width: 16px; height: 16px; color: var(--color-alert-coral);"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <p style="font-size: var(--text-sm); font-weight: 600; color: var(--color-coral-dark);">集中报修激增</p>
+                  <span style="font-size: 10px; color: var(--color-text-muted);">08:12</span>
+                </div>
+                <p style="font-size: var(--text-xs); color: var(--color-text-secondary); margin-top: 2px;">萧山区 · 刹车异常报修量超阈值 2.3 倍</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work Orders + Compliance -->
+        <div class="flex flex-col gap-6">
+          <!-- Work Orders -->
+          <div class="card" style="padding: var(--space-5); flex: 1;">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">工单状态</h3>
+                <p style="font-size: var(--text-xs); color: var(--color-text-muted);">今日工单实时追踪</p>
+              </div>
+              <button class="btn-teal" style="padding: var(--space-1) var(--space-3); font-size: var(--text-xs);">+ 新建工单</button>
+            </div>
+            <div style="display: flex; gap: var(--space-3); margin-bottom: var(--space-4);">
+              <div style="flex: 1; text-align: center; padding: var(--space-3); background-color: var(--color-surface-subtle); border-radius: var(--radius-md);">
+                <p style="font-size: var(--text-xl); font-weight: 700; color: var(--color-text-primary);">18</p>
+                <p style="font-size: var(--text-xs); color: var(--color-text-muted);">待派发</p>
+              </div>
+              <div style="flex: 1; text-align: center; padding: var(--space-3); background-color: var(--color-surface-subtle); border-radius: var(--radius-md);">
+                <p style="font-size: var(--text-xl); font-weight: 700; color: var(--color-alert-coral);">42</p>
+                <p style="font-size: var(--text-xs); color: var(--color-text-muted);">处理中</p>
+              </div>
+              <div style="flex: 1; text-align: center; padding: var(--space-3); background-color: var(--color-surface-subtle); border-radius: var(--radius-md);">
+                <p style="font-size: var(--text-xl); font-weight: 700; color: var(--color-signal-teal);">156</p>
+                <p style="font-size: var(--text-xs); color: var(--color-text-muted);">已完成</p>
+              </div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--color-border);">
+                  <th style="text-align: left; padding: var(--space-2) 0; font-size: var(--text-xs); font-weight: 500; color: var(--color-text-muted);">工单类型</th>
+                  <th style="text-align: left; padding: var(--space-2) 0; font-size: var(--text-xs); font-weight: 500; color: var(--color-text-muted);">区域</th>
+                  <th style="text-align: right; padding: var(--space-2) 0; font-size: var(--text-xs); font-weight: 500; color: var(--color-text-muted);">状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table-row" style="border-bottom: 1px solid var(--color-divider);">
+                  <td style="padding: var(--space-2) 0; font-size: var(--text-sm);">车辆调度</td>
+                  <td style="padding: var(--space-2) 0; font-size: var(--text-sm); color: var(--color-text-secondary);">西湖区</td>
+                  <td style="padding: var(--space-2) 0; text-align: right;"><span class="badge badge-coral">处理中</span></td>
+                </tr>
+                <tr class="table-row" style="border-bottom: 1px solid var(--color-divider);">
+                  <td style="padding: var(--space-2) 0; font-size: var(--text-sm);">换电补能</td>
+                  <td style="padding: var(--space-2) 0; font-size: var(--text-sm); color: var(--color-text-secondary);">余杭区</td>
+                  <td style="padding: var(--space-2) 0; text-align: right;"><span class="badge badge-teal">已完成</span></td>
+                </tr>
+                <tr class="table-row">
+                  <td style="padding: var(--space-2) 0; font-size: var(--text-sm);">故障维修</td>
+                  <td style="padding: var(--space-2) 0; font-size: var(--text-sm); color: var(--color-text-secondary);">上城区</td>
+                  <td style="padding: var(--space-2) 0; text-align: right;"><span class="badge badge-rose">待派发</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Compliance -->
+          <div class="card" style="padding: var(--space-5);">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">合规监管</h3>
+                <p style="font-size: var(--text-xs); color: var(--color-text-muted);">本月考核指标</p>
+              </div>
+              <i data-lucide="shield-check" style="width: 20px; height: 20px; color: var(--color-signal-teal);"></i>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: var(--text-sm);">头盔佩戴率</span>
+                  <span style="font-size: var(--text-sm); font-weight: 600; color: var(--color-signal-teal);">96.2%</span>
+                </div>
+                <div style="height: 6px; background-color: var(--color-surface-hover); border-radius: var(--radius-full); overflow: hidden;">
+                  <div style="width: 96.2%; height: 100%; background-color: var(--color-signal-teal); border-radius: var(--radius-full);"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: var(--text-sm);">合规停放率</span>
+                  <span style="font-size: var(--text-sm); font-weight: 600; color: var(--color-signal-teal);">94.8%</span>
+                </div>
+                <div style="height: 6px; background-color: var(--color-surface-hover); border-radius: var(--radius-full); overflow: hidden;">
+                  <div style="width: 94.8%; height: 100%; background-color: var(--color-signal-teal); border-radius: var(--radius-full);"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: var(--text-sm);">车辆报备率</span>
+                  <span style="font-size: var(--text-sm); font-weight: 600; color: var(--color-alert-coral);">88.5%</span>
+                </div>
+                <div style="height: 6px; background-color: var(--color-surface-hover); border-radius: var(--radius-full); overflow: hidden;">
+                  <div style="width: 88.5%; height: 100%; background-color: var(--color-alert-coral); border-radius: var(--radius-full);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="padding: var(--space-6); border-top: 1px solid var(--color-border); margin-top: var(--space-6);">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <p style="font-size: var(--text-xs); color: var(--color-text-muted);">© 2024 CityFleet BikeOps. 数据更新于 2024-12-18 14:32:08</p>
+        <div class="flex gap-6">
+          <a href="#" style="font-size: var(--text-xs); color: var(--color-text-muted); text-decoration: none;">帮助中心</a>
+          <a href="#" style="font-size: var(--text-xs); color: var(--color-text-muted); text-decoration: none;">系统日志</a>
+          <a href="#" style="font-size: var(--text-xs); color: var(--color-text-muted); text-decoration: none;">反馈建议</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

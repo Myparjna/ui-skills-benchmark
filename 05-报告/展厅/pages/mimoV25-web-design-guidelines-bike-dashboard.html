@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101828">
+<title>骑迹运营 - 共享两轮城市运营管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f9fafb;
+    --sidebar-bg: #101828;
+    --sidebar-hover: #1d2939;
+    --sidebar-active: #344054;
+    --white: #ffffff;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-bg: #eef2ff;
+    --success: #10b981;
+    --success-bg: #ecfdf5;
+    --warning: #f59e0b;
+    --warning-bg: #fffbeb;
+    --danger: #ef4444;
+    --danger-bg: #fef2f2;
+    --info: #3b82f6;
+    --info-bg: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --font-body: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-elevated: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    --transition: 150ms cubic-bezier(0.4,0,0.2,1);
+    --font-tabular: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--gray-800);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    display: flex; min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- SIDEBAR ---- */
+  .sidebar {
+    width: 240px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column;
+    flex-shrink: 0; position: fixed;
+    top: 0; bottom: 0; left: 0; z-index: 50;
+    overflow-y: auto;
+  }
+  .sidebar-brand {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-brand-icon {
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 14px;
+  }
+  .sidebar-brand-text {
+    font-size: 15px; font-weight: 700; color: white;
+  }
+  .sidebar-brand-text small {
+    display: block; font-size: 11px; font-weight: 400;
+    color: var(--gray-400); margin-top: 1px;
+  }
+
+  .sidebar-nav { flex: 1; padding: 12px 8px; }
+  .nav-section-label {
+    font-size: 11px; font-weight: 600; color: var(--gray-500);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 16px 12px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: var(--radius-sm);
+    color: var(--gray-400); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: background var(--transition), color var(--transition);
+    cursor: pointer; border: none; background: none;
+    width: 100%; text-align: left;
+    font-family: var(--font-body);
+  }
+  .nav-item:hover { background: var(--sidebar-hover); color: var(--gray-200); }
+  .nav-item.active { background: var(--sidebar-active); color: white; }
+  .nav-item:focus-visible { outline: 2px solid var(--primary-light); outline-offset: -2px; }
+  .nav-icon { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; background: var(--danger);
+    color: white; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-user {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--primary); display: flex;
+    align-items: center; justify-content: center;
+    color: white; font-size: 13px; font-weight: 600;
+  }
+  .sidebar-user-info { flex: 1; min-width: 0; }
+  .sidebar-user-name { font-size: 13px; font-weight: 600; color: white; }
+  .sidebar-user-role { font-size: 11px; color: var(--gray-500); }
+
+  /* ---- MAIN ---- */
+  .main { flex: 1; margin-left: 240px; display: flex; flex-direction: column; min-width: 0; }
+
+  /* ---- TOP BAR ---- */
+  .topbar {
+    height: 56px; background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center;
+    padding: 0 24px; gap: 16px;
+    flex-shrink: 0;
+  }
+  .topbar-breadcrumb {
+    font-size: 13px; color: var(--gray-500);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .topbar-breadcrumb strong { color: var(--gray-800); font-weight: 600; }
+  .topbar-spacer { flex: 1; }
+  .topbar-controls { display: flex; align-items: center; gap: 8px; }
+  .topbar-select {
+    padding: 6px 10px; border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm); font-size: 13px;
+    font-family: var(--font-body); color: var(--gray-700);
+    background: var(--white); cursor: pointer;
+  }
+  .topbar-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .topbar-btn {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer; position: relative;
+    transition: background var(--transition);
+  }
+  .topbar-btn:hover { background: var(--gray-50); }
+  .topbar-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .topbar-btn .dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--danger); border: 2px solid var(--white);
+  }
+
+  /* ---- CONTENT ---- */
+  .content { flex: 1; padding: 24px; overflow-y: auto; }
+
+  /* ---- KPI CARDS ---- */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: box-shadow var(--transition);
+  }
+  .kpi-card:hover { box-shadow: var(--shadow-card); }
+  .kpi-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .kpi-label { font-size: 13px; color: var(--gray-500); font-weight: 500; }
+  .kpi-icon {
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .kpi-icon.purple { background: var(--primary-bg); color: var(--primary); }
+  .kpi-icon.green { background: var(--success-bg); color: var(--success); }
+  .kpi-icon.yellow { background: var(--warning-bg); color: var(--warning); }
+  .kpi-icon.red { background: var(--danger-bg); color: var(--danger); }
+  .kpi-value {
+    font-size: 28px; font-weight: 700; color: var(--gray-900);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .kpi-value small { font-size: 14px; font-weight: 500; color: var(--gray-500); }
+  .kpi-change {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 600;
+    margin-top: 6px; padding: 2px 6px;
+    border-radius: var(--radius-sm);
+  }
+  .kpi-change.up { background: var(--success-bg); color: var(--success); }
+  .kpi-change.down { background: var(--danger-bg); color: var(--danger); }
+
+  /* ---- GRID LAYOUT ---- */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px; margin-bottom: 24px;
+  }
+  .dashboard-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ---- CARD ---- */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--gray-800); }
+  .card-action {
+    font-size: 12px; color: var(--primary); text-decoration: none;
+    font-weight: 500; cursor: pointer; background: none; border: none;
+    font-family: var(--font-body);
+    transition: color var(--transition);
+  }
+  .card-action:hover { color: var(--primary-light); }
+  .card-action:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
+  .card-body { padding: 16px 20px; }
+
+  /* ---- MAP PLACEHOLDER ---- */
+  .map-placeholder {
+    height: 320px; position: relative;
+    background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 50%, #d1fae5 100%);
+    overflow: hidden;
+  }
+  .map-placeholder::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .map-heatmap {
+    position: absolute; border-radius: 50%;
+    filter: blur(30px); opacity: 0.4;
+  }
+  .map-heatmap.h1 { width: 180px; height: 180px; top: 20%; left: 15%; background: var(--danger); }
+  .map-heatmap.h2 { width: 140px; height: 140px; top: 50%; left: 55%; background: var(--warning); }
+  .map-heatmap.h3 { width: 100px; height: 100px; top: 30%; left: 70%; background: var(--success); }
+  .map-heatmap.h4 { width: 120px; height: 120px; top: 65%; left: 25%; background: var(--info); }
+
+  .map-cluster {
+    position: absolute; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: white;
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    transition: transform var(--transition);
+  }
+  .map-cluster:hover { transform: scale(1.15); }
+  .map-cluster.c1 { width: 40px; height: 40px; top: 28%; left: 22%; background: var(--primary); }
+  .map-cluster.c2 { width: 34px; height: 34px; top: 42%; left: 48%; background: var(--success); }
+  .map-cluster.c3 { width: 28px; height: 28px; top: 58%; left: 35%; background: var(--info); }
+  .map-cluster.c4 { width: 46px; height: 46px; top: 35%; left: 68%; background: var(--warning); }
+  .map-cluster.c5 { width: 32px; height: 32px; top: 70%; left: 60%; background: var(--primary); }
+
+  .map-legend {
+    position: absolute; bottom: 12px; left: 12px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(8px);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    display: flex; gap: 12px; font-size: 11px; color: var(--gray-600);
+  }
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 4px; vertical-align: middle;
+  }
+  .map-toolbar {
+    position: absolute; top: 12px; right: 12px;
+    display: flex; gap: 6px;
+  }
+  .map-tool {
+    padding: 6px 10px; border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(8px);
+    border: 1px solid var(--gray-200);
+    font-size: 11px; font-weight: 500; cursor: pointer;
+    font-family: var(--font-body); color: var(--gray-700);
+    transition: background var(--transition);
+  }
+  .map-tool:hover { background: var(--white); }
+  .map-tool:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .map-tool.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* ---- ALERT LIST ---- */
+  .alert-list { display: flex; flex-direction: column; }
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .alert-dot.p0 { background: var(--danger); }
+  .alert-dot.p1 { background: var(--warning); }
+  .alert-dot.p2 { background: var(--info); }
+  .alert-info { flex: 1; min-width: 0; }
+  .alert-title { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+  .alert-meta { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+  .alert-action {
+    padding: 4px 10px; border-radius: var(--radius-sm);
+    background: var(--primary-bg); color: var(--primary);
+    font-size: 11px; font-weight: 600; border: none;
+    cursor: pointer; font-family: var(--font-body);
+    transition: background var(--transition);
+    white-space: nowrap;
+  }
+  .alert-action:hover { background: #ddd6fe; }
+  .alert-action:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+  /* ---- FLEET STATUS ---- */
+  .fleet-bars { display: flex; flex-direction: column; gap: 12px; }
+  .fleet-bar-row { display: flex; align-items: center; gap: 10px; }
+  .fleet-bar-label {
+    width: 64px; font-size: 12px; color: var(--gray-600);
+    text-align: right; flex-shrink: 0;
+  }
+  .fleet-bar-track {
+    flex: 1; height: 20px; background: var(--gray-100);
+    border-radius: var(--radius-sm); overflow: hidden;
+    display: flex;
+  }
+  .fleet-bar-fill {
+    height: 100%; transition: width 600ms ease;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white;
+    font-variant-numeric: tabular-nums;
+  }
+  .fleet-bar-fill.f-available { background: var(--success); }
+  .fleet-bar-fill.f-riding { background: var(--info); }
+  .fleet-bar-fill.f-lowbat { background: var(--warning); }
+  .fleet-bar-fill.f-fault { background: var(--danger); }
+  .fleet-bar-fill.f-offline { background: var(--gray-400); }
+  .fleet-bar-value {
+    width: 48px; font-size: 13px; font-weight: 600;
+    color: var(--gray-800); font-variant-numeric: tabular-nums;
+    text-align: right; flex-shrink: 0;
+  }
+
+  /* ---- WORK ORDER TABLE ---- */
+  .wo-table { width: 100%; border-collapse: collapse; }
+  .wo-table th {
+    text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--gray-500); text-transform: uppercase;
+    letter-spacing: 0.3px; padding: 8px 12px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .wo-table td {
+    padding: 10px 12px; font-size: 13px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+  }
+  .wo-table tr:hover td { background: var(--gray-50); }
+  .wo-id { font-weight: 600; color: var(--primary); font-variant-numeric: tabular-nums; }
+  .wo-type {
+    display: inline-block; padding: 2px 8px;
+    border-radius: var(--radius-sm); font-size: 11px; font-weight: 600;
+  }
+  .wo-type.swap { background: var(--warning-bg); color: var(--warning); }
+  .wo-type.fix { background: var(--danger-bg); color: var(--danger); }
+  .wo-type.move { background: var(--info-bg); color: var(--info); }
+  .wo-type.check { background: var(--primary-bg); color: var(--primary); }
+  .wo-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 500;
+  }
+  .wo-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .wo-status.pending .wo-status-dot { background: var(--gray-400); }
+  .wo-status.active .wo-status-dot { background: var(--info); }
+  .wo-status.overdue .wo-status-dot { background: var(--danger); }
+  .wo-status.done .wo-status-dot { background: var(--success); }
+  .wo-time { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--gray-500); }
+  .wo-assignee {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .wo-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--primary-bg); color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+  }
+
+  /* ---- BATTERY CHART ---- */
+  .battery-dist { display: flex; gap: 6px; align-items: flex-end; height: 120px; margin-bottom: 8px; }
+  .battery-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .battery-bar {
+    width: 100%; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: height 600ms ease;
+  }
+  .battery-bar.b1 { background: var(--danger); }
+  .battery-bar.b2 { background: var(--warning); }
+  .battery-bar.b3 { background: var(--info); }
+  .battery-bar.b4 { background: var(--success); }
+  .battery-label { font-size: 10px; color: var(--gray-500); text-align: center; }
+  .battery-count { font-size: 11px; font-weight: 700; color: var(--gray-700); font-variant-numeric: tabular-nums; }
+
+  /* ---- QUICK ACTIONS ---- */
+  .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .quick-btn {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; padding: 14px 8px;
+    border: 1px solid var(--gray-200); border-radius: var(--radius-md);
+    background: var(--white); cursor: pointer;
+    font-family: var(--font-body);
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .quick-btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+  .quick-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .quick-btn-icon {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .quick-btn-icon.qb1 { background: var(--primary-bg); color: var(--primary); }
+  .quick-btn-icon.qb2 { background: var(--warning-bg); color: var(--warning); }
+  .quick-btn-icon.qb3 { background: var(--success-bg); color: var(--success); }
+  .quick-btn-icon.qb4 { background: var(--danger-bg); color: var(--danger); }
+  .quick-btn-icon.qb5 { background: var(--info-bg); color: var(--info); }
+  .quick-btn-icon.qb6 { background: #f5f3ff; color: #7c3aed; }
+  .quick-btn-label { font-size: 12px; font-weight: 500; color: var(--gray-700); }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .dashboard-grid-3 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" role="navigation" aria-label="主导航菜单">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon" aria-hidden="true">Q</div>
+    <div class="sidebar-brand-text">骑迹运营<small>共享两轮管理后台</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">概览</div>
+    <a href="#" class="nav-item active" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">D</span> 运营总览
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">M</span> 地图调度中心
+    </a>
+
+    <div class="nav-section-label">资产管理</div>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">V</span> 车队资产
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">B</span> 电池与能源
+    </a>
+
+    <div class="nav-section-label">运营执行</div>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">W</span> 运维工单
+      <span class="nav-badge" aria-label="23个待处理工单">23</span>
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">Z</span> 规则与区域
+    </a>
+
+    <div class="nav-section-label">合规与数据</div>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">C</span> 合规监管
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">A</span> 数据报表
+    </a>
+
+    <div class="nav-section-label">系统</div>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">O</span> 组织与权限
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">S</span> 系统配置
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" aria-hidden="true">Z</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">张明远</div>
+        <div class="sidebar-user-role">城市运营经理</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOP BAR -->
+  <header class="topbar" role="banner">
+    <div class="topbar-breadcrumb">
+      <span>运营总览</span>
+      <span aria-hidden="true">/</span>
+      <strong>杭州市</strong>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-controls">
+      <select class="topbar-select" aria-label="选择时间范围">
+        <option>今日</option>
+        <option>昨日</option>
+        <option>本周</option>
+        <option>本月</option>
+      </select>
+      <select class="topbar-select" aria-label="选择车型">
+        <option>混合车队</option>
+        <option>自行车</option>
+        <option>电单车</option>
+      </select>
+      <button class="topbar-btn" aria-label="通知，有5条未读">
+        N<span class="dot"></span>
+      </button>
+      <button class="topbar-btn" aria-label="设置">S</button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <!-- KPI -->
+    <section class="kpi-grid" aria-label="核心运营指标">
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">今日订单</span>
+          <div class="kpi-icon purple" aria-hidden="true">O</div>
+        </div>
+        <div class="kpi-value">18,462</div>
+        <div class="kpi-change up">+12.3% 较昨日</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">活跃车辆</span>
+          <div class="kpi-icon green" aria-hidden="true">V</div>
+        </div>
+        <div class="kpi-value">21,847<small>/24,500</small></div>
+        <div class="kpi-change up">可用率 89.2%</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">今日 GMV</span>
+          <div class="kpi-icon yellow" aria-hidden="true">$</div>
+        </div>
+        <div class="kpi-value">&yen;86,320</div>
+        <div class="kpi-change up">+8.7% 较昨日</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">待处理告警</span>
+          <div class="kpi-icon red" aria-hidden="true">!</div>
+        </div>
+        <div class="kpi-value">47</div>
+        <div class="kpi-change down">P0: 3 &middot; P1: 12</div>
+      </article>
+    </section>
+
+    <!-- MAP + ALERTS -->
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">地图调度中心</span>
+          <div style="display:flex;gap:6px">
+            <button class="map-tool active" aria-label="显示车辆分布">车辆</button>
+            <button class="map-tool" aria-label="显示电量热力图">电量</button>
+            <button class="map-tool" aria-label="显示围栏区域">围栏</button>
+          </div>
+        </div>
+        <div class="map-placeholder" role="img" aria-label="杭州市车辆分布地图，显示5个聚类区域">
+          <div class="map-heatmap h1" aria-hidden="true"></div>
+          <div class="map-heatmap h2" aria-hidden="true"></div>
+          <div class="map-heatmap h3" aria-hidden="true"></div>
+          <div class="map-heatmap h4" aria-hidden="true"></div>
+          <div class="map-cluster c1" tabindex="0" role="button" aria-label="城西区域，1,240辆">1.2k</div>
+          <div class="map-cluster c2" tabindex="0" role="button" aria-label="滨江区域，860辆">860</div>
+          <div class="map-cluster c3" tabindex="0" role="button" aria-label="拱墅区域，520辆">520</div>
+          <div class="map-cluster c4" tabindex="0" role="button" aria-label="未来科技城区域，1,580辆">1.6k</div>
+          <div class="map-cluster c5" tabindex="0" role="button" aria-label="萧山区域，680辆">680</div>
+          <div class="map-legend" aria-label="图例">
+            <span><span class="legend-dot" style="background:var(--primary)"></span>正常</span>
+            <span><span class="legend-dot" style="background:var(--warning)"></span>低电</span>
+            <span><span class="legend-dot" style="background:var(--danger)"></span>告警</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">实时告警</span>
+          <button class="card-action" aria-label="查看全部告警">全部告警</button>
+        </div>
+        <div class="card-body">
+          <div class="alert-list" role="list" aria-label="告警列表">
+            <div class="alert-item" role="listitem">
+              <span class="alert-dot p0" aria-hidden="true"></span>
+              <div class="alert-info">
+                <div class="alert-title">西湖景区车辆聚集堆积</div>
+                <div class="alert-meta">P0 &middot; 3 分钟前 &middot; 涉及 48 辆</div>
+              </div>
+              <button class="alert-action" aria-label="处理西湖景区堆积告警">处理</button>
+            </div>
+            <div class="alert-item" role="listitem">
+              <span class="alert-dot p0" aria-hidden="true"></span>
+              <div class="alert-info">
+                <div class="alert-title">钱塘区越界车辆告警</div>
+                <div class="alert-meta">P0 &middot; 8 分钟前 &middot; 12 辆越界</div>
+              </div>
+              <button class="alert-action" aria-label="处理钱塘区越界告警">处理</button>
+            </div>
+            <div class="alert-item" role="listitem">
+              <span class="alert-dot p1" aria-hidden="true"></span>
+              <div class="alert-info">
+                <div class="alert-title">滨江区低电车辆集中</div>
+                <div class="alert-meta">P1 &middot; 15 分钟前 &middot; 156 辆低电</div>
+              </div>
+              <button class="alert-action" aria-label="处理滨江低电告警">派单</button>
+            </div>
+            <div class="alert-item" role="listitem">
+              <span class="alert-dot p1" aria-hidden="true"></span>
+              <div class="alert-info">
+                <div class="alert-title">拱墅区禁停区违规停放</div>
+                <div class="alert-meta">P1 &middot; 22 分钟前 &middot; 8 辆违停</div>
+              </div>
+              <button class="alert-action" aria-label="处理拱墅违停告警">派单</button>
+            </div>
+            <div class="alert-item" role="listitem">
+              <span class="alert-dot p2" aria-hidden="true"></span>
+              <div class="alert-info">
+                <div class="alert-title">余杭区设备离线集中</div>
+                <div class="alert-meta">P2 &middot; 35 分钟前 &middot; 23 辆离线</div>
+              </div>
+              <button class="alert-action" aria-label="处理余杭离线告警">查看</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLEET + BATTERY + WORK ORDERS -->
+    <div class="dashboard-grid-3">
+      <!-- FLEET HEALTH -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">车队健康状态</span>
+          <button class="card-action" aria-label="查看车队详情">详情</button>
+        </div>
+        <div class="card-body">
+          <div class="fleet-bars">
+            <div class="fleet-bar-row">
+              <span class="fleet-bar-label">可用</span>
+              <div class="fleet-bar-track" role="progressbar" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100" aria-label="可用车辆占比65%">
+                <div class="fleet-bar-fill f-available" style="width:65%">65%</div>
+              </div>
+              <span class="fleet-bar-value">15,925</span>
+            </div>
+            <div class="fleet-bar-row">
+              <span class="fleet-bar-label">骑行中</span>
+              <div class="fleet-bar-track" role="progressbar" aria-valuenow="18" aria-valuemin="0" aria-valuemax="100">
+                <div class="fleet-bar-fill f-riding" style="width:18%">18%</div>
+              </div>
+              <span class="fleet-bar-value">4,410</span>
+            </div>
+            <div class="fleet-bar-row">
+              <span class="fleet-bar-label">低电</span>
+              <div class="fleet-bar-track" role="progressbar" aria-valuenow="8" aria-valuemin="0" aria-valuemax="100">
+                <div class="fleet-bar-fill f-lowbat" style="width:8%"></div>
+              </div>
+              <span class="fleet-bar-value">1,960</span>
+            </div>
+            <div class="fleet-bar-row">
+              <span class="fleet-bar-label">故障</span>
+              <div class="fleet-bar-track" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100">
+                <div class="fleet-bar-fill f-fault" style="width:5%"></div>
+              </div>
+              <span class="fleet-bar-value">1,225</span>
+            </div>
+            <div class="fleet-bar-row">
+              <span class="fleet-bar-label">离线</span>
+              <div class="fleet-bar-track" role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="100">
+                <div class="fleet-bar-fill f-offline" style="width:4%"></div>
+              </div>
+              <span class="fleet-bar-value">980</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BATTERY -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">电单车电量分布</span>
+          <button class="card-action" aria-label="查看电池详情">电池管理</button>
+        </div>
+        <div class="card-body">
+          <div class="battery-dist" aria-label="电量分布柱状图">
+            <div class="battery-bar-wrap">
+              <div class="battery-count">1,840</div>
+              <div class="battery-bar b1" style="height:35%"></div>
+              <div class="battery-label">0-10%</div>
+            </div>
+            <div class="battery-bar-wrap">
+              <div class="battery-count">3,120</div>
+              <div class="battery-bar b2" style="height:55%"></div>
+              <div class="battery-label">10-30%</div>
+            </div>
+            <div class="battery-bar-wrap">
+              <div class="battery-count">5,680</div>
+              <div class="battery-bar b3" style="height:85%"></div>
+              <div class="battery-label">30-60%</div>
+            </div>
+            <div class="battery-bar-wrap">
+              <div class="battery-count">4,360</div>
+              <div class="battery-bar b4" style="height:70%"></div>
+              <div class="battery-label">60-100%</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--gray-500);padding-top:8px;border-top:1px solid var(--gray-100)">
+            <span>今日换电: <strong style="color:var(--gray-800);font-variant-numeric:tabular-nums">847</strong> 次</span>
+            <span>成功率: <strong style="color:var(--success)">96.8%</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">快速工作台</span>
+        </div>
+        <div class="card-body">
+          <div class="quick-grid">
+            <button class="quick-btn" aria-label="创建调度任务">
+              <div class="quick-btn-icon qb1" aria-hidden="true">D</div>
+              <span class="quick-btn-label">调度任务</span>
+            </button>
+            <button class="quick-btn" aria-label="创建换电任务">
+              <div class="quick-btn-icon qb2" aria-hidden="true">B</div>
+              <span class="quick-btn-label">换电任务</span>
+            </button>
+            <button class="quick-btn" aria-label="创建巡检任务">
+              <div class="quick-btn-icon qb3" aria-hidden="true">P</div>
+              <span class="quick-btn-label">巡检任务</span>
+            </button>
+            <button class="quick-btn" aria-label="创建维修工单">
+              <div class="quick-btn-icon qb4" aria-hidden="true">R</div>
+              <span class="quick-btn-label">维修工单</span>
+            </button>
+            <button class="quick-btn" aria-label="车辆检索">
+              <div class="quick-btn-icon qb5" aria-hidden="true">S</div>
+              <span class="quick-btn-label">车辆检索</span>
+            </button>
+            <button class="quick-btn" aria-label="批量指令">
+              <div class="quick-btn-icon qb6" aria-hidden="true">C</div>
+              <span class="quick-btn-label">批量指令</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORK ORDERS -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header">
+        <span class="card-title">运维工单</span>
+        <div style="display:flex;gap:8px">
+          <button class="card-action" aria-label="查看工单看板">看板视图</button>
+          <button class="card-action" aria-label="查看全部工单">全部工单</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="wo-table" aria-label="运维工单列表">
+          <thead>
+            <tr>
+              <th scope="col">工单号</th>
+              <th scope="col">类型</th>
+              <th scope="col">描述</th>
+              <th scope="col">状态</th>
+              <th scope="col">负责人</th>
+              <th scope="col">创建时间</th>
+              <th scope="col">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="wo-id">#WO-20260601-047</span></td>
+              <td><span class="wo-type swap">换电</span></td>
+              <td>滨江区低电车辆批量换电 (12辆)</td>
+              <td><span class="wo-status overdue"><span class="wo-status-dot"></span>超时</span></td>
+              <td><span class="wo-assignee"><span class="wo-avatar">L</span>李伟</span></td>
+              <td><span class="wo-time">09:15</span></td>
+              <td><button class="alert-action" aria-label="追踪工单WO-047">追踪</button></td>
+            </tr>
+            <tr>
+              <td><span class="wo-id">#WO-20260601-046</span></td>
+              <td><span class="wo-type fix">维修</span></td>
+              <td>城西 3 辆车刹车系统异常</td>
+              <td><span class="wo-status active"><span class="wo-status-dot"></span>执行中</span></td>
+              <td><span class="wo-assignee"><span class="wo-avatar">W</span>王芳</span></td>
+              <td><span class="wo-time">08:42</span></td>
+              <td><button class="alert-action" aria-label="追踪工单WO-046">追踪</button></td>
+            </tr>
+            <tr>
+              <td><span class="wo-id">#WO-20260601-045</span></td>
+              <td><span class="wo-type move">调度</span></td>
+              <td>从未来科技城调 20 辆至西溪湿地</td>
+              <td><span class="wo-status active"><span class="wo-status-dot"></span>执行中</span></td>
+              <td><span class="wo-assignee"><span class="wo-avatar">C</span>陈刚</span></td>
+              <td><span class="wo-time">08:20</span></td>
+              <td><button class="alert-action" aria-label="追踪工单WO-045">追踪</button></td>
+            </tr>
+            <tr>
+              <td><span class="wo-id">#WO-20260601-044</span></td>
+              <td><span class="wo-type check">巡检</span></td>
+              <td>西湖景区禁停区违停处置 (8辆)</td>
+              <td><span class="wo-status pending"><span class="wo-status-dot"></span>待接单</span></td>
+              <td><span class="wo-assignee"><span class="wo-avatar">-</span>待分配</span></td>
+              <td><span class="wo-time">07:55</span></td>
+              <td><button class="alert-action" aria-label="分配工单WO-044">派单</button></td>
+            </tr>
+            <tr>
+              <td><span class="wo-id">#WO-20260601-043</span></td>
+              <td><span class="wo-type swap">换电</span></td>
+              <td>萧山区早高峰补车任务 (15辆)</td>
+              <td><span class="wo-status done"><span class="wo-status-dot"></span>已完成</span></td>
+              <td><span class="wo-assignee"><span class="wo-avatar">Z</span>赵鹏</span></td>
+              <td><span class="wo-time">06:30</span></td>
+              <td><button class="alert-action" aria-label="查看工单WO-043详情">详情</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=375, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>电享充 - 智能充电桩查找</title>
+<style>
+/* ===== shadcn/ui Design Tokens (mobile) ===== */
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(222.2 84% 4.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222.2 84% 4.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222.2 84% 4.9%);
+  --primary: hsl(142.1 76.2% 36.3%);
+  --primary-foreground: hsl(355.7 100% 97.3%);
+  --secondary: hsl(210 40% 96.1%);
+  --secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --muted: hsl(210 40% 96.1%);
+  --muted-foreground: hsl(215.4 16.3% 46.9%);
+  --accent: hsl(210 40% 96.1%);
+  --accent-foreground: hsl(222.2 47.4% 11.2%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --success: hsl(142.1 76.2% 36.3%);
+  --warning: hsl(38 92% 50%);
+  --info: hsl(221.2 83.2% 53.3%);
+  --border: hsl(214.3 31.8% 91.4%);
+  --input: hsl(214.3 31.8% 91.4%);
+  --ring: hsl(142.1 76.2% 36.3%);
+  --radius: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ===== Base Reset ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--muted);
+  color: var(--foreground);
+  width: 375px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ===== Utilities ===== */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.inline-flex { display: inline-flex; }
+.grid { display: grid; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.flex-1 { flex: 1; }
+
+.gap-1 { gap: var(--spacing-1); }
+.gap-2 { gap: var(--spacing-2); }
+.gap-3 { gap: var(--spacing-3); }
+.gap-4 { gap: var(--spacing-4); }
+
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.text-center { text-align: center; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.text-foreground { color: var(--foreground); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.text-primary { color: var(--primary); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-destructive { color: var(--destructive); }
+.bg-primary { background-color: var(--primary); }
+.bg-card { background-color: var(--card); }
+.bg-muted { background-color: var(--muted); }
+
+/* ===== Status Bar ===== */
+.status-bar {
+  height: 44px;
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-4);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ===== Header ===== */
+.app-header {
+  background: var(--background);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* ===== Search ===== */
+.search-section {
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--background);
+}
+
+.search-fieldgroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  height: 2.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0 var(--spacing-3);
+  transition: border-color 0.15s;
+}
+.search-input-wrap:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px hsl(142.1 76.2% 36.3% / 0.15);
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+.search-input::placeholder { color: var(--muted-foreground); }
+
+/* Filter row */
+.filter-row {
+  display: flex;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  height: 2rem;
+  padding: 0 var(--spacing-3);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.chip:hover { background: var(--accent); }
+.chip.active { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.chip-status { display: flex; align-items: center; gap: var(--spacing-2); }
+.chip-dot { width: 6px; height: 6px; border-radius: 9999px; flex-shrink: 0; }
+.chip-dot.success { background: var(--success); }
+.chip-dot.warning { background: var(--warning); }
+.chip-dot.destructive { background: var(--destructive); }
+
+/* ===== Toggle ===== */
+.toggle-group {
+  display: flex;
+  background: var(--muted);
+  border-radius: var(--radius);
+  padding: 2px;
+  gap: 2px;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-1);
+  height: 2rem;
+  padding: 0 var(--spacing-4);
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggle-item.active { background: var(--background); color: var(--foreground); box-shadow: var(--shadow-sm); }
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===== Station List ===== */
+.station-list {
+  padding: var(--spacing-3) var(--spacing-4) calc(var(--spacing-8) + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.station-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-4);
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.station-card:hover, .station-card:focus-visible {
+  box-shadow: var(--shadow-md);
+  border-color: var(--ring);
+  outline: none;
+}
+
+.station-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-3);
+}
+
+.station-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.station-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.station-distance {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.station-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: hsl(142.1 76.2% 36.3% / 0.1);
+  color: var(--success);
+  border: 1px solid hsl(142.1 76.2% 36.3% / 0.2);
+}
+.badge-warning {
+  background: hsl(38 92% 50% / 0.1);
+  color: var(--warning);
+  border: 1px solid hsl(38 92% 50% / 0.2);
+}
+.badge-destructive {
+  background: hsl(0 84.2% 60.2% / 0.1);
+  color: var(--destructive);
+  border: 1px solid hsl(0 84.2% 60.2% / 0.2);
+}
+
+.station-address {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.station-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.station-stats {
+  display: flex;
+  gap: var(--spacing-4);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.stat-label {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.port-info {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.port-tag {
+  padding: 2px var(--spacing-2);
+  border-radius: var(--radius);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+.port-tag.available { background: hsl(142.1 76.2% 36.3% / 0.1); color: var(--success); }
+
+/* ===== Map View Placeholder ===== */
+.map-view {
+  display: none;
+  height: calc(100vh - 200px);
+  background: var(--secondary);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  border-radius: var(--radius-xl);
+  margin: var(--spacing-3) var(--spacing-4);
+}
+
+/* ===== Modal / Dialog ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(2px);
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-sheet {
+  background: var(--background);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%;
+  max-width: 375px;
+  padding: var(--spacing-6);
+  padding-bottom: calc(var(--spacing-6) + var(--safe-bottom));
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--border);
+  margin: 0 auto var(--spacing-4);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-2);
+}
+
+.modal-desc {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-6);
+}
+
+.modal-fieldgroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-4);
+}
+
+.modal-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.modal-select {
+  display: flex;
+  height: 2.75rem;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--background);
+  padding: 0 var(--spacing-3);
+  font-size: 0.875rem;
+  color: var(--foreground);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='hsl(215.4 16.3% 46.9%25)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
+}
+
+.modal-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal-info-label {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modal-info-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* ===== Button ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  white-space: nowrap;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  height: 2.75rem;
+  padding: 0 var(--spacing-6);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  cursor: pointer;
+  outline: none;
+  width: 100%;
+}
+.btn:focus-visible { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+.btn-default { background: var(--primary); color: var(--primary-foreground); }
+.btn-default:hover { opacity: 0.9; }
+.btn-outline { border-color: var(--border); background: var(--background); }
+.btn-outline:hover { background: var(--accent); }
+
+.btn-sm {
+  height: 1.75rem;
+  padding: 0 var(--spacing-3);
+  font-size: 0.75rem;
+  width: auto;
+}
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 375px;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 50;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--spacing-2) 0;
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.tab-item.active { color: var(--primary); }
+
+/* ===== Divider ===== */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--spacing-4) 0;
+}
+
+.icon-sm { width: 14px; height: 14px; }
+.icon-md { width: 18px; height: 18px; }
+.icon-lg { width: 22px; height: 22px; }
+</style>
+</head>
+<body>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <span>9:41</span>
+  <span>
+    <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="14" x2="23" y2="14" stroke="white" stroke-width="2"/></svg>
+  </span>
+</div>
+
+<!-- App Header -->
+<header class="app-header" role="banner">
+  <div class="header-row">
+    <h1 class="header-title">电享充</h1>
+    <div class="toggle-group" role="group" aria-label="视图切换">
+      <button class="toggle-item active" id="toggle-list" aria-pressed="true" onclick="switchView('list')">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        列表
+      </button>
+      <button class="toggle-item" id="toggle-map" aria-pressed="false" onclick="switchView('map')">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        地图
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Search -->
+<section class="search-section" role="search" aria-label="搜索充电站">
+  <div class="search-fieldgroup">
+    <div class="search-input-wrap">
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input class="search-input" type="search" placeholder="搜索地点或充电站名称" aria-label="搜索充电站">
+    </div>
+  </div>
+</section>
+
+<!-- Filter Row -->
+<div class="filter-row" role="group" aria-label="筛选条件">
+  <button class="chip active" onclick="filterChips(this)">全部</button>
+  <button class="chip" onclick="filterChips(this)">
+    <span class="chip-dot success"></span>空闲
+  </button>
+  <button class="chip" onclick="filterChips(this)">
+    <span class="chip-dot warning"></span>繁忙
+  </button>
+  <button class="chip" onclick="filterChips(this)">
+    快充
+    <span class="text-muted-foreground">120kW</span>
+  </button>
+  <button class="chip" onclick="filterChips(this)">
+    3km内
+  </button>
+</div>
+
+<!-- Station List -->
+<div id="station-list" class="station-list" role="list" aria-label="充电站列表">
+
+  <!-- Station 1 -->
+  <div class="station-card" role="listitem" tabindex="0" onclick="openModal('天河城快充站', '120kW', '8/12', 'CNY 1.28')" aria-label="天河城快充站 空闲 距你1.2公里">
+    <div class="station-header">
+      <div>
+        <div class="station-name-row">
+          <span class="station-name">天河城快充站</span>
+          <span class="station-badge badge-success">空闲</span>
+        </div>
+        <span class="station-distance">1.2 km</span>
+      </div>
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="station-address">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      天河区天河路 230 号 B1 停车场
+    </div>
+    <div class="station-footer">
+      <div class="station-stats">
+        <div class="stat-item">
+          <span class="stat-value">CNY 1.28</span>
+          <span class="stat-label">元/度</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">8/12</span>
+          <span class="stat-label">空闲桩</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">120kW</span>
+          <span class="stat-label">最大功率</span>
+        </div>
+      </div>
+      <div class="port-info">
+        <span class="port-tag available">快充x6</span>
+        <span class="port-tag">慢充x6</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Station 2 -->
+  <div class="station-card" role="listitem" tabindex="0" onclick="openModal('珠江新城超充站', '240kW', '4/8', 'CNY 1.58')" aria-label="珠江新城超充站 繁忙 距你2.5公里">
+    <div class="station-header">
+      <div>
+        <div class="station-name-row">
+          <span class="station-name">珠江新城超充站</span>
+          <span class="station-badge badge-warning">繁忙</span>
+        </div>
+        <span class="station-distance">2.5 km</span>
+      </div>
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="station-address">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      天河区珠江新城华夏路 8 号地面停车场
+    </div>
+    <div class="station-footer">
+      <div class="station-stats">
+        <div class="stat-item">
+          <span class="stat-value">CNY 1.58</span>
+          <span class="stat-label">元/度</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">4/8</span>
+          <span class="stat-label">空闲桩</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">240kW</span>
+          <span class="stat-label">最大功率</span>
+        </div>
+      </div>
+      <div class="port-info">
+        <span class="port-tag available">超充x4</span>
+        <span class="port-tag">快充x4</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Station 3 -->
+  <div class="station-card" role="listitem" tabindex="0" onclick="openModal('琶洲会展充电站', '60kW', '10/10', 'CNY 0.98')" aria-label="琶洲会展充电站 空闲 距你3.8公里">
+    <div class="station-header">
+      <div>
+        <div class="station-name-row">
+          <span class="station-name">琶洲会展充电站</span>
+          <span class="station-badge badge-success">空闲</span>
+        </div>
+        <span class="station-distance">3.8 km</span>
+      </div>
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="station-address">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      海珠区新港东路 1000 号会展中心 P3
+    </div>
+    <div class="station-footer">
+      <div class="station-stats">
+        <div class="stat-item">
+          <span class="stat-value">CNY 0.98</span>
+          <span class="stat-label">元/度</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">10/10</span>
+          <span class="stat-label">空闲桩</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">60kW</span>
+          <span class="stat-label">最大功率</span>
+        </div>
+      </div>
+      <div class="port-info">
+        <span class="port-tag available">快充x10</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Station 4 -->
+  <div class="station-card" role="listitem" tabindex="0" onclick="openModal('大学城充电站', '120kW', '0/6', 'CNY 1.18')" aria-label="大学城充电站 已满 距你5.1公里">
+    <div class="station-header">
+      <div>
+        <div class="station-name-row">
+          <span class="station-name">大学城充电站</span>
+          <span class="station-badge badge-destructive">已满</span>
+        </div>
+        <span class="station-distance">5.1 km</span>
+      </div>
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="station-address">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      番禺区大学城外环西路 168 号
+    </div>
+    <div class="station-footer">
+      <div class="station-stats">
+        <div class="stat-item">
+          <span class="stat-value">CNY 1.18</span>
+          <span class="stat-label">元/度</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value text-destructive">0/6</span>
+          <span class="stat-label">空闲桩</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">120kW</span>
+          <span class="stat-label">最大功率</span>
+        </div>
+      </div>
+      <div class="port-info">
+        <span class="port-tag">快充x6</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Station 5 -->
+  <div class="station-card" role="listitem" tabindex="0" onclick="openModal('白云机场充电站', '180kW', '12/20', 'CNY 1.38')" aria-label="白云机场充电站 空闲 距你8.2公里">
+    <div class="station-header">
+      <div>
+        <div class="station-name-row">
+          <span class="station-name">白云机场充电站</span>
+          <span class="station-badge badge-success">空闲</span>
+        </div>
+        <span class="station-distance">8.2 km</span>
+      </div>
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="station-address">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      白云区空港大道 P4 停车场 E 区
+    </div>
+    <div class="station-footer">
+      <div class="station-stats">
+        <div class="stat-item">
+          <span class="stat-value">CNY 1.38</span>
+          <span class="stat-label">元/度</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">12/20</span>
+          <span class="stat-label">空闲桩</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">180kW</span>
+          <span class="stat-label">最大功率</span>
+        </div>
+      </div>
+      <div class="port-info">
+        <span class="port-tag available">超充x8</span>
+        <span class="port-tag available">快充x12</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Map View (hidden by default) -->
+<div id="map-view" class="map-view" role="region" aria-label="地图视图">
+  <svg viewBox="0 0 200 200" fill="none" stroke="var(--muted-foreground)" stroke-width="1" aria-hidden="true" style="width: 120px; height: 120px;">
+    <rect x="10" y="10" width="180" height="180" rx="8" fill="var(--muted)"/>
+    <polyline points="30,100 70,80 110,120 160,60 190,50" stroke="var(--primary)" stroke-width="2"/>
+    <circle cx="70" cy="80" r="5" fill="var(--primary)"/>
+    <circle cx="110" cy="120" r="5" fill="var(--warning)"/>
+    <circle cx="160" cy="60" r="5" fill="var(--success)"/>
+  </svg>
+  <span class="text-muted-foreground text-sm">地图加载中...</span>
+</div>
+
+<!-- Bottom Tab Bar -->
+<nav class="tab-bar" role="navigation" aria-label="底部导航">
+  <button class="tab-item active" aria-current="page">
+    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+    充电
+  </button>
+  <button class="tab-item">
+    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    行程
+  </button>
+  <button class="tab-item">
+    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    我的
+  </button>
+</nav>
+
+<!-- Charging Confirmation Modal -->
+<div class="modal-overlay" id="charging-modal" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2 id="modal-heading" class="modal-title" id="modal-station-name">天河城快充站</h2>
+    <p class="modal-desc">确认充电信息后开始充电</p>
+
+    <div class="modal-info-grid">
+      <div class="modal-info-item">
+        <span class="modal-info-label">最大功率</span>
+        <span class="modal-info-value" id="modal-power">120kW</span>
+      </div>
+      <div class="modal-info-item">
+        <span class="modal-info-label">空闲桩数</span>
+        <span class="modal-info-value" id="modal-available">8/12</span>
+      </div>
+      <div class="modal-info-item">
+        <span class="modal-info-label">充电价格</span>
+        <span class="modal-info-value text-primary" id="modal-price">CNY 1.28/度</span>
+      </div>
+      <div class="modal-info-item">
+        <span class="modal-info-label">预计时长</span>
+        <span class="modal-info-value">约 45 分钟</span>
+      </div>
+    </div>
+
+    <div class="modal-fieldgroup">
+      <label class="modal-label" for="charge-amount">充电金额 (CNY)</label>
+      <select class="modal-select" id="charge-amount" aria-label="选择充电金额">
+        <option>CNY 50 (约 39 度)</option>
+        <option>CNY 100 (约 78 度)</option>
+        <option>CNY 200 (约 156 度)</option>
+        <option>自定义金额</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--spacing-3);">
+      <button class="btn btn-outline" id="modal-cancel-btn" style="flex: 1;" onclick="closeModal()">取消</button>
+      <button class="btn btn-default" style="flex: 1;" onclick="confirmCharge()">
+        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        开始充电
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchView(view) {
+  const listBtn = document.getElementById('toggle-list');
+  const mapBtn = document.getElementById('toggle-map');
+  const list = document.getElementById('station-list');
+  const map = document.getElementById('map-view');
+
+  if (view === 'list') {
+    listBtn.classList.add('active'); listBtn.setAttribute('aria-pressed', 'true');
+    mapBtn.classList.remove('active'); mapBtn.setAttribute('aria-pressed', 'false');
+    list.style.display = '';
+    map.style.display = 'none';
+  } else {
+    mapBtn.classList.add('active'); mapBtn.setAttribute('aria-pressed', 'true');
+    listBtn.classList.remove('active'); listBtn.setAttribute('aria-pressed', 'false');
+    list.style.display = 'none';
+    map.style.display = 'flex';
+  }
+}
+
+function filterChips(btn) {
+  document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+function openModal(name, power, available, price) {
+  document.getElementById('modal-station-name').textContent = name;
+  document.getElementById('modal-power').textContent = power;
+  document.getElementById('modal-available').textContent = available;
+  document.getElementById('modal-price').textContent = price ;
+  document.getElementById('charging-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('charge-amount').focus();
+}
+
+function closeModal() {
+  document.getElementById('charging-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function confirmCharge() {
+  closeModal();
+  // In real app: navigate to charging status page
+}
+
+// Close modal on overlay click
+document.getElementById('charging-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+
+</body>
+</html>

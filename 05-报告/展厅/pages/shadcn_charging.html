@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>充电小程序 · shadcn/ui</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --card: #ffffff;
+      --card-foreground: #09090b;
+      --popover: #ffffff;
+      --popover-foreground: #09090b;
+      --primary: #18181b;
+      --primary-foreground: #fafafa;
+      --secondary: #f4f4f5;
+      --secondary-foreground: #18181b;
+      --muted: #f4f4f5;
+      --muted-foreground: #71717a;
+      --accent: #f4f4f5;
+      --accent-foreground: #18181b;
+      --destructive: #ef4444;
+      --destructive-foreground: #fafafa;
+      --border: #e4e4e7;
+      --input: #e4e4e7;
+      --ring: #a1a1aa;
+      --radius: 0.5rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      background: #f4f4f5;
+      color: var(--foreground);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .app-container {
+      max-width: 430px;
+      margin: 0 auto;
+      background: var(--background);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      padding-bottom: 80px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--background);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .location-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--foreground);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .location-btn i {
+      width: 16px;
+      height: 16px;
+    }
+
+    .search-input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px 0 36px;
+      border: 1px solid var(--input);
+      border-radius: var(--radius);
+      background: var(--secondary);
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--foreground);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .search-input::placeholder {
+      color: var(--muted-foreground);
+    }
+
+    .search-input:focus {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 2px rgba(161, 161, 170, 0.2);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-foreground);
+      width: 16px;
+      height: 16px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--foreground);
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover {
+      background: var(--secondary);
+    }
+
+    .icon-btn i {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Map Area */
+    .map-area {
+      position: relative;
+      height: 280px;
+      background: #f8f8f9;
+      overflow: hidden;
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity: 0.6;
+    }
+
+    .map-streets {
+      position: absolute;
+      inset: 0;
+    }
+
+    .street-h {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #e4e4e7;
+    }
+
+    .street-v {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e4e4e7;
+    }
+
+    .map-pin {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .map-pin i {
+      width: 14px;
+      height: 14px;
+      color: var(--primary-foreground);
+      transform: rotate(45deg);
+    }
+
+    .map-pin.p1 { top: 60px; left: 80px; }
+    .map-pin.p2 { top: 120px; left: 200px; }
+    .map-pin.p3 { top: 180px; left: 140px; }
+    .map-pin.p4 { top: 90px; left: 300px; }
+
+    .map-card {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      cursor: grab;
+    }
+
+    .map-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .map-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--card-foreground);
+    }
+
+    .map-card-meta {
+      font-size: 13px;
+      color: var(--muted-foreground);
+      margin-bottom: 12px;
+    }
+
+    .map-card-badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .map-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
+    }
+
+    .badge-green {
+      border-color: #22c55e;
+      color: #16a34a;
+      background: #f0fdf4;
+    }
+
+    .badge-orange {
+      border-color: #f97316;
+      color: #ea580c;
+      background: #fff7ed;
+    }
+
+    .badge i {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      flex: 1;
+    }
+
+    .btn-outline {
+      background: var(--background);
+      border-color: var(--border);
+      color: var(--foreground);
+    }
+
+    .btn-outline:hover {
+      background: var(--secondary);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: #27272a;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--secondary-foreground);
+      border-color: var(--secondary);
+    }
+
+    .btn-secondary:hover {
+      background: #e4e4e7;
+    }
+
+    .btn i {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Section */
+    .section {
+      padding: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--foreground);
+      margin-bottom: 12px;
+    }
+
+    /* Quick Access */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .quick-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .quick-item:hover {
+      background: var(--secondary);
+    }
+
+    .quick-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      background: var(--secondary);
+      color: var(--foreground);
+    }
+
+    .quick-icon i {
+      width: 20px;
+      height: 20px;
+    }
+
+    .quick-label {
+      font-size: 12px;
+      color: var(--foreground);
+      font-weight: 500;
+    }
+
+    /* Station Card */
+    .station-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: box-shadow 0.15s;
+    }
+
+    .station-card:hover {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .station-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+
+    .station-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--card-foreground);
+    }
+
+    .station-meta {
+      font-size: 13px;
+      color: var(--muted-foreground);
+      margin-bottom: 10px;
+    }
+
+    .station-badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .station-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Member Card */
+    .member-card {
+      background: linear-gradient(135deg, #18181b 0%, #3f3f46 100%);
+      border-radius: var(--radius);
+      padding: 20px;
+      color: #fafafa;
+    }
+
+    .member-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .member-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(250, 250, 250, 0.15);
+      color: #fafafa;
+      border: 1px solid rgba(250, 250, 250, 0.2);
+    }
+
+    .member-badge i {
+      width: 12px;
+      height: 12px;
+    }
+
+    .member-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .member-desc {
+      font-size: 13px;
+      color: #a1a1aa;
+      margin-bottom: 16px;
+    }
+
+    .member-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .member-actions .btn-secondary {
+      background: rgba(250, 250, 250, 0.1);
+      color: #fafafa;
+      border-color: rgba(250, 250, 250, 0.2);
+    }
+
+    .member-actions .btn-secondary:hover {
+      background: rgba(250, 250, 250, 0.2);
+    }
+
+    .member-actions .btn-primary {
+      background: #fafafa;
+      color: #18181b;
+      border-color: #fafafa;
+    }
+
+    .member-actions .btn-primary:hover {
+      background: #e4e4e7;
+    }
+
+    /* Separator */
+    .separator {
+      height: 1px;
+      background: var(--border);
+      margin: 0 16px;
+    }
+
+    /* TabBar */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: var(--background);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 6px 0 12px;
+      z-index: 100;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 12px;
+      color: var(--muted-foreground);
+      font-size: 11px;
+      cursor: pointer;
+      transition: color 0.15s;
+      border: none;
+      background: none;
+      font-family: inherit;
+    }
+
+    .tab-item.active {
+      color: var(--foreground);
+    }
+
+    .tab-item i {
+      width: 22px;
+      height: 22px;
+    }
+
+    .tab-scan {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(24, 24, 27, 0.25);
+      margin-top: -20px;
+      border: 3px solid var(--background);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .tab-scan:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(24, 24, 27, 0.3);
+    }
+
+    .tab-scan i {
+      width: 24px;
+      height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="location-btn">
+        <i data-lucide="map-pin"></i>
+        <span>深圳市</span>
+        <i data-lucide="chevron-down" style="width:14px;height:14px;color:var(--muted-foreground)"></i>
+      </div>
+      <div class="search-input-wrapper">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" class="search-input" placeholder="搜索充电站点">
+      </div>
+      <button class="icon-btn">
+        <i data-lucide="bell"></i>
+      </button>
+    </header>
+
+    <!-- Map Area -->
+    <div class="map-area">
+      <div class="map-grid"></div>
+      <div class="map-streets">
+        <div class="street-h" style="top:40%"></div>
+        <div class="street-h" style="top:70%"></div>
+        <div class="street-v" style="left:30%"></div>
+        <div class="street-v" style="left:65%"></div>
+      </div>
+      <div class="map-pin p1"><i data-lucide="zap"></i></div>
+      <div class="map-pin p2"><i data-lucide="zap"></i></div>
+      <div class="map-pin p3"><i data-lucide="zap"></i></div>
+      <div class="map-pin p4"><i data-lucide="zap"></i></div>
+
+      <div class="map-card">
+        <div class="map-card-header">
+          <span class="map-card-title">南山科技园充电站</span>
+          <span style="font-size:12px;color:var(--muted-foreground)">0.8km</span>
+        </div>
+        <div class="map-card-meta">¥1.28 / 度 · 24小时营业</div>
+        <div class="map-card-badges">
+          <span class="badge badge-green"><i data-lucide="zap"></i>快充空闲 6</span>
+          <span class="badge badge-orange"><i data-lucide="battery-charging"></i>慢充紧张 1</span>
+        </div>
+        <div class="map-card-actions">
+          <button class="btn btn-outline"><i data-lucide="navigation"></i>导航</button>
+          <button class="btn btn-primary"><i data-lucide="scan-line"></i>扫码充电</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Access -->
+    <div class="section">
+      <h2 class="section-title">快捷入口</h2>
+      <div class="quick-grid">
+        <div class="quick-item">
+          <div class="quick-icon"><i data-lucide="clipboard-list"></i></div>
+          <span class="quick-label">我的订单</span>
+        </div>
+        <div class="quick-item">
+          <div class="quick-icon"><i data-lucide="wallet"></i></div>
+          <span class="quick-label">钱包</span>
+        </div>
+        <div class="quick-item">
+          <div class="quick-icon"><i data-lucide="ticket"></i></div>
+          <span class="quick-label">卡券</span>
+        </div>
+        <div class="quick-item">
+          <div class="quick-icon"><i data-lucide="headset"></i></div>
+          <span class="quick-label">客服</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <!-- Nearby Stations -->
+    <div class="section">
+      <h2 class="section-title">附近站点</h2>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">南山科技园充电站</span>
+          <span style="font-size:12px;color:var(--muted-foreground)">0.8km</span>
+        </div>
+        <div class="station-meta">¥1.28 / 度 · 24小时营业</div>
+        <div class="station-badges">
+          <span class="badge badge-green"><i data-lucide="zap"></i>快充空闲 6</span>
+          <span class="badge badge-orange"><i data-lucide="battery-charging"></i>慢充紧张 1</span>
+        </div>
+        <div class="station-actions">
+          <button class="btn btn-outline"><i data-lucide="navigation"></i>导航</button>
+          <button class="btn btn-primary"><i data-lucide="scan-line"></i>扫码充电</button>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">海岸城超级充电站</span>
+          <span style="font-size:12px;color:var(--muted-foreground)">1.5km</span>
+        </div>
+        <div class="station-meta">¥1.45 / 度 · 08:00 - 22:00</div>
+        <div class="station-badges">
+          <span class="badge badge-green"><i data-lucide="zap"></i>快充空闲 12</span>
+          <span class="badge badge-green"><i data-lucide="battery-charging"></i>慢充空闲 4</span>
+        </div>
+        <div class="station-actions">
+          <button class="btn btn-outline"><i data-lucide="navigation"></i>导航</button>
+          <button class="btn btn-primary"><i data-lucide="scan-line"></i>扫码充电</button>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">深圳湾公园充电站</span>
+          <span style="font-size:12px;color:var(--muted-foreground)">2.3km</span>
+        </div>
+        <div class="station-meta">¥0.98 / 度 · 06:00 - 23:00</div>
+        <div class="station-badges">
+          <span class="badge badge-orange"><i data-lucide="zap"></i>快充紧张 2</span>
+          <span class="badge badge-green"><i data-lucide="battery-charging"></i>慢充空闲 8</span>
+        </div>
+        <div class="station-actions">
+          <button class="btn btn-outline"><i data-lucide="navigation"></i>导航</button>
+          <button class="btn btn-primary"><i data-lucide="scan-line"></i>扫码充电</button>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">万象天地地下充电站</span>
+          <span style="font-size:12px;color:var(--muted-foreground)">3.1km</span>
+        </div>
+        <div class="station-meta">¥1.60 / 度 · 10:00 - 22:00</div>
+        <div class="station-badges">
+          <span class="badge badge-green"><i data-lucide="zap"></i>快充空闲 8</span>
+          <span class="badge badge-green"><i data-lucide="battery-charging"></i>慢充空闲 6</span>
+        </div>
+        <div class="station-actions">
+          <button class="btn btn-outline"><i data-lucide="navigation"></i>导航</button>
+          <button class="btn btn-primary"><i data-lucide="scan-line"></i>扫码充电</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <!-- Member Card -->
+    <div class="section">
+      <div class="member-card">
+        <div class="member-card-header">
+          <span class="member-badge"><i data-lucide="crown"></i>PLUS</span>
+        </div>
+        <div class="member-title">开通 PLUS 会员</div>
+        <div class="member-desc">每月节省最高 ¥120，充电享 9.5 折优惠</div>
+        <div class="member-actions">
+          <button class="btn btn-secondary">了解更多</button>
+          <button class="btn btn-primary">立即开通</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TabBar -->
+    <nav class="tabbar">
+      <button class="tab-item active">
+        <i data-lucide="map-pin"></i>
+        <span>首页</span>
+      </button>
+      <button class="tab-item">
+        <i data-lucide="compass"></i>
+        <span>发现</span>
+      </button>
+      <div class="tab-scan">
+        <i data-lucide="scan-line"></i>
+      </div>
+      <button class="tab-item">
+        <i data-lucide="message-square"></i>
+        <span>消息</span>
+      </button>
+      <button class="tab-item">
+        <i data-lucide="user"></i>
+        <span>我的</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

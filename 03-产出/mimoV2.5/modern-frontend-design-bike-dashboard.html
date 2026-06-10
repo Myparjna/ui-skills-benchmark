@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>骑迹运营 · Fleet Ops Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN TOKENS (OKLCH) ─────────────────────────── */
+:root {
+  --bg:           oklch(10% 0.015 265);
+  --bg-sidebar:   oklch(8% 0.02 265);
+  --surface:      oklch(14% 0.018 265);
+  --surface-up:   oklch(18% 0.02 265);
+  --surface-hover:oklch(20% 0.02 265);
+  --fg:           oklch(95% 0.01 265);
+  --fg-secondary: oklch(72% 0.015 265);
+  --fg-muted:     oklch(52% 0.015 265);
+  --fg-dim:       oklch(38% 0.01 265);
+  --primary:      oklch(62% 0.22 265);
+  --primary-up:   oklch(68% 0.22 265);
+  --primary-soft: oklch(62% 0.22 265 / 0.12);
+  --green:        oklch(65% 0.18 155);
+  --green-soft:   oklch(65% 0.18 155 / 0.12);
+  --orange:       oklch(72% 0.18 55);
+  --orange-soft:  oklch(72% 0.18 55 / 0.12);
+  --red:          oklch(60% 0.22 25);
+  --red-soft:     oklch(60% 0.22 25 / 0.12);
+  --yellow:       oklch(78% 0.16 80);
+  --yellow-soft:  oklch(78% 0.16 80 / 0.12);
+  --cyan:         oklch(70% 0.15 210);
+  --cyan-soft:    oklch(70% 0.15 210 / 0.12);
+  --border:       oklch(22% 0.02 265);
+  --border-faint: oklch(16% 0.01 265);
+
+  --font: 'Inter', 'PingFang SC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Geist Mono', monospace;
+
+  --r-xs:   4px;
+  --r-sm:   6px;
+  --r:      8px;
+  --r-lg:   12px;
+  --r-xl:   16px;
+  --r-full: 9999px;
+
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast:  150ms;
+  --dur-base:  250ms;
+  --dur-slow:  500ms;
+}
+
+/* ── RESET ──────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+/* ── LIQUID GLASS ───────────────────────────────────── */
+.liquid-glass {
+  background: linear-gradient(135deg, oklch(100% 0 0 / 0.06) 0%, oklch(100% 0 0 / 0.02) 100%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid oklch(100% 0 0 / 0.08);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.1), 0 4px 24px oklch(0% 0 0 / 0.25);
+}
+
+/* ── SIDEBAR ────────────────────────────────────────── */
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-faint);
+  display: flex; flex-direction: column;
+  padding: 0;
+  flex-shrink: 0;
+}
+.sidebar-header {
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--border-faint);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: white;
+}
+.sidebar-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sidebar-brand-sub {
+  font-size: 0.65rem;
+  color: var(--fg-muted);
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  overflow-y: auto;
+}
+.nav-group-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fg-dim);
+  padding: 12px 12px 6px;
+  font-weight: 600;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  font-size: 0.85rem;
+  color: var(--fg-secondary);
+  transition: all var(--dur-fast) var(--ease-out);
+  margin-bottom: 2px;
+}
+.nav-item:hover {
+  background: oklch(100% 0 0 / 0.04);
+  color: var(--fg);
+}
+.nav-item.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.nav-item-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.nav-item-badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: var(--red);
+  color: white;
+}
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-faint);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange), var(--red));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+}
+.sidebar-user-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.sidebar-user-role {
+  font-size: 0.65rem;
+  color: var(--fg-muted);
+}
+
+/* ── MAIN ───────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex; flex-direction: column;
+  min-width: 0;
+}
+
+/* ── TOP BAR ────────────────────────────────────────── */
+.topbar {
+  height: 56px;
+  border-bottom: 1px solid var(--border-faint);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.topbar-breadcrumb {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+.topbar-breadcrumb span { color: var(--fg); font-weight: 600; }
+.topbar-spacer { flex: 1; }
+.topbar-search {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+  min-width: 240px;
+}
+.topbar-search kbd {
+  padding: 1px 6px;
+  background: var(--border-faint);
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--fg-dim);
+  margin-left: auto;
+}
+.topbar-actions {
+  display: flex; gap: 8px; align-items: center;
+}
+.topbar-icon-btn {
+  width: 34px; height: 34px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  color: var(--fg-muted);
+  transition: all var(--dur-fast) var(--ease-out);
+  position: relative;
+}
+.topbar-icon-btn:hover { background: var(--surface); color: var(--fg); }
+.topbar-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+/* ── CONTENT ────────────────────────────────────────── */
+.content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ── PAGE HEADER ────────────────────────────────────── */
+.page-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px;
+}
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.page-subtitle {
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+.page-actions {
+  display: flex; gap: 8px;
+}
+.btn {
+  padding: 7px 16px;
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.btn-primary:hover { background: var(--primary-up); }
+.btn-outline {
+  border: 1px solid var(--border);
+  color: var(--fg-secondary);
+}
+.btn-outline:hover { background: var(--surface); border-color: var(--fg-dim); }
+
+/* ── FILTERS ────────────────────────────────────────── */
+.filters {
+  display: flex; gap: 8px; margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 5px 12px;
+  border-radius: var(--r-xs);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--surface);
+  color: var(--fg-muted);
+  border: 1px solid var(--border-faint);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.filter-btn.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: oklch(62% 0.22 265 / 0.2);
+}
+.filter-btn:hover { border-color: var(--fg-dim); }
+
+/* ── KPI GRID (BENTO) ──────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  padding: 16px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  transition: all var(--dur-base) var(--ease-out);
+}
+.kpi-card:hover {
+  border-color: var(--border);
+  transform: translateY(-2px);
+}
+.kpi-card.span-2 { grid-column: span 2; }
+.kpi-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.kpi-label {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+.kpi-trend {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+}
+.kpi-trend.up { background: var(--green-soft); color: var(--green); }
+.kpi-trend.down { background: var(--red-soft); color: var(--red); }
+.kpi-trend.flat { background: var(--surface-up); color: var(--fg-muted); }
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-family: var(--font-mono);
+  line-height: 1.1;
+}
+.kpi-sub {
+  font-size: 0.7rem;
+  color: var(--fg-dim);
+  margin-top: 4px;
+}
+
+/* ── CHARTS ROW ─────────────────────────────────────── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.chart-card {
+  padding: 16px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+}
+.chart-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.chart-title-label {
+  font-size: 0.7rem;
+  color: var(--fg-dim);
+  font-weight: 400;
+}
+
+/* ── BAR CHART ──────────────────────────────────────── */
+.bar-chart {
+  display: flex; align-items: flex-end; gap: 6px;
+  height: 140px;
+  padding-top: 8px;
+}
+.bar-group {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+.bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  transition: height var(--dur-slow) var(--ease-expo);
+  position: relative;
+}
+.bar.primary { background: var(--primary); }
+.bar.green { background: var(--green); }
+.bar.orange { background: var(--orange); }
+.bar-label {
+  font-size: 0.6rem;
+  color: var(--fg-dim);
+}
+
+/* ── DONUT CHART ────────────────────────────────────── */
+.donut-wrapper {
+  display: flex; align-items: center; gap: 16px;
+}
+.donut {
+  width: 110px; height: 110px;
+  position: relative;
+  flex-shrink: 0;
+}
+.donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.donut-track {
+  fill: none;
+  stroke: var(--border-faint);
+  stroke-width: 12;
+}
+.donut-seg {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-slow) var(--ease-expo);
+}
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.donut-center-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.04em;
+}
+.donut-center-label {
+  font-size: 0.6rem;
+  color: var(--fg-muted);
+}
+.donut-legend {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.75rem;
+  color: var(--fg-secondary);
+}
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-val {
+  margin-left: auto;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ── ALERTS TABLE ───────────────────────────────────── */
+.table-card {
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.table-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-faint);
+}
+.table-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.table-count {
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  padding: 2px 8px;
+  background: var(--surface-up);
+  border-radius: var(--r-full);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-faint);
+}
+td {
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border-faint);
+  color: var(--fg-secondary);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: oklch(100% 0 0 / 0.02); }
+.severity {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.severity.p0 { background: var(--red-soft); color: var(--red); }
+.severity.p1 { background: var(--orange-soft); color: var(--orange); }
+.severity.p2 { background: var(--yellow-soft); color: var(--yellow); }
+.status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.status-badge.pending { background: var(--orange-soft); color: var(--orange); }
+.status-badge.handling { background: var(--primary-soft); color: var(--primary); }
+.status-badge.done { background: var(--green-soft); color: var(--green); }
+.action-btn {
+  padding: 4px 10px;
+  border-radius: var(--r-xs);
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: var(--surface-up);
+  color: var(--fg-secondary);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.action-btn:hover { background: var(--primary-soft); color: var(--primary); }
+
+/* ── BOTTOM ROW ─────────────────────────────────────── */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── WORK ORDER BOARD ───────────────────────────────── */
+.wo-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.wo-col {
+  padding: 10px;
+  border-radius: var(--r-sm);
+  background: oklch(100% 0 0 / 0.02);
+}
+.wo-col-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.wo-col-count {
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  font-size: 0.65rem;
+  background: var(--surface-up);
+}
+.wo-item {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-sm);
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  color: var(--fg-secondary);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.wo-item:hover { border-color: var(--primary); }
+.wo-item-id {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--fg-dim);
+  margin-bottom: 2px;
+}
+.wo-item-type {
+  font-weight: 600;
+  color: var(--fg);
+  font-size: 0.75rem;
+}
+.wo-item-meta {
+  display: flex; justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.65rem;
+  color: var(--fg-dim);
+}
+
+/* ── QUICK ACTIONS ──────────────────────────────────── */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.qa-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.qa-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.qa-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.qa-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.qa-desc {
+  font-size: 0.65rem;
+  color: var(--fg-dim);
+  margin-top: 2px;
+}
+
+/* ── SCROLL REVEAL ──────────────────────────────────── */
+.reveal {
+  animation: fade-up linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 20%;
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .bottom-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .wo-board { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── REDUCED MOTION ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ─────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">Q</div>
+    <div>
+      <div class="sidebar-brand">骑迹运营</div>
+      <div class="sidebar-brand-sub">Fleet Ops v2.6</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">核心</div>
+    <a class="nav-item active" href="#">
+      <span class="nav-item-icon">&#9632;</span> 运营总览
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#9906;</span> 地图调度中心
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#9881;</span> 车队资产
+      <span class="nav-item-badge">28.6k</span>
+    </a>
+
+    <div class="nav-group-label">能源</div>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#9889;</span> 电池与能源
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#9878;</span> 换电管理
+    </a>
+
+    <div class="nav-group-label">运维</div>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#128196;</span> 运维工单
+      <span class="nav-item-badge">47</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#9879;</span> 规则与区域
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#128200;</span> 合规监管
+    </a>
+
+    <div class="nav-group-label">分析</div>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#128202;</span> 数据报表
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#128101;</span> 组织与权限
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-item-icon">&#9881;</span> 系统配置
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-avatar">张</div>
+    <div>
+      <div class="sidebar-user-name">张明远</div>
+      <div class="sidebar-user-role">城市运营经理 · 杭州</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ────────────────────────────────────────── -->
+<div class="main">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-breadcrumb">运营总览 / <span>杭州</span></div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-search">
+      &#128269; 搜索车辆、工单、电池...
+      <kbd>Ctrl+K</kbd>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-icon-btn">&#9776;</button>
+      <button class="topbar-icon-btn">
+        &#128276;
+        <span class="topbar-dot"></span>
+      </button>
+      <button class="topbar-icon-btn">&#9881;</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">运营总览</div>
+        <div class="page-subtitle">2026年6月1日 · 周日 · 杭州市全区 · 最近更新 30秒前</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline">今日</button>
+        <button class="btn btn-outline">本周</button>
+        <button class="btn btn-primary">导出报表</button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <button class="filter-btn active">全部车型</button>
+      <button class="filter-btn">共享自行车</button>
+      <button class="filter-btn">共享电单车</button>
+      <button class="filter-btn">可换电</button>
+      <button class="filter-btn">全区</button>
+      <button class="filter-btn">重点区域</button>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card reveal">
+        <div class="kpi-header">
+          <span class="kpi-label">今日订单</span>
+          <span class="kpi-trend up">+12.3%</span>
+        </div>
+        <div class="kpi-value">18,462</div>
+        <div class="kpi-sub">昨日 16,438 · 骑行时长 42,800h</div>
+      </div>
+      <div class="kpi-card reveal">
+        <div class="kpi-header">
+          <span class="kpi-label">今日GMV</span>
+          <span class="kpi-trend up">+8.7%</span>
+        </div>
+        <div class="kpi-value">&#165;86.2k</div>
+        <div class="kpi-sub">退款 &#165;1.2k · 补贴 &#165;4.8k</div>
+      </div>
+      <div class="kpi-card reveal">
+        <div class="kpi-header">
+          <span class="kpi-label">车辆可用率</span>
+          <span class="kpi-trend down">-1.2%</span>
+        </div>
+        <div class="kpi-value">91.4%</div>
+        <div class="kpi-sub">目标 &#8805; 90% · 26,124 / 28,580</div>
+      </div>
+      <div class="kpi-card reveal">
+        <div class="kpi-header">
+          <span class="kpi-label">单车日均骑行</span>
+          <span class="kpi-trend up">+0.3</span>
+        </div>
+        <div class="kpi-value">3.2次</div>
+        <div class="kpi-sub">自行车 2.8 · 电单车 3.8</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <!-- Bar Chart: 24h Orders -->
+      <div class="chart-card reveal">
+        <div class="chart-title">
+          24小时订单趋势
+          <span class="chart-title-label">今日 vs 昨日</span>
+        </div>
+        <div class="bar-chart">
+          <div class="bar-group"><div class="bar primary" style="height:15%"></div><div class="bar-label">0</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:8%"></div><div class="bar-label">1</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:5%"></div><div class="bar-label">2</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:4%"></div><div class="bar-label">3</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:6%"></div><div class="bar-label">4</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:18%"></div><div class="bar-label">5</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:45%"></div><div class="bar-label">6</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:82%"></div><div class="bar-label">7</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:95%"></div><div class="bar-label">8</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:70%"></div><div class="bar-label">9</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:55%"></div><div class="bar-label">10</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:60%"></div><div class="bar-label">11</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:65%"></div><div class="bar-label">12</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:50%"></div><div class="bar-label">13</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:48%"></div><div class="bar-label">14</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:55%"></div><div class="bar-label">15</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:72%"></div><div class="bar-label">16</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:100%"></div><div class="bar-label">17</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:90%"></div><div class="bar-label">18</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:60%"></div><div class="bar-label">19</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:40%"></div><div class="bar-label">20</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:30%"></div><div class="bar-label">21</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:22%"></div><div class="bar-label">22</div></div>
+          <div class="bar-group"><div class="bar primary" style="height:18%"></div><div class="bar-label">23</div></div>
+        </div>
+      </div>
+
+      <!-- Donut: Vehicle Status -->
+      <div class="chart-card reveal">
+        <div class="chart-title">车辆状态分布</div>
+        <div class="donut-wrapper">
+          <div class="donut">
+            <svg viewBox="0 0 80 80">
+              <circle class="donut-track" cx="40" cy="40" r="32" />
+              <circle class="donut-seg" cx="40" cy="40" r="32" stroke="var(--green)" stroke-dasharray="201" stroke-dashoffset="0" />
+              <circle class="donut-seg" cx="40" cy="40" r="32" stroke="var(--primary)" stroke-dasharray="201" stroke-dashoffset="-145" />
+              <circle class="donut-seg" cx="40" cy="40" r="32" stroke="var(--orange)" stroke-dasharray="201" stroke-dashoffset="-170" />
+              <circle class="donut-seg" cx="40" cy="40" r="32" stroke="var(--red)" stroke-dasharray="201" stroke-dashoffset="-185" />
+            </svg>
+            <div class="donut-center">
+              <div class="donut-center-val">28.6k</div>
+              <div class="donut-center-label">总车辆</div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--green)"></span>
+              可用
+              <span class="legend-val">26,124</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--primary)"></span>
+              使用中
+              <span class="legend-val">1,280</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--orange)"></span>
+              低电/故障
+              <span class="legend-val">842</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--red)"></span>
+              离线/回收
+              <span class="legend-val">334</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts Table -->
+    <div class="table-card reveal">
+      <div class="table-header">
+        <div class="table-title">&#9888; 实时告警中心</div>
+        <div class="table-count">23 条待处理</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>等级</th>
+            <th>类型</th>
+            <th>位置</th>
+            <th>车辆</th>
+            <th>时间</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="severity p0">P0</span></td>
+            <td>禁停区违规聚集</td>
+            <td>西湖区延安路189号</td>
+            <td>12辆</td>
+            <td>2分钟前</td>
+            <td><span class="status-badge pending">待处理</span></td>
+            <td><button class="action-btn">定位</button></td>
+          </tr>
+          <tr>
+            <td><span class="severity p0">P0</span></td>
+            <td>疑似盗损·异常轨迹</td>
+            <td>滨江区网商路599号</td>
+            <td>QZ-88421</td>
+            <td>8分钟前</td>
+            <td><span class="status-badge handling">处理中</span></td>
+            <td><button class="action-btn">详情</button></td>
+          </tr>
+          <tr>
+            <td><span class="severity p1">P1</span></td>
+            <td>低电量预警 &lt;10%</td>
+            <td>余杭区未来科技城</td>
+            <td>38辆</td>
+            <td>15分钟前</td>
+            <td><span class="status-badge pending">待派单</span></td>
+            <td><button class="action-btn">生成工单</button></td>
+          </tr>
+          <tr>
+            <td><span class="severity p1">P1</span></td>
+            <td>越界骑行</td>
+            <td>萧山区市心路</td>
+            <td>QZ-67203</td>
+            <td>22分钟前</td>
+            <td><span class="status-badge handling">处理中</span></td>
+            <td><button class="action-btn">轨迹</button></td>
+          </tr>
+          <tr>
+            <td><span class="severity p2">P2</span></td>
+            <td>长时间静止 &gt;48h</td>
+            <td>拱墅区大关路</td>
+            <td>QZ-91045</td>
+            <td>1小时前</td>
+            <td><span class="status-badge done">已关闭</span></td>
+            <td><button class="action-btn">查看</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+      <!-- Work Order Board -->
+      <div class="chart-card reveal">
+        <div class="chart-title">
+          工单看板
+          <span class="chart-title-label">今日活跃 47单</span>
+        </div>
+        <div class="wo-board">
+          <div class="wo-col">
+            <div class="wo-col-header">待派 <span class="wo-col-count">8</span></div>
+            <div class="wo-item">
+              <div class="wo-item-id">WO-2601-042</div>
+              <div class="wo-item-type">换电任务</div>
+              <div class="wo-item-meta"><span>余杭区</span><span>3辆</span></div>
+            </div>
+            <div class="wo-item">
+              <div class="wo-item-id">WO-2601-041</div>
+              <div class="wo-item-type">违停处置</div>
+              <div class="wo-item-meta"><span>西湖区</span><span>12辆</span></div>
+            </div>
+          </div>
+          <div class="wo-col">
+            <div class="wo-col-header">执行中 <span class="wo-col-count">21</span></div>
+            <div class="wo-item">
+              <div class="wo-item-id">WO-2601-038</div>
+              <div class="wo-item-type">潮汐调度</div>
+              <div class="wo-item-meta"><span>滨江区</span><span>王伟</span></div>
+            </div>
+            <div class="wo-item">
+              <div class="wo-item-id">WO-2601-035</div>
+              <div class="wo-item-type">故障维修</div>
+              <div class="wo-item-meta"><span>上城区</span><span>李强</span></div>
+            </div>
+          </div>
+          <div class="wo-col">
+            <div class="wo-col-header">待验收 <span class="wo-col-count">12</span></div>
+            <div class="wo-item">
+              <div class="wo-item-id">WO-2601-029</div>
+              <div class="wo-item-type">巡检回收</div>
+              <div class="wo-item-meta"><span>拱墅区</span><span>赵刚</span></div>
+            </div>
+          </div>
+          <div class="wo-col">
+            <div class="wo-col-header">超时 <span class="wo-col-count" style="background:var(--red-soft);color:var(--red)">6</span></div>
+            <div class="wo-item" style="border-left: 2px solid var(--red);">
+              <div class="wo-item-id">WO-2601-018</div>
+              <div class="wo-item-type">换电任务</div>
+              <div class="wo-item-meta"><span>萧山区</span><span style="color:var(--red)">超时42min</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="chart-card reveal">
+        <div class="chart-title">快速工作台</div>
+        <div class="quick-actions">
+          <button class="qa-btn">
+            <div class="qa-icon" style="background:var(--primary-soft)">&#10010;</div>
+            <div>
+              <div class="qa-label">创建调度任务</div>
+              <div class="qa-desc">从堆车区到缺车区</div>
+            </div>
+          </button>
+          <button class="qa-btn">
+            <div class="qa-icon" style="background:var(--green-soft)">&#9889;</div>
+            <div>
+              <div class="qa-label">创建换电任务</div>
+              <div class="qa-desc">低电车辆优先换电</div>
+            </div>
+          </button>
+          <button class="qa-btn">
+            <div class="qa-icon" style="background:var(--orange-soft)">&#128269;</div>
+            <div>
+              <div class="qa-label">车辆检索</div>
+              <div class="qa-desc">车架号/设备号/二维码</div>
+            </div>
+          </button>
+          <button class="qa-btn">
+            <div class="qa-icon" style="background:var(--cyan-soft)">&#9879;</div>
+            <div>
+              <div class="qa-label">批量指令</div>
+              <div class="qa-desc">锁车/鸣笛/降速/禁用</div>
+            </div>
+          </button>
+          <button class="qa-btn">
+            <div class="qa-icon" style="background:var(--yellow-soft)">&#128203;</div>
+            <div>
+              <div class="qa-label">巡检任务</div>
+              <div class="qa-desc">按区域批量巡检</div>
+            </div>
+          </button>
+          <button class="qa-btn">
+            <div class="qa-icon" style="background:var(--red-soft)">&#128221;</div>
+            <div>
+              <div class="qa-label">维修工单</div>
+              <div class="qa-desc">故障报修与配件记录</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

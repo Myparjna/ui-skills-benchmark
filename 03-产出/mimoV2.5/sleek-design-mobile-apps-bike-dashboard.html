@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>城市运营管理后台 - 共享两轮</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-bg: #eff6ff;
+    --green: #22c55e;
+    --green-bg: #f0fdf4;
+    --orange: #f59e0b;
+    --orange-bg: #fffbeb;
+    --red: #ef4444;
+    --red-bg: #fef2f2;
+    --purple: #8b5cf6;
+    --purple-bg: #f5f3ff;
+    --text: #0f172a;
+    --text-2: #475569;
+    --text-3: #94a3b8;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --sidebar: #0f172a;
+    --sidebar-active: #1e293b;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand-icon svg { width: 18px; height: 18px; color: #fff; }
+
+  .brand-text {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .brand-sub {
+    color: var(--text-3);
+    font-size: 10px;
+    font-weight: 400;
+  }
+
+  .sidebar-nav {
+    padding: 12px 8px;
+    flex: 1;
+  }
+
+  .nav-group {
+    margin-bottom: 8px;
+  }
+
+  .nav-group-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-3);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 12px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover {
+    background: var(--sidebar-active);
+    color: rgba(255,255,255,0.85);
+  }
+
+  .nav-item.active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary), var(--green));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .user-name {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .user-role {
+    color: var(--text-3);
+    font-size: 11px;
+  }
+
+  /* Main Content */
+  .main {
+    flex: 1;
+    margin-left: 240px;
+    min-height: 100vh;
+  }
+
+  /* Top Bar */
+  .topbar {
+    height: 56px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .topbar-breadcrumb {
+    font-size: 12px;
+    color: var(--text-3);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-2);
+    position: relative;
+  }
+
+  .topbar-btn svg { width: 18px; height: 18px; }
+
+  .topbar-btn .dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    background: var(--red);
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+  }
+
+  .scope-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .scope-select svg { width: 14px; height: 14px; color: var(--text-3); }
+
+  /* Dashboard Content */
+  .dashboard {
+    padding: 24px;
+  }
+
+  /* Time & Scope Bar */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .time-tabs {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .time-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .time-tab:last-child { border-right: none; }
+  .time-tab:hover { background: var(--bg); }
+  .time-tab.active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .controls-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ctrl-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    font-size: 13px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ctrl-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .ctrl-btn svg { width: 15px; height: 15px; }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .kpi-card.blue::before { background: var(--primary); }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.orange::before { background: var(--orange); }
+  .kpi-card.red::before { background: var(--red); }
+  .kpi-card.purple::before { background: var(--purple); }
+
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-3);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-card.blue .kpi-value { color: var(--primary); }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.orange .kpi-value { color: var(--orange); }
+  .kpi-card.red .kpi-value { color: var(--red); }
+  .kpi-card.purple .kpi-value { color: var(--purple); }
+
+  .kpi-change {
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .kpi-change.up { color: var(--green); }
+  .kpi-change.down { color: var(--red); }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+
+  /* Dashboard Grid */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .dash-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .card-action-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-2);
+    background: var(--card);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .card-action-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .card-action-btn.active { background: var(--primary-bg); border-color: var(--primary); color: var(--primary); }
+
+  .card-body { padding: 18px; }
+
+  /* Map Placeholder */
+  .map-placeholder {
+    height: 380px;
+    background: linear-gradient(135deg, #e8f4f8 0%, #dbeafe 50%, #e0e7ff 100%);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-overlay {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(59,130,246,0.08) 0%, transparent 40%),
+      radial-gradient(circle at 70% 60%, rgba(34,197,94,0.06) 0%, transparent 35%),
+      radial-gradient(circle at 50% 80%, rgba(239,68,68,0.05) 0%, transparent 30%);
+  }
+
+  .map-dots {
+    position: absolute;
+    inset: 0;
+  }
+
+  .map-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    opacity: 0.7;
+  }
+
+  .map-dot.blue { background: var(--primary); }
+  .map-dot.green { background: var(--green); }
+  .map-dot.orange { background: var(--orange); }
+  .map-dot.red { background: var(--red); }
+
+  .map-legend {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text-2);
+    box-shadow: var(--shadow);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .map-toolbar {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .map-tool {
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.95);
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    color: var(--text-2);
+  }
+
+  .map-tool svg { width: 16px; height: 16px; }
+
+  /* Alert List */
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .alert-item:hover { background: var(--bg); }
+
+  .alert-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .alert-dot.p0 { background: var(--red); }
+  .alert-dot.p1 { background: var(--orange); }
+  .alert-dot.p2 { background: var(--primary); }
+
+  .alert-content { flex: 1; }
+
+  .alert-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .alert-meta {
+    font-size: 11px;
+    color: var(--text-3);
+    display: flex;
+    gap: 8px;
+  }
+
+  .alert-action {
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-2);
+    background: var(--card);
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  /* Status Distribution */
+  .status-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-label {
+    font-size: 12px;
+    color: var(--text-2);
+    width: 56px;
+    flex-shrink: 0;
+  }
+
+  .status-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .status-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .status-count {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    width: 52px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .status-pct {
+    font-size: 11px;
+    color: var(--text-3);
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Work Order Table */
+  .wo-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .wo-table th {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .wo-table td {
+    font-size: 13px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .wo-table tr:last-child td { border-bottom: none; }
+  .wo-table tr:hover td { background: var(--bg); }
+
+  .wo-type {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .wo-type.battery { background: var(--orange-bg); color: var(--orange); }
+  .wo-type.repair { background: var(--red-bg); color: var(--red); }
+  .wo-type.dispatch { background: var(--primary-bg); color: var(--primary); }
+  .wo-type.mispark { background: var(--purple-bg); color: var(--purple); }
+
+  .wo-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .wo-status .sdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .wo-status.pending .sdot { background: var(--orange); }
+  .wo-status.active .sdot { background: var(--primary); }
+  .wo-status.done .sdot { background: var(--green); }
+  .wo-status.overdue .sdot { background: var(--red); }
+
+  .wo-priority {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .wo-priority.high { background: var(--red-bg); color: var(--red); }
+  .wo-priority.mid { background: var(--orange-bg); color: var(--orange); }
+  .wo-priority.low { background: var(--primary-bg); color: var(--primary); }
+
+  /* Battery Section */
+  .battery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .batt-card {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .batt-val {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .batt-label {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+
+  .soc-bar {
+    display: flex;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    gap: 2px;
+    margin-top: 12px;
+  }
+
+  .soc-segment {
+    height: 100%;
+    border-radius: 4px;
+  }
+
+  .soc-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .soc-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-2);
+  }
+
+  .soc-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .qa-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .qa-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-bg);
+  }
+
+  .qa-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .qa-icon svg { width: 18px; height: 18px; }
+
+  .qa-icon.blue { background: var(--primary-bg); color: var(--primary); }
+  .qa-icon.green { background: var(--green-bg); color: var(--green); }
+  .qa-icon.orange { background: var(--orange-bg); color: var(--orange); }
+  .qa-icon.purple { background: var(--purple-bg); color: var(--purple); }
+
+  .qa-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+  }
+
+  /* Bottom Row */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Compliance */
+  .compliance-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .comp-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-item:last-child { border-bottom: none; }
+
+  .comp-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .comp-icon svg { width: 18px; height: 18px; }
+
+  .comp-info { flex: 1; }
+
+  .comp-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .comp-sub {
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  .comp-val {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
+  }
+
+  .comp-val.good { color: var(--green); }
+  .comp-val.warn { color: var(--orange); }
+  .comp-val.bad { color: var(--red); }
+
+  /* Responsive */
+  @media (max-width: 1400px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 1200px) {
+    .sidebar { width: 60px; }
+    .sidebar .brand-text, .sidebar .brand-sub,
+    .sidebar .nav-group-label, .sidebar .nav-item span,
+    .sidebar .nav-badge, .sidebar .user-name, .sidebar .user-role { display: none; }
+    .sidebar .nav-item { justify-content: center; padding: 10px; }
+    .sidebar .nav-item svg { margin: 0; }
+    .sidebar .user-info { justify-content: center; }
+    .main { margin-left: 60px; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    </div>
+    <div>
+      <div class="brand-text">骑运维</div>
+      <div class="brand-sub">城市运营后台</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group">
+      <div class="nav-group-label">概览</div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>运营总览</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        <span>地图调度</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">资产管理</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="8" cy="14" r="2"/></svg>
+        <span>车队资产</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="7" width="12" height="14" rx="2"/><path d="M10 7V5a2 2 0 014 0v2"/><line x1="12" y1="11" x2="12" y2="15"/></svg>
+        <span>电池能源</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">运营执行</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+        <span>运维工单</span>
+        <span class="nav-badge">23</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        <span>规则区域</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">治理与分析</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>合规监管</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <span>数据报表</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span>系统配置</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar">张</div>
+      <div>
+        <div class="user-name">张明远</div>
+        <div class="user-role">城市运营经理</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">运营总览</div>
+      <div class="topbar-breadcrumb">杭州市 / 全城 / 混合车队</div>
+    </div>
+    <div class="topbar-right">
+      <div class="scope-select">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        杭州市
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <button class="topbar-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <button class="topbar-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <!-- Controls Bar -->
+    <div class="controls-bar">
+      <div class="time-tabs">
+        <div class="time-tab active">今日</div>
+        <div class="time-tab">昨日</div>
+        <div class="time-tab">本周</div>
+        <div class="time-tab">本月</div>
+        <div class="time-tab">自定义</div>
+      </div>
+      <div class="controls-right">
+        <button class="ctrl-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          刷新
+        </button>
+        <button class="ctrl-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          导出
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">今日订单</div>
+        <div class="kpi-value">12,847</div>
+        <div class="kpi-change up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5"/></svg>
+          +8.3%
+        </div>
+        <div class="kpi-sub">昨日 11,862</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">活跃车辆</div>
+        <div class="kpi-value">18,432</div>
+        <div class="kpi-change up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5"/></svg>
+          +2.1%
+        </div>
+        <div class="kpi-sub">投放总量 24,000</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">低电车辆</div>
+        <div class="kpi-value">1,247</div>
+        <div class="kpi-change down">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5"/></svg>
+          -12.5%
+        </div>
+        <div class="kpi-sub">占比 5.2%</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">待处理告警</div>
+        <div class="kpi-value">89</div>
+        <div class="kpi-change down">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5"/></svg>
+          -5.3%
+        </div>
+        <div class="kpi-sub">P0: 3 / P1: 18</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">可用率</div>
+        <div class="kpi-value">92.4%</div>
+        <div class="kpi-change up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5"/></svg>
+          +1.2%
+        </div>
+        <div class="kpi-sub">目标: 90%</div>
+      </div>
+    </div>
+
+    <!-- Map + Alerts -->
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="indicator"></span>
+            实时车辆分布
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn active">车辆</button>
+            <button class="card-action-btn">电量</button>
+            <button class="card-action-btn">热力</button>
+            <button class="card-action-btn">围栏</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="map-placeholder">
+            <div class="map-overlay"></div>
+            <div class="map-dots">
+              <!-- Scattered vehicle dots -->
+              <div class="map-dot green" style="top:15%;left:12%"></div>
+              <div class="map-dot green" style="top:20%;left:18%"></div>
+              <div class="map-dot blue" style="top:25%;left:30%"></div>
+              <div class="map-dot green" style="top:18%;left:45%"></div>
+              <div class="map-dot orange" style="top:30%;left:55%"></div>
+              <div class="map-dot green" style="top:22%;left:65%"></div>
+              <div class="map-dot blue" style="top:35%;left:20%"></div>
+              <div class="map-dot green" style="top:40%;left:40%"></div>
+              <div class="map-dot red" style="top:45%;left:50%"></div>
+              <div class="map-dot green" style="top:38%;left:70%"></div>
+              <div class="map-dot blue" style="top:50%;left:15%"></div>
+              <div class="map-dot green" style="top:55%;left:35%"></div>
+              <div class="map-dot orange" style="top:52%;left:60%"></div>
+              <div class="map-dot green" style="top:60%;left:25%"></div>
+              <div class="map-dot green" style="top:65%;left:45%"></div>
+              <div class="map-dot blue" style="top:58%;left:75%"></div>
+              <div class="map-dot green" style="top:70%;left:55%"></div>
+              <div class="map-dot red" style="top:72%;left:30%"></div>
+              <div class="map-dot green" style="top:75%;left:65%"></div>
+              <div class="map-dot orange" style="top:80%;left:40%"></div>
+              <div class="map-dot green" style="top:82%;left:20%"></div>
+              <div class="map-dot green" style="top:85%;left:70%"></div>
+              <div class="map-dot blue" style="top:28%;left:80%"></div>
+              <div class="map-dot green" style="top:48%;left:85%"></div>
+              <div class="map-dot green" style="top:68%;left:82%"></div>
+            </div>
+            <div class="map-legend">
+              <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>可用</div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--primary)"></span>使用中</div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--orange)"></span>低电</div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>故障/离线</div>
+            </div>
+            <div class="map-toolbar">
+              <button class="map-tool">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+              </button>
+              <button class="map-tool">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+              </button>
+              <button class="map-tool">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title">实时告警</div>
+          <button class="card-action-btn">全部告警</button>
+        </div>
+        <div class="card-body">
+          <div class="alert-list">
+            <div class="alert-item">
+              <span class="alert-dot p0"></span>
+              <div class="alert-content">
+                <div class="alert-title">西湖区车辆异常聚集</div>
+                <div class="alert-meta">
+                  <span>P0 紧急</span>
+                  <span>3分钟前</span>
+                </div>
+              </div>
+              <button class="alert-action">定位</button>
+            </div>
+            <div class="alert-item">
+              <span class="alert-dot p0"></span>
+              <div class="alert-content">
+                <div class="alert-title">滨江区禁停区违规停放</div>
+                <div class="alert-meta">
+                  <span>P0 紧急</span>
+                  <span>8分钟前</span>
+                </div>
+              </div>
+              <button class="alert-action">派单</button>
+            </div>
+            <div class="alert-item">
+              <span class="alert-dot p1"></span>
+              <div class="alert-content">
+                <div class="alert-title">余杭区低电车辆超200辆</div>
+                <div class="alert-meta">
+                  <span>P1 高</span>
+                  <span>15分钟前</span>
+                </div>
+              </div>
+              <button class="alert-action">生成换电</button>
+            </div>
+            <div class="alert-item">
+              <span class="alert-dot p1"></span>
+              <div class="alert-content">
+                <div class="alert-title">拱墅区车辆越界至服务区外</div>
+                <div class="alert-meta">
+                  <span>P1 高</span>
+                  <span>22分钟前</span>
+                </div>
+              </div>
+              <button class="alert-action">查看轨迹</button>
+            </div>
+            <div class="alert-item">
+              <span class="alert-dot p2"></span>
+              <div class="alert-content">
+                <div class="alert-title">上城区3辆车离线超1小时</div>
+                <div class="alert-meta">
+                  <span>P2 中</span>
+                  <span>35分钟前</span>
+                </div>
+              </div>
+              <button class="alert-action">巡检</button>
+            </div>
+            <div class="alert-item">
+              <span class="alert-dot p2"></span>
+              <div class="alert-content">
+                <div class="alert-title">萧山区疑似盗损轨迹预警</div>
+                <div class="alert-meta">
+                  <span>P2 中</span>
+                  <span>42分钟前</span>
+                </div>
+              </div>
+              <button class="alert-action">追踪</button>
+            </div>
+            <div class="alert-item">
+              <span class="alert-dot p2"></span>
+              <div class="alert-content">
+                <div class="alert-title">钱塘区电池温度异常</div>
+                <div class="alert-meta">
+                  <span>P2 中</span>
+                  <span>1小时前</span>
+                </div>
+              </div>
+              <button class="alert-action">锁定</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vehicle Status + Battery -->
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title">车队健康状态</div>
+          <div class="card-actions">
+            <button class="card-action-btn active">全部</button>
+            <button class="card-action-btn">自行车</button>
+            <button class="card-action-btn">电单车</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="status-bars">
+            <div class="status-row">
+              <span class="status-label">可用</span>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:68%;background:var(--green)"></div></div>
+              <span class="status-count">16,320</span>
+              <span class="status-pct">68%</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">使用中</span>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:18%;background:var(--primary)"></div></div>
+              <span class="status-count">4,320</span>
+              <span class="status-pct">18%</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">低电</span>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:5.2%;background:var(--orange)"></div></div>
+              <span class="status-count">1,247</span>
+              <span class="status-pct">5.2%</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">故障</span>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:3.8%;background:var(--red)"></div></div>
+              <span class="status-count">912</span>
+              <span class="status-pct">3.8%</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">离线</span>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:2.5%;background:var(--text-3)"></div></div>
+              <span class="status-count">601</span>
+              <span class="status-pct">2.5%</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">回收中</span>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:2.5%;background:var(--purple)"></div></div>
+              <span class="status-count">600</span>
+              <span class="status-pct">2.5%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title">电池电量分布</div>
+          <button class="card-action-btn">换电详情</button>
+        </div>
+        <div class="card-body">
+          <div class="battery-grid">
+            <div class="batt-card">
+              <div class="batt-val" style="color:var(--red)">847</div>
+              <div class="batt-label">0-10%</div>
+            </div>
+            <div class="batt-card">
+              <div class="batt-val" style="color:var(--orange)">2,130</div>
+              <div class="batt-label">10-30%</div>
+            </div>
+            <div class="batt-card">
+              <div class="batt-val" style="color:var(--primary)">5,680</div>
+              <div class="batt-label">30-60%</div>
+            </div>
+            <div class="batt-card">
+              <div class="batt-val" style="color:var(--green)">9,775</div>
+              <div class="batt-label">60-100%</div>
+            </div>
+          </div>
+          <div class="soc-bar">
+            <div class="soc-segment" style="flex:847;background:var(--red)"></div>
+            <div class="soc-segment" style="flex:2130;background:var(--orange)"></div>
+            <div class="soc-segment" style="flex:5680;background:var(--primary)"></div>
+            <div class="soc-segment" style="flex:9775;background:var(--green)"></div>
+          </div>
+          <div class="soc-legend">
+            <div class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--red)"></span>危急</div>
+            <div class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--orange)"></span>低电</div>
+            <div class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--primary)"></span>正常</div>
+            <div class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--green)"></span>满电</div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:16px;">
+            <div style="flex:1;background:var(--bg);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">今日换电</div>
+              <div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green);">1,847</div>
+            </div>
+            <div style="flex:1;background:var(--bg);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">在途任务</div>
+              <div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--orange);">63</div>
+            </div>
+            <div style="flex:1;background:var(--bg);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">成功率</div>
+              <div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--primary);">97.2%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <div class="qa-btn">
+        <div class="qa-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <span class="qa-label">创建调度任务</span>
+      </div>
+      <div class="qa-btn">
+        <div class="qa-icon orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="7" width="12" height="14" rx="2"/><path d="M10 7V5a2 2 0 014 0v2"/><line x1="12" y1="11" x2="12" y2="15"/></svg>
+        </div>
+        <span class="qa-label">创建换电任务</span>
+      </div>
+      <div class="qa-btn">
+        <div class="qa-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        </div>
+        <span class="qa-label">创建巡检工单</span>
+      </div>
+      <div class="qa-btn">
+        <div class="qa-icon purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+        </div>
+        <span class="qa-label">车辆检索</span>
+      </div>
+    </div>
+
+    <!-- Work Orders + Compliance -->
+    <div class="bottom-grid">
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title">工单执行概览</div>
+          <div class="card-actions">
+            <button class="card-action-btn active">全部</button>
+            <button class="card-action-btn">换电</button>
+            <button class="card-action-btn">维修</button>
+            <button class="card-action-btn">调度</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <table class="wo-table">
+            <thead>
+              <tr>
+                <th>工单号</th>
+                <th>类型</th>
+                <th>优先级</th>
+                <th>状态</th>
+                <th>负责人</th>
+                <th>耗时</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">WO-20260601-001</td>
+                <td><span class="wo-type battery">换电</span></td>
+                <td><span class="wo-priority high">P0</span></td>
+                <td><span class="wo-status active"><span class="sdot"></span>执行中</span></td>
+                <td>李伟</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">18min</td>
+              </tr>
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">WO-20260601-002</td>
+                <td><span class="wo-type repair">维修</span></td>
+                <td><span class="wo-priority high">P0</span></td>
+                <td><span class="wo-status overdue"><span class="sdot"></span>超时</span></td>
+                <td>王刚</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">52min</td>
+              </tr>
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">WO-20260601-003</td>
+                <td><span class="wo-type dispatch">调度</span></td>
+                <td><span class="wo-priority mid">P1</span></td>
+                <td><span class="wo-status pending"><span class="sdot"></span>待派</span></td>
+                <td>--</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">--</td>
+              </tr>
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">WO-20260601-004</td>
+                <td><span class="wo-type mispark">违停</span></td>
+                <td><span class="wo-priority mid">P1</span></td>
+                <td><span class="wo-status active"><span class="sdot"></span>执行中</span></td>
+                <td>赵敏</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">12min</td>
+              </tr>
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">WO-20260601-005</td>
+                <td><span class="wo-type battery">换电</span></td>
+                <td><span class="wo-priority low">P2</span></td>
+                <td><span class="wo-status done"><span class="sdot"></span>已完成</span></td>
+                <td>陈磊</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">24min</td>
+              </tr>
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">WO-20260601-006</td>
+                <td><span class="wo-type dispatch">调度</span></td>
+                <td><span class="wo-priority low">P2</span></td>
+                <td><span class="wo-status done"><span class="sdot"></span>已完成</span></td>
+                <td>周洋</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">35min</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dash-card">
+        <div class="card-header">
+          <div class="card-title">合规与治理</div>
+          <button class="card-action-btn">详细报告</button>
+        </div>
+        <div class="card-body">
+          <div class="compliance-items">
+            <div class="comp-item">
+              <div class="comp-icon" style="background:var(--red-bg);color:var(--red);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="comp-info">
+                <div class="comp-label">禁停违规</div>
+                <div class="comp-sub">今日处置时效 P90: 8.2min</div>
+              </div>
+              <div class="comp-val warn">47</div>
+            </div>
+            <div class="comp-item">
+              <div class="comp-icon" style="background:var(--orange-bg);color:var(--orange);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              </div>
+              <div class="comp-info">
+                <div class="comp-label">越界车辆</div>
+                <div class="comp-sub">服务区外行驶车辆</div>
+              </div>
+              <div class="comp-val warn">23</div>
+            </div>
+            <div class="comp-item">
+              <div class="comp-icon" style="background:var(--green-bg);color:var(--green);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+              </div>
+              <div class="comp-info">
+                <div class="comp-label">投放合规率</div>
+                <div class="comp-sub">许可上限 25,000 辆</div>
+              </div>
+              <div class="comp-val good">96%</div>
+            </div>
+            <div class="comp-item">
+              <div class="comp-icon" style="background:var(--primary-bg);color:var(--primary);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </div>
+              <div class="comp-info">
+                <div class="comp-label">数据共享接口</div>
+                <div class="comp-sub">MDS/GBFS 最近上报: 2min前</div>
+              </div>
+              <div class="comp-val good">正常</div>
+            </div>
+            <div class="comp-item">
+              <div class="comp-icon" style="background:var(--purple-bg);color:var(--purple);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+              </div>
+              <div class="comp-info">
+                <div class="comp-label">监管报表</div>
+                <div class="comp-sub">本月已自动生成</div>
+              </div>
+              <div class="comp-val good">已就绪</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

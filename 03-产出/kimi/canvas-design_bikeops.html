@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityFleet BikeOps</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=Noto+Sans+SC:wght@100;300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --urban-dark: #0f1115;
+      --urban-panel: #161921;
+      --grid-line: rgba(99,102,241,0.12);
+      --accent-cyan: #22d3ee;
+      --accent-magenta: #e879f9;
+      --accent-amber: #fbbf24;
+      --alert-red: #f87171;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow-x: hidden; background: var(--urban-dark); }
+    body {
+      font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+      color: #e2e8f0;
+    }
+    #topology-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+    .map-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .glass-panel {
+      background: rgba(22,25,33,0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(99,102,241,0.1);
+    }
+    .topo-line {
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      animation: drawTopo 2.5s ease-out forwards;
+    }
+    @keyframes drawTopo {
+      to { stroke-dashoffset: 0; }
+    }
+    .pulse-dot {
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+    .data-stream {
+      animation: dataStream 3s linear infinite;
+    }
+    @keyframes dataStream {
+      0% { stroke-dashoffset: 100; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .text-reveal {
+      animation: textRevealTopo 1s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    @keyframes textRevealTopo {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .delay-1 { animation-delay: 0.15s; }
+    .delay-2 { animation-delay: 0.35s; }
+    .delay-3 { animation-delay: 0.55s; }
+    .delay-4 { animation-delay: 0.75s; }
+    .kpi-value {
+      font-variant-numeric: tabular-nums;
+    }
+    .status-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .alert-blink {
+      animation: alertBlink 1.5s ease-in-out infinite;
+    }
+    @keyframes alertBlink {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="relative">
+  <canvas id="topology-canvas"></canvas>
+  <div class="map-grid"></div>
+
+  <!-- Topology SVG Background -->
+  <svg class="fixed top-20 right-0 w-1/2 h-1/2 opacity-30" style="z-index:1;" viewBox="0 0 400 400">
+    <path class="topo-line" d="M50,200 Q100,100 200,150 T350,120" fill="none" stroke="#22d3ee" stroke-width="0.5"/>
+    <path class="topo-line" d="M30,250 Q120,180 220,220 T380,200" fill="none" stroke="#e879f9" stroke-width="0.5" style="animation-delay:0.5s;"/>
+    <path class="topo-line" d="M80,320 Q150,260 250,280 T360,260" fill="none" stroke="#fbbf24" stroke-width="0.5" style="animation-delay:1s;"/>
+    <circle cx="200" cy="150" r="4" fill="#22d3ee" class="pulse-dot"/>
+    <circle cx="220" cy="220" r="3" fill="#e879f9" class="pulse-dot" style="animation-delay:0.7s;"/>
+    <circle cx="250" cy="280" r="3" fill="#fbbf24" class="pulse-dot" style="animation-delay:1.2s;"/>
+  </svg>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 px-8 py-5 flex justify-between items-center border-b border-slate-800/50 glass-panel">
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 border border-indigo-500/40 rounded flex items-center justify-center">
+        <div class="w-3 h-3 bg-indigo-400 rounded-sm"></div>
+      </div>
+      <div class="text-sm font-normal tracking-[0.15em] text-slate-200">CITYFLEET <span class="text-slate-500 font-light">BIKEOPS</span></div>
+    </div>
+    <div class="hidden md:flex gap-8 text-xs tracking-[0.1em] font-light text-slate-400">
+      <a href="#" class="hover:text-white transition-colors">DASHBOARD</a>
+      <a href="#" class="hover:text-white transition-colors">FLEET</a>
+      <a href="#" class="hover:text-white transition-colors">ALERTS</a>
+    </div>
+  </nav>
+
+  <!-- Main Dashboard -->
+  <main class="relative z-10 pt-28 pb-12 px-6 min-h-screen">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Header -->
+      <div class="mb-10 text-reveal">
+        <h1 class="text-3xl md:text-5xl font-light tracking-[0.05em] text-slate-100">城市运营管理</h1>
+        <p class="mt-2 text-sm tracking-[0.2em] text-slate-500 font-light">URBAN FLEET OPERATIONS CENTER</p>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="glass-panel rounded-lg p-6 text-reveal delay-1">
+          <p class="text-xs tracking-[0.1em] text-slate-500 mb-3">TOTAL FLEET</p>
+          <p class="text-4xl font-light kpi-value text-white">42,896</p>
+          <div class="mt-4 h-1 bg-slate-800 rounded overflow-hidden">
+            <div class="h-full bg-cyan-400/60" style="width: 78%;"></div>
+          </div>
+        </div>
+        <div class="glass-panel rounded-lg p-6 text-reveal delay-2">
+          <p class="text-xs tracking-[0.1em] text-slate-500 mb-3">ACTIVE RIDES</p>
+          <p class="text-4xl font-light kpi-value text-white">12,403</p>
+          <div class="mt-4 h-1 bg-slate-800 rounded overflow-hidden">
+            <div class="h-full bg-fuchsia-400/60" style="width: 62%;"></div>
+          </div>
+        </div>
+        <div class="glass-panel rounded-lg p-6 text-reveal delay-3">
+          <p class="text-xs tracking-[0.1em] text-slate-500 mb-3">AVG BATTERY</p>
+          <p class="text-4xl font-light kpi-value text-amber-300">68<span class="text-xl text-amber-300/60">%</span></p>
+          <div class="mt-4 h-1 bg-slate-800 rounded overflow-hidden">
+            <div class="h-full bg-amber-400/60" style="width: 68%;"></div>
+          </div>
+        </div>
+        <div class="glass-panel rounded-lg p-6 text-reveal delay-4">
+          <p class="text-xs tracking-[0.1em] text-slate-500 mb-3">UTILIZATION</p>
+          <p class="text-4xl font-light kpi-value text-emerald-300">84<span class="text-xl text-emerald-300/60">%</span></p>
+          <div class="mt-4 h-1 bg-slate-800 rounded overflow-hidden">
+            <div class="h-full bg-emerald-400/60" style="width: 84%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Row: Fleet Health + Battery -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+        <!-- Fleet Health -->
+        <div class="lg:col-span-2 glass-panel rounded-lg p-6 text-reveal delay-2">
+          <div class="flex justify-between items-center mb-6">
+            <p class="text-xs tracking-[0.15em] text-slate-400">FLEET HEALTH DISTRIBUTION</p>
+            <div class="flex gap-4 text-xs text-slate-500">
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Healthy</span>
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Service</span>
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-rose-400"></span>Offline</span>
+            </div>
+          </div>
+          <div class="flex items-end gap-2 h-40">
+            <div class="flex-1 bg-emerald-500/20 border-t border-emerald-400/40 rounded-t-sm relative group" style="height: 85%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity">36.4k</div>
+            </div>
+            <div class="flex-1 bg-emerald-500/20 border-t border-emerald-400/40 rounded-t-sm relative group" style="height: 82%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity">35.1k</div>
+            </div>
+            <div class="flex-1 bg-amber-500/20 border-t border-amber-400/40 rounded-t-sm relative group" style="height: 24%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity">10.3k</div>
+            </div>
+            <div class="flex-1 bg-emerald-500/20 border-t border-emerald-400/40 rounded-t-sm relative group" style="height: 78%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity">33.5k</div>
+            </div>
+            <div class="flex-1 bg-rose-500/20 border-t border-rose-400/40 rounded-t-sm relative group" style="height: 8%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity">3.4k</div>
+            </div>
+            <div class="flex-1 bg-amber-500/20 border-t border-amber-400/40 rounded-t-sm relative group" style="height: 18%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity">7.7k</div>
+            </div>
+            <div class="flex-1 bg-emerald-500/20 border-t border-emerald-400/40 rounded-t-sm relative group" style="height: 88%;">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity">37.8k</div>
+            </div>
+          </div>
+          <div class="flex justify-between mt-3 text-xs text-slate-600 font-light">
+            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+          </div>
+        </div>
+
+        <!-- Battery Status -->
+        <div class="glass-panel rounded-lg p-6 text-reveal delay-3">
+          <p class="text-xs tracking-[0.15em] text-slate-400 mb-6">BATTERY STATUS</p>
+          <div class="space-y-5">
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span class="text-slate-400">High (>80%)</span>
+                <span class="text-emerald-300">18,240</span>
+              </div>
+              <div class="h-1 bg-slate-800 rounded overflow-hidden">
+                <div class="h-full bg-emerald-400 status-bar" style="width: 42.5%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span class="text-slate-400">Normal (30-80%)</span>
+                <span class="text-cyan-300">19,760</span>
+              </div>
+              <div class="h-1 bg-slate-800 rounded overflow-hidden">
+                <div class="h-full bg-cyan-400 status-bar" style="width: 46%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span class="text-slate-400">Low (<30%)</span>
+                <span class="text-amber-300">3,856</span>
+              </div>
+              <div class="h-1 bg-slate-800 rounded overflow-hidden">
+                <div class="h-full bg-amber-400 status-bar" style="width: 9%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span class="text-slate-400">Critical (<10%)</span>
+                <span class="text-rose-300">1,040</span>
+              </div>
+              <div class="h-1 bg-slate-800 rounded overflow-hidden">
+                <div class="h-full bg-rose-400 status-bar" style="width: 2.5%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Supply-Demand + Alerts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Supply-Demand Map Visualization -->
+        <div class="lg:col-span-2 glass-panel rounded-lg p-6 text-reveal delay-3">
+          <div class="flex justify-between items-center mb-4">
+            <p class="text-xs tracking-[0.15em] text-slate-400">SUPPLY-DEMAND GAPS</p>
+            <div class="flex gap-4 text-xs text-slate-500">
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-400"></span>Surplus</span>
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-rose-400"></span>Deficit</span>
+            </div>
+          </div>
+          <div class="relative h-48 bg-slate-900/30 rounded border border-slate-800 overflow-hidden">
+            <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <line x1="25%" y1="0" x2="25%" y2="100%" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>
+              <line x1="50%" y1="0" x2="50%" y2="100%" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>
+              <line x1="75%" y1="0" x2="75%" y2="100%" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>
+              <line x1="0" y1="33%" x2="100%" y2="33%" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>
+              <line x1="0" y1="66%" x2="100%" y2="66%" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>
+              <!-- Data streams -->
+              <line class="data-stream" x1="10%" y1="80%" x2="35%" y2="20%" stroke="#f87171" stroke-width="1.5" stroke-dasharray="8,8" opacity="0.7"/>
+              <line class="data-stream" x1="60%" y1="15%" x2="85%" y2="70%" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="8,8" opacity="0.7" style="animation-delay:1s;"/>
+              <line class="data-stream" x1="40%" y1="85%" x2="70%" y2="40%" stroke="#f87171" stroke-width="1.5" stroke-dasharray="8,8" opacity="0.7" style="animation-delay:2s;"/>
+            </svg>
+            <!-- Zone markers -->
+            <div class="absolute top-[15%] left-[55%] w-3 h-3 bg-indigo-400/60 rounded-full pulse-dot"></div>
+            <div class="absolute top-[70%] left-[80%] w-2 h-2 bg-indigo-400/40 rounded-full pulse-dot" style="animation-delay:0.5s;"></div>
+            <div class="absolute top-[20%] left-[30%] w-3 h-3 bg-rose-400/60 rounded-full pulse-dot alert-blink"></div>
+            <div class="absolute top-[75%] left-[10%] w-3 h-3 bg-rose-400/60 rounded-full pulse-dot alert-blink" style="animation-delay:0.8s;"></div>
+            <div class="absolute top-[40%] left-[65%] w-2 h-2 bg-rose-400/40 rounded-full pulse-dot alert-blink" style="animation-delay:1.5s;"></div>
+            <!-- Labels -->
+            <div class="absolute bottom-3 left-3 text-xs text-slate-600 tracking-widest">DISTRICT ZONE MAP</div>
+          </div>
+        </div>
+
+        <!-- Alert Center -->
+        <div class="glass-panel rounded-lg p-6 text-reveal delay-4">
+          <div class="flex justify-between items-center mb-5">
+            <p class="text-xs tracking-[0.15em] text-slate-400">ALERT CENTER</p>
+            <span class="px-2 py-1 text-xs bg-rose-500/20 text-rose-300 rounded border border-rose-500/30">3 ACTIVE</span>
+          </div>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded">
+              <div class="w-2 h-2 mt-1.5 bg-rose-400 rounded-full alert-blink"></div>
+              <div>
+                <p class="text-xs text-slate-300">Low battery cluster detected</p>
+                <p class="text-xs text-slate-500 mt-1">District B12 · 47 units</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded">
+              <div class="w-2 h-2 mt-1.5 bg-amber-400 rounded-full alert-blink" style="animation-delay:0.5s;"></div>
+              <div>
+                <p class="text-xs text-slate-300">High demand imbalance</p>
+                <p class="text-xs text-slate-500 mt-1">District C04 · Surge +240%</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded">
+              <div class="w-2 h-2 mt-1.5 bg-amber-400 rounded-full alert-blink" style="animation-delay:1s;"></div>
+              <div>
+                <p class="text-xs text-slate-300">Maintenance threshold reached</p>
+                <p class="text-xs text-slate-500 mt-1">Fleet Group A3 · 128 units</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('topology-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let nodes = [];
+    let connections = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initNodes();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initNodes() {
+      nodes = [];
+      connections = [];
+      const cols = Math.ceil(width / 80);
+      const rows = Math.ceil(height / 80);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (Math.random() > 0.7) {
+            nodes.push({
+              x: c * 80 + Math.random() * 40,
+              y: r * 80 + Math.random() * 40,
+              vx: (Math.random() - 0.5) * 0.2,
+              vy: (Math.random() - 0.5) * 0.2,
+              radius: Math.random() * 1.5 + 0.5,
+              pulse: Math.random() * Math.PI * 2
+            });
+          }
+        }
+      }
+    }
+
+    function drawTopology() {
+      ctx.clearRect(0, 0, width, height);
+      
+      // Draw connections
+      ctx.strokeStyle = 'rgba(99,102,241,0.08)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < nodes.length; i++) {
+        let connected = 0;
+        for (let j = i + 1; j < nodes.length && connected < 3; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+            connected++;
+          }
+        }
+      }
+
+      // Draw nodes
+      nodes.forEach(node => {
+        node.x += node.vx;
+        node.y += node.vy;
+        node.pulse += 0.02;
+        if (node.x < 0 || node.x > width) node.vx *= -1;
+        if (node.y < 0 || node.y > height) node.vy *= -1;
+        
+        const r = node.radius + Math.sin(node.pulse) * 0.5;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, Math.max(0.5, r), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(99,102,241,${0.3 + Math.sin(node.pulse) * 0.2})`;
+        ctx.fill();
+      });
+
+      requestAnimationFrame(drawTopology);
+    }
+    drawTopology();
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.text-reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityFleet 城市运营管理后台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar-bg: #0f172a;
+      --sidebar-hover: rgba(255,255,255,0.04);
+      --accent: #3b82f6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --surface: #ffffff;
+      --surface-elevated: #f8fafc;
+      --border-subtle: #e2e8f0;
+    }
+    * { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f1f5f9; }
+    .sidebar-item {
+      transition: all 0.15s ease;
+      border-radius: 8px;
+    }
+    .sidebar-item:hover {
+      background: var(--sidebar-hover);
+    }
+    .sidebar-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+    .bento-card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .bento-card:hover {
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+      transform: translateY(-1px);
+    }
+    .data-table th {
+      font-weight: 500;
+      color: #64748b;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .data-table td {
+      font-size: 13px;
+      color: #334155;
+    }
+    .data-table tr {
+      transition: background 0.15s ease;
+    }
+    .data-table tbody tr:hover {
+      background: #f8fafc;
+    }
+    .alert-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 999px;
+    }
+    .progress-bar {
+      height: 6px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+    .mini-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 40px;
+    }
+    .mini-bar {
+      flex: 1;
+      border-radius: 2px;
+      background: #cbd5e1;
+      transition: background 0.2s ease;
+    }
+    .mini-bar:hover { background: var(--accent); }
+    .pill {
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+    }
+    .quick-action {
+      transition: all 0.15s ease;
+    }
+    .quick-action:hover {
+      background: #f1f5f9;
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body class="antialiased text-slate-800">
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[var(--sidebar-bg)] text-slate-300 flex flex-col shrink-0">
+      <div class="h-16 flex items-center px-6 border-b border-white/5">
+        <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center mr-3">
+          <i data-lucide="bike" class="w-4 h-4 text-white"></i>
+        </div>
+        <div>
+          <p class="text-white font-semibold text-sm">CityFleet</p>
+          <p class="text-[10px] text-slate-500">城市运营管理后台</p>
+        </div>
+      </div>
+      
+      <div class="p-4 space-y-1 overflow-y-auto flex-1">
+        <div class="sidebar-item active flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">运营总览</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="map" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">地图调度中心</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="truck" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">车队资产</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="battery-charging" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">电池与能源</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">运维工单</span>
+          <span class="ml-auto alert-badge bg-red-500/20 text-red-400">12</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="hexagon" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">规则与区域</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">合规监管</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">数据报表</span>
+        </div>
+        <div class="mt-6 mb-2 px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">系统</div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">组织与权限</span>
+        </div>
+        <div class="sidebar-item flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span class="text-sm font-medium">系统配置</span>
+        </div>
+      </div>
+      
+      <div class="p-4 border-t border-white/5">
+        <div class="flex items-center gap-3">
+          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80" alt="Admin" class="w-9 h-9 rounded-full object-cover">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white truncate">张运营经理</p>
+            <p class="text-xs text-slate-500 truncate">杭州城市站</p>
+          </div>
+          <i data-lucide="log-out" class="w-4 h-4 text-slate-500 cursor-pointer hover:text-white"></i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-20 bg-[#f1f5f9]/80 backdrop-blur-xl border-b border-slate-200 px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-xl font-semibold text-slate-900">运营总览 Dashboard</h1>
+            <p class="text-sm text-slate-500 mt-0.5">今日运营日：2026年4月14日 · 杭州 · 全城范围</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <i data-lucide="calendar" class="w-4 h-4 text-slate-400 mr-2"></i>
+              <span class="text-slate-700">今日</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 ml-2"></i>
+            </div>
+            <div class="flex items-center bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <i data-lucide="map-pin" class="w-4 h-4 text-slate-400 mr-2"></i>
+              <span class="text-slate-700">全城</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 ml-2"></i>
+            </div>
+            <button class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              创建工单
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="p-8 space-y-6">
+        <!-- Core KPI Bento Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- KPI 1 -->
+          <div class="bento-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <i data-lucide="bike" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <span class="pill bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 5.2%
+              </span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">23,847</p>
+            <p class="text-sm text-slate-500">在营车辆总数</p>
+            <div class="mt-3 mini-chart">
+              <div class="mini-bar" style="height: 40%;"></div>
+              <div class="mini-bar" style="height: 60%;"></div>
+              <div class="mini-bar" style="height: 45%;"></div>
+              <div class="mini-bar" style="height: 70%;"></div>
+              <div class="mini-bar" style="height: 55%;"></div>
+              <div class="mini-bar" style="height: 80%;"></div>
+              <div class="mini-bar" style="height: 65%;"></div>
+              <div class="mini-bar bg-blue-500" style="height: 90%;"></div>
+            </div>
+          </div>
+          
+          <!-- KPI 2 -->
+          <div class="bento-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <i data-lucide="activity" class="w-5 h-5 text-emerald-600"></i>
+              </div>
+              <span class="pill bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 2.1%
+              </span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">91.4%</p>
+            <p class="text-sm text-slate-500">车辆可用率</p>
+            <div class="mt-3 progress-bar">
+              <div class="progress-fill bg-emerald-500" style="width: 91.4%;"></div>
+            </div>
+            <p class="text-xs text-slate-400 mt-2">目标 ≥ 90%</p>
+          </div>
+          
+          <!-- KPI 3 -->
+          <div class="bento-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                <i data-lucide="zap" class="w-5 h-5 text-amber-600"></i>
+              </div>
+              <span class="pill bg-rose-50 text-rose-600 flex items-center gap-1">
+                <i data-lucide="arrow-down-right" class="w-3 h-3"></i> 1.8%
+              </span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">1,842</p>
+            <p class="text-sm text-slate-500">低电车辆数</p>
+            <div class="mt-3 progress-bar">
+              <div class="progress-fill bg-amber-500" style="width: 42%;"></div>
+            </div>
+            <p class="text-xs text-slate-400 mt-2">需换电 / 总计 4,392 辆电单车</p>
+          </div>
+          
+          <!-- KPI 4 -->
+          <div class="bento-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                <i data-lucide="credit-card" class="w-5 h-5 text-purple-600"></i>
+              </div>
+              <span class="pill bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 8.4%
+              </span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900">¥ 486,230</p>
+            <p class="text-sm text-slate-500">今日 GMV</p>
+            <div class="mt-3 mini-chart">
+              <div class="mini-bar" style="height: 30%;"></div>
+              <div class="mini-bar" style="height: 50%;"></div>
+              <div class="mini-bar" style="height: 40%;"></div>
+              <div class="mini-bar" style="height: 60%;"></div>
+              <div class="mini-bar" style="height: 55%;"></div>
+              <div class="mini-bar" style="height: 75%;"></div>
+              <div class="mini-bar" style="height: 65%;"></div>
+              <div class="mini-bar bg-purple-500" style="height: 85%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle Row: Alerts & Quick Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Alert Center -->
+          <div class="bento-card p-0 overflow-hidden lg:col-span-2">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-rose-500"></i>
+                <h3 class="font-semibold text-slate-900">告警与异常中心</h3>
+                <span class="alert-badge bg-rose-100 text-rose-600">8 条待处理</span>
+              </div>
+              <a href="#" class="text-sm text-blue-600 hover:text-blue-700 font-medium">查看全部</a>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full data-table">
+                <thead>
+                  <tr class="bg-slate-50/70">
+                    <th class="text-left px-5 py-3">级别</th>
+                    <th class="text-left px-5 py-3">类型</th>
+                    <th class="text-left px-5 py-3">描述</th>
+                    <th class="text-left px-5 py-3">区域</th>
+                    <th class="text-left px-5 py-3">时间</th>
+                    <th class="text-left px-5 py-3">状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-slate-100">
+                    <td class="px-5 py-3.5"><span class="alert-badge bg-rose-100 text-rose-600">P0</span></td>
+                    <td class="px-5 py-3.5"><div class="flex items-center gap-2"><i data-lucide="map-pin-off" class="w-3.5 h-3.5 text-rose-500"></i> 禁停违规</div></td>
+                    <td class="px-5 py-3.5">西湖景区北山街聚集堆积 127 辆</td>
+                    <td class="px-5 py-3.5 text-slate-500">西湖区</td>
+                    <td class="px-5 py-3.5 text-slate-500">09:23</td>
+                    <td class="px-5 py-3.5"><span class="text-rose-600 font-medium">待指派</span></td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="px-5 py-3.5"><span class="alert-badge bg-rose-100 text-rose-600">P0</span></td>
+                    <td class="px-5 py-3.5"><div class="flex items-center gap-2"><i data-lucide="battery-warning" class="w-3.5 h-3.5 text-amber-500"></i> 低电聚集</div></td>
+                    <td class="px-5 py-3.5">火车东站P0 低电车辆 86 辆</td>
+                    <td class="px-5 py-3.5 text-slate-500">上城区</td>
+                    <td class="px-5 py-3.5 text-slate-500">09:18</td>
+                    <td class="px-5 py-3.5"><span class="text-amber-600 font-medium">处理中</span></td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="px-5 py-3.5"><span class="alert-badge bg-amber-100 text-amber-700">P1</span></td>
+                    <td class="px-5 py-3.5"><div class="flex items-center gap-2"><i data-lucide="wifi-off" class="w-3.5 h-3.5 text-slate-500"></i> 设备离线</div></td>
+                    <td class="px-5 py-3.5">滨江区 34 辆车离线超 1 小时</td>
+                    <td class="px-5 py-3.5 text-slate-500">滨江区</td>
+                    <td class="px-5 py-3.5 text-slate-500">08:56</td>
+                    <td class="px-5 py-3.5"><span class="text-slate-500">已派单</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-5 py-3.5"><span class="alert-badge bg-amber-100 text-amber-700">P1</span></td>
+                    <td class="px-5 py-3.5"><div class="flex items-center gap-2"><i data-lucide="navigation-off" class="w-3.5 h-3.5 text-rose-500"></i> 越界</div></td>
+                    <td class="px-5 py-3.5">余杭区 12 辆车超出服务区</td>
+                    <td class="px-5 py-3.5 text-slate-500">余杭区</td>
+                    <td class="px-5 py-3.5 text-slate-500">08:41</td>
+                    <td class="px-5 py-3.5"><span class="text-slate-500">已派单</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="bento-card p-5">
+            <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <i data-lucide="zap" class="w-4 h-4 text-blue-600"></i> 快捷操作
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <button class="quick-action flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 bg-white">
+                <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <i data-lucide="truck" class="w-4 h-4 text-blue-600"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-700">创建调度</span>
+              </button>
+              <button class="quick-action flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 bg-white">
+                <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <i data-lucide="battery-charging" class="w-4 h-4 text-amber-600"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-700">换电任务</span>
+              </button>
+              <button class="quick-action flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 bg-white">
+                <div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <i data-lucide="scan-line" class="w-4 h-4 text-emerald-600"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-700">车辆检索</span>
+              </button>
+              <button class="quick-action flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 bg-white">
+                <div class="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <i data-lucide="file-bar-chart" class="w-4 h-4 text-purple-600"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-700">导出报表</span>
+              </button>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">今日在岗运维</span>
+                <span class="font-semibold text-slate-900">87 人</span>
+              </div>
+              <div class="flex items-center justify-between text-sm mt-2">
+                <span class="text-slate-500">可接单人数</span>
+                <span class="font-semibold text-emerald-600">62 人</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: Work Orders & Battery Status -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Work Orders -->
+          <div class="bento-card p-5">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">工单概览</h3>
+              <a href="#" class="text-sm text-blue-600 hover:text-blue-700 font-medium">全部工单</a>
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-slate-300"></div>
+                  <span class="text-sm text-slate-600">待派单</span>
+                </div>
+                <span class="text-sm font-semibold text-slate-900">24</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span class="text-sm text-slate-600">执行中</span>
+                </div>
+                <span class="text-sm font-semibold text-slate-900">56</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <span class="text-sm text-slate-600">临近超时</span>
+                </div>
+                <span class="text-sm font-semibold text-amber-600">8</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                  <span class="text-sm text-slate-600">已超时</span>
+                </div>
+                <span class="text-sm font-semibold text-rose-600">4</span>
+              </div>
+              <div class="pt-4 border-t border-slate-100">
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="text-slate-500">今日完成率</span>
+                  <span class="font-semibold text-slate-900">82.3%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill bg-blue-500" style="width: 82.3%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Battery Status -->
+          <div class="bento-card p-5">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">电池状态分布</h3>
+              <span class="text-xs text-slate-500">电单车 4,392 辆</span>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">60% - 100%</span>
+                  <span class="font-medium text-slate-900">2,156 辆</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill bg-emerald-500" style="width: 49.1%;"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">30% - 60%</span>
+                  <span class="font-medium text-slate-900">1,394 辆</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill bg-blue-500" style="width: 31.7%;"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">10% - 30%</span>
+                  <span class="font-medium text-slate-900">642 辆</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill bg-amber-500" style="width: 14.6%;"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">0% - 10%</span>
+                  <span class="font-medium text-rose-600">200 辆</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill bg-rose-500" style="width: 4.6%;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-5 p-3 bg-amber-50 rounded-xl border border-amber-100">
+              <div class="flex items-start gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 mt-0.5"></i>
+                <div>
+                  <p class="text-sm font-medium text-amber-800">换电预警</p>
+                  <p class="text-xs text-amber-700 mt-0.5">预计未来 2 小时内将有 340 辆车跌破 10%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Supply-Demand Gap -->
+          <div class="bento-card p-5">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">供需缺口</h3>
+              <span class="text-xs text-slate-500">实时</span>
+            </div>
+            <div class="space-y-4">
+              <div class="p-4 rounded-xl bg-rose-50 border border-rose-100">
+                <div class="flex items-center gap-2 mb-1">
+                  <i data-lucide="trending-down" class="w-4 h-4 text-rose-600"></i>
+                  <span class="text-sm font-semibold text-rose-800">缺车区域</span>
+                </div>
+                <p class="text-2xl font-bold text-rose-700">12 <span class="text-sm font-normal text-rose-600">个区域</span></p>
+                <p class="text-xs text-rose-600 mt-1">建议调入 486 辆车</p>
+              </div>
+              <div class="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <div class="flex items-center gap-2 mb-1">
+                  <i data-lucide="trending-up" class="w-4 h-4 text-blue-600"></i>
+                  <span class="text-sm font-semibold text-blue-800">堆车区域</span>
+                </div>
+                <p class="text-2xl font-bold text-blue-700">8 <span class="text-sm font-normal text-blue-600">个区域</span></p>
+                <p class="text-xs text-blue-600 mt-1">建议调出 312 辆车</p>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">早高峰覆盖率</span>
+                <span class="font-semibold text-emerald-600">93.2%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compliance Section -->
+        <div class="bento-card p-5">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> 合规与治理概览
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-500">MDS 接口状态</span>
+              <span class="alert-badge bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 正常
+              </span>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-slate-50">
+              <p class="text-xs text-slate-500 mb-1">本月禁停次数</p>
+              <p class="text-xl font-bold text-slate-900">142 <span class="text-xs font-normal text-emerald-600">↓ 12%</span></p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50">
+              <p class="text-xs text-slate-500 mb-1">本月越界次数</p>
+              <p class="text-xl font-bold text-slate-900">89 <span class="text-xs font-normal text-emerald-600">↓ 8%</span></p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50">
+              <p class="text-xs text-slate-500 mb-1">投放量 / 许可上限</p>
+              <p class="text-xl font-bold text-slate-900">23,847 / 25,000</p>
+              <div class="progress-bar mt-2">
+                <div class="progress-fill bg-blue-500" style="width: 95.4%;"></div>
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50">
+              <p class="text-xs text-slate-500 mb-1">数据共享延迟</p>
+              <p class="text-xl font-bold text-slate-900">2.3s <span class="text-xs font-normal text-emerald-600">P95</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

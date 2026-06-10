@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星空航空 · Skystar Airlines | Vercel Web Guidelines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+/* ═══ Design Tokens (Vercel Web Interface Guidelines) ═══ */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  --color-bg: #ffffff;
+  --color-bg-subtle: #fafafa;
+  --color-bg-muted: #f5f5f5;
+  --color-text: #000000;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-primary: #0070f3;
+  --color-primary-hover: #0761d7;
+  --color-border: #eaeaea;
+  --color-border-strong: #cccccc;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px; --space-20: 80px; --space-24: 96px;
+
+  /* Animation */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms; --dur-base: 250ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px; line-height: 1.625; color: var(--color-text);
+  background: var(--color-bg); -webkit-font-smoothing: antialiased;
+}
+
+/* ── Reading Progress Bar ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, #0070f3, #7928ca);
+  width: 0%; z-index: 1000; transition: width .1s linear;
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute; top: -100%; left: var(--space-4);
+  padding: var(--space-2) var(--space-4); background: var(--color-text);
+  color: var(--color-bg); border-radius: var(--radius-sm);
+  z-index: 1001; font-size: 14px;
+}
+.skip-link:focus { top: var(--space-4); }
+
+/* ── Navbar ── */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-10);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background: rgba(255,255,255,.85);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-base) var(--ease-out);
+}
+.navbar.scrolled { border-bottom-color: var(--color-border); }
+
+.nav-logo {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-weight: 700; font-size: 18px; letter-spacing: -0.03em;
+  text-decoration: none; color: var(--color-text);
+}
+.nav-logo svg { width: 28px; height: 28px; color: var(--color-primary); }
+.nav-logo span { color: var(--color-primary-text); }
+
+.nav-links { display: flex; align-items: center; gap: var(--space-8); }
+.nav-link {
+  font-size: 14px; font-weight: 500; color: var(--color-text-secondary);
+  text-decoration: none; transition: color var(--dur-fast) ease;
+}
+.nav-link:hover, .nav-link:focus-visible { color: var(--color-text); outline: none; }
+
+.nav-cta {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-text); color: var(--color-bg);
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+  text-decoration: none; transition: opacity var(--dur-fast) ease;
+  border: none; cursor: pointer;
+}
+.nav-cta:hover { opacity: .85; }
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .navbar { padding: var(--space-4) var(--space-5); }
+}
+
+/* ── Hero Section ── */
+.hero {
+  min-height: 92vh; display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  text-align: center; padding: var(--space-20) var(--space-5);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,112,243,.12), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 30%, rgba(121,40,202,.08), transparent);
+  pointer-events: none;
+}
+/* CSS Stars animation */
+.stars {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.star {
+  position: absolute; width: 2px; height: 2px; background: rgba(0,112,243,.35);
+  border-radius: 50%; animation: twinkle 3s infinite ease-in-out;
+}
+.star:nth-child(1){top:15%;left:20%;animation-delay:0s;width:3px;height:3px;}
+.star:nth-child(2){top:25%;left:70%;animation-delay:.5s;}
+.star:nth-child(3){top:45%;left:15%;animation-delay:1.2s;width:2.5px;}
+.star:nth-child(4){top:65%;left:80%;animation-delay:.3s;}
+.star:nth-child(5){top:10%;left:50%;animation-delay:.8s;}
+.star:nth-child(6){top:75%;left:40%;animation-delay:1.5s;}
+.star:nth-child(7){top:35%;left:90%;animation-delay:.6s;}
+.star:nth-child(8){top:55%;left:5%;animation-delay:1.8s;}
+
+@keyframes twinkle {
+  0%,100%{opacity:.3;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.3)}
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-bg-muted); border: 1px solid var(--color-border);
+  border-radius: 99px; font-size: 13px; font-weight: 500;
+  color: var(--color-text-secondary); margin-bottom: var(--space-6);
+  letter-spacing: .02em;
+}
+.hero-eyebrow .dot {
+  width: 6px; height: 6px; background: #22c55e; border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100%{opacity:1} 50%{opacity:.4}
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5vw + 1rem, 5rem);
+  font-weight: 800; line-height: 1.05; letter-spacing: -0.04em;
+  max-width: 900px; margin-bottom: var(--space-6);
+}
+.hero-title .gradient-text {
+  background: linear-gradient(135deg, #0070f3 0%, #7928ca 50%, #ff0080 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 1.2vw, 1.25rem); line-height: 1.7;
+  color: var(--color-text-secondary); max-width: 600px;
+  margin-bottom: var(--space-10); font-weight: 400;
+}
+
+.hero-search {
+  display: inline-flex; align-items: stretch;
+  background: var(--color-bg); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.02);
+  transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+.hero-search:hover, .hero-search:focus-within {
+  box-shadow: 0 8px 30px rgba(0,0,0,.1), 0 0 0 1px rgba(0,112,243,.1);
+  transform: translateY(-1px);
+}
+.search-field {
+  padding: var(--space-4) var(--space-5); border: none; outline: none;
+  font-family: var(--font-sans); font-size: 15px; width: 280px;
+  background: transparent; color: var(--color-text);
+}
+.search-field::placeholder { color: var(--color-text-tertiary); }
+.search-divider {
+  width: 1px; background: var(--color-border); align-self: stretch;
+}
+.search-btn {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-4) var(--space-6); border: none; cursor: pointer;
+  background: var(--color-text); color: var(--color-bg);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  transition: opacity var(--dur-fast) ease;
+}
+.search-btn:hover { opacity: .9; }
+
+@media (max-width: 640px) {
+  .hero-search { flex-direction: column; width: 100%; max-width: 380px; }
+  .search-field { width: 100%; border-bottom: 1px solid var(--color-border); }
+  .search-divider { display: none; }
+  .search-btn { justify-content: center; }
+}
+
+/* ── Stats Marquee ── */
+.stats-bar {
+  padding: var(--space-12) var(--space-5); text-align: center;
+  border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-8);
+  max-width: 900px; margin: 0 auto;
+}
+.stat-item {}
+.stat-number {
+  font-size: clamp(28px, 4vw, 42px); font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1;
+  background: linear-gradient(135deg, #0070f3, #7928ca);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-label {
+  font-size: 13px; color: var(--color-text-secondary); margin-top: var(--space-1);
+  font-weight: 500;
+}
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-6); }
+}
+
+/* ── Why Choose Us (Bento-ish Grid) ── */
+.section { padding: var(--space-24) var(--space-5); max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-size: 13px; font-weight: 600; color: var(--color-primary);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: var(--space-3);
+}
+.section-title {
+  font-size: clamp(1.75rem, 3vw + .5rem, 2.5rem);
+  font-weight: 800; letter-spacing: -.03em; line-height: 1.15;
+  margin-bottom: var(--space-4); max-width: 650px;
+}
+.section-desc { color: var(--color-text-secondary); max-width: 550px;
+  margin-bottom: var(--space-12); font-size: 15px; line-height: 1.7;
+}
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+.feature-card {
+  padding: var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+.feature-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+}
+.feature-icon {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(0,112,243,.08), rgba(121,40,202,.08));
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-5);
+  color: var(--color-primary); font-size: 22px;
+}
+.feature-card h3 {
+  font-size: 17px; font-weight: 700; margin-bottom: var(--space-2);
+  letter-spacing: -.01em;
+}
+.feature-card p {
+  font-size: 14px; color: var(--color-text-secondary); line-height: 1.65;
+}
+
+/* ── Destinations ── */
+.destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-5);
+}
+.dest-card {
+  border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--color-border); transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+  cursor: default;
+}
+.dest-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.08);
+}
+.dest-img {
+  aspect-ratio: 4/3; object-fit: cover; width: 100%;
+  background: linear-gradient(135deg, #e0e7ff, #fce7f3);
+}
+.dest-info { padding: var(--space-4) var(--space-5); }
+.dest-city {
+  font-size: 17px; font-weight: 700; letter-spacing: -.01em;
+}
+.dest-desc {
+  font-size: 13px; color: var(--color-text-secondary); margin-top: var(--space-1);
+}
+.dest-meta {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-top: var(--space-2); font-size: 12px; color: var(--color-text-tertiary);
+}
+.dest-meta span.iconify { font-size: 13px; }
+.dest-price {
+  margin-top: var(--space-3);
+  font-size: 18px; font-weight: 800; color: var(--color-primary);
+  letter-spacing: -.02em;
+}
+
+/* ── Promo Banner ── */
+.promo-banner {
+  background: linear-gradient(135deg, #0a0a2e 0%, #1a1a4e 50%, #2d1b69 100%);
+  color: #fff; border-radius: var(--radius-xl); padding: var(--space-12) var(--space-10);
+  text-align: center;
+}
+.promo-badge {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-3); background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.15); border-radius: 99px;
+  font-size: 12px; font-weight: 600; margin-bottom: var(--space-5);
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.promo-banner h3 {
+  font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 800;
+  margin-bottom: var(--space-4); letter-spacing: -.02em;
+}
+.promo-routes {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+.promo-route {
+  font-size: 15px; opacity: .9;
+}
+.promo-route strong { color: #22c55e; font-size: 18px; }
+.promo-note { font-size: 12px; opacity: .55; }
+.promo-link {
+  display: inline-block; color: #fff; font-size: 14px; font-weight: 600;
+  text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.4);
+  padding-bottom: 2px; transition: border-color var(--dur-fast) ease;
+}
+.promo-link:hover { border-color: #fff; }
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--color-border); padding: var(--space-16) var(--space-5);
+  background: var(--color-bg-subtle);
+}
+.footer-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--space-10);
+}
+.footer-brand h4 {
+  font-size: 17px; font-weight: 800; letter-spacing: -.02em; margin-bottom: var(--space-3);
+}
+.footer-brand p {
+  font-size: 13px; color: var(--color-text-secondary); line-height: 1.6;
+  margin-bottom: var(--space-4);
+}
+.footer-col h5 {
+  font-size: 13px; font-weight: 700; margin-bottom: var(--space-4);
+  color: var(--color-text);
+}
+.footer-col a {
+  display: block; font-size: 13px; color: var(--color-text-secondary);
+  text-decoration: none; margin-bottom: var(--space-2);
+  transition: color var(--dur-fast) ease;
+}
+.footer-col a:hover { color: var(--color-text); }
+.footer-bottom {
+  max-width: 1100px; margin: var(--space-10) auto 0;
+  padding-top: var(--space-8); border-top: 1px solid var(--color-border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--color-text-tertiary);
+}
+@media (max-width: 768px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: var(--space-8); }
+  .footer-brand { grid-column: 1 / -1; }
+  .footer-bottom { flex-direction: column; gap: var(--space-3); text-align: center; }
+}
+
+/* ── Accessibility ── */
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Reading Progress -->
+<div class="progress-bar" id="progress"></div>
+<a href="#main" class="skip-link">跳转到主要内容</a>
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+  <a href="#" class="nav-logo">
+    <span class="iconify" data-icon="lucide:plane"></span>
+    星空航空
+  </a>
+  <div class="nav-links">
+    <a href="#" class="nav-link">首页</a>
+    <a href="#" class="nav-link">航班查询</a>
+    <a href="#" class="nav-link">目的地</a>
+    <a href="#" class="nav-link">服务与礼遇</a>
+    <a href="#" class="nav-link">常旅客计划</a>
+    <a href="#" class="nav-link">关于我们</a>
+  </div>
+  <button class="nav-cta">预订航班</button>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="stars">
+    <div class="star"></div><div class="star"></div><div class="star"></div>
+    <div class="star"></div><div class="star"></div><div class="star"></div>
+    <div class="star"></div><div class="star"></div>
+  </div>
+  <div class="hero-eyebrow"><span class="dot"></span> Skystar Airlines · Est. 2008</div>
+  <h1 class="hero-title">
+    每一次起飞<br>
+    <span class="gradient-text">都是一次全新的抵达</span>
+  </h1>
+  <p class="hero-subtitle">
+    连接世界，触及梦想。航线覆盖国内82座城市、亚太及欧洲47个国际目的地，每日执飞超过600班。
+  </p>
+  <div class="hero-search">
+    <input type="text" class="search-field" placeholder="您想去哪里？" aria-label="目的地城市">
+    <div class="search-divider"></div>
+    <button class="search-btn" aria-label="搜索航班">
+      <span class="iconify" data-icon="lucide:search"></span>
+      搜索航班
+    </button>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stats-grid">
+    <div class="stat-item"><div class="stat-number">186</div><div class="stat-label">架机队规模</div></div>
+    <div class="stat-item"><div class="stat-number">129</div><div class="stat-label">通航城市</div></div>
+    <div class="stat-item"><div class="stat-number">600+</div><div class="stat-label">日航班量</div></div>
+    <div class="stat-item"><div class="stat-number">16年</div><div class="stat-label">安全纪录</div></div>
+  </div>
+</div>
+
+<!-- Why Choose Us -->
+<main id="main">
+<section class="section">
+  <div class="section-label">Why Skystar Airlines</div>
+  <h2 class="section-title">为什么选择星空航空？</h2>
+  <p class="section-desc">从安全到服务，从航线到客舱体验，每一个细节都为您的旅程精心设计。</p>
+
+  <div class="features-grid">
+    <article class="feature-card">
+      <div class="feature-icon"><span class="iconify" data-icon="lucide:shield-check"></span></div>
+      <h3>安全第一，永不妥协</h3>
+      <p>平均飞行经验超9,800小时的机长团队，波音787梦想客机+空客A320neo全机队。连续16年零重大事故。</p>
+    </article>
+    <article class="feature-card">
+      <div class="feature-icon"><span class="iconify" data-icon="lucide:globe"></span></div>
+      <h3>广泛航线，覆盖全球</h3>
+      <p>国内82城 + 亚太/欧洲47个国际目的地。与28家航司代码共享，构建190+目的地的出行网络。</p>
+    </article>
+    <article class="feature-card">
+      <div class="feature-icon"><span class="iconify" data-icon="lucide:armchair"></span></div>
+      <h3>精心设计的客舱</h3>
+      <p>商务舱1-2-1平躺座椅配17英寸4K屏。经济舱行业领先间距，全程免费Wi-Fi。</p>
+    </article>
+    <article class="feature-card">
+      <div class="feature-icon"><span class="iconify" data-icon="lucide:utensils"></span></div>
+      <h3>云端餐饮，匠心呈现</h3>
+      <p>联名知名主厨打造机上菜单，融合东方饮食哲学与现代烹饪。节假日限定节令料理。</p>
+    </article>
+    <article class="feature-card">
+      <div class="feature-icon"><span class="iconify" data-icon="lucide:smartphone"></span></div>
+      <h3>数字化便捷出行</h3>
+      <p>App全流程无纸化，智能客服"星星"7×24小时四语交互。从出发到登机仅需18分钟。</p>
+    </article>
+  </div>
+</section>
+
+<!-- Featured Destinations -->
+<section class="section">
+  <div class="section-label">Featured Destinations</div>
+  <h2 class="section-title">精选目的地</h2>
+  <p class="section-desc">探索世界的每一个角落，从阳光海岸到艺术之都。</p>
+
+  <div class="destinations-grid">
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=300&fit=crop" alt="三亚海滩" class="dest-img" loading="lazy">
+      <div class="dest-info">
+        <div class="dest-city">三亚 · Sanya</div>
+        <div class="dest-desc">阳光与海浪的完美邂逅</div>
+        <div class="dest-meta"><span class="iconify" data-icon="lucide:clock"></span> 1小时45分 · 每日4班</div>
+        <div class="dest-price">¥399 起</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1590559849738-b1cc0b228921?w=400&h=300&fit=crop" alt="成都大熊猫" class="dest-img" loading="lazy">
+      <div class="dest-info">
+        <div class="dest-city">成都 · Chengdu</div>
+        <div class="dest-desc">慢下来，遇见真正的巴蜀</div>
+        <div class="dest-meta"><span class="iconify" data-icon="lucide:clock"></span> 2小时50分 · 每日8班</div>
+        <div class="dest-price">¥520 起</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop" alt="东京塔夜景" class="dest-img" loading="lazy">
+      <div class="dest-info">
+        <div class="dest-city">东京 · Tokyo</div>
+        <div class="desc">赏樱季专属航班</div>
+        <div class="dest-meta"><span class="iconify" data-icon="lucide:clock"></span> 3小时10分 · 每日2班</div>
+        <div class="dest-price">¥1,299 起</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=300&fit=crop" alt="迪拜哈利法塔" class="dest-img" loading="lazy">
+      <div class="dest-info">
+        <div class="dest-city">迪拜 · Dubai</div>
+        <div class="dest-desc">沙漠奢旅的起点</div>
+        <div class="dest-meta"><span class="iconify" data-icon="lucide:clock"></span> 9小时 · 每日1班</div>
+        <div class="dest-price">¥3,899 起</div>
+      </div>
+    </div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1502602898657-9e9d75bcccd5?w=400&h=300&fit=crop" alt="巴黎埃菲尔铁塔" class="dest-img" loading="lazy">
+      <div class="dest-info">
+        <div class="dest-city">巴黎 · Paris</div>
+        <div class="dest-desc">艺术与浪漫在等你</div>
+        <div class="dest-meta"><span class="iconify" data-icon="lucide:clock"></span> 13小时 · 每周5班</div>
+        <div class="dest-price">¥4,299 起</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Promo Banner -->
+<section class="section">
+  <div class="promo-banner">
+    <div class="promo-badge"><span class="iconify" data-icon="lucide:sparkles"></span> 夏季出行季特惠</div>
+    <h3>限时优惠机票开抢</h3>
+    <div class="promo-routes">
+      <div class="promo-route">杭州 → 三亚 <strong>¥399起</strong></div>
+      <div class="promo-route">杭州 → 大阪 <strong>¥1,299起</strong></div>
+      <div class="promo-route">杭州 → 伦敦 <strong>¥3,899起</strong></div>
+    </div>
+    <div class="promo-note">有效期至 2026 年 6 月 30 日 · 数量有限</div>
+    <br>
+    <a href="#" class="promo-link">查看全部特惠 →</a>
+  </div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <h4><span class="iconify" data-icon="lucide:plane" style="vertical-align:-2px"></span> 星空航空</h4>
+      <p>Skystar Airlines · 杭州萧山国际机场运营基地<br>连接世界，触及梦想。</p>
+      <p style="font-size:12px;color:var(--color-text-tertiary);">
+        客服热线 400-800-9988（7×24）<br>
+        CATA 中国航空运输协会会员
+      </p>
+    </div>
+    <div class="footer-col">
+      <h5>快速链接</h5>
+      <a href="#">航班状态查询</a>
+      <a href="#">行李规定</a>
+      <a href="#">退改签政策</a>
+      <a href="#">旅行保险</a>
+      <a href="#">常见问题</a>
+    </div>
+    <div class="footer-col">
+      <h5>服务</h5>
+      <a href="#">特殊旅客关怀</a>
+      <a href="#">宠物随行计划</a>
+      <a href="#">企业商务方案</a>
+      <a href="#">常旅客计划</a>
+    </div>
+    <div class="footer-col">
+      <h5>关注我们</h5>
+      <a href="#">微信公众号「星空航空」</a>
+      <a href="#">微博 @星空航空官方</a>
+      <a href="#">抖音 @skystarairlines</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号</span>
+    <span>Vercel Web Guidelines Compliant</span>
+  </div>
+</footer>
+
+<script>
+// Reading progress bar
+window.addEventListener('scroll',()=>{
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = Math.min((scrollTop / docHeight) * 100, 100);
+  document.getElementById('progress').style.width = pct + '%';
+});
+
+// Navbar scroll effect
+window.addEventListener('scroll',()=>{
+  const nav=document.getElementById('navbar');
+  nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>充电小程序 · Sleek Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    :root {
+      --blue: #2563eb;
+      --blue-light: #3b82f6;
+      --blue-dark: #1d4ed8;
+      --green: #10b981;
+      --green-light: #34d399;
+      --orange: #f59e0b;
+      --orange-light: #fbbf24;
+      --red: #ef4444;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #94a3b8;
+      --border: #e2e8f0;
+    }
+    
+    body {
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      background: #e2e8f0;
+      overflow-x: hidden;
+    }
+    
+    .app-container {
+      max-width: 430px;
+      margin: 0 auto;
+      background: var(--bg);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      box-shadow: 0 0 40px rgba(0,0,0,0.1);
+    }
+    
+    /* 顶部导航 */
+    .header {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      padding: 48px 20px 20px;
+      color: white;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    
+    .location {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      opacity: 0.95;
+    }
+    
+    .notification-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .notification-btn:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    
+    .notification-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      background: var(--orange);
+      border-radius: 50%;
+      border: 2px solid var(--blue);
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      padding: 12px 16px;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    
+    .search-bar:focus-within {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .search-bar input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: white;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .search-bar input::placeholder {
+      color: rgba(255,255,255,0.6);
+    }
+    
+    .search-bar i {
+      opacity: 0.7;
+    }
+    
+    /* 地图区域 */
+    .map-area {
+      position: relative;
+      height: 320px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 50%, #f8fafc 100%);
+    }
+    
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle, rgba(37,99,235,0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    
+    .map-road {
+      position: absolute;
+      background: rgba(255,255,255,0.6);
+      border-radius: 8px;
+    }
+    
+    .map-road-1 {
+      width: 100%;
+      height: 20px;
+      top: 35%;
+      left: 0;
+    }
+    
+    .map-road-2 {
+      width: 20px;
+      height: 100%;
+      top: 0;
+      left: 30%;
+    }
+    
+    .map-road-3 {
+      width: 80%;
+      height: 16px;
+      top: 70%;
+      left: 10%;
+    }
+    
+    .map-road-4 {
+      width: 16px;
+      height: 60%;
+      top: 20%;
+      left: 70%;
+    }
+    
+    .map-pin {
+      position: absolute;
+      z-index: 5;
+    }
+    
+    .pin {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    
+    .pin-marker {
+      width: 40px;
+      height: 40px;
+      border-radius: 50% 50% 50% 0;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transform: rotate(-45deg);
+      box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+      margin-bottom: 4px;
+    }
+    
+    .pin-marker i {
+      transform: rotate(45deg);
+      width: 18px;
+      height: 18px;
+    }
+    
+    .pin-green .pin-marker { background: var(--green); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    .pin-orange .pin-marker { background: var(--orange); box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+    
+    /* 站点卡片叠加层 */
+    .station-overlay {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 10;
+    }
+    
+    .station-card-mini {
+      background: white;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    
+    .station-card-mini .station-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+    
+    .station-card-mini .station-info {
+      flex: 1;
+    }
+    
+    .station-card-mini .station-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .station-card-mini .station-meta {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .station-card-mini .navigate-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .station-card-mini .navigate-btn:hover {
+      background: var(--blue-dark);
+      transform: scale(1.05);
+    }
+    
+    /* 快捷功能入口 */
+    .quick-actions {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      background: white;
+      margin: -20px 16px 0;
+      border-radius: 20px;
+      position: relative;
+      z-index: 15;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    
+    .quick-action-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 8px 0;
+      border-radius: 14px;
+    }
+    
+    .quick-action-item:hover {
+      background: var(--bg);
+      transform: translateY(-2px);
+    }
+    
+    .quick-action-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      position: relative;
+    }
+    
+    .quick-action-icon.scan { background: linear-gradient(135deg, var(--blue), var(--blue-light)); }
+    .quick-action-icon.orders { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+    .quick-action-icon.wallet { background: linear-gradient(135deg, var(--orange), var(--orange-light)); }
+    .quick-action-icon.coupon { background: linear-gradient(135deg, #ec4899, #f472b6); }
+    
+    .quick-action-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    /* 附近充电站 */
+    .section {
+      padding: 24px 16px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .section-more {
+      font-size: 13px;
+      color: var(--blue);
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.2s ease;
+    }
+    
+    .section-more:hover {
+      color: var(--blue-dark);
+    }
+    
+    .station-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .station-card {
+      background: white;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .station-card:hover {
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+    
+    .station-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .station-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .station-card-address {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    
+    .status-tag .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .status-free { background: rgba(16,185,129,0.1); color: var(--green); }
+    .status-free .dot { background: var(--green); }
+    
+    .status-busy { background: rgba(245,158,11,0.1); color: var(--orange); }
+    .status-busy .dot { background: var(--orange); }
+    
+    .status-fault { background: rgba(239,68,68,0.1); color: var(--red); }
+    .status-fault .dot { background: var(--red); }
+    
+    .station-card-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .station-ports {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .port-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .port-label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+    
+    .port-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .port-value .unit {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-tertiary);
+    }
+    
+    .station-price {
+      text-align: right;
+    }
+    
+    .price-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+    
+    .price-value .unit {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    
+    .price-note {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+    
+    .station-distance {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    /* 会员推广卡片 */
+    .vip-card {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 0 16px 16px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .vip-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .vip-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .vip-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .vip-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .vip-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    
+    .vip-subtitle {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+    
+    .vip-btn {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #1e293b;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .vip-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(245,158,11,0.4);
+    }
+    
+    .vip-benefits {
+      display: flex;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .vip-benefit {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .vip-benefit-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    .vip-benefit-label {
+      font-size: 11px;
+      opacity: 0.6;
+    }
+    
+    /* 底部 TabBar */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+      z-index: 100;
+    }
+    
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-tertiary);
+      position: relative;
+    }
+    
+    .tab-item.active {
+      color: var(--blue);
+    }
+    
+    .tab-item span {
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .tab-item i {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .tab-scan {
+      position: relative;
+      top: -20px;
+    }
+    
+    .tab-scan-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--blue-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+      transition: all 0.2s ease;
+      border: 4px solid white;
+    }
+    
+    .tab-scan-circle:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(37,99,235,0.4);
+    }
+    
+    .tab-scan-label {
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+    }
+    
+    /* 底部安全区域占位 */
+    .safe-bottom {
+      height: calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+    
+    /* 滚动优化 */
+    .app-container {
+      -webkit-overflow-scrolling: touch;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 顶部导航 -->
+    <div class="header">
+      <div class="header-top">
+        <div class="location">
+          <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
+          <span>深圳市</span>
+          <i data-lucide="chevron-down" style="width:14px;height:14px;opacity:0.7;"></i>
+        </div>
+        <div class="notification-btn">
+          <i data-lucide="bell" style="width:20px;height:20px;"></i>
+          <div class="notification-dot"></div>
+        </div>
+      </div>
+      <div class="search-bar">
+        <i data-lucide="search" style="width:18px;height:18px;"></i>
+        <input type="text" placeholder="搜索充电站、地址">
+      </div>
+    </div>
+    
+    <!-- 地图区域 -->
+    <div class="map-area">
+      <div class="map-grid"></div>
+      <div class="map-road map-road-1"></div>
+      <div class="map-road map-road-2"></div>
+      <div class="map-road map-road-3"></div>
+      <div class="map-road map-road-4"></div>
+      
+      <!-- 地图标记 -->
+      <div class="map-pin" style="top:25%;left:22%;">
+        <div class="pin pin-green">
+          <div class="pin-marker"><i data-lucide="zap" style="width:16px;height:16px;"></i></div>
+        </div>
+      </div>
+      <div class="map-pin" style="top:55%;left:55%;">
+        <div class="pin">
+          <div class="pin-marker"><i data-lucide="zap" style="width:16px;height:16px;"></i></div>
+        </div>
+      </div>
+      <div class="map-pin" style="top:40%;left:78%;">
+        <div class="pin pin-orange">
+          <div class="pin-marker"><i data-lucide="zap" style="width:16px;height:16px;"></i></div>
+        </div>
+      </div>
+      <div class="map-pin" style="top:72%;left:35%;">
+        <div class="pin pin-green">
+          <div class="pin-marker"><i data-lucide="zap" style="width:16px;height:16px;"></i></div>
+        </div>
+      </div>
+      
+      <!-- 站点卡片叠加 -->
+      <div class="station-overlay">
+        <div class="station-card-mini">
+          <div class="station-icon">
+            <i data-lucide="zap" style="width:24px;height:24px;"></i>
+          </div>
+          <div class="station-info">
+            <div class="station-name">南山科技园快充站</div>
+            <div class="station-meta">
+              <span style="color:var(--green);font-weight:600;">空闲 6</span>
+              <span>|</span>
+              <span>距离 0.8km</span>
+            </div>
+          </div>
+          <div class="navigate-btn">
+            <i data-lucide="navigation" style="width:18px;height:18px;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 快捷功能入口 -->
+    <div class="quick-actions">
+      <div class="quick-action-item">
+        <div class="quick-action-icon scan">
+          <i data-lucide="scan-line" style="width:24px;height:24px;"></i>
+        </div>
+        <span class="quick-action-label">扫码充电</span>
+      </div>
+      <div class="quick-action-item">
+        <div class="quick-action-icon orders">
+          <i data-lucide="clipboard-list" style="width:24px;height:24px;"></i>
+        </div>
+        <span class="quick-action-label">我的订单</span>
+      </div>
+      <div class="quick-action-item">
+        <div class="quick-action-icon wallet">
+          <i data-lucide="wallet" style="width:24px;height:24px;"></i>
+        </div>
+        <span class="quick-action-label">钱包</span>
+      </div>
+      <div class="quick-action-item">
+        <div class="quick-action-icon coupon">
+          <i data-lucide="ticket" style="width:24px;height:24px;"></i>
+        </div>
+        <span class="quick-action-label">卡券</span>
+      </div>
+    </div>
+    
+    <!-- 附近充电站 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">附近充电站</div>
+        <div class="section-more">
+          查看全部 <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+        </div>
+      </div>
+      
+      <div class="station-list">
+        <!-- 站点 1 -->
+        <div class="station-card">
+          <div class="station-card-header">
+            <div>
+              <div class="station-card-title">南山科技园快充站</div>
+              <div class="station-card-address">
+                <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+                南山区科苑南路88号
+              </div>
+            </div>
+            <div class="status-tag status-free">
+              <span class="dot"></span>
+              空闲
+            </div>
+          </div>
+          <div class="station-card-body">
+            <div class="station-ports">
+              <div class="port-info">
+                <span class="port-label">快充空闲</span>
+                <span class="port-value">6 <span class="unit">/ 8</span></span>
+              </div>
+              <div class="port-info">
+                <span class="port-label">慢充空闲</span>
+                <span class="port-value">3 <span class="unit">/ 4</span></span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="price-value">0.89 <span class="unit">元/度</span></div>
+              <div class="price-note">含服务费</div>
+            </div>
+          </div>
+          <div class="station-distance">
+            <i data-lucide="navigation" style="width:12px;height:12px;"></i>
+            距离 0.8km · 步行约 10 分钟
+          </div>
+        </div>
+        
+        <!-- 站点 2 -->
+        <div class="station-card">
+          <div class="station-card-header">
+            <div>
+              <div class="station-card-title">深圳湾超级充电站</div>
+              <div class="station-card-address">
+                <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+                南山区滨海大道3001号
+              </div>
+            </div>
+            <div class="status-tag status-busy">
+              <span class="dot"></span>
+              充电中
+            </div>
+          </div>
+          <div class="station-card-body">
+            <div class="station-ports">
+              <div class="port-info">
+                <span class="port-label">快充空闲</span>
+                <span class="port-value">2 <span class="unit">/ 12</span></span>
+              </div>
+              <div class="port-info">
+                <span class="port-label">慢充空闲</span>
+                <span class="port-value">5 <span class="unit">/ 6</span></span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="price-value">1.25 <span class="unit">元/度</span></div>
+              <div class="price-note">峰时电价</div>
+            </div>
+          </div>
+          <div class="station-distance">
+            <i data-lucide="navigation" style="width:12px;height:12px;"></i>
+            距离 2.3km · 驾车约 8 分钟
+          </div>
+        </div>
+        
+        <!-- 站点 3 -->
+        <div class="station-card">
+          <div class="station-card-header">
+            <div>
+              <div class="station-card-title">福田中心城充电站</div>
+              <div class="station-card-address">
+                <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+                福田区福华一路88号
+              </div>
+            </div>
+            <div class="status-tag status-free">
+              <span class="dot"></span>
+              空闲
+            </div>
+          </div>
+          <div class="station-card-body">
+            <div class="station-ports">
+              <div class="port-info">
+                <span class="port-label">快充空闲</span>
+                <span class="port-value">10 <span class="unit">/ 10</span></span>
+              </div>
+              <div class="port-info">
+                <span class="port-label">慢充空闲</span>
+                <span class="port-value">6 <span class="unit">/ 6</span></span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="price-value">0.76 <span class="unit">元/度</span></div>
+              <div class="price-note">谷时优惠</div>
+            </div>
+          </div>
+          <div class="station-distance">
+            <i data-lucide="navigation" style="width:12px;height:12px;"></i>
+            距离 4.5km · 驾车约 15 分钟
+          </div>
+        </div>
+        
+        <!-- 站点 4 -->
+        <div class="station-card">
+          <div class="station-card-header">
+            <div>
+              <div class="station-card-title">宝安海雅缤纷城充电站</div>
+              <div class="station-card-address">
+                <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+                宝安区建安一路99号
+              </div>
+            </div>
+            <div class="status-tag status-fault">
+              <span class="dot"></span>
+              故障
+            </div>
+          </div>
+          <div class="station-card-body">
+            <div class="station-ports">
+              <div class="port-info">
+                <span class="port-label">快充空闲</span>
+                <span class="port-value">0 <span class="unit">/ 6</span></span>
+              </div>
+              <div class="port-info">
+                <span class="port-label">慢充空闲</span>
+                <span class="port-value">0 <span class="unit">/ 4</span></span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="price-value">-- <span class="unit">元/度</span></div>
+              <div class="price-note">暂停服务</div>
+            </div>
+          </div>
+          <div class="station-distance">
+            <i data-lucide="navigation" style="width:12px;height:12px;"></i>
+            距离 6.2km · 驾车约 18 分钟
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 会员推广卡片 -->
+    <div class="vip-card">
+      <div class="vip-card-header">
+        <div class="vip-badge">
+          <div class="vip-icon">
+            <i data-lucide="crown" style="width:20px;height:20px;color:white;"></i>
+          </div>
+          <div>
+            <div class="vip-title">PLUS 会员</div>
+            <div class="vip-subtitle">银卡 / 金卡限时优惠</div>
+          </div>
+        </div>
+        <button class="vip-btn">立即开通</button>
+      </div>
+      <div class="vip-benefits">
+        <div class="vip-benefit">
+          <span class="vip-benefit-value">9.5 折</span>
+          <span class="vip-benefit-label">充电折扣</span>
+        </div>
+        <div class="vip-benefit">
+          <span class="vip-benefit-value">免服务费</span>
+          <span class="vip-benefit-label">每月 4 次</span>
+        </div>
+        <div class="vip-benefit">
+          <span class="vip-benefit-value">优先预约</span>
+          <span class="vip-benefit-label">热门站点</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 安全区域占位 -->
+    <div class="safe-bottom"></div>
+    
+    <!-- 底部 TabBar -->
+    <div class="tabbar">
+      <div class="tab-item active">
+        <i data-lucide="home" style="width:24px;height:24px;"></i>
+        <span>首页</span>
+      </div>
+      <div class="tab-item">
+        <i data-lucide="piggy-bank" style="width:24px;height:24px;"></i>
+        <span>省钱</span>
+      </div>
+      <div class="tab-item tab-scan">
+        <div class="tab-scan-circle">
+          <i data-lucide="scan-line" style="width:28px;height:28px;"></i>
+        </div>
+        <span class="tab-scan-label">扫码</span>
+      </div>
+      <div class="tab-item">
+        <i data-lucide="clipboard-list" style="width:24px;height:24px;"></i>
+        <span>订单</span>
+      </div>
+      <div class="tab-item">
+        <i data-lucide="user" style="width:24px;height:24px;"></i>
+        <span>我的</span>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星空航空 Skystar Airlines - 每一次起飞，都是一次全新的抵达</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        brand: {
+          900: '#0A1628',
+          800: '#0F1F3A',
+          700: '#162D54',
+          600: '#1E3A6E',
+          500: '#2A5490',
+          400: '#3B6FB5',
+          300: '#5A8FD4',
+          200: '#8AB4E0',
+          100: '#C0D8F0',
+          50: '#E8F0FA',
+        },
+        accent: {
+          DEFAULT: '#C9A96E',
+          light: '#D9BC8E',
+          dark: '#A88A52',
+        },
+        surface: {
+          DEFAULT: '#FFFFFF',
+          secondary: '#F6F8FB',
+          tertiary: '#EDF1F7',
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  :root {
+    --color-brand-900: #0A1628;
+    --color-brand-800: #0F1F3A;
+    --color-brand-700: #162D54;
+    --color-accent: #C9A96E;
+    --color-accent-light: #D9BC8E;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-card: 0 1px 3px rgba(10,22,40,0.06), 0 4px 16px rgba(10,22,40,0.04);
+    --shadow-elevated: 0 4px 12px rgba(10,22,40,0.08), 0 16px 48px rgba(10,22,40,0.06);
+    --shadow-float: 0 8px 24px rgba(10,22,40,0.12), 0 32px 64px rgba(10,22,40,0.08);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+    color: var(--color-brand-900);
+    background: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Design Agent Canvas Grid Background */
+  .canvas-bg {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(10,22,40,0.04) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+  /* Hero gradient overlay */
+  .hero-overlay {
+    background: linear-gradient(135deg, rgba(10,22,40,0.88) 0%, rgba(15,31,58,0.72) 50%, rgba(10,22,40,0.40) 100%);
+  }
+  /* Accent line */
+  .accent-line {
+    width: 48px;
+    height: 3px;
+    background: var(--color-accent);
+    border-radius: 2px;
+  }
+  /* Card hover lift */
+  .card-lift {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-float);
+  }
+  /* Button shine */
+  .btn-primary {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-accent);
+    color: var(--color-brand-900);
+    font-weight: 600;
+    transition: all 0.25s ease;
+  }
+  .btn-primary:hover {
+    background: var(--color-accent-light);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(201,169,110,0.35);
+  }
+  /* Nav link underline animation */
+  .nav-link {
+    position: relative;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--color-accent);
+    transition: width 0.3s ease;
+  }
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    width: 100%;
+  }
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* Feature icon circle */
+  .icon-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--color-brand-800), var(--color-brand-600));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent);
+    font-size: 24px;
+  }
+  /* Destination card image placeholder */
+  .dest-img {
+    background: linear-gradient(135deg, var(--color-brand-700), var(--color-brand-500));
+    position: relative;
+    overflow: hidden;
+  }
+  .dest-img::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(255,255,255,0.03) 8px,
+      rgba(255,255,255,0.03) 16px
+    );
+  }
+  /* Flight path SVG animation */
+  @keyframes dash {
+    to { stroke-dashoffset: 0; }
+  }
+  .flight-path {
+    stroke-dasharray: 8 6;
+    animation: dash 20s linear infinite;
+  }
+  /* Table styling */
+  .tier-table th {
+    background: var(--color-brand-800);
+    color: var(--color-accent);
+    font-weight: 600;
+    text-align: left;
+    padding: 16px 20px;
+  }
+  .tier-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #EDF1F7;
+  }
+  .tier-table tr:hover td {
+    background: #F6F8FB;
+  }
+  /* Promo banner pattern */
+  .promo-pattern {
+    background: linear-gradient(135deg, var(--color-brand-800), var(--color-brand-600));
+    position: relative;
+    overflow: hidden;
+  }
+  .promo-pattern::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 2px 2px, rgba(201,169,110,0.08) 1px, transparent 0);
+    background-size: 32px 32px;
+  }
+  /* Search bar glass */
+  .search-glass {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  /* Stat number */
+  .stat-number {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+</style>
+</head>
+<body class="canvas-bg">
+
+<!-- ==================== COMPONENT: NavigationBar ==================== -->
+<!-- Extracted as reusable layout component per superdesign spec -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background: transparent;">
+  <div class="max-w-[1440px] mx-auto px-8 h-20 flex items-center justify-between">
+    <!-- Logo -->
+    <a href="#" class="flex items-center gap-3 group">
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--color-accent);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12h20"/><path d="M2 12l5-5"/><path d="M2 12l5 5"/><path d="M22 12l-5-5"/><path d="M22 12l-5 5"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-lg font-bold tracking-tight" style="color: #fff;" id="nav-logo-text">星空航空</span>
+        <span class="text-[10px] tracking-[0.15em] uppercase font-medium" style="color: rgba(255,255,255,0.6);" id="nav-logo-sub">Skystar Airlines</span>
+      </div>
+    </a>
+    <!-- Nav Links -->
+    <div class="hidden lg:flex items-center gap-8">
+      <a href="#hero" class="nav-link text-sm font-medium text-white/90 hover:text-white py-2 active">首页</a>
+      <a href="#search" class="nav-link text-sm font-medium text-white/90 hover:text-white py-2">航班查询</a>
+      <a href="#destinations" class="nav-link text-sm font-medium text-white/90 hover:text-white py-2">目的地</a>
+      <a href="#features" class="nav-link text-sm font-medium text-white/90 hover:text-white py-2">服务与礼遇</a>
+      <a href="#frequent-flyer" class="nav-link text-sm font-medium text-white/90 hover:text-white py-2">常旅客计划</a>
+      <a href="#about" class="nav-link text-sm font-medium text-white/90 hover:text-white py-2">关于我们</a>
+    </div>
+    <!-- CTA -->
+    <div class="flex items-center gap-4">
+      <button class="hidden md:block text-sm font-medium text-white/90 hover:text-white transition-colors">登录</button>
+      <button class="btn-primary px-5 py-2.5 rounded-lg text-sm">注册会员</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ==================== SECTION: Hero ==================== -->
+<section id="hero" class="relative min-h-[900px] flex items-center" style="background: var(--color-brand-900);">
+  <!-- Background pattern -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute inset-0" style="background: radial-gradient(ellipse at 30% 20%, rgba(42,84,144,0.25) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(201,169,110,0.08) 0%, transparent 50%);"></div>
+    <svg class="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 1920 900" preserveAspectRatio="xMidYMid slice">
+      <path class="flight-path" d="M-100 450 Q 400 200, 960 450 T 2020 450" stroke="rgba(201,169,110,0.4)" stroke-width="1.5" fill="none"/>
+      <path class="flight-path" d="M-100 350 Q 500 150, 1000 350 T 2020 300" stroke="rgba(201,169,110,0.2)" stroke-width="1" fill="none" style="animation-delay: -5s;"/>
+      <circle cx="200" cy="350" r="2" fill="rgba(201,169,110,0.5)"/>
+      <circle cx="600" cy="250" r="2" fill="rgba(201,169,110,0.3)"/>
+      <circle cx="1000" cy="350" r="2" fill="rgba(201,169,110,0.5)"/>
+      <circle cx="1400" cy="280" r="2" fill="rgba(201,169,110,0.3)"/>
+      <circle cx="1800" cy="320" r="2" fill="rgba(201,169,110,0.5)"/>
+    </svg>
+    <!-- Star dots -->
+    <div class="absolute top-[15%] left-[10%] w-1 h-1 rounded-full bg-white/30"></div>
+    <div class="absolute top-[25%] left-[25%] w-0.5 h-0.5 rounded-full bg-white/20"></div>
+    <div class="absolute top-[10%] left-[60%] w-1 h-1 rounded-full bg-white/25"></div>
+    <div class="absolute top-[35%] left-[80%] w-0.5 h-0.5 rounded-full bg-white/20"></div>
+    <div class="absolute top-[20%] right-[15%] w-1 h-1 rounded-full bg-white/30"></div>
+  </div>
+
+  <div class="relative z-10 max-w-[1440px] mx-auto px-8 w-full pt-32 pb-20">
+    <div class="max-w-3xl">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="accent-line"></div>
+          <span class="text-sm font-medium tracking-wider uppercase" style="color: var(--color-accent);">Skystar Airlines</span>
+        </div>
+        <h1 class="text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight text-white mb-6">
+          每一次起飞<br>
+          <span style="color: var(--color-accent);">都是一次全新的抵达</span>
+        </h1>
+        <p class="text-xl text-white/70 leading-relaxed max-w-xl mb-10">
+          连接世界，触达梦想。星空航空航线覆盖国内82座城市及47个国际目的地，每日执飞超过600个航班，累计安全飞行突破1200万小时。
+        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          <button class="btn-primary px-8 py-4 rounded-xl text-base">立即预订</button>
+          <button class="px-8 py-4 rounded-xl text-base font-medium text-white border border-white/20 hover:border-white/40 hover:bg-white/5 transition-all">探索目的地</button>
+        </div>
+      </div>
+    </div>
+    <!-- Stats bar -->
+    <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl reveal" style="transition-delay: 0.2s;">
+      <div>
+        <div class="stat-number">600+</div>
+        <div class="text-sm text-white/50 mt-2 font-medium">每日航班</div>
+      </div>
+      <div>
+        <div class="stat-number">129</div>
+        <div class="text-sm text-white/50 mt-2 font-medium">航点覆盖</div>
+      </div>
+      <div>
+        <div class="stat-number">1200万</div>
+        <div class="text-sm text-white/50 mt-2 font-medium">安全飞行小时</div>
+      </div>
+      <div>
+        <div class="stat-number">16年</div>
+        <div class="text-sm text-white/50 mt-2 font-medium">零重大事故</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: Flight Search ==================== -->
+<section id="search" class="relative z-20 -mt-10 px-8">
+  <div class="max-w-[1200px] mx-auto">
+    <div class="search-glass rounded-2xl p-8 shadow-2xl">
+      <div class="flex items-center gap-2 mb-6">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <span class="text-lg font-bold" style="color: var(--color-brand-900);">您想去哪里？</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="md:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-2">出发城市</label>
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <span class="text-sm font-medium">杭州</span>
+          </div>
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-2">到达城市</label>
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8 2 5 5 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-4-3-7-7-7z"/></svg>
+            <span class="text-sm text-gray-400">选择目的地</span>
+          </div>
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-2">出发日期</label>
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span class="text-sm font-medium">2026-06-15</span>
+          </div>
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-2">乘客</label>
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="text-sm font-medium">1 成人</span>
+          </div>
+        </div>
+        <div class="md:col-span-1 flex items-end">
+          <button class="btn-primary w-full py-3 rounded-xl text-base font-semibold flex items-center justify-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            搜索航班
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: Promo Banner ==================== -->
+<section class="py-16 px-8">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="promo-pattern rounded-2xl p-8 md:p-10 relative">
+      <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-2xl">📣</span>
+            <span class="text-sm font-bold tracking-wider uppercase" style="color: var(--color-accent);">限时特惠</span>
+          </div>
+          <h3 class="text-2xl md:text-3xl font-bold text-white mb-2">夏季出行季 · 特惠机票开抢</h3>
+          <p class="text-white/60 text-sm">优惠有效期至2026年6月30日，数量有限，先订先得</p>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <div class="bg-white/10 backdrop-blur rounded-xl px-5 py-3 border border-white/10">
+            <div class="text-xs text-white/50 mb-1">杭州 → 三亚</div>
+            <div class="text-xl font-bold text-white">¥399<span class="text-sm font-normal text-white/50">起</span></div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-xl px-5 py-3 border border-white/10">
+            <div class="text-xs text-white/50 mb-1">杭州 → 大阪</div>
+            <div class="text-xl font-bold text-white">¥1,299<span class="text-sm font-normal text-white/50">起</span></div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-xl px-5 py-3 border border-white/10">
+            <div class="text-xs text-white/50 mb-1">杭州 → 伦敦</div>
+            <div class="text-xl font-bold text-white">¥3,899<span class="text-sm font-normal text-white/50">起</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: Why Choose Us ==================== -->
+<section id="features" class="py-20 px-8">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="accent-line"></div>
+        <span class="text-sm font-medium tracking-wider uppercase" style="color: var(--color-accent);">Why Choose Us</span>
+        <div class="accent-line"></div>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-black tracking-tight" style="color: var(--color-brand-900);">为什么选择星空航空</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Feature 1 -->
+      <div class="card-lift bg-white rounded-2xl p-8 border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="icon-circle mb-6">🛫</div>
+        <h3 class="text-xl font-bold mb-3" style="color: var(--color-brand-900);">安全第一，永不妥协</h3>
+        <p class="text-sm leading-relaxed text-gray-600">
+          平均飞行经验超9800小时的机长团队，全机队配备波音787与空客A320neo，严格执行IOSA国际安全标准。连续16年零重大事故，八年中国民航局"安全运营优秀单位"。
+        </p>
+      </div>
+      <!-- Feature 2 -->
+      <div class="card-lift bg-white rounded-2xl p-8 border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="icon-circle mb-6">🌏</div>
+        <h3 class="text-xl font-bold mb-3" style="color: var(--color-brand-900);">广泛航线，覆盖全球</h3>
+        <p class="text-sm leading-relaxed text-gray-600">
+          覆盖国内82城、亚太及欧洲47个国际目的地。与全球28家航空公司代码共享，构建190个目的地的出行网络，每一段旅程无缝衔接。
+        </p>
+      </div>
+      <!-- Feature 3 -->
+      <div class="card-lift bg-white rounded-2xl p-8 border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="icon-circle mb-6">💺</div>
+        <h3 class="text-xl font-bold mb-3" style="color: var(--color-brand-900);">精心设计的客舱体验</h3>
+        <p class="text-sm leading-relaxed text-gray-600">
+          商务舱1-2-1全通道平躺座椅，17英寸4K娱乐屏；经济舱座椅间距行业领先，10英寸娱乐系统与USB-C快充，全程免费Wi-Fi覆盖。
+        </p>
+      </div>
+      <!-- Feature 4 -->
+      <div class="card-lift bg-white rounded-2xl p-8 border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="icon-circle mb-6">🍽️</div>
+        <h3 class="text-xl font-bold mb-3" style="color: var(--color-brand-900);">云端餐饮，匠心呈现</h3>
+        <p class="text-sm leading-relaxed text-gray-600">
+          与国内外知名主厨联名打造机上菜单，融合东方饮食哲学与现代烹饪技术。商务舱按需点餐，经济舱中西套餐及素食选项，节假日限定节令料理。
+        </p>
+      </div>
+      <!-- Feature 5 -->
+      <div class="card-lift bg-white rounded-2xl p-8 border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="icon-circle mb-6">📱</div>
+        <h3 class="text-xl font-bold mb-3" style="color: var(--color-brand-900);">数字化服务，便捷出行</h3>
+        <p class="text-sm leading-relaxed text-gray-600">
+          全流程无纸化出行：一键购票、选座、值机、登机。智能客服"星星"7×24小时四语交互。从出发大厅到登机口，平均仅需18分钟。
+        </p>
+      </div>
+      <!-- Feature 6: Special Care -->
+      <div class="card-lift bg-white rounded-2xl p-8 border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="icon-circle mb-6">♿</div>
+        <h3 class="text-xl font-bold mb-3" style="color: var(--color-brand-900);">特殊旅客关怀</h3>
+        <p class="text-sm leading-relaxed text-gray-600">
+          婴幼儿推车寄存、轮椅全程陪同、无障碍座位优先安排、孕妇优先登机。杭州、北京、上海设有"星空关爱"专属服务柜台。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: Destinations ==================== -->
+<section id="destinations" class="py-20 px-8" style="background: var(--color-surface-secondary);">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 reveal">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="accent-line"></div>
+          <span class="text-sm font-medium tracking-wider uppercase" style="color: var(--color-accent);">Featured Destinations</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black tracking-tight" style="color: var(--color-brand-900);">精选目的地</h2>
+      </div>
+      <a href="#" class="mt-4 md:mt-0 text-sm font-semibold flex items-center gap-2 hover:gap-3 transition-all" style="color: var(--color-brand-600);">
+        查看全部目的地
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Destination 1 -->
+      <div class="card-lift bg-white rounded-2xl overflow-hidden border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="dest-img h-52 flex items-end p-6">
+          <div class="relative z-10">
+            <span class="text-xs font-bold text-white/70 uppercase tracking-wider">Sanya</span>
+            <h3 class="text-2xl font-bold text-white">三亚</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 mb-1">阳光与海浪的完美邂逅</p>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              最快1小时45分
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M2 12l5-5"/><path d="M2 12l5 5"/><path d="M22 12l-5-5"/><path d="M22 12l-5 5"/></svg>
+              每日4班
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Destination 2 -->
+      <div class="card-lift bg-white rounded-2xl overflow-hidden border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="dest-img h-52 flex items-end p-6" style="background: linear-gradient(135deg, #1a3a5c, #2d5a7b);">
+          <div class="relative z-10">
+            <span class="text-xs font-bold text-white/70 uppercase tracking-wider">Chengdu</span>
+            <h3 class="text-2xl font-bold text-white">成都</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 mb-1">慢下来，才能遇见真正的巴蜀</p>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              每日8班
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+              支持中转西藏
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Destination 3 -->
+      <div class="card-lift bg-white rounded-2xl overflow-hidden border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="dest-img h-52 flex items-end p-6" style="background: linear-gradient(135deg, #2d1a3a, #5a2d5a);">
+          <div class="relative z-10">
+            <span class="text-xs font-bold text-white/70 uppercase tracking-wider">Tokyo</span>
+            <h3 class="text-2xl font-bold text-white">东京</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 mb-1">赏樱季专属航班，限量发售</p>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              每日2班
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 010 14"/><path d="M12 2v20"/></svg>
+              NRT & HND
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Destination 4 -->
+      <div class="card-lift bg-white rounded-2xl overflow-hidden border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="dest-img h-52 flex items-end p-6" style="background: linear-gradient(135deg, #3a2a1a, #7b5a3d);">
+          <div class="relative z-10">
+            <span class="text-xs font-bold text-white/70 uppercase tracking-wider">Dubai</span>
+            <h3 class="text-2xl font-bold text-white">迪拜</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 mb-1">沙漠奢旅的起点</p>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              每日1班
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M2 12l5-5"/><path d="M2 12l5 5"/><path d="M22 12l-5-5"/><path d="M22 12l-5 5"/></svg>
+              商务舱平躺
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Destination 5 -->
+      <div class="card-lift bg-white rounded-2xl overflow-hidden border border-gray-100" style="box-shadow: var(--shadow-card);">
+        <div class="dest-img h-52 flex items-end p-6" style="background: linear-gradient(135deg, #1a2a3a, #3d5a7b);">
+          <div class="relative z-10">
+            <span class="text-xs font-bold text-white/70 uppercase tracking-wider">Paris</span>
+            <h3 class="text-2xl font-bold text-white">巴黎</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 mb-1">艺术与浪漫在等你</p>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              每周5班
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              CDG直航
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Destination 6: Business -->
+      <div class="card-lift rounded-2xl overflow-hidden border border-gray-100" style="background: linear-gradient(135deg, var(--color-brand-800), var(--color-brand-700)); box-shadow: var(--shadow-card);">
+        <div class="h-52 flex flex-col items-center justify-center p-6 text-center relative">
+          <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 24px 24px;"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background: var(--color-accent);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">企业商务服务</h3>
+            <p class="text-sm text-white/60 mb-4">已为12,000+家企业提供定制出行方案</p>
+            <button class="px-5 py-2 rounded-lg text-sm font-semibold" style="background: var(--color-accent); color: var(--color-brand-900);">了解企业方案</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: Frequent Flyer ==================== -->
+<section id="frequent-flyer" class="py-20 px-8">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="accent-line"></div>
+          <span class="text-sm font-medium tracking-wider uppercase" style="color: var(--color-accent);">Skystar Frequent Flyer</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6" style="color: var(--color-brand-900);">星辰会员计划</h2>
+        <p class="text-base leading-relaxed text-gray-600 mb-8">
+          加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿、租车及超过300个合作品牌的礼遇权益。立即注册，即送2,000里程作为开户礼。
+        </p>
+        <button class="btn-primary px-8 py-4 rounded-xl text-base font-semibold">立即注册会员</button>
+      </div>
+      <div class="reveal" style="transition-delay: 0.15s;">
+        <div class="overflow-hidden rounded-2xl border border-gray-200" style="box-shadow: var(--shadow-elevated);">
+          <table class="w-full tier-table text-sm">
+            <thead>
+              <tr>
+                <th>等级</th>
+                <th>标准</th>
+                <th>专属权益</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background: #E8F0FA; color: var(--color-brand-600);">银</div>
+                    <span class="font-semibold">银卡</span>
+                  </div>
+                </td>
+                <td class="text-gray-600">年飞25,000里程</td>
+                <td class="text-gray-600">优先值机、额外行李额</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background: #C0D8F0; color: var(--color-brand-700);">金</div>
+                    <span class="font-semibold">金卡</span>
+                  </div>
+                </td>
+                <td class="text-gray-600">年飞50,000里程</td>
+                <td class="text-gray-600">贵宾休息室、优先登机</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background: var(--color-accent); color: var(--color-brand-900);">白</div>
+                    <span class="font-semibold">白金卡</span>
+                  </div>
+                </td>
+                <td class="text-gray-600">年飞100,000里程</td>
+                <td class="text-gray-600">专属顾问、头等舱升级券</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background: var(--color-brand-900); color: var(--color-accent);">钻</div>
+                    <span class="font-semibold">钻石卡</span>
+                  </div>
+                </td>
+                <td class="text-gray-600">邀请制</td>
+                <td class="text-gray-600">全部权益+私人定制服务</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: Pet Friendly ==================== -->
+<section class="py-20 px-8" style="background: var(--color-surface-secondary);">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="rounded-2xl p-10 md:p-14 flex flex-col lg:flex-row items-center gap-10" style="background: linear-gradient(135deg, var(--color-brand-800), var(--color-brand-700)); box-shadow: var(--shadow-elevated);">
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-3xl">🐕</span>
+          <span class="text-sm font-bold tracking-wider uppercase" style="color: var(--color-accent);">Pet Travel</span>
+        </div>
+        <h3 class="text-3xl font-black text-white mb-4">宠物随行计划</h3>
+        <p class="text-base text-white/70 leading-relaxed mb-6">
+          我们理解毛孩子也是家庭的一员。星空航空特设宠物随行服务，符合条件的小型宠物可进入客舱随旅客同乘，大型犬猫提供恒温专属货舱运输，全程由专业动物运输团队监护。
+        </p>
+        <button class="px-6 py-3 rounded-xl text-sm font-semibold border border-white/20 text-white hover:bg-white/10 transition-colors">查看宠物运输指引</button>
+      </div>
+      <div class="flex-1 flex justify-center">
+        <div class="relative">
+          <div class="w-64 h-64 rounded-full flex items-center justify-center" style="background: radial-gradient(circle, rgba(201,169,110,0.15) 0%, transparent 70%);">
+            <div class="w-48 h-48 rounded-full flex items-center justify-center" style="background: radial-gradient(circle, rgba(201,169,110,0.2) 0%, transparent 70%);">
+              <div class="w-32 h-32 rounded-full flex items-center justify-center text-6xl" style="background: rgba(201,169,110,0.25);">
+                🐾
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION: About ==================== -->
+<section id="about" class="py-20 px-8">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div class="order-2 lg:order-1 reveal">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-2xl h-48 flex items-center justify-center" style="background: linear-gradient(135deg, var(--color-brand-700), var(--color-brand-500));">
+            <div class="text-center text-white">
+              <div class="text-4xl font-black" style="color: var(--color-accent);">186</div>
+              <div class="text-sm text-white/70 mt-1">架机队规模</div>
+            </div>
+          </div>
+          <div class="rounded-2xl h-48 flex items-center justify-center" style="background: linear-gradient(135deg, #1a3a5c, #2d5a7b);">
+            <div class="text-center text-white">
+              <div class="text-4xl font-black" style="color: var(--color-accent);">5.2</div>
+              <div class="text-sm text-white/70 mt-1">年平均机龄</div>
+            </div>
+          </div>
+          <div class="rounded-2xl h-48 flex items-center justify-center" style="background: linear-gradient(135deg, #2d1a3a, #5a2d5a);">
+            <div class="text-center text-white">
+              <div class="text-4xl font-black" style="color: var(--color-accent);">2008</div>
+              <div class="text-sm text-white/70 mt-1">成立年份</div>
+            </div>
+          </div>
+          <div class="rounded-2xl h-48 flex items-center justify-center" style="background: linear-gradient(135deg, var(--color-brand-800), var(--color-brand-600));">
+            <div class="text-center text-white">
+              <div class="text-4xl font-black" style="color: var(--color-accent);">40%</div>
+              <div class="text-sm text-white/70 mt-1">2035碳排目标</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="order-1 lg:order-2 reveal">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="accent-line"></div>
+          <span class="text-sm font-medium tracking-wider uppercase" style="color: var(--color-accent);">About Skystar Airlines</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6" style="color: var(--color-brand-900);">关于星空航空</h2>
+        <p class="text-base leading-relaxed text-gray-600 mb-4">
+          星空航空成立于2008年，是一家总部位于杭州、立足长三角、面向全球的现代化航空公司。我们相信，航空出行不应该只是从A到B的位移，而应该是一段有温度的旅程。
+        </p>
+        <p class="text-base leading-relaxed text-gray-600 mb-6">
+          2026年起，星空航空全面加入CORSIA国际碳抵消机制，并承诺2035年实现单位客公里碳排放较2019年基准下降40%。新引进机型全部选用新一代节能发动机，在杭州、上海、北京三大基地机场推行地面车辆全面电动化。
+        </p>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            CATA会员
+          </div>
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            IATA认证
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== COMPONENT: Footer ==================== -->
+<footer class="py-16 px-8" style="background: var(--color-brand-900);">
+  <div class="max-w-[1440px] mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+      <div>
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--color-accent);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="2.2"><path d="M2 12h20"/><path d="M2 12l5-5"/><path d="M2 12l5 5"/><path d="M22 12l-5-5"/><path d="M22 12l-5 5"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-white">星空航空</div>
+            <div class="text-[10px] tracking-wider text-white/40 uppercase">Skystar Airlines</div>
+          </div>
+        </div>
+        <p class="text-sm text-white/50 leading-relaxed">
+          杭州萧山国际机场运营基地<br>
+          客服热线：400-800-9988<br>
+          （7×24小时）
+        </p>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">快速链接</h4>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">航班状态查询</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">行李规定</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">退改签政策</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">旅行保险</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">常见问题</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">服务与礼遇</h4>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">特殊旅客关怀</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">宠物随行计划</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">企业商务服务</a></li>
+          <li><a href="#" class="text-sm text-white/50 hover:text-white transition-colors">贵宾休息室</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">关注我们</h4>
+        <ul class="space-y-3">
+          <li><span class="text-sm text-white/50">微信公众号「星空航空」</span></li>
+          <li><span class="text-sm text-white/50">微博 @星空航空官方</span></li>
+          <li><span class="text-sm text-white/50">抖音 @skystarairlines</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+      <p class="text-xs text-white/30">© 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号 保留所有权利</p>
+      <div class="flex items-center gap-4">
+        <span class="text-xs text-white/30">CATA中国航空运输协会会员</span>
+        <span class="text-xs text-white/30">|</span>
+        <span class="text-xs text-white/30">IATA国际航空运输协会认证</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Navbar scroll behavior
+  const navbar = document.getElementById('navbar');
+  const navLogoText = document.getElementById('nav-logo-text');
+  const navLogoSub = document.getElementById('nav-logo-sub');
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 80) {
+      navbar.style.background = 'rgba(10, 22, 40, 0.95)';
+      navbar.style.backdropFilter = 'blur(20px)';
+      navbar.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    } else {
+      navbar.style.background = 'transparent';
+      navbar.style.backdropFilter = 'none';
+      navbar.style.boxShadow = 'none';
+    }
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Active nav link tracking
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 120;
+      if (scrollY >= sectionTop) {
+        current = section.getAttribute('id');
+      }
+    });
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
+</body>
+</html>

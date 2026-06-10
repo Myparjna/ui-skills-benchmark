@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>城市运营管理后台 - 共享两轮</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#e6f4ff', 100: '#bae0ff', 200: '#91caff', 300: '#69b1ff',
+              400: '#4096ff', 500: '#1677FF', 600: '#0958d9', 700: '#003eb3',
+              800: '#002c8c', 900: '#001d66'
+            },
+            success: { DEFAULT: '#52C41A', light: '#f6ffed', dark: '#389e0d', bg: '#f6ffed' },
+            warning: { DEFAULT: '#FA8C16', light: '#fff7e6', dark: '#d46b08', bg: '#fff7e6' },
+            danger: { DEFAULT: '#f5222d', light: '#fff1f0', dark: '#cf1322', bg: '#fff1f0' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-default: #f5f5f5;
+      --bg-elevated: #ffffff;
+      --bg-muted: #fafafa;
+      --text-default: #1f1f1f;
+      --text-muted: #8c8c8c;
+      --text-toned: #595959;
+      --border-default: #f0f0f0;
+      --sidebar-bg: #001529;
+      --sidebar-hover: #1890ff;
+    }
+    html, body { font-family: 'Noto Sans SC', system-ui, sans-serif; background: var(--bg-default); }
+    .sidebar { background: var(--sidebar-bg); min-height: 100vh; width: 220px; position: fixed; left: 0; top: 0; z-index: 50; }
+    .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.65); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .sidebar-item:hover, .sidebar-item.active { color: white; background: rgba(24,144,255,0.15); }
+    .sidebar-item.active { border-right: 3px solid #1890ff; }
+    .main-content { margin-left: 220px; min-height: 100vh; }
+    .card-elevated { background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .kpi-value { font-size: 28px; font-weight: 700; color: var(--text-default); line-height: 1.2; }
+    .kpi-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .kpi-change { font-size: 12px; font-weight: 500; }
+    .kpi-up { color: #52C41A; }
+    .kpi-down { color: #f5222d; }
+    .badge-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .chart-bar { background: linear-gradient(to top, #1677FF, #69b1ff); border-radius: 4px 4px 0 0; transition: all 0.3s; }
+    .chart-bar:hover { opacity: 0.8; }
+    .progress-ring { transform: rotate(-90deg); }
+    .table-row:hover { background: #fafafa; }
+    .alert-p0 { background: #fff1f0; border-left: 3px solid #f5222d; }
+    .alert-p1 { background: #fff7e6; border-left: 3px solid #FA8C16; }
+    .alert-p2 { background: #f6ffed; border-left: 3px solid #52C41A; }
+  </style>
+</head>
+<body>
+  <div class="flex">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="p-5 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center text-white font-bold text-sm">运</div>
+        <div>
+          <div class="text-white font-semibold text-sm">城市运营后台</div>
+          <div class="text-white/40 text-xs">北京市</div>
+        </div>
+      </div>
+      <nav class="mt-2">
+        <div class="sidebar-item active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          <span>运营总览</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>地图调度中心</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+          <span>车队资产</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>电池与能源</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>运维工单</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="4"/></svg>
+          <span>规则与区域</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>合规监管</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <span>数据报表</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>组织与权限</span>
+        </div>
+        <div class="sidebar-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>系统配置</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 顶部栏 -->
+      <header class="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 text-sm text-muted">
+            <span>运营总览</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            <span class="text-default font-medium">Dashboard</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            <span>今日</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <button class="p-2 rounded-lg hover:bg-gray-50 relative">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-DEFAULT rounded-full"></span>
+          </button>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-medium text-sm">李</div>
+            <span class="text-sm text-toned">李经理</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="p-6">
+        <!-- 核心KPI -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="card-elevated p-5">
+            <div class="kpi-label">今日订单数</div>
+            <div class="kpi-value mt-1">28,456</div>
+            <div class="kpi-change kpi-up mt-2 flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+              +12.5% 较昨日
+            </div>
+          </div>
+          <div class="card-elevated p-5">
+            <div class="kpi-label">今日GMV</div>
+            <div class="kpi-value mt-1">¥142,380</div>
+            <div class="kpi-change kpi-up mt-2 flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+              +8.3% 较昨日
+            </div>
+          </div>
+          <div class="card-elevated p-5">
+            <div class="kpi-label">车辆可用率</div>
+            <div class="kpi-value mt-1">87.2%</div>
+            <div class="kpi-change kpi-down mt-2 flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+              -2.1% 较昨日
+            </div>
+          </div>
+          <div class="card-elevated p-5">
+            <div class="kpi-label">活跃用户(DAU)</div>
+            <div class="kpi-value mt-1">18,932</div>
+            <div class="kpi-change kpi-up mt-2 flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+              +5.7% 较昨日
+            </div>
+          </div>
+        </div>
+
+        <!-- 第二行：车队健康 + 电量分布 -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <!-- 车辆状态分布 -->
+          <div class="card-elevated p-5">
+            <h3 class="font-semibold text-default mb-4">车辆状态分布</h3>
+            <div class="flex items-center gap-6">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#f0f0f0" stroke-width="12"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#52C41A" stroke-width="12" stroke-dasharray="219 314" stroke-dashoffset="0" stroke-linecap="round" class="progress-ring"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#FA8C16" stroke-width="12" stroke-dasharray="63 314" stroke-dashoffset="-219" stroke-linecap="round" class="progress-ring"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#f5222d" stroke-width="12" stroke-dasharray="19 314" stroke-dashoffset="-282" stroke-linecap="round" class="progress-ring"/>
+                <text x="60" y="55" text-anchor="middle" font-size="20" font-weight="700" fill="#1f1f1f">25,000</text>
+                <text x="60" y="72" text-anchor="middle" font-size="11" fill="#8c8c8c">总车辆</text>
+              </svg>
+              <div class="flex-1 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="status-dot status-free"></span>
+                    <span class="text-sm text-toned">可用</span>
+                  </div>
+                  <span class="text-sm font-semibold">17,400 (69.6%)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="status-dot status-charging"></span>
+                    <span class="text-sm text-toned">使用中</span>
+                  </div>
+                  <span class="text-sm font-semibold">5,000 (20.0%)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="status-dot status-fault"></span>
+                    <span class="text-sm text-toned">故障/离线</span>
+                  </div>
+                  <span class="text-sm font-semibold">1,500 (6.0%)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="status-dot status-unknown"></span>
+                    <span class="text-sm text-toned">低电/回收</span>
+                  </div>
+                  <span class="text-sm font-semibold">1,100 (4.4%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 电量分布 -->
+          <div class="card-elevated p-5">
+            <h3 class="font-semibold text-default mb-4">电单车电量分布</h3>
+            <div class="space-y-4">
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1">
+                  <span class="text-toned">60% - 100%</span>
+                  <span class="font-medium">8,500辆</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-success-DEFAULT rounded-full" style="width: 68%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1">
+                  <span class="text-toned">30% - 60%</span>
+                  <span class="font-medium">3,200辆</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-primary-400 rounded-full" style="width: 26%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1">
+                  <span class="text-toned">10% - 30%</span>
+                  <span class="font-medium">600辆</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-warning-DEFAULT rounded-full" style="width: 5%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1">
+                  <span class="text-toned">0% - 10%</span>
+                  <span class="font-medium">180辆</span>
+                </div>
+                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-danger-DEFAULT rounded-full" style="width: 1.5%"></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 p-3 bg-warning-bg rounded-lg flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              <span class="text-sm text-warning-dark">低电车辆 780 辆，建议优先换电</span>
+            </div>
+          </div>
+
+          <!-- 今日告警 -->
+          <div class="card-elevated p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-default">实时告警</h3>
+              <span class="badge-tag bg-danger-light text-danger-dark">12 未处理</span>
+            </div>
+            <div class="space-y-3">
+              <div class="alert-p0 p-3 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="badge-tag bg-danger-light text-danger-dark text-xs">P0</span>
+                    <span class="text-sm font-medium">越界告警</span>
+                  </div>
+                  <span class="text-xs text-muted">2分钟前</span>
+                </div>
+                <p class="text-xs text-toned mt-1">车辆 #BJ202400123 超出运营围栏</p>
+              </div>
+              <div class="alert-p1 p-3 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="badge-tag bg-warning-light text-warning-dark text-xs">P1</span>
+                    <span class="text-sm font-medium">低电告警</span>
+                  </div>
+                  <span class="text-xs text-muted">5分钟前</span>
+                </div>
+                <p class="text-xs text-toned mt-1">车辆 #BJ202400456 电量低于10%</p>
+              </div>
+              <div class="alert-p1 p-3 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="badge-tag bg-warning-light text-warning-dark text-xs">P1</span>
+                    <span class="text-sm font-medium">禁停告警</span>
+                  </div>
+                  <span class="text-xs text-muted">8分钟前</span>
+                </div>
+                <p class="text-xs text-toned mt-1">车辆 #BJ202400789 违规停放</p>
+              </div>
+              <div class="alert-p2 p-3 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="badge-tag bg-success-light text-success-dark text-xs">P2</span>
+                    <span class="text-sm font-medium">离线恢复</span>
+                  </div>
+                  <span class="text-xs text-muted">12分钟前</span>
+                </div>
+                <p class="text-xs text-toned mt-1">车辆 #BJ202400321 已重新上线</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第三行：订单趋势 + 工单概览 -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <!-- 订单趋势 -->
+          <div class="card-elevated p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-default">今日订单趋势</h3>
+              <div class="flex items-center gap-4 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="w-3 h-1 bg-primary-500 rounded"></span>
+                  <span class="text-muted">今日</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="w-3 h-1 bg-gray-200 rounded"></span>
+                  <span class="text-muted">昨日</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-end gap-2 h-40">
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 40px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 55px"></div>
+                </div>
+                <span class="text-[10px] text-muted">06:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 80px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 110px"></div>
+                </div>
+                <span class="text-[10px] text-muted">08:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 60px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 75px"></div>
+                </div>
+                <span class="text-[10px] text-muted">10:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 45px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 50px"></div>
+                </div>
+                <span class="text-[10px] text-muted">12:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 70px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 90px"></div>
+                </div>
+                <span class="text-[10px] text-muted">14:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 120px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 145px"></div>
+                </div>
+                <span class="text-[10px] text-muted">17:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 100px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 130px"></div>
+                </div>
+                <span class="text-[10px] text-muted">19:00</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex items-end gap-0.5">
+                  <div class="flex-1 chart-bar" style="height: 55px; opacity: 0.3"></div>
+                  <div class="flex-1 chart-bar" style="height: 70px"></div>
+                </div>
+                <span class="text-[10px] text-muted">21:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 工单概览 -->
+          <div class="card-elevated p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-default">工单与人效概览</h3>
+              <button class="text-sm text-primary-600">查看全部</button>
+            </div>
+            <div class="grid grid-cols-4 gap-3 mb-4">
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-lg font-bold text-default">45</div>
+                <div class="text-xs text-muted mt-1">待派单</div>
+              </div>
+              <div class="text-center p-3 bg-primary-50 rounded-lg">
+                <div class="text-lg font-bold text-primary-600">128</div>
+                <div class="text-xs text-muted mt-1">执行中</div>
+              </div>
+              <div class="text-center p-3 bg-warning-bg rounded-lg">
+                <div class="text-lg font-bold text-warning-dark">18</div>
+                <div class="text-xs text-muted mt-1">临近超时</div>
+              </div>
+              <div class="text-center p-3 bg-success-bg rounded-lg">
+                <div class="text-lg font-bold text-success-dark">342</div>
+                <div class="text-xs text-muted mt-1">今日完成</div>
+              </div>
+            </div>
+            <div class="border-t border-gray-100 pt-4">
+              <h4 class="text-sm font-medium text-default mb-3">人效排行</h4>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 rounded bg-warning-DEFAULT text-white text-xs flex items-center justify-center font-bold">1</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-toned">王师傅</span>
+                      <span class="text-sm font-medium">28单</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full mt-1">
+                      <div class="h-full bg-warning-DEFAULT rounded-full" style="width: 93%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 rounded bg-gray-200 text-gray-500 text-xs flex items-center justify-center font-bold">2</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-toned">李师傅</span>
+                      <span class="text-sm font-medium">24单</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full mt-1">
+                      <div class="h-full bg-primary-400 rounded-full" style="width: 80%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 rounded bg-gray-200 text-gray-500 text-xs flex items-center justify-center font-bold">3</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-toned">张师傅</span>
+                      <span class="text-sm font-medium">21单</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full mt-1">
+                      <div class="h-full bg-primary-400 rounded-full" style="width: 70%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第四行：供需调度 + 合规概览 -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 供需调度 -->
+          <div class="card-elevated p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-default">供需与调度态势</h3>
+              <span class="badge-tag bg-primary-50 text-primary-600">早高峰预警</span>
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-3 bg-danger-light rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-danger-DEFAULT/10 flex items-center justify-center text-danger-DEFAULT">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-sm font-medium text-default">缺车区域</div>
+                    <div class="text-xs text-muted">朝阳区国贸 · 三里屯</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-lg font-bold text-danger-DEFAULT">12个</div>
+                  <div class="text-xs text-muted">建议补车 340辆</div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-success-bg rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-success-DEFAULT/10 flex items-center justify-center text-success-dark">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-sm font-medium text-default">堆车区域</div>
+                    <div class="text-xs text-muted">海淀区中关村 · 西二旗</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-lg font-bold text-success-dark">8个</div>
+                  <div class="text-xs text-muted">建议调离 210辆</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3 pt-2">
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                  <div class="text-base font-bold text-default">85%</div>
+                  <div class="text-xs text-muted mt-1">调度完成率</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                  <div class="text-base font-bold text-default">6</div>
+                  <div class="text-xs text-muted mt-1">未完成任务</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                  <div class="text-base font-bold text-default">2</div>
+                  <div class="text-xs text-muted mt-1">超时任务</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 合规概览 -->
+          <div class="card-elevated p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-default">合规与治理概览</h3>
+              <span class="badge-tag bg-success-light text-success-dark">正常</span>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 border border-gray-100 rounded-lg">
+                  <div class="text-xs text-muted">今日禁停次数</div>
+                  <div class="text-xl font-bold text-default mt-1">23</div>
+                  <div class="text-xs kpi-down mt-1">-15% 较昨日</div>
+                </div>
+                <div class="p-3 border border-gray-100 rounded-lg">
+                  <div class="text-xs text-muted">今日越界次数</div>
+                  <div class="text-xl font-bold text-default mt-1">8</div>
+                  <div class="text-xs kpi-down mt-1">-30% 较昨日</div>
+                </div>
+              </div>
+              <div class="p-3 border border-gray-100 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-toned">投放量 vs 许可上限</span>
+                  <span class="text-sm font-medium">25,000 / 30,000</span>
+                </div>
+                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-primary-500 rounded-full" style="width: 83%"></div>
+                </div>
+                <div class="text-xs text-muted mt-1">使用率 83.3%，未超投</div>
+              </div>
+              <div class="p-3 border border-gray-100 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-sm text-toned">数据共享接口状态</div>
+                    <div class="text-xs text-muted mt-0.5">MDS/GBFS 政务接口</div>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="status-dot status-free"></span>
+                    <span class="text-sm font-medium text-success-dark">正常</span>
+                  </div>
+                </div>
+                <div class="text-xs text-muted mt-2">最近上报：2分钟前 · 成功率 99.8%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

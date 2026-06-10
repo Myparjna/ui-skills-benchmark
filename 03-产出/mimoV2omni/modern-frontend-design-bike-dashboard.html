@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绿能出行 - 运营管理后台 (Modern 2026)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 2026 Modern Frontend Design - OKLCH Colors */
+            --bg-deep: oklch(8% 0.02 265);
+            --bg-primary: oklch(10% 0.02 265);
+            --bg-secondary: oklch(13% 0.02 265);
+            --bg-tertiary: oklch(16% 0.02 265);
+            --bg-elevated: oklch(19% 0.02 265);
+            
+            --fg-primary: oklch(95% 0.01 95);
+            --fg-secondary: oklch(72% 0.02 265);
+            --fg-muted: oklch(55% 0.02 265);
+            --fg-dim: oklch(40% 0.02 265);
+            
+            --accent-primary: oklch(65% 0.2 280);
+            --accent-success: oklch(62% 0.18 145);
+            --accent-warning: oklch(75% 0.19 65);
+            --accent-danger: oklch(62% 0.22 25);
+            --accent-info: oklch(65% 0.15 230);
+            
+            --border-subtle: oklch(20% 0.02 265);
+            --border-default: oklch(25% 0.02 265);
+            
+            /* Liquid Glass */
+            --glass-bg: linear-gradient(135deg, oklch(100% 0 0 / 0.08) 0%, oklch(100% 0 0 / 0.02) 100%);
+            --glass-border: 1px solid oklch(100% 0 0 / 0.12);
+            
+            --font: 'Inter', system-ui, sans-serif;
+            --r: 0.75rem;
+            --r-lg: 1rem;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font);
+            background: var(--bg-deep);
+            color: var(--fg-primary);
+            line-height: 1.5;
+            min-height: 100dvh;
+        }
+        
+        /* Layout */
+        .layout { display: flex; }
+        
+        /* Liquid Glass Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-right: var(--glass-border);
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-primary), oklch(65% 0.2 320));
+            border-radius: var(--r);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-mark svg { width: 20px; height: 20px; fill: white; }
+        .logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+        .logo-sub { font-size: 11px; color: var(--fg-muted); }
+        
+        /* Navigation */
+        .nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+        .nav-group { margin-bottom: 20px; }
+        .nav-group-title {
+            font-size: 10px; font-weight: 600; color: var(--fg-dim);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            padding: 8px 12px;
+        }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; border-radius: var(--r);
+            color: var(--fg-secondary); text-decoration: none;
+            font-size: 13px; font-weight: 500;
+            transition: all 0.2s; margin-bottom: 4px;
+        }
+        
+        .nav-item:hover { background: var(--bg-tertiary); color: var(--fg-primary); }
+        .nav-item.active {
+            background: oklch(from var(--accent-primary) l c h / 0.15);
+            color: var(--accent-primary);
+        }
+        
+        .nav-item svg { width: 18px; height: 18px; fill: currentColor; }
+        
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent-danger);
+            color: white;
+            font-size: 10px; font-weight: 600;
+            padding: 2px 8px; border-radius: 10px;
+            font-family: monospace;
+        }
+        
+        /* Main */
+        .main { flex: 1; margin-left: 240px; display: flex; flex-direction: column; }
+        
+        /* Liquid Glass Top Bar */
+        .topbar {
+            height: 60px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: var(--glass-border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            position: sticky; top: 0; z-index: 50;
+        }
+        
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .page-title { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+        
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        
+        .search-box {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--r); padding: 8px 12px; width: 260px;
+        }
+        
+        .search-box input {
+            background: transparent; border: none;
+            color: var(--fg-primary); font-size: 13px; width: 100%; outline: none;
+        }
+        
+        .search-box input::placeholder { color: var(--fg-dim); }
+        .search-box svg { width: 16px; height: 16px; fill: var(--fg-dim); }
+        
+        /* Icon Button */
+        .icon-btn {
+            width: 36px; height: 36px;
+            border-radius: var(--r);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; position: relative;
+        }
+        
+        .icon-btn:hover { background: var(--bg-elevated); }
+        .icon-btn svg { width: 18px; height: 18px; fill: var(--fg-secondary); }
+        
+        .notification-dot {
+            position: absolute; top: 6px; right: 6px;
+            width: 8px; height: 8px;
+            background: var(--accent-danger); border-radius: 50%;
+        }
+        
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: var(--r);
+            background: linear-gradient(135deg, var(--accent-primary), oklch(65% 0.2 320));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600; color: white;
+        }
+        
+        /* Content */
+        .content { flex: 1; padding: 24px; }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 24px;
+        }
+        
+        /* Liquid Glass Card */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: var(--glass-border);
+            border-radius: var(--r-lg);
+            box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.15), 0 8px 32px oklch(0% 0 0 / 0.3);
+        }
+        
+        .stat-card { padding: 20px; }
+        
+        .stat-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .stat-icon {
+            width: 40px; height: 40px; border-radius: var(--r);
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .stat-icon.purple { background: oklch(from var(--accent-primary) l c h / 0.15); }
+        .stat-icon.green { background: oklch(from var(--accent-success) l c h / 0.15); }
+        .stat-icon.orange { background: oklch(from var(--accent-warning) l c h / 0.15); }
+        .stat-icon.red { background: oklch(from var(--accent-danger) l c h / 0.15); }
+        
+        .stat-icon svg { width: 20px; height: 20px; }
+        .stat-icon.purple svg { fill: var(--accent-primary); }
+        .stat-icon.green svg { fill: var(--accent-success); }
+        .stat-icon.orange svg { fill: var(--accent-warning); }
+        .stat-icon.red svg { fill: var(--accent-danger); }
+        
+        .stat-trend {
+            font-size: 11px; font-weight: 500; font-family: monospace;
+        }
+        .stat-trend.up { color: var(--accent-success); }
+        .stat-trend.down { color: var(--accent-danger); }
+        
+        .stat-value {
+            font-size: 32px; font-weight: 700;
+            letter-spacing: -0.03em; margin-bottom: 4px;
+            font-family: monospace;
+        }
+        
+        .stat-label { font-size: 13px; color: var(--fg-muted); }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+        }
+        
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .card-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+        .card-actions { display: flex; gap: 8px; }
+        .card-body { padding: 20px; }
+        
+        /* Button */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border-radius: var(--r);
+            font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; border: none;
+        }
+        
+        .btn-primary { background: var(--accent-primary); color: white; }
+        .btn-primary:hover { background: oklch(from var(--accent-primary) calc(l + 0.1) c h); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--fg-primary); border: 1px solid var(--border-default); }
+        .btn-secondary:hover { background: var(--bg-elevated); }
+        .btn svg { width: 14px; height: 14px; fill: currentColor; }
+        
+        /* Map */
+        .map-container {
+            height: 340px;
+            background: linear-gradient(135deg, oklch(12% 0.03 265) 0%, oklch(15% 0.03 265) 100%);
+            border-radius: var(--r);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        
+        .map-container::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 30% 40%, oklch(from var(--accent-primary) l c h / 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, oklch(from var(--accent-success) l c h / 0.1) 0%, transparent 50%);
+            animation: pulse 4s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .map-icon { width: 56px; height: 56px; fill: var(--accent-primary); opacity: 0.6; position: relative; z-index: 1; }
+        .map-text { font-size: 13px; color: var(--fg-muted); position: relative; z-index: 1; }
+        
+        /* Vehicle Status */
+        .status-list { display: flex; flex-direction: column; gap: 8px; }
+        
+        .status-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--r);
+            border: 1px solid transparent;
+        }
+        
+        .status-item:hover { border-color: var(--border-default); }
+        .status-left { display: flex; align-items: center; gap: 12px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.available { background: var(--accent-success); }
+        .status-dot.in-use { background: var(--accent-info); }
+        .status-dot.low-battery { background: var(--accent-warning); }
+        .status-dot.maintenance { background: var(--accent-danger); }
+        .status-name { font-size: 13px; }
+        .status-count { font-size: 20px; font-weight: 600; font-family: monospace; }
+        
+        /* Alerts */
+        .alert-list { display: flex; flex-direction: column; gap: 12px; }
+        
+        .alert-item {
+            display: flex; gap: 12px; padding: 12px;
+            background: var(--bg-tertiary); border-radius: var(--r);
+            border-left: 3px solid;
+        }
+        
+        .alert-item.critical { border-color: var(--accent-danger); }
+        .alert-item.warning { border-color: var(--accent-warning); }
+        .alert-item.info { border-color: var(--accent-info); }
+        
+        .alert-content { flex: 1; }
+        .alert-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+        .alert-desc { font-size: 12px; color: var(--fg-muted); margin-bottom: 6px; }
+        .alert-time { font-size: 11px; color: var(--fg-dim); font-family: monospace; }
+        
+        .alert-action {
+            background: transparent; border: 1px solid var(--border-default);
+            border-radius: 6px; padding: 6px 12px; font-size: 11px;
+            color: var(--fg-secondary); cursor: pointer; align-self: flex-start;
+        }
+        
+        .alert-action:hover { background: var(--bg-elevated); color: var(--fg-primary); }
+        
+        /* Table */
+        .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .table th {
+            text-align: left; padding: 12px; font-size: 11px; font-weight: 600;
+            color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .table td { padding: 12px; border-bottom: 1px solid var(--border-subtle); }
+        .table tr:hover td { background: var(--bg-tertiary); }
+        .table-id { font-family: monospace; font-size: 12px; color: var(--accent-primary); }
+        
+        .table-type {
+            display: inline-block; padding: 4px 10px;
+            border-radius: 6px; font-size: 11px; font-weight: 500;
+        }
+        
+        .table-type.repair { background: oklch(from var(--accent-danger) l c h / 0.15); color: var(--accent-danger); }
+        .table-type.battery { background: oklch(from var(--accent-warning) l c h / 0.15); color: var(--accent-warning); }
+        .table-type.relocate { background: oklch(from var(--accent-info) l c h / 0.15); color: var(--accent-info); }
+        
+        .table-status { display: flex; align-items: center; gap: 8px; }
+        .table-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .table-status.pending .table-status-dot { background: var(--accent-warning); }
+        .table-status.in-progress .table-status-dot { background: var(--accent-info); }
+        .table-status.completed .table-status-dot { background: var(--accent-success); }
+        .table-status-text { font-size: 12px; }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .search-box { display: none; }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-mark">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5.1 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="logo-text">绿能出行</div>
+                        <div class="logo-sub">运营管理中心</div>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="nav">
+                <div class="nav-group">
+                    <div class="nav-group-title">运营监控</div>
+                    <a href="#" class="nav-item active">
+                        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                        运营总览
+                    </a>
+                    <a href="#" class="nav-item">
+                        <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+                        地图调度
+                    </a>
+                    <a href="#" class="nav-item">
+                        <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+                        车队资产 <span class="nav-badge">2,847</span>
+                    </a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">能源管理</div>
+                    <a href="#" class="nav-item">
+                        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                        电池能源
+                    </a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">运维</div>
+                    <a href="#" class="nav-item">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                        运维工单 <span class="nav-badge">12</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- Main -->
+        <main class="main">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 class="page-title">运营总览</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5z"/></svg>
+                        <input type="text" placeholder="搜索车辆、工单...">
+                    </div>
+                    <button class="icon-btn">
+                        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                        <span class="notification-dot"></span>
+                    </button>
+                    <div class="user-avatar">管</div>
+                </div>
+            </header>
+            
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon purple">
+                                <svg viewBox="0 0 24 24"><path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5z"/></svg>
+                            </div>
+                            <span class="stat-trend up">+8.5%</span>
+                        </div>
+                        <div class="stat-value">2,847</div>
+                        <div class="stat-label">运营车辆总数</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon green">
+                                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <span class="stat-trend up">+12.3%</span>
+                        </div>
+                        <div class="stat-value">2,156</div>
+                        <div class="stat-label">可用车辆</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon orange">
+                                <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                            </div>
+                            <span class="stat-trend down">-5.2%</span>
+                        </div>
+                        <div class="stat-value">386</div>
+                        <div class="stat-label">低电车辆</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon red">
+                                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            </div>
+                            <span class="stat-trend down">-15.7%</span>
+                        </div>
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">待处理工单</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">实时车辆监控</h3>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary">筛选</button>
+                                <button class="btn btn-primary">创建任务</button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="map-container">
+                                <svg class="map-icon" viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5z"/></svg>
+                                <span class="map-text">地图加载中...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">车辆状态</h3></div>
+                            <div class="card-body">
+                                <div class="status-list">
+                                    <div class="status-item">
+                                        <div class="status-left"><span class="status-dot available"></span><span class="status-name">可用</span></div>
+                                        <span class="status-count">2,156</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-left"><span class="status-dot in-use"></span><span class="status-name">使用中</span></div>
+                                        <span class="status-count">305</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-left"><span class="status-dot low-battery"></span><span class="status-name">低电</span></div>
+                                        <span class="status-count">386</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-left"><span class="status-dot maintenance"></span><span class="status-name">维修</span></div>
+                                        <span class="status-count">23</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">告警中心</h3>
+                                <a href="#" style="font-size: 12px; color: var(--accent-primary);">全部</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert-list">
+                                    <div class="alert-item critical">
+                                        <div class="alert-content">
+                                            <div class="alert-title">电池温度异常</div>
+                                            <div class="alert-desc">3辆车温度超阈值</div>
+                                            <div class="alert-time">2分钟前</div>
+                                        </div>
+                                        <button class="alert-action">处理</button>
+                                    </div>
+                                    <div class="alert-item warning">
+                                        <div class="alert-content">
+                                            <div class="alert-title">围栏违规</div>
+                                            <div class="alert-desc">5辆车驶出运营区域</div>
+                                            <div class="alert-time">15分钟前</div>
+                                        </div>
+                                        <button class="alert-action">查看</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card-header">
+                        <h3 class="card-title">待处理工单</h3>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary">导出</button>
+                            <button class="btn btn-primary">新建工单</button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>编号</th><th>类型</th><th>车辆</th><th>位置</th><th>状态</th><th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="table-id">WO-20240414-001</span></td>
+                                    <td><span class="table-type repair">维修</span></td>
+                                    <td>EB-10234</td>
+                                    <td>海淀区中关村</td>
+                                    <td><div class="table-status pending"><span class="table-status-dot"></span><span class="table-status-text">待派单</span></div></td>
+                                    <td><button class="btn btn-secondary">处理</button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="table-id">WO-20240414-002</span></td>
+                                    <td><span class="table-type battery">换电</span></td>
+                                    <td>EB-10892</td>
+                                    <td>朝阳区国贸</td>
+                                    <td><div class="table-status in-progress"><span class="table-status-dot"></span><span class="table-status-text">执行中</span></div></td>
+                                    <td><button class="btn btn-secondary">查看</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

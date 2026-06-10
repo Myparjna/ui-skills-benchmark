@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>闪电充 - EV Charging Mini Program</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --tech-blue: #1677FF;
+      --tech-green: #52C41A;
+      --tech-orange: #FA8C16;
+      --clay-bg: #F0F4F8;
+      --clay-card: #FFFFFF;
+      --clay-text: #2D3748;
+      --clay-muted: #718096;
+      --shadow-light: #FFFFFF;
+      --shadow-dark: rgba(163, 177, 198, 0.6);
+      --font-display: 'Quicksand', sans-serif;
+      --font-body: 'Nunito', sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(180deg, #EEF2F7 0%, #E4EBF5 100%);
+      color: var(--clay-text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Claymorphism Base Shadows */
+    .clay {
+      background: var(--clay-card);
+      border-radius: 24px;
+      box-shadow: 
+        8px 8px 16px var(--shadow-dark),
+        -8px -8px 16px var(--shadow-light),
+        inset 2px 2px 4px rgba(255,255,255,0.8),
+        inset -2px -2px 4px rgba(163,177,198,0.2);
+    }
+
+    .clay-inset {
+      background: var(--clay-bg);
+      border-radius: 20px;
+      box-shadow: 
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+    }
+
+    .clay-btn {
+      background: linear-gradient(145deg, #ffffff, #e6e6e6);
+      border-radius: 20px;
+      box-shadow: 
+        6px 6px 12px var(--shadow-dark),
+        -6px -6px 12px var(--shadow-light),
+        inset 1px 1px 2px rgba(255,255,255,0.9);
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: var(--font-body);
+      font-weight: 700;
+    }
+
+    .clay-btn:active {
+      transform: scale(0.96);
+      box-shadow: 
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+    }
+
+    .clay-btn:focus-visible {
+      outline: 3px solid var(--tech-blue);
+      outline-offset: 3px;
+    }
+
+    .clay-btn-primary {
+      background: linear-gradient(145deg, #3d8dff, #146de8);
+      color: white;
+      box-shadow: 
+        6px 6px 16px rgba(22, 119, 255, 0.35),
+        -6px -6px 16px var(--shadow-light),
+        inset 1px 1px 2px rgba(255,255,255,0.3);
+    }
+
+    .clay-btn-primary:active {
+      box-shadow: 
+        inset 4px 4px 12px rgba(0, 60, 150, 0.4),
+        inset -2px -2px 8px rgba(255,255,255,0.1);
+    }
+
+    .clay-btn-green {
+      background: linear-gradient(145deg, #6bd93a, #42a814);
+      color: white;
+      box-shadow: 
+        6px 6px 16px rgba(82, 196, 26, 0.35),
+        -6px -6px 16px var(--shadow-light),
+        inset 1px 1px 2px rgba(255,255,255,0.3);
+    }
+
+    .clay-btn-orange {
+      background: linear-gradient(145deg, #ffa33d, #d46a0a);
+      color: white;
+      box-shadow: 
+        6px 6px 16px rgba(250, 140, 22, 0.35),
+        -6px -6px 16px var(--shadow-light),
+        inset 1px 1px 2px rgba(255,255,255,0.3);
+    }
+
+    /* Typography */
+    .font-display {
+      font-family: var(--font-display);
+    }
+
+    .font-body {
+      font-family: var(--font-body);
+    }
+
+    /* Squishy Tab Bar - Signature Detail */
+    .tab-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-radius: 32px;
+      padding: 8px 16px 12px;
+      box-shadow: 
+        0 20px 40px rgba(163, 177, 198, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.9);
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 16px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--clay-muted);
+    }
+
+    .tab-item:focus-visible {
+      outline: 2px solid var(--tech-blue);
+      outline-offset: 2px;
+    }
+
+    .tab-item.active {
+      color: var(--tech-blue);
+      background: rgba(22, 119, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    /* Giant Center Scan Button - Signature Detail */
+    .scan-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #3d9eff, #52c41a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: -40px;
+      box-shadow: 
+        0 12px 30px rgba(22, 119, 255, 0.4),
+        0 4px 10px rgba(82, 196, 26, 0.3),
+        inset 0 2px 4px rgba(255,255,255,0.4),
+        inset 0 -2px 4px rgba(0,0,0,0.1);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      border: 4px solid rgba(255,255,255,0.9);
+      position: relative;
+    }
+
+    .scan-btn::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(61, 158, 255, 0.3), rgba(82, 196, 26, 0.2));
+      z-index: -1;
+      filter: blur(12px);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .scan-btn:hover {
+      transform: scale(1.08);
+    }
+
+    .scan-btn:hover::after {
+      opacity: 1;
+    }
+
+    .scan-btn:active {
+      transform: scale(0.92);
+      box-shadow: 
+        inset 0 4px 12px rgba(0,0,0,0.2),
+        inset 0 -2px 4px rgba(255,255,255,0.2);
+    }
+
+    .scan-btn:focus-visible {
+      outline: 3px solid var(--tech-orange);
+      outline-offset: 4px;
+    }
+
+    /* Page sections */
+    .page {
+      display: none;
+      padding-bottom: 120px;
+      animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes pageEnter {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Charging Progress Ring - Signature Detail */
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring-circle {
+      transition: stroke-dashoffset 1s ease-in-out;
+    }
+
+    /* Status dots */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-free { background: var(--tech-green); box-shadow: 0 0 8px var(--tech-green); }
+    .status-charging { background: var(--tech-orange); box-shadow: 0 0 8px var(--tech-orange); }
+    .status-busy { background: #EF4444; box-shadow: 0 0 8px #EF4444; }
+
+    /* Card hover effects */
+    .clay-card-hover {
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .clay-card-hover:hover {
+      transform: translateY(-4px) scale(1.01);
+    }
+
+    /* Map simulation */
+    .map-container {
+      background: linear-gradient(135deg, #dbeafe 0%, #dcfce7 50%, #fef3c7 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-pin {
+      position: absolute;
+      animation: pinFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes pinFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* Hide scrollbar but allow scroll */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--tech-blue);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="font-body">
+  <!-- App Container -->
+  <div class="max-w-md mx-auto min-h-screen relative bg-gradient-to-b from-[#EEF2F7] to-[#E4EBF5]">
+    
+    <!-- HOME PAGE -->
+    <div id="page-home" class="page active px-5 pt-6">
+      <!-- Header -->
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <p class="text-sm text-[#718096]">下午好，</p>
+          <h1 class="font-display text-2xl font-bold text-[#2D3748]">新能源车主</h1>
+        </div>
+        <button class="clay w-12 h-12 flex items-center justify-center rounded-2xl" aria-label="消息通知">
+          <i data-lucide="bell" class="w-5 h-5 text-[#718096]"></i>
+          <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-[#FA8C16] rounded-full border-2 border-white"></span>
+        </button>
+      </header>
+
+      <!-- Balance Card -->
+      <div class="clay p-6 mb-6 clay-card-hover">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-xs text-[#718096] font-semibold uppercase tracking-wide">账户余额</p>
+            <p class="font-display text-3xl font-bold text-[#2D3748] mt-1">¥<span id="balance">186.50</span></p>
+          </div>
+          <div class="clay-inset px-3 py-1.5 rounded-xl">
+            <span class="text-xs font-bold text-[#52C41A]">PLUS 金卡</span>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button class="clay-btn clay-btn-primary flex-1 py-3 rounded-xl text-sm">充值</button>
+          <button class="clay-btn flex-1 py-3 rounded-xl text-sm text-[#718096]">卡券 3张</button>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-4 gap-3 mb-6">
+        <button class="flex flex-col items-center gap-2 p-3 rounded-2xl transition-transform active:scale-95" tabindex="0">
+          <div class="clay w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-white">
+            <i data-lucide="map-pin" class="w-6 h-6 text-[#1677FF]"></i>
+          </div>
+          <span class="text-xs font-semibold text-[#2D3748]">附近电站</span>
+        </button>
+        <button class="flex flex-col items-center gap-2 p-3 rounded-2xl transition-transform active:scale-95" tabindex="0">
+          <div class="clay w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-50 to-white">
+            <i data-lucide="zap" class="w-6 h-6 text-[#52C41A]"></i>
+          </div>
+          <span class="text-xs font-semibold text-[#2D3748]">能量包</span>
+        </button>
+        <button class="flex flex-col items-center gap-2 p-3 rounded-2xl transition-transform active:scale-95" tabindex="0">
+          <div class="clay w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-orange-50 to-white">
+            <i data-lucide="ticket" class="w-6 h-6 text-[#FA8C16]"></i>
+          </div>
+          <span class="text-xs font-semibold text-[#2D3748]">优惠券</span>
+        </button>
+        <button class="flex flex-col items-center gap-2 p-3 rounded-2xl transition-transform active:scale-95" tabindex="0">
+          <div class="clay w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-purple-50 to-white">
+            <i data-lucide="car" class="w-6 h-6 text-purple-500"></i>
+          </div>
+          <span class="text-xs font-semibold text-[#2D3748]">车辆管理</span>
+        </button>
+      </div>
+
+      <!-- Map Simulation -->
+      <div class="clay p-4 mb-6 clay-card-hover">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-display text-lg font-bold text-[#2D3748]">附近充电站</h2>
+          <button class="text-sm font-bold text-[#1677FF]">查看列表</button>
+        </div>
+        <div class="map-container rounded-2xl h-48 relative">
+          <!-- Map Pins -->
+          <div class="map-pin top-8 left-12 clay px-3 py-2 rounded-xl flex items-center gap-2" style="animation-delay: 0s;">
+            <span class="status-dot status-free"></span>
+            <span class="text-xs font-bold text-[#2D3748]">6 空闲</span>
+          </div>
+          <div class="map-pin top-20 right-10 clay px-3 py-2 rounded-xl flex items-center gap-2" style="animation-delay: 0.5s;">
+            <span class="status-dot status-charging"></span>
+            <span class="text-xs font-bold text-[#2D3748]">2 空闲</span>
+          </div>
+          <div class="map-pin bottom-12 left-20 clay px-3 py-2 rounded-xl flex items-center gap-2" style="animation-delay: 1s;">
+            <span class="status-dot status-free"></span>
+            <span class="text-xs font-bold text-[#2D3748]">8 空闲</span>
+          </div>
+          <div class="map-pin bottom-8 right-16 clay px-3 py-2 rounded-xl flex items-center gap-2" style="animation-delay: 1.5s;">
+            <span class="status-dot status-busy"></span>
+            <span class="text-xs font-bold text-[#2D3748]">1 空闲</span>
+          </div>
+          <!-- Current location -->
+          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div class="w-4 h-4 bg-[#1677FF] rounded-full border-2 border-white shadow-lg"></div>
+            <div class="absolute inset-0 w-4 h-4 bg-[#1677FF] rounded-full animate-ping opacity-40"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nearby Stations List -->
+      <h2 class="font-display text-lg font-bold text-[#2D3748] mb-4">推荐电站</h2>
+      <div class="space-y-4">
+        <article class="clay p-4 clay-card-hover">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h3 class="font-bold text-[#2D3748]">特来电 · 西湖文化广场站</h3>
+              <p class="text-xs text-[#718096] mt-0.5">距您 0.8km · 停车免费2小时</p>
+            </div>
+            <div class="clay-inset px-2.5 py-1 rounded-lg">
+              <span class="text-xs font-bold text-[#1677FF]">¥0.89/度</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs text-[#718096] mb-3">
+            <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3.5 h-3.5 text-[#1677FF]"></i> 快充 12个</span>
+            <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3.5 h-3.5 text-[#52C41A]"></i> 慢充 4个</span>
+          </div>
+          <div class="flex gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-green-100 text-[#52C41A] text-xs font-bold">6 空闲</span>
+            <span class="px-2.5 py-1 rounded-lg bg-orange-100 text-[#FA8C16] text-xs font-bold">4 充电中</span>
+            <span class="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-500 text-xs font-bold">2 故障</span>
+          </div>
+        </article>
+
+        <article class="clay p-4 clay-card-hover">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h3 class="font-bold text-[#2D3748]">星星充电 · 万象城地下站</h3>
+              <p class="text-xs text-[#718096] mt-0.5">距您 1.2km · 消费满50免停</p>
+            </div>
+            <div class="clay-inset px-2.5 py-1 rounded-lg">
+              <span class="text-xs font-bold text-[#1677FF]">¥0.95/度</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs text-[#718096] mb-3">
+            <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3.5 h-3.5 text-[#1677FF]"></i> 超充 4个</span>
+            <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3.5 h-3.5 text-[#1677FF]"></i> 快充 8个</span>
+          </div>
+          <div class="flex gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-green-100 text-[#52C41A] text-xs font-bold">3 空闲</span>
+            <span class="px-2.5 py-1 rounded-lg bg-orange-100 text-[#FA8C16] text-xs font-bold">7 充电中</span>
+            <span class="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-600 text-xs font-bold">PLUS专享</span>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- DEALS PAGE -->
+    <div id="page-deals" class="page px-5 pt-6">
+      <header class="mb-6">
+        <h1 class="font-display text-2xl font-bold text-[#2D3748]">省钱充电</h1>
+        <p class="text-sm text-[#718096] mt-1">限时优惠 · 满减活动 · 能量包</p>
+      </header>
+
+      <!-- Banner -->
+      <div class="clay p-1 mb-6 clay-card-hover rounded-3xl overflow-hidden">
+        <div class="h-36 rounded-[20px] bg-gradient-to-r from-[#1677FF] to-[#52C41A] flex items-center px-6 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10"></div>
+          <div class="absolute bottom-0 left-20 w-20 h-20 bg-white/10 rounded-full -mb-10"></div>
+          <div class="relative z-10">
+            <p class="text-white/90 text-sm font-bold">夏季充电季</p>
+            <p class="text-white text-2xl font-display font-bold mt-1">首充立减 <span class="text-3xl">¥20</span></p>
+            <p class="text-white/80 text-xs mt-2">新用户专享，限前1000名</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Energy Packs -->
+      <h2 class="font-display text-lg font-bold text-[#2D3748] mb-4">能量包套餐</h2>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="clay p-4 text-center clay-card-hover">
+          <p class="text-2xl font-display font-bold text-[#1677FF]">100度</p>
+          <p class="text-xs text-[#718096] mt-1">约可行驶 500km</p>
+          <div class="my-3">
+            <span class="text-lg font-bold text-[#2D3748]">¥79</span>
+            <span class="text-xs text-[#718096] line-through">¥99</span>
+          </div>
+          <button class="clay-btn clay-btn-primary w-full py-2.5 rounded-xl text-xs">立即购买</button>
+        </div>
+        <div class="clay p-4 text-center clay-card-hover relative">
+          <span class="absolute -top-2 -right-2 clay-btn-orange px-2 py-1 rounded-lg text-[10px] font-bold">热销</span>
+          <p class="text-2xl font-display font-bold text-[#1677FF]">200度</p>
+          <p class="text-xs text-[#718096] mt-1">约可行驶 1000km</p>
+          <div class="my-3">
+            <span class="text-lg font-bold text-[#2D3748]">¥148</span>
+            <span class="text-xs text-[#718096] line-through">¥198</span>
+          </div>
+          <button class="clay-btn clay-btn-primary w-full py-2.5 rounded-xl text-xs">立即购买</button>
+        </div>
+      </div>
+
+      <!-- Coupons -->
+      <h2 class="font-display text-lg font-bold text-[#2D3748] mb-4">我的优惠券</h2>
+      <div class="space-y-4">
+        <div class="clay p-4 flex items-center gap-4 clay-card-hover">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1677FF] to-[#3d8dff] flex flex-col items-center justify-center text-white">
+            <span class="text-xs font-bold">满减</span>
+            <span class="text-lg font-display font-bold">¥5</span>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-[#2D3748]">充电满30元可用</p>
+            <p class="text-xs text-[#718096] mt-1">有效期至 2026-05-31</p>
+          </div>
+          <button class="clay-btn clay-btn-green px-4 py-2 rounded-xl text-xs">去使用</button>
+        </div>
+        <div class="clay p-4 flex items-center gap-4 clay-card-hover">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FA8C16] to-[#ffa33d] flex flex-col items-center justify-center text-white">
+            <span class="text-xs font-bold">折扣</span>
+            <span class="text-lg font-display font-bold">8折</span>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-[#2D3748]">PLUS会员专属折扣券</p>
+            <p class="text-xs text-[#718096] mt-1">有效期至 2026-06-15</p>
+          </div>
+          <button class="clay-btn clay-btn-green px-4 py-2 rounded-xl text-xs">去使用</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCAN PAGE -->
+    <div id="page-scan" class="page px-5 pt-6">
+      <header class="text-center mb-8">
+        <h1 class="font-display text-2xl font-bold text-[#2D3748]">扫码充电</h1>
+        <p class="text-sm text-[#718096] mt-1">对准充电桩上的二维码</p>
+      </header>
+
+      <!-- Scan Frame -->
+      <div class="clay p-6 mb-6">
+        <div class="aspect-square rounded-3xl bg-gradient-to-br from-gray-800 to-gray-900 relative overflow-hidden flex items-center justify-center">
+          <!-- Camera grid -->
+          <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 40px 40px;"></div>
+          <!-- Scan corners -->
+          <div class="absolute top-8 left-8 w-12 h-12 border-l-4 border-t-4 border-[#52C41A] rounded-tl-xl"></div>
+          <div class="absolute top-8 right-8 w-12 h-12 border-r-4 border-t-4 border-[#52C41A] rounded-tr-xl"></div>
+          <div class="absolute bottom-8 left-8 w-12 h-12 border-l-4 border-b-4 border-[#52C41A] rounded-bl-xl"></div>
+          <div class="absolute bottom-8 right-8 w-12 h-12 border-r-4 border-b-4 border-[#52C41A] rounded-br-xl"></div>
+          <!-- Scan line -->
+          <div class="absolute left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-[#52C41A] to-transparent animate-pulse" style="top: 50%;"></div>
+          
+          <div class="text-center z-10">
+            <div class="w-20 h-20 mx-auto mb-4 clay rounded-2xl flex items-center justify-center bg-white/10">
+              <i data-lucide="scan-line" class="w-10 h-10 text-white/80"></i>
+            </div>
+            <p class="text-white/60 text-sm">将二维码放入框内即可自动扫描</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Pile Number -->
+      <div class="clay p-5 mb-6">
+        <label class="text-sm font-bold text-[#2D3748] mb-3 block">或输入桩编号</label>
+        <div class="clay-inset p-1 rounded-xl flex gap-2">
+          <input 
+            type="text" 
+            placeholder="例如：HZ-XH-00123"
+            class="flex-1 bg-transparent border-none px-4 py-3 text-[#2D3748] font-medium focus:outline-none placeholder:text-[#A0AEC0]"
+          />
+          <button class="clay-btn clay-btn-primary px-6 py-3 rounded-xl text-sm">启动</button>
+        </div>
+      </div>
+
+      <!-- Recent Charged -->
+      <h2 class="font-display text-base font-bold text-[#2D3748] mb-4">最近充电</h2>
+      <div class="space-y-3">
+        <button class="clay p-4 w-full text-left clay-card-hover">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-bold text-[#2D3748]">西湖文化广场站 · A03</p>
+              <p class="text-xs text-[#718096] mt-1">昨天 18:32 · 充了 32.5度</p>
+            </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- CHARGING PAGE -->
+    <div id="page-charging" class="page px-5 pt-6">
+      <header class="text-center mb-6">
+        <div class="inline-flex items-center gap-2 clay-inset px-4 py-2 rounded-full mb-3">
+          <span class="status-dot status-charging animate-pulse"></span>
+          <span class="text-sm font-bold text-[#FA8C16]">正在充电中</span>
+        </div>
+        <h1 class="font-display text-xl font-bold text-[#2D3748]">西湖文化广场站 · A03</h1>
+      </header>
+
+      <!-- Progress Ring - Signature Detail -->
+      <div class="clay p-8 mb-6 flex flex-col items-center">
+        <div class="relative w-56 h-56">
+          <svg class="progress-ring w-56 h-56" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="#E2E8F0" stroke-width="12"/>
+            <circle 
+              id="progress-circle"
+              cx="100" 
+              cy="100" 
+              r="88" 
+              fill="none" 
+              stroke="url(#progressGradient)" 
+              stroke-width="12"
+              stroke-linecap="round"
+              stroke-dasharray="552.9"
+              stroke-dashoffset="138.2"
+              class="progress-ring-circle"
+            />
+            <defs>
+              <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1677FF"/>
+                <stop offset="100%" stop-color="#52C41A"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <p class="text-4xl font-display font-bold text-[#2D3748]">32.5</p>
+            <p class="text-sm text-[#718096] font-medium">kWh</p>
+            <p class="text-lg font-bold text-[#FA8C16] mt-2">75%</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2 mt-4 clay-inset px-4 py-2 rounded-full">
+          <i data-lucide="clock" class="w-4 h-4 text-[#718096]"></i>
+          <span class="text-sm text-[#718096]">预计剩余 18 分钟充满</span>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="clay p-4 text-center clay-card-hover">
+          <p class="text-xs text-[#718096] mb-1">当前功率</p>
+          <p class="text-xl font-display font-bold text-[#1677FF]">62.3<span class="text-sm font-body">kW</span></p>
+        </div>
+        <div class="clay p-4 text-center clay-card-hover">
+          <p class="text-xs text-[#718096] mb-1">已用时长</p>
+          <p class="text-xl font-display font-bold text-[#2D3748]">42<span class="text-sm font-body">min</span></p>
+        </div>
+        <div class="clay p-4 text-center clay-card-hover">
+          <p class="text-xs text-[#718096] mb-1">实时费用</p>
+          <p class="text-xl font-display font-bold text-[#52C41A]">¥28.9</p>
+        </div>
+      </div>
+
+      <!-- Stop Button -->
+      <button class="clay-btn clay-btn-orange w-full py-4 rounded-2xl text-base font-bold shadow-lg">
+        停止充电
+      </button>
+
+      <!-- Charging Tips -->
+      <div class="mt-6 clay p-4">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+            <i data-lucide="info" class="w-4 h-4 text-[#1677FF]"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-[#2D3748]">充电小贴士</p>
+            <p class="text-xs text-[#718096] mt-1 leading-relaxed">电量达到80%后充电功率会自动降低以保护电池。您可以利用这段时间在附近休息或购物。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="page-profile" class="page px-5 pt-6">
+      <!-- User Header -->
+      <div class="clay p-5 mb-6 clay-card-hover">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#1677FF] to-[#52C41A] p-0.5">
+            <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
+              <span class="font-display text-xl font-bold text-[#1677FF]">新</span>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <h2 class="font-display text-xl font-bold text-[#2D3748]">新能源车主</h2>
+              <span class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-[#1677FF] to-[#52C41A] text-white text-[10px] font-bold">PLUS金卡</span>
+            </div>
+            <p class="text-sm text-[#718096] mt-1">138****8888</p>
+          </div>
+          <button class="clay w-10 h-10 flex items-center justify-center rounded-xl">
+            <i data-lucide="settings" class="w-5 h-5 text-[#718096]"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Wallet Stats -->
+      <div class="clay p-5 mb-6">
+        <div class="grid grid-cols-4 gap-4 text-center">
+          <div>
+            <p class="text-lg font-display font-bold text-[#2D3748]">¥186</p>
+            <p class="text-xs text-[#718096] mt-1">余额</p>
+          </div>
+          <div>
+            <p class="text-lg font-display font-bold text-[#2D3748]">3</p>
+            <p class="text-xs text-[#718096] mt-1">卡券</p>
+          </div>
+          <div>
+            <p class="text-lg font-display font-bold text-[#2D3748]">200</p>
+            <p class="text-xs text-[#718096] mt-1">能量包(度)</p>
+          </div>
+          <div>
+            <p class="text-lg font-display font-bold text-[#2D3748]">1,280</p>
+            <p class="text-xs text-[#718096] mt-1">碳积分</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menu List -->
+      <div class="space-y-3">
+        <button class="clay p-4 w-full flex items-center justify-between clay-card-hover">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <i data-lucide="file-text" class="w-5 h-5 text-[#1677FF]"></i>
+            </div>
+            <span class="font-bold text-[#2D3748]">我的订单</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+        </button>
+
+        <button class="clay p-4 w-full flex items-center justify-between clay-card-hover">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+              <i data-lucide="receipt" class="w-5 h-5 text-[#52C41A]"></i>
+            </div>
+            <span class="font-bold text-[#2D3748]">发票管理</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+        </button>
+
+        <button class="clay p-4 w-full flex items-center justify-between clay-card-hover">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+              <i data-lucide="car" class="w-5 h-5 text-[#FA8C16]"></i>
+            </div>
+            <span class="font-bold text-[#2D3748]">车辆管理</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-[#718096]">已绑1辆</span>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+          </div>
+        </button>
+
+        <button class="clay p-4 w-full flex items-center justify-between clay-card-hover">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+              <i data-lucide="heart-pulse" class="w-5 h-5 text-purple-600"></i>
+            </div>
+            <span class="font-bold text-[#2D3748]">电池卫士</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-lg bg-green-100 text-[#52C41A] text-[10px] font-bold">健康度 98%</span>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+          </div>
+        </button>
+
+        <button class="clay p-4 w-full flex items-center justify-between clay-card-hover">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
+              <i data-lucide="leaf" class="w-5 h-5 text-cyan-600"></i>
+            </div>
+            <span class="font-bold text-[#2D3748]">碳积分与V2G</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+        </button>
+
+        <button class="clay p-4 w-full flex items-center justify-between clay-card-hover">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center">
+              <i data-lucide="help-circle" class="w-5 h-5 text-pink-600"></i>
+            </div>
+            <span class="font-bold text-[#2D3748]">客服中心</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-[#718096]"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ORDERS PAGE -->
+    <div id="page-orders" class="page px-5 pt-6">
+      <header class="mb-6">
+        <h1 class="font-display text-2xl font-bold text-[#2D3748]">充电订单</h1>
+      </header>
+
+      <!-- Order Tabs -->
+      <div class="clay p-1.5 mb-6 flex rounded-2xl">
+        <button class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-white shadow-sm text-[#1677FF]">全部</button>
+        <button class="flex-1 py-2.5 rounded-xl text-sm font-bold text-[#718096]">充电中</button>
+        <button class="flex-1 py-2.5 rounded-xl text-sm font-bold text-[#718096]">待支付</button>
+      </div>
+
+      <div class="space-y-4">
+        <article class="clay p-4 clay-card-hover">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <p class="font-bold text-[#2D3748]">西湖文化广场站</p>
+              <p class="text-xs text-[#718096] mt-0.5">2026-04-14 18:32</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-green-100 text-[#52C41A] text-xs font-bold">已完成</span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200">
+            <div class="flex gap-4 text-sm">
+              <span class="text-[#718096]">32.5 <span class="text-xs">度</span></span>
+              <span class="text-[#718096]">42 <span class="text-xs">分钟</span></span>
+            </div>
+            <p class="text-xl font-display font-bold text-[#2D3748]">¥28.90</p>
+          </div>
+          <div class="flex gap-3 mt-3">
+            <button class="clay-btn flex-1 py-2 rounded-xl text-xs text-[#718096]">再次充电</button>
+            <button class="clay-btn clay-btn-primary flex-1 py-2 rounded-xl text-xs">开发票</button>
+          </div>
+        </article>
+
+        <article class="clay p-4 clay-card-hover">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <p class="font-bold text-[#2D3748]">万象城地下站</p>
+              <p class="text-xs text-[#718096] mt-0.5">2026-04-12 09:15</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-green-100 text-[#52C41A] text-xs font-bold">已完成</span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200">
+            <div class="flex gap-4 text-sm">
+              <span class="text-[#718096]">45.2 <span class="text-xs">度</span></span>
+              <span class="text-[#718096]">38 <span class="text-xs">分钟</span></span>
+            </div>
+            <p class="text-xl font-display font-bold text-[#2D3748]">¥38.50</p>
+          </div>
+          <div class="flex gap-3 mt-3">
+            <button class="clay-btn flex-1 py-2 rounded-xl text-xs text-[#718096]">再次充电</button>
+            <button class="clay-btn clay-btn-primary flex-1 py-2 rounded-xl text-xs">开发票</button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <nav class="tab-bar" role="tablist" aria-label="底部导航">
+      <button class="tab-item active" role="tab" aria-selected="true" aria-controls="page-home" onclick="switchTab('home')">
+        <i data-lucide="home" class="w-5 h-5"></i>
+        <span>首页</span>
+      </button>
+      <button class="tab-item" role="tab" aria-selected="false" aria-controls="page-deals" onclick="switchTab('deals')">
+        <i data-lucide="tag" class="w-5 h-5"></i>
+        <span>省钱</span>
+      </button>
+      <button class="scan-btn" aria-label="扫码充电" onclick="switchTab('scan')">
+        <i data-lucide="scan-line" class="w-7 h-7 text-white"></i>
+      </button>
+      <button class="tab-item" role="tab" aria-selected="false" aria-controls="page-orders" onclick="switchTab('orders')">
+        <i data-lucide="file-text" class="w-5 h-5"></i>
+        <span>订单</span>
+      </button>
+      <button class="tab-item" role="tab" aria-selected="false" aria-controls="page-profile" onclick="switchTab('profile')">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span>我的</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Tab switching
+    function switchTab(tabName) {
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      
+      // Show selected page
+      const targetPage = document.getElementById('page-' + tabName);
+      if (targetPage) {
+        targetPage.classList.add('active');
+      }
+      
+      // For charging demo, show charging page when scan is clicked (simulation)
+      if (tabName === 'scan') {
+        setTimeout(() => {
+          document.getElementById('page-scan').classList.remove('active');
+          document.getElementById('page-charging').classList.add('active');
+          // Update tab to show orders as active since charging is a special state
+          document.querySelectorAll('.tab-item').forEach(t => {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+          });
+        }, 1500);
+      }
+      
+      // Update tab states
+      document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.classList.remove('active');
+        tab.setAttribute('aria-selected', 'false');
+        if (tab.getAttribute('aria-controls') === 'page-' + tabName) {
+          tab.classList.add('active');
+          tab.setAttribute('aria-selected', 'true');
+        }
+      });
+    }
+
+    // Animate progress ring
+    function animateProgress() {
+      const circle = document.getElementById('progress-circle');
+      if (!circle) return;
+      const radius = 88;
+      const circumference = 2 * Math.PI * radius;
+      let progress = 75;
+      const offset = circumference - (progress / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+    }
+
+    // Initial animation
+    setTimeout(animateProgress, 500);
+  </script>
+</body>
+</html>

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>共享两轮城市运营管理后台</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --sidebar-bg: #0B1120;
+      --sidebar-hover: rgba(255,255,255,0.04);
+      --sidebar-active: rgba(59,130,246,0.12);
+      --sidebar-text: #94A3B8;
+      --sidebar-text-active: #F8FAFC;
+      --primary: #3B82F6;
+      --primary-light: #EFF6FF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --info: #6366F1;
+      --bg: #F1F5F9;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --text-secondary: #475569;
+      --text-tertiary: #94A3B8;
+      --border: #E2E8F0;
+    }
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5;
+    }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px; background: var(--sidebar-bg); flex-shrink: 0;
+      display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 20px 24px; display: flex; align-items: center; gap: 10px;
+      color: #fff; font-size: 16px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-brand .logo-icon {
+      width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), #60A5FA);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .sidebar-group { margin-bottom: 20px; }
+    .sidebar-group-label {
+      padding: 0 14px; font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+      color: var(--sidebar-text); text-decoration: none; font-size: 13px; font-weight: 500;
+      border-radius: 8px; transition: all 0.15s; margin-bottom: 2px; cursor: pointer;
+    }
+    .sidebar-item:hover { background: var(--sidebar-hover); color: #CBD5E1; }
+    .sidebar-item.active { background: var(--sidebar-active); color: var(--sidebar-text-active); }
+    .sidebar-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 16px; border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px;
+    }
+    .sidebar-user { flex: 1; }
+    .sidebar-user-name { color: #fff; font-size: 13px; font-weight: 600; }
+    .sidebar-user-role { color: var(--text-tertiary); font-size: 11px; }
+
+    /* Main Content */
+    .main { flex: 1; margin-left: 240px; }
+    .header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 64px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-title { font-size: 20px; font-weight: 700; }
+    .header-filters { display: flex; gap: 10px; }
+    .header-select {
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; color: var(--text-secondary); background: var(--card); outline: none;
+    }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-icon-btn {
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; position: relative;
+    }
+    .header-badge {
+      position: absolute; top: -2px; right: -2px; width: 16px; height: 16px;
+      background: var(--danger); color: #fff; font-size: 10px; font-weight: 700;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--card);
+    }
+
+    .content { padding: 24px 28px; }
+
+    /* KPI Cards */
+    .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card {
+      background: var(--card); border-radius: 12px; padding: 20px;
+      border: 1px solid var(--border); transition: box-shadow 0.2s;
+    }
+    .kpi-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .kpi-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+    .kpi-icon {
+      width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .kpi-value { font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .kpi-change {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600;
+      padding: 2px 8px; border-radius: 100px;
+    }
+    .change-up { background: #ECFDF5; color: #059669; }
+    .change-down { background: #FEF2F2; color: #DC2626; }
+
+    /* Charts Row */
+    .chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-card {
+      background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border);
+    }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .chart-title { font-size: 15px; font-weight: 700; }
+    .chart-legend { display: flex; gap: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Bar Chart */
+    .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 180px; padding-top: 20px; }
+    .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .bar-track { width: 100%; flex: 1; display: flex; align-items: flex-end; gap: 3px; position: relative; }
+    .bar {
+      flex: 1; border-radius: 4px 4px 0 0; min-height: 4px; transition: opacity 0.2s;
+    }
+    .bar:hover { opacity: 0.8; }
+    .bar-label { font-size: 11px; color: var(--text-tertiary); }
+    .bar-tooltip {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: var(--text); color: #fff; padding: 4px 8px; border-radius: 6px;
+      font-size: 11px; white-space: nowrap; margin-bottom: 4px; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .bar-track:hover .bar-tooltip { opacity: 1; }
+
+    /* Donut Chart */
+    .donut-wrap { display: flex; align-items: center; gap: 24px; }
+    .donut-svg { width: 140px; height: 140px; }
+    .donut-center { fill: var(--card); }
+    .donut-text { text-anchor: middle; dominant-baseline: middle; }
+    .donut-labels { display: flex; flex-direction: column; gap: 10px; }
+    .donut-label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .donut-label-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .donut-label-val { margin-left: auto; font-weight: 700; color: var(--text); }
+
+    /* Bottom Row */
+    .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Alert List */
+    .alert-list { display: flex; flex-direction: column; gap: 8px; }
+    .alert-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      background: var(--bg); border-radius: 10px; border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    .alert-item:hover { background: #E8EEF4; }
+    .alert-item.p0 { border-left-color: var(--danger); }
+    .alert-item.p1 { border-left-color: var(--warning); }
+    .alert-item.p2 { border-left-color: var(--info); }
+    .alert-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .badge-p0 { background: #FEF2F2; color: #DC2626; }
+    .badge-p1 { background: #FFFBEB; color: #B45309; }
+    .badge-p2 { background: #EEF2FF; color: #4338CA; }
+    .alert-content { flex: 1; min-width: 0; }
+    .alert-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .alert-meta { font-size: 12px; color: var(--text-tertiary); }
+    .alert-time { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+    .alert-action {
+      font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+
+    /* Work Order Stats */
+    .wo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .wo-item {
+      background: var(--bg); border-radius: 10px; padding: 14px; text-align: center;
+    }
+    .wo-val { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .wo-label { font-size: 12px; color: var(--text-secondary); }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { padding: 10px 12px; text-align: left; font-size: 13px; }
+    .data-table th {
+      color: var(--text-tertiary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td { border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px;
+      font-size: 11px; font-weight: 600;
+    }
+    .pill-processing { background: #FEF3C7; color: #92400E; }
+    .pill-done { background: #D1FAE5; color: #065F46; }
+    .pill-pending { background: #E0E7FF; color: #3730A3; }
+
+    /* Quick Actions */
+    .quick-bar {
+      display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .quick-btn {
+      display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+    }
+    .quick-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    @media (max-width: 1280px) {
+      .kpi-row { grid-template-columns: repeat(3, 1fr); }
+      .chart-row { grid-template-columns: 1fr; }
+      .bottom-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1024px) {
+      .sidebar { width: 64px; }
+      .sidebar-brand span, .sidebar-group-label, .sidebar-item span, .sidebar-user { display: none; }
+      .sidebar-item { justify-content: center; padding: 12px; }
+      .main { margin-left: 64px; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-icon">🚲</div>
+        <span>两轮智运后台</span>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">核心运营</div>
+          <a href="#" class="sidebar-item active"><span class="icon">📊</span><span>运营总览</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">🗺️</span><span>地图调度中心</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">🚲</span><span>车队资产</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">🔋</span><span>电池与能源</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">🔧</span><span>运维工单</span></a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">管理配置</div>
+          <a href="#" class="sidebar-item"><span class="icon">📍</span><span>规则与区域</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">📋</span><span>合规监管</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">📈</span><span>数据报表</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">👥</span><span>组织与权限</span></a>
+          <a href="#" class="sidebar-item"><span class="icon">⚙️</span><span>系统配置</span></a>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-avatar">张</div>
+        <div class="sidebar-user">
+          <div class="sidebar-user-name">张运营</div>
+          <div class="sidebar-user-role">城市运营经理 · 杭州</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <div class="header-left">
+          <h1 class="header-title">运营总览 Dashboard</h1>
+          <div class="header-filters">
+            <select class="header-select">
+              <option>今日</option>
+              <option>昨日</option>
+              <option>本周</option>
+              <option>本月</option>
+            </select>
+            <select class="header-select">
+              <option>杭州全城</option>
+              <option>西湖区</option>
+              <option>上城区</option>
+              <option>滨江区</option>
+            </select>
+            <select class="header-select">
+              <option>全部车型</option>
+              <option>自行车</option>
+              <option>电单车</option>
+            </select>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="header-icon-btn">🔔<span class="header-badge">5</span></button>
+          <button class="header-icon-btn">❓</button>
+          <button class="header-icon-btn">👤</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="quick-bar">
+          <button class="quick-btn">➕ 创建调度任务</button>
+          <button class="quick-btn">➕ 创建换电任务</button>
+          <button class="quick-btn">🔍 车辆检索</button>
+          <button class="quick-btn">📦 批量指令</button>
+          <button class="quick-btn">📍 围栏管理</button>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">今日订单数</span>
+              <div class="kpi-icon" style="background:#EFF6FF;">📦</div>
+            </div>
+            <div class="kpi-value">48,293</div>
+            <span class="kpi-change change-up">↑ 12.5% 较昨日</span>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">骑行次数</span>
+              <div class="kpi-icon" style="background:#ECFDF5;">🚲</div>
+            </div>
+            <div class="kpi-value">52,104</div>
+            <span class="kpi-change change-up">↑ 8.3% 较昨日</span>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">今日 GMV</span>
+              <div class="kpi-icon" style="background:#FFFBEB;">💰</div>
+            </div>
+            <div class="kpi-value">¥128,450</div>
+            <span class="kpi-change change-up">↑ 15.2% 较昨日</span>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">活跃用户 DAU</span>
+              <div class="kpi-icon" style="background:#F5F3FF;">👥</div>
+            </div>
+            <div class="kpi-value">31,820</div>
+            <span class="kpi-change change-down">↓ 2.1% 较昨日</span>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">车辆可用率</span>
+              <div class="kpi-icon" style="background:#F0FDFA;">✅</div>
+            </div>
+            <div class="kpi-value">87.4%</div>
+            <span class="kpi-change change-up">↑ 1.8% 较昨日</span>
+          </div>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">订单与骑行趋势</span>
+              <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot" style="background:#3B82F6;"></span>订单数</span>
+                <span class="legend-item"><span class="legend-dot" style="background:#10B981;"></span>骑行次数</span>
+              </div>
+            </div>
+            <div class="bar-chart">
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:45%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:52%;background:#10B981;"></div>
+                  <div class="bar-tooltip">06:00 | 订单 3.2k 骑行 3.8k</div>
+                </div>
+                <span class="bar-label">06</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:72%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:80%;background:#10B981;"></div>
+                  <div class="bar-tooltip">08:00 | 订单 5.8k 骑行 6.4k</div>
+                </div>
+                <span class="bar-label">08</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:55%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:60%;background:#10B981;"></div>
+                  <div class="bar-tooltip">10:00 | 订单 4.2k 骑行 4.6k</div>
+                </div>
+                <span class="bar-label">10</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:38%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:42%;background:#10B981;"></div>
+                  <div class="bar-tooltip">12:00 | 订单 2.8k 骑行 3.1k</div>
+                </div>
+                <span class="bar-label">12</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:50%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:55%;background:#10B981;"></div>
+                  <div class="bar-tooltip">14:00 | 订单 3.9k 骑行 4.3k</div>
+                </div>
+                <span class="bar-label">14</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:85%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:92%;background:#10B981;"></div>
+                  <div class="bar-tooltip">18:00 | 订单 7.2k 骑行 7.8k</div>
+                </div>
+                <span class="bar-label">18</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:65%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:70%;background:#10B981;"></div>
+                  <div class="bar-tooltip">20:00 | 订单 5.1k 骑行 5.5k</div>
+                </div>
+                <span class="bar-label">20</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar-track">
+                  <div class="bar" style="height:30%;background:#3B82F6;"></div>
+                  <div class="bar" style="height:35%;background:#10B981;"></div>
+                  <div class="bar-tooltip">22:00 | 订单 1.9k 骑行 2.2k</div>
+                </div>
+                <span class="bar-label">22</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">车辆状态分布</span>
+            </div>
+            <div class="donut-wrap">
+              <svg class="donut-svg" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#E2E8F0" stroke-width="16"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#3B82F6" stroke-width="16"
+                  stroke-dasharray="211 352" stroke-dashoffset="0" stroke-linecap="round"
+                  transform="rotate(-90 70 70)"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#10B981" stroke-width="16"
+                  stroke-dasharray="88 352" stroke-dashoffset="-211" stroke-linecap="round"
+                  transform="rotate(-90 70 70)"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#F59E0B" stroke-width="16"
+                  stroke-dasharray="35 352" stroke-dashoffset="-299" stroke-linecap="round"
+                  transform="rotate(-90 70 70)"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#EF4444" stroke-width="16"
+                  stroke-dasharray="18 352" stroke-dashoffset="-334" stroke-linecap="round"
+                  transform="rotate(-90 70 70)"/>
+                <circle class="donut-center" cx="70" cy="70" r="40"/>
+                <text class="donut-text" x="70" y="65" fill="#0F172A" font-size="22" font-weight="800">28,500</text>
+                <text class="donut-text" x="70" y="82" fill="#94A3B8" font-size="10">总车辆数</text>
+              </svg>
+              <div class="donut-labels">
+                <div class="donut-label"><span class="donut-label-dot" style="background:#3B82F6;"></span>可用 <span class="donut-label-val">17,100</span></div>
+                <div class="donut-label"><span class="donut-label-dot" style="background:#10B981;"></span>使用中 <span class="donut-label-val">7,125</span></div>
+                <div class="donut-label"><span class="donut-label-dot" style="background:#F59E0B;"></span>低电/待换 <span class="donut-label-val">2,850</span></div>
+                <div class="donut-label"><span class="donut-label-dot" style="background:#EF4444;"></span>故障/离线 <span class="donut-label-val">1,425</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">实时告警中心</span>
+              <span style="font-size:12px;color:var(--text-tertiary);">共 23 条未处理</span>
+            </div>
+            <div class="alert-list">
+              <div class="alert-item p0">
+                <span class="alert-badge badge-p0">P0 紧急</span>
+                <div class="alert-content">
+                  <div class="alert-title">西湖区文三路车辆大规模聚集堆积</div>
+                  <div class="alert-meta">检测到 156 辆车在 50m 半径内聚集，已超过 30 分钟</div>
+                </div>
+                <span class="alert-time">3分钟前</span>
+                <span class="alert-action">派单 →</span>
+              </div>
+              <div class="alert-item p0">
+                <span class="alert-badge badge-p0">P0 紧急</span>
+                <div class="alert-content">
+                  <div class="alert-title">滨江区物联网街禁停区严重违停</div>
+                  <div class="alert-meta">违停车辆 42 辆，已触发城市监管告警</div>
+                </div>
+                <span class="alert-time">8分钟前</span>
+                <span class="alert-action">派单 →</span>
+              </div>
+              <div class="alert-item p1">
+                <span class="alert-badge badge-p1">P1 重要</span>
+                <div class="alert-content">
+                  <div class="alert-title">上城区低电车辆超过阈值</div>
+                  <div class="alert-meta">当前低电车辆 2,850 辆，阈值 2,500 辆</div>
+                </div>
+                <span class="alert-time">15分钟前</span>
+                <span class="alert-action">查看 →</span>
+              </div>
+              <div class="alert-item p1">
+                <span class="alert-badge badge-p1">P1 重要</span>
+                <div class="alert-content">
+                  <div class="alert-title">萧山区 47 辆车离线超过 2 小时</div>
+                  <div class="alert-meta">可能为信号盲区或设备故障，建议现场排查</div>
+                </div>
+                <span class="alert-time">22分钟前</span>
+                <span class="alert-action">查看 →</span>
+              </div>
+              <div class="alert-item p2">
+                <span class="alert-badge badge-p2">P2 一般</span>
+                <div class="alert-content">
+                  <div class="alert-title">拱墅区换电任务完成率低于 80%</div>
+                  <div class="alert-meta">今日换电任务完成率 76%，建议增派人手</div>
+                </div>
+                <span class="alert-time">35分钟前</span>
+                <span class="alert-action">查看 →</span>
+              </div>
+              <div class="alert-item p2">
+                <span class="alert-badge badge-p2">P2 一般</span>
+                <div class="alert-content">
+                  <div class="alert-title">江干区车辆越界 13 辆</div>
+                  <div class="alert-meta">超出运营服务区，需调度回收</div>
+                </div>
+                <span class="alert-time">42分钟前</span>
+                <span class="alert-action">查看 →</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">运维工单概览</span>
+              <span style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;">查看全部 →</span>
+            </div>
+            <div class="wo-grid">
+              <div class="wo-item">
+                <div class="wo-val" style="color:var(--primary);">18</div>
+                <div class="wo-label">待派单</div>
+              </div>
+              <div class="wo-item">
+                <div class="wo-val" style="color:var(--warning);">32</div>
+                <div class="wo-label">执行中</div>
+              </div>
+              <div class="wo-item">
+                <div class="wo-val" style="color:var(--danger);">7</div>
+                <div class="wo-label">已超时</div>
+              </div>
+              <div class="wo-item">
+                <div class="wo-val" style="color:var(--success);">156</div>
+                <div class="wo-label">今日完成</div>
+              </div>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr><th>工单类型</th><th>数量</th><th>完成率</th><th>状态</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>换电任务</td>
+                  <td>89</td>
+                  <td>82%</td>
+                  <td><span class="status-pill pill-processing">进行中</span></td>
+                </tr>
+                <tr>
+                  <td>故障维修</td>
+                  <td>34</td>
+                  <td>76%</td>
+                  <td><span class="status-pill pill-processing">进行中</span></td>
+                </tr>
+                <tr>
+                  <td>调度搬运</td>
+                  <td>56</td>
+                  <td>91%</td>
+                  <td><span class="status-pill pill-done">正常</span></td>
+                </tr>
+                <tr>
+                  <td>违停处置</td>
+                  <td>23</td>
+                  <td>68%</td>
+                  <td><span class="status-pill pill-pending">积压</span></td>
+                </tr>
+                <tr>
+                  <td>巡检任务</td>
+                  <td>12</td>
+                  <td>100%</td>
+                  <td><span class="status-pill pill-done">已完成</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

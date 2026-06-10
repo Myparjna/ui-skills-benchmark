@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>易充 - 电动汽车充电</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style type="text/tailwindcss">
+    @theme {
+      --color-primary: #1677FF;
+      --color-primary-light: #E6F4FF;
+      --color-success: #52C41A;
+      --color-success-light: #F6FFED;
+      --color-warning: #FA8C16;
+      --color-warning-light: #FFF7E6;
+      --color-danger: #F5222D;
+      --color-text-primary: #1F2937;
+      --color-text-secondary: #6B7280;
+      --color-text-tertiary: #9CA3AF;
+      --color-bg-page: #F3F4F6;
+      --color-bg-card: #FFFFFF;
+      --color-border: #E5E7EB;
+      --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+  </style>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+    }
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: #F3F4F6;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 8px solid #1f2937;
+    }
+    .content-scroll {
+      height: calc(812px - 44px - 64px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+    }
+    .content-scroll::-webkit-scrollbar { display: none; }
+    .map-bg {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+      position: relative;
+    }
+    .map-road-h {
+      position: absolute;
+      height: 8px;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .map-road-v {
+      position: absolute;
+      width: 8px;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .scan-btn-shadow {
+      box-shadow: 0 8px 24px rgba(22, 119, 255, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .card-shadow {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .banner-gradient-1 {
+      background: linear-gradient(135deg, #1677FF 0%, #36CFC9 100%);
+    }
+    .banner-gradient-2 {
+      background: linear-gradient(135deg, #FA8C16 0%, #FFD591 100%);
+    }
+    .plus-card-gradient-1 {
+      background: linear-gradient(135deg, #E6F4FF 0%, #F0F9FF 100%);
+      border: 1px solid #BAE7FF;
+    }
+    .plus-card-gradient-2 {
+      background: linear-gradient(135deg, #FFF7E6 0%, #FFFBE6 100%);
+      border: 1px solid #FFD591;
+    }
+    .plus-card-gradient-3 {
+      background: linear-gradient(135deg, #F6FFED 0%, #F0FFF0 100%);
+      border: 1px solid #B7EB8F;
+    }
+    .tab-active { color: #1677FF; }
+    .tab-inactive { color: #9CA3AF; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-free { background: #52C41A; }
+    .status-busy { background: #FA8C16; }
+    .status-fault { background: #F5222D; }
+    .tag-fast { background: #E6F4FF; color: #1677FF; }
+    .tag-slow { background: #F6FFED; color: #52C41A; }
+    .tag-24h { background: #FFF7E6; color: #FA8C16; }
+    .tag-parking { background: #F3F4F6; color: #6B7280; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- 状态栏 -->
+    <div class="h-[44px] bg-white flex items-center justify-between px-6 pt-2 select-none">
+      <span class="text-sm font-semibold text-gray-900">9:41</span>
+      <div class="flex items-center gap-1.5">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0.5" y="8" width="2.5" height="3" rx="0.5" fill="#1F2937"/><rect x="4" y="5.5" width="2.5" height="5.5" rx="0.5" fill="#1F2937"/><rect x="7.5" y="3" width="2.5" height="8" rx="0.5" fill="#1F2937"/><rect x="11" y="0.5" width="2.5" height="10.5" rx="0.5" fill="#1F2937" opacity="0.3"/></svg>
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M6.5 1.5C6.5 0.947715 6.94772 0.5 7.5 0.5H12.5C13.0523 0.5 13.5 0.947715 13.5 1.5V8.5C13.5 9.05228 13.0523 9.5 12.5 9.5H7.5C6.94772 9.5 6.5 9.05228 6.5 8.5V1.5Z" stroke="#1F2937" stroke-width="1"/><path d="M4 3C4 2.44772 4.44772 2 5 2H5.5V8H5C4.44772 8 4 7.55228 4 7V3Z" fill="#1F2937"/><path d="M1.5 4.5C1.5 3.94772 1.94772 3.5 2.5 3.5H3V6.5H2.5C1.94772 6.5 1.5 6.05228 1.5 5.5V4.5Z" fill="#1F2937"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="20" height="9" rx="2" stroke="#1F2937" stroke-width="1"/><rect x="2" y="2" width="16" height="6" rx="1" fill="#1F2937"/></svg>
+      </div>
+    </div>
+
+    <!-- 内容滚动区 -->
+    <div class="content-scroll">
+      <!-- Header -->
+      <div class="bg-white px-4 pt-2 pb-3 flex items-center gap-3">
+        <div class="flex items-center gap-1 shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span class="text-sm font-medium text-gray-900 truncate max-w-[80px]">天河区</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="flex-1 bg-gray-100 rounded-lg h-9 flex items-center px-3 gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span class="text-sm text-gray-400">搜索充电站、地址</span>
+        </div>
+        <div class="shrink-0 relative">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </div>
+      </div>
+
+      <!-- Banner 轮播 -->
+      <div class="px-4 pt-3 pb-1">
+        <div class="relative rounded-xl overflow-hidden h-[110px] banner-gradient-1">
+          <div class="absolute inset-0 flex items-center justify-between px-5">
+            <div class="text-white">
+              <div class="text-xs opacity-80 mb-1">限时特惠</div>
+              <div class="text-lg font-bold">充电6折起</div>
+              <div class="text-xs opacity-90 mt-1">PLUS会员专享跨站优惠</div>
+            </div>
+            <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+          </div>
+          <div class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+            <span class="w-4 h-1 bg-white rounded-full"></span>
+            <span class="w-1 h-1 bg-white/40 rounded-full"></span>
+            <span class="w-1 h-1 bg-white/40 rounded-full"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷入口网格 -->
+      <div class="px-4 pt-3">
+        <div class="bg-white rounded-xl p-4 card-shadow">
+          <div class="grid grid-cols-4 gap-4">
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <span class="text-xs text-gray-700">附近桩</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="8" height="8" x="8" y="8" rx="1.5"/></svg>
+              </div>
+              <span class="text-xs text-gray-700">扫码充电</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-12 h-12 rounded-xl bg-warning-light flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 14h.01"/><path d="M9 17h.01"/><path d="M12 14h.01"/><path d="M12 17h.01"/><path d="M15 14h.01"/><path d="M15 17h.01"/></svg>
+              </div>
+              <span class="text-xs text-gray-700">我的订单</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>
+              </div>
+              <span class="text-xs text-gray-700">在线客服</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 地图视图 -->
+      <div class="px-4 pt-3">
+        <div class="bg-white rounded-xl overflow-hidden card-shadow">
+          <div class="px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span class="text-sm font-semibold text-gray-900">附近充电站</span>
+              <span class="text-xs text-gray-400">5km内</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-primary font-medium">地图</span>
+              <span class="text-xs text-gray-400">列表</span>
+            </div>
+          </div>
+          <div class="map-bg h-[200px] relative mx-4 mb-4 rounded-lg overflow-hidden">
+            <!-- 模拟道路 -->
+            <div class="map-road-h" style="top:30%;left:5%;width:90%;"></div>
+            <div class="map-road-h" style="top:65%;left:10%;width:80%;"></div>
+            <div class="map-road-v" style="top:10%;left:25%;height:80%;"></div>
+            <div class="map-road-v" style="top:15%;left:70%;height:70%;"></div>
+            <!-- 当前定位 -->
+            <div class="absolute" style="top:45%;left:48%;">
+              <div class="relative">
+                <div class="w-8 h-8 rounded-full bg-primary/20 pulse-ring absolute -inset-1"></div>
+                <div class="w-6 h-6 rounded-full bg-primary border-2 border-white shadow-md flex items-center justify-center relative z-10">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+              </div>
+            </div>
+            <!-- 充电桩标记 - 空闲 -->
+            <div class="absolute" style="top:22%;left:32%;">
+              <div class="flex flex-col items-center">
+                <div class="bg-white rounded-lg px-2 py-1 shadow-md mb-1">
+                  <span class="text-[10px] font-bold text-success">8空</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-success border-2 border-white shadow-md flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+              </div>
+            </div>
+            <!-- 充电桩标记 - 忙碌 -->
+            <div class="absolute" style="top:55%;left:18%;">
+              <div class="flex flex-col items-center">
+                <div class="bg-white rounded-lg px-2 py-1 shadow-md mb-1">
+                  <span class="text-[10px] font-bold text-warning">2空</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-warning border-2 border-white shadow-md flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+              </div>
+            </div>
+            <!-- 充电桩标记 - 聚合 -->
+            <div class="absolute" style="top:35%;left:62%;">
+              <div class="flex flex-col items-center">
+                <div class="w-10 h-10 rounded-full bg-primary border-2 border-white shadow-md flex items-center justify-center">
+                  <span class="text-xs font-bold text-white">12</span>
+                </div>
+              </div>
+            </div>
+            <!-- 充电桩标记 - 空闲 -->
+            <div class="absolute" style="top:72%;left:55%;">
+              <div class="flex flex-col items-center">
+                <div class="bg-white rounded-lg px-2 py-1 shadow-md mb-1">
+                  <span class="text-[10px] font-bold text-success">5空</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-success border-2 border-white shadow-md flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+              </div>
+            </div>
+            <!-- 筛选按钮 -->
+            <div class="absolute bottom-3 right-3">
+              <div class="w-9 h-9 rounded-lg bg-white shadow-md flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+              </div>
+            </div>
+            <!-- 定位按钮 -->
+            <div class="absolute bottom-3 right-14">
+              <div class="w-9 h-9 rounded-lg bg-white shadow-md flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 附近站点列表 -->
+      <div class="px-4 pt-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-gray-900">附近站点</span>
+          <div class="flex items-center gap-1 text-xs text-primary">
+            <span>综合排序</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <!-- 站点1 -->
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-semibold text-gray-900">特来电天河智慧城快充站</h3>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] tag-fast font-medium">快充</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span class="text-xs text-gray-500">4.8分</span>
+                  <span class="text-xs text-gray-400">|</span>
+                  <span class="text-xs text-gray-500">0.8km</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">天河区高唐路321号智慧城停车场B2层</p>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-lg font-bold text-primary">1.28</div>
+                <div class="text-[10px] text-gray-400">元/度</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot status-free"></span>
+                <span class="text-xs text-gray-600">快充 8/10</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot status-free"></span>
+                <span class="text-xs text-gray-600">慢充 3/5</span>
+              </div>
+              <span class="px-1.5 py-0.5 rounded text-[10px] tag-24h font-medium ml-auto">24h</span>
+            </div>
+          </div>
+
+          <!-- 站点2 -->
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-semibold text-gray-900">星星充电万科广场超充站</h3>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] tag-fast font-medium">超充</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span class="text-xs text-gray-500">4.6分</span>
+                  <span class="text-xs text-gray-400">|</span>
+                  <span class="text-xs text-gray-500">1.5km</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">天河区华观路1961号万科广场地下停车场</p>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-lg font-bold text-primary">1.55</div>
+                <div class="text-[10px] text-gray-400">元/度</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot status-busy"></span>
+                <span class="text-xs text-gray-600">超充 2/6</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot status-free"></span>
+                <span class="text-xs text-gray-600">快充 4/8</span>
+              </div>
+              <span class="px-1.5 py-0.5 rounded text-[10px] tag-parking font-medium ml-auto">免停2h</span>
+            </div>
+          </div>
+
+          <!-- 站点3 -->
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-semibold text-gray-900">云快充华景新城社区站</h3>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] tag-slow font-medium">慢充</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#FA8C16" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span class="text-xs text-gray-500">4.9分</span>
+                  <span class="text-xs text-gray-400">|</span>
+                  <span class="text-xs text-gray-500">2.1km</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">天河区华景路78号华景新城小区内</p>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-lg font-bold text-primary">0.72</div>
+                <div class="text-[10px] text-gray-400">元/度</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+              <div class="flex items-center gap-1.5">
+                <span class="status-dot status-free"></span>
+                <span class="text-xs text-gray-600">慢充 6/8</span>
+              </div>
+              <span class="px-1.5 py-0.5 rounded text-[10px] tag-24h font-medium ml-auto">24h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLUS会员板块 -->
+      <div class="px-4 pt-4 pb-2">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-gray-900">PLUS会员</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] bg-primary-light text-primary font-medium">省更多</span>
+          </div>
+          <span class="text-xs text-gray-400">查看全部</span>
+        </div>
+        <div class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width:none;">
+          <!-- PLUS银卡 -->
+          <div class="plus-card-gradient-1 rounded-xl p-3 min-w-[140px] flex-shrink-0">
+            <div class="flex items-center gap-1.5 mb-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              <span class="text-xs font-bold text-primary">PLUS银卡</span>
+            </div>
+            <div class="text-lg font-bold text-gray-900">¥2.9<span class="text-xs font-normal text-gray-500">/月</span></div>
+            <div class="text-[10px] text-gray-500 mt-1">充电6折起</div>
+            <div class="text-[10px] text-gray-500">每月5张满减券</div>
+          </div>
+          <!-- PLUS金卡 -->
+          <div class="plus-card-gradient-2 rounded-xl p-3 min-w-[140px] flex-shrink-0">
+            <div class="flex items-center gap-1.5 mb-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              <span class="text-xs font-bold text-warning">PLUS金卡</span>
+            </div>
+            <div class="text-lg font-bold text-gray-900">¥19.9<span class="text-xs font-normal text-gray-500">/月</span></div>
+            <div class="text-[10px] text-gray-500 mt-1">8折专属单价</div>
+            <div class="text-[10px] text-gray-500">月赠能量包</div>
+          </div>
+          <!-- V1超级会员 -->
+          <div class="plus-card-gradient-3 rounded-xl p-3 min-w-[140px] flex-shrink-0">
+            <div class="flex items-center gap-1.5 mb-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              <span class="text-xs font-bold text-success">V1超级会员</span>
+            </div>
+            <div class="text-lg font-bold text-gray-900">¥99<span class="text-xs font-normal text-gray-500">/年</span></div>
+            <div class="text-[10px] text-gray-500 mt-1">最低折扣</div>
+            <div class="text-[10px] text-gray-500">电池管家检测</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 充电进度悬浮卡片 -->
+      <div class="px-4 pt-2 pb-4">
+        <div class="bg-white rounded-xl p-4 card-shadow border border-primary-light">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-warning-light flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-gray-900">正在充电中</div>
+                <div class="text-xs text-gray-500">特来电天河智慧城快充站 · 3号枪</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm font-bold text-warning">65%</div>
+              <div class="text-[10px] text-gray-400">预计25分钟</div>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center gap-4">
+            <div class="flex-1 text-center">
+              <div class="text-xs text-gray-400">实时功率</div>
+              <div class="text-sm font-semibold text-gray-900">82kW</div>
+            </div>
+            <div class="w-px h-8 bg-gray-200"></div>
+            <div class="flex-1 text-center">
+              <div class="text-xs text-gray-400">已充电量</div>
+              <div class="text-sm font-semibold text-gray-900">18.6kWh</div>
+            </div>
+            <div class="w-px h-8 bg-gray-200"></div>
+            <div class="flex-1 text-center">
+              <div class="text-xs text-gray-400">当前费用</div>
+              <div class="text-sm font-semibold text-gray-900">¥23.8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部留白，避免被TabBar遮挡 -->
+      <div class="h-4"></div>
+    </div>
+
+    <!-- 底部 TabBar -->
+    <div class="absolute bottom-0 left-0 right-0 h-[64px] bg-white border-t border-gray-100 flex items-center justify-around px-2 z-20">
+      <div class="flex flex-col items-center gap-0.5 w-14">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="text-[10px] tab-active font-medium">首页</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 w-14">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        <span class="text-[10px] tab-inactive">活动</span>
+      </div>
+      <!-- 中间扫码大按钮 -->
+      <div class="relative -top-4">
+        <div class="w-14 h-14 rounded-full banner-gradient-1 scan-btn-shadow flex items-center justify-center">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="8" height="8" x="8" y="8" rx="1.5"/></svg>
+        </div>
+        <div class="text-[10px] text-center text-gray-500 mt-1">扫码</div>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 w-14">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        <span class="text-[10px] tab-inactive">订单</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 w-14">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="text-[10px] tab-inactive">我的</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

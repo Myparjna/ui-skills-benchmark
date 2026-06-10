@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltAgent — 2026 智能充电补能系统</title>
+    <style>
+        :root {
+            /* ── 2026 DESIGN TOKENS (OKLCH) ── */
+            --bg: oklch(10% 0.02 260);
+            --surface: oklch(16% 0.03 260);
+            --surface-up: oklch(22% 0.04 260);
+            --fg: oklch(98% 0.01 200);
+            --fg-muted: oklch(75% 0.02 260);
+            --primary: oklch(75% 0.22 155); /* 霓虹翠绿 */
+            --primary-glow: oklch(75% 0.22 155 / 0.4);
+            --accent: oklch(65% 0.25 280); /* 极光紫 */
+            
+            --r-lg: 1.5rem;
+            --r-md: 1rem;
+            --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --dur-base: 400ms;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ── LIQUID GLASS UTILITY ── */
+        .liquid-glass {
+            background: linear-gradient(135deg, oklch(100% 0 0 / 0.06), oklch(100% 0 0 / 0.01));
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid oklch(100% 0 0 / 0.12);
+            box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.1), 0 12px 40px oklch(0% 0 0 / 0.4);
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 3rem);
+            max-width: 1200px;
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 1000;
+            border-radius: 2rem;
+        }
+
+        .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.04em; color: var(--primary); }
+
+        /* ── HERO SECTION ── */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            text-align: center;
+            padding: 0 1.5rem;
+            background: radial-gradient(circle at 50% 50%, oklch(25% 0.1 240 / 0.3) 0%, transparent 70%);
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -0.06em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to bottom, var(--fg), oklch(70% 0.02 260));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero p {
+            max-width: 600px;
+            font-size: 1.25rem;
+            color: var(--fg-muted);
+            margin-bottom: 3rem;
+        }
+
+        /* ── SCAN BUTTON (FLOATING ENERGY) ── */
+        .scan-trigger {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: oklch(10% 0.05 155);
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 80px var(--primary-glow);
+            transition: transform var(--dur-base) var(--ease-expo);
+            position: relative;
+        }
+
+        .scan-trigger:hover { transform: scale(1.1); }
+        .scan-trigger::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+
+        /* ── BENTO FEATURES (SCROLL ANIMATED) ── */
+        .features {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+
+        .card {
+            padding: 2.5rem;
+            border-radius: var(--r-lg);
+            animation: fade-up linear both;
+            animation-timeline: view();
+            animation-range: entry 10% cover 30%;
+        }
+
+        .card-large { grid-column: span 8; }
+        .card-small { grid-column: span 4; }
+
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(60px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card h3 { font-size: 2rem; margin-bottom: 1rem; letter-spacing: -0.02em; }
+        .card p { color: var(--fg-muted); }
+
+        /* ── STATION LIST (REAL-TIME STATUS) ── */
+        .stations {
+            padding: 6rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .station-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem;
+            margin-bottom: 1rem;
+            border-radius: var(--r-md);
+            transition: background var(--dur-base);
+        }
+
+        .station-item:hover { background: var(--surface-up); }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: inline-block;
+            margin-right: 0.5rem;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* ── CHARGING OVERLAY ── */
+        .charging-panel {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 320px;
+            padding: 1.5rem;
+            border-radius: var(--r-lg);
+            display: none;
+            z-index: 2000;
+        }
+
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        svg { transform: rotate(-90deg); }
+        circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+        .bg-circle { stroke: oklch(100% 0 0 / 0.1); }
+        .progress-circle {
+            stroke: var(--primary);
+            stroke-dasharray: 314;
+            stroke-dashoffset: 314;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        @media (max-width: 768px) {
+            .card-large, .card-small { grid-column: span 12; }
+            .hero h1 { font-size: 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="liquid-glass">
+        <div class="logo">VOLTAGENT</div>
+        <div style="display: flex; gap: 2rem; font-weight: 500; font-size: 0.9rem;">
+            <span>附近充电站</span>
+            <span>PLUS 会员</span>
+            <span>订单</span>
+        </div>
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--surface-up);"></div>
+    </nav>
+
+    <section class="hero">
+        <h1>瞬间补能<br>连接未来</h1>
+        <p>整合 1,000,000+ 充电终端，2026 全链路无感充电体验。支持 V2G 碳积分回馈，让每一次充电都有价值。</p>
+        
+        <div class="scan-trigger" onclick="startCharging()">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <path d="M7 12h10"></path>
+            </svg>
+            <span style="margin-top: 1rem;">扫码启动</span>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="card card-large liquid-glass">
+            <h3>智能聚合地图</h3>
+            <p>实时接入特来电、星星充电等 20+ 运营商 API。每 30 秒自动刷新桩态，确保数据 100% 准确。支持超充、快充精确筛选。</p>
+        </div>
+        <div class="card card-small liquid-glass" style="background: var(--accent); color: white;">
+            <h3>PLUS 权益</h3>
+            <p>银卡会员享受 8.5 折服务费优惠，金卡会员独享免费停车特权。</p>
+        </div>
+        <div class="card card-small liquid-glass">
+            <h3>碳积分体系</h3>
+            <p>记录您的绿色足迹。减排量可兑换充电券或公益树苗。</p>
+        </div>
+        <div class="card card-large liquid-glass" style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h3>即插即充</h3>
+                <p>NFC 感应识别，插枪即刻启动。告别繁琐扫码，全流程不到 3 秒。</p>
+            </div>
+            <div style="width: 120px; height: 120px; background: oklch(100% 0 0 / 0.05); border-radius: 50%; display: grid; place-items: center;">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5">
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <section class="stations">
+        <h2 style="font-size: 2.5rem; margin-bottom: 2rem; letter-spacing: -0.04em;">附近优质站点</h2>
+        <div class="station-item liquid-glass">
+            <div>
+                <h4 style="font-size: 1.25rem;">杭州萧山机场超充站</h4>
+                <p style="font-size: 0.9rem; color: var(--fg-muted);">距离 1.2km · 停车免费</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">¥1.12<span style="font-size: 0.8rem; font-weight: 400; color: var(--fg-muted);">/度</span></div>
+                <div style="font-size: 0.8rem;"><span class="status-dot"></span>12 桩空闲</div>
+            </div>
+        </div>
+        <div class="station-item liquid-glass">
+            <div>
+                <h4 style="font-size: 1.25rem;">西湖银泰快充中心</h4>
+                <p style="font-size: 0.9rem; color: var(--fg-muted);">距离 3.5km · 会员专享折扣</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">¥0.98<span style="font-size: 0.8rem; font-weight: 400; color: var(--fg-muted);">/度</span></div>
+                <div style="font-size: 0.8rem;"><span class="status-dot"></span>5 桩空闲</div>
+            </div>
+        </div>
+    </section>
+
+    <div id="charging-panel" class="charging-panel liquid-glass">
+        <div class="progress-ring">
+            <svg width="120" height="120">
+                <circle class="bg-circle" cx="60" cy="60" r="50"></circle>
+                <circle id="progress-bar" class="progress-circle" cx="60" cy="60" r="50"></circle>
+            </svg>
+            <div id="percent-text" style="position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.5rem; font-weight: 800;">0%</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-weight: 600;">正在充电...</div>
+            <div style="font-size: 0.8rem; color: var(--fg-muted); margin: 0.5rem 0 1rem;">杭州萧山机场超充站 - 02号桩</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; text-align: left; font-size: 0.85rem;">
+                <div class="liquid-glass" style="padding: 0.5rem; border-radius: 0.5rem;">
+                    <div style="opacity: 0.6;">功率</div>
+                    <div style="font-weight: 700;">120.5 kW</div>
+                </div>
+                <div class="liquid-glass" style="padding: 0.5rem; border-radius: 0.5rem;">
+                    <div style="opacity: 0.6;">电量</div>
+                    <div style="font-weight: 700;">12.4 kWh</div>
+                </div>
+            </div>
+            <button onclick="stopCharging()" style="margin-top: 1rem; width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: none; background: oklch(62% 0.22 25); color: white; font-weight: 600; cursor: pointer;">停止充电</button>
+        </div>
+    </div>
+
+    <script>
+        let chargingInterval;
+        let progress = 0;
+
+        function startCharging() {
+            const panel = document.getElementById('charging-panel');
+            panel.style.display = 'block';
+            panel.style.animation = 'slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+            
+            progress = 0;
+            const bar = document.getElementById('progress-bar');
+            const text = document.getElementById('percent-text');
+
+            chargingInterval = setInterval(() => {
+                progress += 1;
+                if (progress > 100) progress = 100;
+                
+                const offset = 314 - (progress / 100) * 314;
+                bar.style.strokeDashoffset = offset;
+                text.innerText = progress + '%';
+
+                if (progress === 100) clearInterval(chargingInterval);
+            }, 500);
+        }
+
+        function stopCharging() {
+            clearInterval(chargingInterval);
+            document.getElementById('charging-panel').style.display = 'none';
+            alert('充电结束，已通过免密支付扣除 ¥32.50');
+        }
+    </script>
+</body>
+</html>

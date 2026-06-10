@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>闪电充 - 聚合充电平台</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* OKLCH Design Tokens - 2026 Standard */
+      --bg: oklch(98% 0.005 265);
+      --surface: oklch(100% 0 0);
+      --surface-up: oklch(97% 0.01 265);
+      --fg: oklch(25% 0.02 265);
+      --fg-muted: oklch(55% 0.02 265);
+      --fg-dim: oklch(70% 0.015 265);
+      --primary: oklch(55% 0.18 255);
+      --primary-up: oklch(60% 0.18 255);
+      --primary-glow: oklch(55% 0.18 255 / 0.25);
+      --success: oklch(65% 0.18 145);
+      --warning: oklch(70% 0.15 65);
+      --error: oklch(55% 0.18 25);
+      --border: oklch(90% 0.01 265);
+      --border-faint: oklch(95% 0.005 265);
+
+      --font: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      --r-sm: 0.5rem;
+      --r: 0.75rem;
+      --r-lg: 1rem;
+      --r-xl: 1.5rem;
+      --r-full: 9999px;
+
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --dur-fast: 150ms;
+      --dur-base: 250ms;
+      --dur-slow: 500ms;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: var(--font);
+      background: oklch(92% 0.02 265);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    /* Mobile Container */
+    .mobile-frame {
+      width: 375px;
+      height: 812px;
+      margin: 0 auto;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 80px oklch(0% 0 0 / 0.15), 0 0 0 1px oklch(0% 0 0 / 0.05);
+      border-radius: 40px;
+    }
+
+    .scroll-view {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 100px;
+      scrollbar-width: none;
+    }
+    .scroll-view::-webkit-scrollbar { display: none; }
+
+    /* Liquid Glass - 2026 Standard */
+    .liquid-glass {
+      background: linear-gradient(135deg, oklch(100% 0 0 / 0.85) 0%, oklch(100% 0 0 / 0.65) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid oklch(100% 0 0 / 0.25);
+      box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.3), 0 8px 32px oklch(0% 0 0 / 0.08);
+    }
+
+    .liquid-glass-strong {
+      background: linear-gradient(135deg, oklch(100% 0 0 / 0.92) 0%, oklch(100% 0 0 / 0.78) 100%);
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      border: 1px solid oklch(100% 0 0 / 0.3);
+      box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.4), 0 12px 40px oklch(0% 0 0 / 0.12);
+    }
+
+    /* Card System */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px oklch(0% 0 0 / 0.04), 0 1px 2px oklch(0% 0 0 / 0.02);
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .card:active {
+      transform: scale(0.98);
+    }
+
+    /* Map Container */
+    .map-container {
+      position: relative;
+      height: 280px;
+      background: linear-gradient(180deg, oklch(85% 0.05 220) 0%, oklch(90% 0.03 200) 50%, oklch(88% 0.04 180) 100%);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(oklch(0% 0 0 / 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(0% 0 0 / 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .map-road {
+      position: absolute;
+      background: oklch(100% 0 0 / 0.7);
+      border-radius: var(--r-full);
+    }
+
+    /* Station Marker */
+    .station-marker {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      transition: transform var(--dur-base) var(--ease-spring);
+    }
+    .station-marker:hover {
+      transform: translate(-50%, -105%) scale(1.1);
+    }
+
+    .marker-pin {
+      width: 40px;
+      height: 40px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px oklch(0% 0 0 / 0.2);
+    }
+    .marker-pin i {
+      transform: rotate(45deg);
+      color: white;
+    }
+
+    /* TabBar */
+    .tabbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 84px;
+      padding-bottom: 20px;
+      z-index: 50;
+    }
+
+    .scan-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--r-full);
+      background: linear-gradient(135deg, var(--primary) 0%, oklch(60% 0.2 160) 100%);
+      box-shadow: 0 4px 16px var(--primary-glow), 0 0 0 4px oklch(100% 0 0 / 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .scan-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Animations */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes scale-in {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .anim-fade-up {
+      animation: fade-up var(--dur-slow) var(--ease-expo) both;
+    }
+    .anim-scale-in {
+      animation: scale-in var(--dur-slow) var(--ease-spring) both;
+    }
+    .anim-slide-up {
+      animation: slide-up var(--dur-slow) var(--ease-expo) both;
+    }
+
+    .delay-1 { animation-delay: 80ms; }
+    .delay-2 { animation-delay: 160ms; }
+    .delay-3 { animation-delay: 240ms; }
+    .delay-4 { animation-delay: 320ms; }
+    .delay-5 { animation-delay: 400ms; }
+
+    /* Status Dot */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--r-full);
+      position: relative;
+    }
+    .status-dot::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: var(--r-full);
+      animation: pulse-ring 2s ease-out infinite;
+    }
+    .status-free { background: var(--success); }
+    .status-free::after { border: 1px solid var(--success); }
+    .status-busy { background: var(--warning); }
+    .status-busy::after { border: 1px solid var(--warning); }
+
+    /* Tag */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 16px;
+    }
+    .tag-primary {
+      background: oklch(from var(--primary) l c h / 0.1);
+      color: var(--primary);
+    }
+    .tag-success {
+      background: oklch(from var(--success) l c h / 0.1);
+      color: oklch(45% 0.15 145);
+    }
+    .tag-warning {
+      background: oklch(from var(--warning) l c h / 0.1);
+      color: oklch(55% 0.12 65);
+    }
+
+    /* Price Tag */
+    .price-tag {
+      font-family: var(--font);
+      font-weight: 700;
+      font-size: 18px;
+      color: oklch(55% 0.15 25);
+      letter-spacing: -0.02em;
+    }
+    .price-unit {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--fg-muted);
+    }
+
+    /* Gradient Text */
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary) 0%, oklch(60% 0.2 160) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Banner Gradient */
+    .banner-gradient {
+      background: linear-gradient(135deg, oklch(55% 0.18 255) 0%, oklch(50% 0.15 280) 50%, oklch(55% 0.2 320) 100%);
+    }
+
+    /* Member Card Gradient */
+    .member-gradient {
+      background: linear-gradient(135deg, oklch(35% 0.08 55) 0%, oklch(45% 0.12 50) 100%);
+    }
+
+    /* Scroll Reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity var(--dur-slow) var(--ease-expo), transform var(--dur-slow) var(--ease-expo);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Current Location Pulse */
+    .location-pulse {
+      position: relative;
+      width: 16px;
+      height: 16px;
+    }
+    .location-pulse::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: var(--r-full);
+      border: 2px solid var(--primary);
+      animation: pulse-ring 2s ease-out infinite;
+    }
+    .location-pulse::after {
+      content: '';
+      position: absolute;
+      inset: -16px;
+      border-radius: var(--r-full);
+      border: 1px solid oklch(from var(--primary) l c h / 0.3);
+      animation: pulse-ring 2s ease-out 0.5s infinite;
+    }
+
+    /* Safe Area */
+    .safe-top { padding-top: 44px; }
+    .safe-bottom { padding-bottom: 84px; }
+
+    /* Marquee */
+    .marquee-track {
+      display: flex;
+      animation: marquee 20s linear infinite;
+      width: max-content;
+    }
+    .marquee-container {
+      mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+  <div class="mobile-frame">
+    <div class="scroll-view" id="scrollView">
+
+      <!-- ===== HEADER ===== -->
+      <header class="liquid-glass-strong fixed top-0 left-0 right-0 z-40 safe-top px-4 pb-3" style="width:375px; margin:0 auto; border-radius:40px 40px 0 0;">
+        <div class="flex items-center justify-between gap-3">
+          <!-- Location -->
+          <div class="flex items-center gap-1.5 min-w-0">
+            <div class="location-pulse shrink-0">
+              <div class="w-4 h-4 rounded-full bg-[oklch(55%_0.18_255)] border-2 border-white"></div>
+            </div>
+            <span class="text-sm font-semibold text-[oklch(25%_0.02_265)] truncate">深圳市南山区</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-[oklch(55%_0.02_265)] shrink-0"></i>
+          </div>
+          <!-- Search -->
+          <div class="flex-1 max-w-[200px]">
+            <div class="flex items-center gap-2 bg-[oklch(95%_0.01_265)] rounded-full px-3.5 py-2 border border-[oklch(90%_0.01_265)]">
+              <i data-lucide="search" class="w-4 h-4 text-[oklch(70%_0.015_265)]"></i>
+              <span class="text-xs text-[oklch(70%_0.015_265)]">搜索充电站</span>
+            </div>
+          </div>
+          <!-- Message -->
+          <button class="relative w-9 h-9 flex items-center justify-center rounded-full bg-[oklch(95%_0.01_265)] border border-[oklch(90%_0.01_265)] active:scale-95 transition-transform">
+            <i data-lucide="bell" class="w-4 h-4 text-[oklch(45%_0.02_265)]"></i>
+            <span class="absolute top-1.5 right-2 w-2 h-2 bg-[oklch(55%_0.18_25)] rounded-full"></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="safe-top px-4 pt-2">
+
+        <!-- ===== BANNER ===== -->
+        <section class="anim-fade-up delay-1 mb-4">
+          <div class="banner-gradient rounded-xl p-4 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+            <div class="relative z-10">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="tag bg-white/20 text-white border-0">限时活动</span>
+                <span class="text-xs text-white/80">剩 2 天</span>
+              </div>
+              <h2 class="text-lg font-bold mb-1">开通 PLUS 会员</h2>
+              <p class="text-sm text-white/85 mb-3">充电 6 折起 · 每月省 50 元</p>
+              <button class="bg-white text-[oklch(55%_0.18_255)] text-sm font-semibold px-4 py-1.5 rounded-full active:scale-95 transition-transform">
+                立即开通
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== QUICK ACCESS ===== -->
+        <section class="anim-fade-up delay-2 mb-4">
+          <div class="card p-4">
+            <div class="grid grid-cols-4 gap-3">
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(55%_0.18_255/0.08)] flex items-center justify-center">
+                  <i data-lucide="map-pin" class="w-5 h-5 text-[oklch(55%_0.18_255)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">附近桩</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(65%_0.18_145/0.08)] flex items-center justify-center">
+                  <i data-lucide="scan-line" class="w-5 h-5 text-[oklch(50%_0.15_145)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">扫码充电</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(70%_0.15_65/0.08)] flex items-center justify-center">
+                  <i data-lucide="file-text" class="w-5 h-5 text-[oklch(55%_0.12_65)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">我的订单</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(55%_0.18_25/0.08)] flex items-center justify-center">
+                  <i data-lucide="headphones" class="w-5 h-5 text-[oklch(55%_0.15_25)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">客服中心</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(55%_0.18_280/0.08)] flex items-center justify-center">
+                  <i data-lucide="wallet" class="w-5 h-5 text-[oklch(50%_0.15_280)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">钱包充值</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(60%_0.15_200/0.08)] flex items-center justify-center">
+                  <i data-lucide="ticket" class="w-5 h-5 text-[oklch(45%_0.12_200)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">优惠券</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(55%_0.15_160/0.08)] flex items-center justify-center">
+                  <i data-lucide="leaf" class="w-5 h-5 text-[oklch(45%_0.12_160)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">碳积分</span>
+              </button>
+              <button class="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-[oklch(55%_0.15_25/0.08)] flex items-center justify-center">
+                  <i data-lucide="car" class="w-5 h-5 text-[oklch(55%_0.12_25)]"></i>
+                </div>
+                <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">车辆管理</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== MAP VIEW ===== -->
+        <section class="anim-fade-up delay-3 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-[oklch(25%_0.02_265)]">附近充电站</h3>
+            <button class="flex items-center gap-1 text-xs font-medium text-[oklch(55%_0.18_255)] active:opacity-70 transition-opacity">
+              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+              筛选
+            </button>
+          </div>
+          <div class="map-container">
+            <div class="map-grid"></div>
+            <!-- Roads -->
+            <div class="map-road" style="width:120px;height:8px;top:60px;left:40px;transform:rotate(15deg);"></div>
+            <div class="map-road" style="width:100px;height:8px;top:140px;left:180px;transform:rotate(-25deg);"></div>
+            <div class="map-road" style="width:80px;height:6px;top:200px;left:80px;transform:rotate(45deg);"></div>
+            <div class="map-road" style="width:140px;height:8px;top:100px;left:120px;transform:rotate(75deg);"></div>
+            <!-- Park -->
+            <div class="absolute top-8 left-28 w-16 h-12 rounded-lg bg-[oklch(70%_0.08_145/0.2)] border border-[oklch(70%_0.08_145/0.3)] flex items-center justify-center">
+              <i data-lucide="trees" class="w-4 h-4 text-[oklch(50%_0.1_145)]"></i>
+            </div>
+            <!-- Building -->
+            <div class="absolute top-36 right-10 w-14 h-14 rounded-lg bg-[oklch(80%_0.03_265/0.3)] border border-[oklch(80%_0.03_265/0.4)] flex items-center justify-center">
+              <i data-lucide="building-2" class="w-4 h-4 text-[oklch(60%_0.05_265)]"></i>
+            </div>
+
+            <!-- Station Markers -->
+            <div class="station-marker" style="top:90px;left:100px;">
+              <div class="marker-pin bg-[oklch(55%_0.18_255)]">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span class="text-[10px] font-bold text-[oklch(25%_0.02_265)] bg-white/90 px-1.5 py-0.5 rounded shadow-sm">特来电</span>
+              </div>
+            </div>
+            <div class="station-marker" style="top:130px;left:240px;">
+              <div class="marker-pin bg-[oklch(65%_0.18_145)]">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span class="text-[10px] font-bold text-[oklch(25%_0.02_265)] bg-white/90 px-1.5 py-0.5 rounded shadow-sm">星星充电</span>
+              </div>
+            </div>
+            <div class="station-marker" style="top:190px;left:160px;">
+              <div class="marker-pin bg-[oklch(70%_0.15_65)]">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span class="text-[10px] font-bold text-[oklch(25%_0.02_265)] bg-white/90 px-1.5 py-0.5 rounded shadow-sm">云快充</span>
+              </div>
+            </div>
+            <div class="station-marker" style="top:70px;left:300px;">
+              <div class="marker-pin bg-[oklch(50%_0.1_25)]">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span class="text-[10px] font-bold text-[oklch(25%_0.02_265)] bg-white/90 px-1.5 py-0.5 rounded shadow-sm">国家电网</span>
+              </div>
+            </div>
+
+            <!-- Current Location -->
+            <div class="absolute" style="top:155px;left:195px;">
+              <div class="location-pulse">
+                <div class="w-4 h-4 rounded-full bg-[oklch(55%_0.18_255)] border-2 border-white shadow-lg"></div>
+              </div>
+            </div>
+
+            <!-- Map Controls -->
+            <div class="absolute top-3 right-3 flex flex-col gap-2">
+              <button class="w-9 h-9 rounded-lg bg-white/90 shadow-md flex items-center justify-center active:scale-95 transition-transform">
+                <i data-lucide="plus" class="w-4 h-4 text-[oklch(45%_0.02_265)]"></i>
+              </button>
+              <button class="w-9 h-9 rounded-lg bg-white/90 shadow-md flex items-center justify-center active:scale-95 transition-transform">
+                <i data-lucide="minus" class="w-4 h-4 text-[oklch(45%_0.02_265)]"></i>
+              </button>
+              <button class="w-9 h-9 rounded-lg bg-[oklch(55%_0.18_255)] shadow-md flex items-center justify-center active:scale-95 transition-transform">
+                <i data-lucide="navigation" class="w-4 h-4 text-white"></i>
+              </button>
+            </div>
+
+            <!-- Filter Chips -->
+            <div class="absolute bottom-3 left-3 right-3 flex gap-2">
+              <button class="liquid-glass px-3 py-1.5 rounded-full text-xs font-medium text-[oklch(25%_0.02_265)] active:scale-95 transition-transform">
+                快充
+              </button>
+              <button class="liquid-glass px-3 py-1.5 rounded-full text-xs font-medium text-[oklch(25%_0.02_265)] active:scale-95 transition-transform">
+                慢充
+              </button>
+              <button class="liquid-glass px-3 py-1.5 rounded-full text-xs font-medium text-[oklch(25%_0.02_265)] active:scale-95 transition-transform">
+                免费停车
+              </button>
+              <button class="liquid-glass px-3 py-1.5 rounded-full text-xs font-medium text-[oklch(25%_0.02_265)] active:scale-95 transition-transform">
+                24小时
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== NEARBY STATIONS ===== -->
+        <section class="anim-fade-up delay-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-[oklch(25%_0.02_265)]">附近站点</h3>
+            <button class="text-xs font-medium text-[oklch(55%_0.02_265)] active:opacity-70 transition-opacity">查看全部</button>
+          </div>
+          <div class="flex flex-col gap-3">
+            <!-- Station 1 -->
+            <div class="card p-3.5 active:scale-[0.98] transition-transform">
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-sm font-bold text-[oklch(25%_0.02_265)] truncate">特来电科技园快充站</h4>
+                    <span class="tag tag-success shrink-0">快充</span>
+                  </div>
+                  <p class="text-xs text-[oklch(55%_0.02_265)] truncate">南山区科苑路 15 号科技园停车场 B2 层</p>
+                </div>
+                <div class="text-right shrink-0 ml-2">
+                  <div class="price-tag">1.28<span class="price-unit">元/度</span></div>
+                  <span class="text-[10px] text-[oklch(70%_0.015_265)]">含服务费</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-1">
+                    <div class="status-dot status-free"></div>
+                    <span class="text-xs font-medium text-[oklch(45%_0.15_145)]">8 空闲</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <div class="w-2 h-2 rounded-full bg-[oklch(70%_0.15_65)]"></div>
+                    <span class="text-xs text-[oklch(55%_0.02_265)]">3 充电中</span>
+                  </div>
+                  <span class="text-xs text-[oklch(70%_0.015_265)]">60kW</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <i data-lucide="star" class="w-3 h-3 text-[oklch(70%_0.15_65)] fill-[oklch(70%_0.15_65)]"></i>
+                  <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">4.8</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-2 pt-2 border-t border-[oklch(95%_0.005_265)]">
+                <span class="tag tag-primary">PLUS 6 折</span>
+                <span class="tag tag-warning">停车减免</span>
+                <span class="text-xs text-[oklch(70%_0.015_265)] ml-auto">0.8km</span>
+              </div>
+            </div>
+
+            <!-- Station 2 -->
+            <div class="card p-3.5 active:scale-[0.98] transition-transform">
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-sm font-bold text-[oklch(25%_0.02_265)] truncate">星星充电海岸城站</h4>
+                    <span class="tag tag-success shrink-0">超充</span>
+                  </div>
+                  <p class="text-xs text-[oklch(55%_0.02_265)] truncate">南山区文心五路海岸城购物中心地下停车场</p>
+                </div>
+                <div class="text-right shrink-0 ml-2">
+                  <div class="price-tag">1.55<span class="price-unit">元/度</span></div>
+                  <span class="text-[10px] text-[oklch(70%_0.015_265)]">含服务费</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-1">
+                    <div class="status-dot status-free"></div>
+                    <span class="text-xs font-medium text-[oklch(45%_0.15_145)]">5 空闲</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <div class="w-2 h-2 rounded-full bg-[oklch(70%_0.15_65)]"></div>
+                    <span class="text-xs text-[oklch(55%_0.02_265)]">7 充电中</span>
+                  </div>
+                  <span class="text-xs text-[oklch(70%_0.015_265)]">120kW</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <i data-lucide="star" class="w-3 h-3 text-[oklch(70%_0.15_65)] fill-[oklch(70%_0.15_65)]"></i>
+                  <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">4.6</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-2 pt-2 border-t border-[oklch(95%_0.005_265)]">
+                <span class="tag tag-primary">PLUS 6 折</span>
+                <span class="tag tag-success">24小时</span>
+                <span class="text-xs text-[oklch(70%_0.015_265)] ml-auto">1.2km</span>
+              </div>
+            </div>
+
+            <!-- Station 3 -->
+            <div class="card p-3.5 active:scale-[0.98] transition-transform">
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-sm font-bold text-[oklch(25%_0.02_265)] truncate">云快充深圳湾站</h4>
+                    <span class="tag tag-warning shrink-0">慢充</span>
+                  </div>
+                  <p class="text-xs text-[oklch(55%_0.02_265)] truncate">南山区滨海大道深圳湾公园 P3 停车场</p>
+                </div>
+                <div class="text-right shrink-0 ml-2">
+                  <div class="price-tag">0.78<span class="price-unit">元/度</span></div>
+                  <span class="text-[10px] text-[oklch(70%_0.015_265)]">含服务费</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-1">
+                    <div class="status-dot status-free"></div>
+                    <span class="text-xs font-medium text-[oklch(45%_0.15_145)]">12 空闲</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <div class="w-2 h-2 rounded-full bg-[oklch(70%_0.15_65)]"></div>
+                    <span class="text-xs text-[oklch(55%_0.02_265)]">2 充电中</span>
+                  </div>
+                  <span class="text-xs text-[oklch(70%_0.015_265)]">7kW</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <i data-lucide="star" class="w-3 h-3 text-[oklch(70%_0.15_65)] fill-[oklch(70%_0.15_65)]"></i>
+                  <span class="text-xs font-medium text-[oklch(25%_0.02_265)]">4.9</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-2 pt-2 border-t border-[oklch(95%_0.005_265)]">
+                <span class="tag tag-primary">PLUS 6 折</span>
+                <span class="tag tag-success">免费停车</span>
+                <span class="text-xs text-[oklch(70%_0.015_265)] ml-auto">2.5km</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== PLUS MEMBER ===== -->
+        <section class="anim-fade-up delay-5 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold text-[oklch(25%_0.02_265)]">PLUS 会员</h3>
+              <span class="tag member-gradient text-white border-0">省更多</span>
+            </div>
+            <button class="text-xs font-medium text-[oklch(55%_0.18_255)] active:opacity-70 transition-opacity">了解详情</button>
+          </div>
+          <div class="flex flex-col gap-3">
+            <!-- Silver -->
+            <div class="card p-4 relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-24 h-24 bg-[oklch(80%_0.05_220/0.15)] rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-[oklch(80%_0.05_220/0.2)] flex items-center justify-center">
+                      <i data-lucide="crown" class="w-4 h-4 text-[oklch(60%_0.1_220)]"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-[oklch(25%_0.02_265)]">PLUS 银卡</h4>
+                      <p class="text-[10px] text-[oklch(55%_0.02_265)]">适合偶尔充电的车主</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="price-tag text-base">2.9<span class="price-unit">元/月</span></div>
+                  </div>
+                </div>
+                <div class="flex gap-2 mb-3">
+                  <span class="tag tag-primary">充电 6 折起</span>
+                  <span class="tag tag-success">月省约 50 元</span>
+                  <span class="tag tag-warning">满减券 x5</span>
+                </div>
+                <button class="w-full py-2.5 rounded-lg bg-[oklch(55%_0.18_255)] text-white text-sm font-semibold active:scale-[0.98] transition-transform">
+                  立即开通
+                </button>
+              </div>
+            </div>
+
+            <!-- Gold -->
+            <div class="card p-4 relative overflow-hidden border-[oklch(70%_0.15_65/0.3)]">
+              <div class="absolute top-0 right-0 w-24 h-24 bg-[oklch(70%_0.15_65/0.1)] rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div class="absolute top-3 right-3">
+                <span class="tag bg-[oklch(70%_0.15_65)] text-white border-0 text-[10px]">推荐</span>
+              </div>
+              <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-[oklch(70%_0.15_65/0.15)] flex items-center justify-center">
+                      <i data-lucide="crown" class="w-4 h-4 text-[oklch(60%_0.12_65)]"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-[oklch(25%_0.02_265)]">PLUS 金卡</h4>
+                      <p class="text-[10px] text-[oklch(55%_0.02_265)]">适合高频充电用户</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="price-tag text-base">19.9<span class="price-unit">元/月</span></div>
+                  </div>
+                </div>
+                <div class="flex gap-2 mb-3 flex-wrap">
+                  <span class="tag tag-primary">8 折专属价</span>
+                  <span class="tag tag-success">月赠能量包</span>
+                  <span class="tag tag-warning">优先客服</span>
+                  <span class="tag tag-success">月省约 100 元</span>
+                </div>
+                <button class="w-full py-2.5 rounded-lg bg-gradient-to-r from-[oklch(70%_0.15_65)] to-[oklch(65%_0.18_45)] text-white text-sm font-semibold active:scale-[0.98] transition-transform">
+                  立即开通
+                </button>
+              </div>
+            </div>
+
+            <!-- V1 -->
+            <div class="card p-4 relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-24 h-24 bg-[oklch(50%_0.15_300/0.1)] rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-[oklch(50%_0.15_300/0.15)] flex items-center justify-center">
+                      <i data-lucide="gem" class="w-4 h-4 text-[oklch(50%_0.15_300)]"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-[oklch(25%_0.02_265)]">V1 超级会员</h4>
+                      <p class="text-[10px] text-[oklch(55%_0.02_265)]">年卡尊享，全家共享</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="price-tag text-base">99<span class="price-unit">元/年</span></div>
+                  </div>
+                </div>
+                <div class="flex gap-2 mb-3 flex-wrap">
+                  <span class="tag tag-primary">最低折扣</span>
+                  <span class="tag tag-success">全年礼包</span>
+                  <span class="tag tag-warning">电池管家</span>
+                  <span class="tag tag-success">一号多充</span>
+                </div>
+                <button class="w-full py-2.5 rounded-lg bg-[oklch(25%_0.02_265)] text-white text-sm font-semibold active:scale-[0.98] transition-transform">
+                  立即开通
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== OPERATOR MARQUEE ===== -->
+        <section class="mb-4">
+          <div class="flex items-center justify-between mb-3 px-1">
+            <h3 class="text-sm font-bold text-[oklch(25%_0.02_265)]">合作运营商</h3>
+            <span class="text-xs text-[oklch(55%_0.02_265)]">覆盖全国 300+ 城市</span>
+          </div>
+          <div class="marquee-container overflow-hidden">
+            <div class="marquee-track">
+              <div class="flex items-center gap-3 px-1">
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">特来电</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">星星充电</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">云快充</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">国家电网</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">南方电网</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">小桔充电</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">万马爱充</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">依威能源</div>
+              </div>
+              <div class="flex items-center gap-3 px-1">
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">特来电</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">星星充电</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">云快充</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">国家电网</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">南方电网</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">小桔充电</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">万马爱充</div>
+                <div class="liquid-glass px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium text-[oklch(25%_0.02_265)]">依威能源</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== FOOTER INFO ===== -->
+        <section class="px-1 pb-4">
+          <div class="text-center">
+            <p class="text-xs text-[oklch(70%_0.015_265)] mb-1">2026 年国内新能源乘用车销量突破 1300 万辆</p>
+            <p class="text-xs text-[oklch(70%_0.015_265)]">闪电充 · 让充电更简单</p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ===== TAB BAR ===== -->
+    <nav class="tabbar liquid-glass-strong" style="width:375px; margin:0 auto; left:auto; right:auto;">
+      <div class="flex items-center justify-around h-16 px-2">
+        <button class="flex flex-col items-center gap-0.5 min-w-[60px] active:scale-95 transition-transform">
+          <i data-lucide="home" class="w-5 h-5 text-[oklch(55%_0.18_255)]"></i>
+          <span class="text-[10px] font-medium text-[oklch(55%_0.18_255)]">首页</span>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 min-w-[60px] active:scale-95 transition-transform">
+          <i data-lucide="gift" class="w-5 h-5 text-[oklch(55%_0.02_265)]"></i>
+          <span class="text-[10px] font-medium text-[oklch(55%_0.02_265)]">活动</span>
+        </button>
+        <button class="scan-btn active:scale-95 transition-transform -mt-4">
+          <i data-lucide="scan-line" class="w-6 h-6 text-white"></i>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 min-w-[60px] active:scale-95 transition-transform">
+          <i data-lucide="clipboard-list" class="w-5 h-5 text-[oklch(55%_0.02_265)]"></i>
+          <span class="text-[10px] font-medium text-[oklch(55%_0.02_265)]">订单</span>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 min-w-[60px] active:scale-95 transition-transform">
+          <i data-lucide="user" class="w-5 h-5 text-[oklch(55%_0.02_265)]"></i>
+          <span class="text-[10px] font-medium text-[oklch(55%_0.02_265)]">我的</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Scroll reveal animation
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Add reveal class to sections dynamically for scroll animation
+    document.querySelectorAll('section').forEach((section, index) => {
+      if (index > 0) section.classList.add('reveal');
+    });
+  </script>
+</body>
+</html>

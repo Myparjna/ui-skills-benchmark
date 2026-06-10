@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electric Silence — 智能充电</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+  <style>
+    :root {
+      --primary: #1677FF;
+      --success: #52C41A;
+      --charging: #FA8C16;
+      --bg: #F5F7FA;
+      --card: #FFFFFF;
+      --text-primary: #1A1A2E;
+      --text-secondary: #6B7280;
+      --border: #E8ECF0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Mobile Frame Container ===== */
+    .mobile-frame {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 800px) {
+      body {
+        background: linear-gradient(135deg, #0a1628 0%, #1a2744 50%, #0d1b2a 100%);
+        padding: 40px 20px;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .mobile-frame {
+        min-height: calc(100vh - 80px);
+        border-radius: 36px;
+        box-shadow:
+          0 60px 120px rgba(0,0,0,0.4),
+          0 0 0 12px rgba(255,255,255,0.05),
+          inset 0 0 0 1px rgba(255,255,255,0.08);
+        overflow: hidden;
+      }
+    }
+
+    /* ===== Header / Search ===== */
+    .header {
+      padding: 48px 24px 20px;
+      background: transparent;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .greeting h1 {
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .greeting .time-text {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .avatar-ring {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #69B1FF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    /* Search Bar */
+    .search-bar {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      height: 52px;
+      border: none;
+      border-radius: 16px;
+      background: var(--card);
+      padding: 0 48px 0 20px;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--text-primary);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      transition: all 0.25s ease;
+    }
+
+    .search-bar input::placeholder {
+      color: #B0B8C4;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      box-shadow: 0 4px 24px rgba(22,119,255,0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--primary);
+      font-size: 20px;
+    }
+
+    /* ===== Map Area (CSS Simulated) ===== */
+    .map-area {
+      flex: 1;
+      position: relative;
+      min-height: 280px;
+      margin: 0 20px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: linear-gradient(145deg, #E8F0FE 0%, #D6E4FF 30%, #F0F5FF 70%, #E8EDF4 100%);
+      box-shadow:
+        inset 0 2px 10px rgba(0,0,0,0.04),
+        0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    /* Map grid lines */
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0.35;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Map "roads" - simulated with SVG-like divs */
+    .map-roads {
+      position: absolute;
+      inset: 0;
+    }
+    .road {
+      position: absolute;
+      background: rgba(180,195,220,0.45);
+      border-radius: 2px;
+    }
+    .road-h1 { width: 65%; height: 6px; left: 10%; top: 30%; transform: rotate(-3deg); }
+    .road-h2 { width: 55%; height: 5px; left: 30%; top: 58%; transform: rotate(2deg); }
+    .road-v1 { width: 5px; height: 50%; left: 38%; top: 15%; transform: rotate(-1deg); }
+    .road-v2 { width: 4px; height: 40%; left: 68%; top: 35%; }
+
+    /* Station pins on map */
+    .station-pin {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+      animation: pinBounce 2s ease-in-out infinite;
+    }
+    .station-pin::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: white;
+      top: 3px;
+      left: 3px;
+    }
+    .station-pin.available { background: var(--success); box-shadow: 0 2px 10px rgba(82,196,26,0.4); }
+    .station-pin.charging-state { background: var(--charging); box-shadow: 0 2px 10px rgba(250,140,22,0.4); animation-delay: 0.5s; }
+    .station-pin.busy { background: #FF4D4F; box-shadow: 0 2px 10px rgba(255,77,79,0.4); animation-delay: 1s; }
+    .station-pin:hover { transform: rotate(-45deg) scale(1.4); z-index: 10; }
+
+    @keyframes pinBounce {
+      0%, 100% { transform: rotate(-45deg) translateY(0); }
+      50% { transform: rotate(-45deg) translateY(-4px); }
+    }
+
+    /* Pin positions */
+    .pin-1 { left: 25%; top: 32%; } .pin-2 { left: 58%; top: 42%; } .pin-3 { left: 42%; top: 62%; }
+    .pin-4 { left: 72%; top: 28%; } .pin-5 { left: 18%; top: 56%; } .pin-6 { left: 78%; top: 64%; }
+
+    /* Current location indicator */
+    .current-location {
+      position: absolute;
+      left: 46%;
+      top: 44%;
+      width: 20px;
+      height: 20px;
+      transform: translate(-50%, -50%);
+    }
+    .location-pulse {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--primary);
+      opacity: 0.2;
+      animation: pulseRing 2s ease-out infinite;
+    }
+    .location-dot {
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2.5px solid white;
+      box-shadow: 0 2px 8px rgba(22,119,255,0.3);
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(1); opacity: 0.25; }
+      100% { transform: scale(3.5); opacity: 0; }
+    }
+
+    /* Battery ring on map */
+    .battery-overlay {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      width: 76px;
+      height: 76px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      z-index: 5;
+    }
+
+    .battery-ring {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .battery-ring svg {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+    .battery-ring circle.bg {
+      fill: none;
+      stroke: #E8ECF0;
+      stroke-width: 5;
+    }
+    .battery-ring circle.fg {
+      fill: none;
+      stroke: var(--success);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 157;
+      stroke-dashoffset: 31.4; /* 80% */
+      transition: stroke-dashoffset 1s ease;
+    }
+    .battery-text {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      z-index: 1;
+    }
+
+    /* ===== Bottom Panel — Station List ===== */
+    .bottom-panel {
+      background: var(--card);
+      border-radius: 28px 28px 0 0;
+      padding: 24px 20px 0;
+      margin: 0 0 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.06);
+      position: relative;
+      z-index: 10;
+    }
+
+    .panel-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: #D0D5DD;
+      margin: 0 auto 20px;
+    }
+
+    .panel-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-title .count-badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--primary);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* Station Card */
+    .station-card {
+      display: flex;
+      gap: 14px;
+      padding: 16px;
+      background: #FAFBFC;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1.5px solid transparent;
+    }
+    .station-card:hover {
+      border-color: var(--primary);
+      background: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(22,119,255,0.08);
+    }
+
+    .station-status-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 22px;
+    }
+    .status-available { background: rgba(82,196,26,0.1); color: var(--success); }
+    .status-charging { background: rgba(250,140,22,0.1); color: var(--charging); }
+    .status-busy { background: rgba(255,77,79,0.1); color: #FF4D4F; }
+
+    .station-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .station-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .station-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .available-num {
+      color: var(--success);
+      font-weight: 600;
+    }
+    .price-tag {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .station-action {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 4px;
+    }
+    .distance-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: #0958D9;
+      transform: scale(1.08);
+    }
+
+    /* ===== Tab Bar ===== */
+    .tab-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 0 28px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-icon {
+      font-size: 23px;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+    .tab-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+    .tab-item.active .tab-icon,
+    .tab-item.active .tab-label { color: var(--primary); }
+    .tab-scan {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), #4096FF);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 14px rgba(22,119,255,0.35);
+      margin-top: -20px;
+    }
+
+    /* ===== Artistic Elements ===== */
+    .art-accent {
+      position: fixed;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .art-accent-1 { background: var(--primary); top: -60px; right: -60px; }
+    .art-accent-2 { background: var(--success); bottom: 100px; left: -80px; }
+  </style>
+</head>
+<body>
+
+<div class="art-accent art-accent-1"></div>
+<div class="art-accent art-accent-2"></div>
+
+<div class="mobile-frame">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="greeting">
+        <h1>Electric Silence</h1>
+        <div class="time-text">晚上好，袁先生</div>
+      </div>
+      <div class="avatar-ring">袁</div>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="您想去哪里充电？">
+      <span class="iconify search-icon" data-icon="mdi:magnify"></span>
+    </div>
+  </div>
+
+  <!-- Map Area -->
+  <div class="map-area">
+    <div class="map-grid"></div>
+    <div class="map-roads">
+      <div class="road road-h1"></div>
+      <div class="road road-h2"></div>
+      <div class="road road-v1"></div>
+      <div class="road road-v2"></div>
+    </div>
+
+    <!-- Station Pins -->
+    <div class="station-pin available pin-1"></div>
+    <div class="station-pin charging-state pin-2"></div>
+    <div class="station-pin available pin-3"></div>
+    <div class="station-pin busy pin-4"></div>
+    <div class="station-pin available pin-5"></div>
+    <div class="station-pin charging-state pin-6"></div>
+
+    <!-- Current Location -->
+    <div class="current-location">
+      <div class="location-pulse"></div>
+      <div class="location-dot"></div>
+    </div>
+
+    <!-- Battery Overlay -->
+    <div class="battery-overlay">
+      <div class="battery-ring">
+        <svg viewBox="0 0 56 56">
+          <circle class="bg" cx="28" cy="28" r="25"/>
+          <circle class="fg" cx="28" cy="28" r="25"/>
+        </svg>
+        <span class="battery-text">80%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Panel -->
+  <div class="bottom-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-title">
+      附近充电站
+      <span class="count-badge">6 个站点</span>
+    </div>
+
+    <!-- Station Cards -->
+    <div class="station-card">
+      <div class="station-status-icon status-available">
+        <span class="iconify" data-icon="mdi:ev-station"></span>
+      </div>
+      <div class="station-info">
+        <div class="station-name">世纪大道超充站</div>
+        <div class="station-meta">
+          <span class="meta-item"><span class="iconify" data-icon="mdi:battery-charging-high" style="font-size:13px;"></span> 空闲 <span class="available-num">8</span></span>
+          <span class="meta-item"><span class="iconify" data-icon="mdi:currency-cny" style="font-size:13px;"></span> <span class="price-tag">¥1.28/度</span></span>
+          <span class="meta-item"><span class="iconify" data-icon="mdi:speedometer" style="font-size:13px;"></span> 120kW</span>
+        </div>
+      </div>
+      <div class="station-action">
+        <div class="distance-text">0.8km</div>
+        <div class="nav-btn"><span class="iconify" data-icon="mdi:navigation-variant-outline"></span></div>
+      </div>
+    </div>
+
+    <div class="station-card">
+      <div class="station-status-icon status-charging">
+        <span class="iconify" data-icon="mdi:ev-station"></span>
+      </div>
+      <div class="station-info">
+        <div class="station-name">万达广场快充站</div>
+        <div class="station-meta">
+          <span class="meta-item"><span class="iconify" data-icon="mdi:battery-charging-high" style="font-size:13px;"></span> 空闲 <span class="available-num">3</span></span>
+          <span class="meta-item"><span class="iconify" data-icon="mdi:currency-cny" style="font-size:13px;"></span> <span class="price-tag">¥1.45/度</span></span>
+          <span class="meta-item"><span class="iconify" data-icon="mdi:speedometer" style="font-size:13px;"></span> 60kW</span>
+        </div>
+      </div>
+      <div class="station-action">
+        <div class="distance-text">1.2km</div>
+        <div class="nav-btn"><span class="iconify" data-icon="mdi:navigation-variant-outline"></span></div>
+      </div>
+    </div>
+
+    <div class="station-card">
+      <div class="station-status-icon status-available">
+        <span class="iconify" data-icon="mdi:ev-station"></span>
+      </div>
+      <div class="station-info">
+        <div class="station-name">高新区科技园站</div>
+        <div class="station-meta">
+          <span class="meta-item"><span class="iconify" data-icon="mdi:battery-charging-high" style="font-size:13px;"></span> 空闲 <span class="available-num">12</span></span>
+          <span class="meta-item"><span class="iconify" data-icon="mdi:currency-cny" style="font-size:13px;"></span> <span class="price-tag">¥1.15/度</span></span>
+          <span class="meta-item"><span class="iconify" data-icon="mdi:speedometer" style="font-size:13px;"></span> 180kW</span>
+        </div>
+      </div>
+      <div class="station-action">
+        <div class="distance-text">2.5km</div>
+        <div class="nav-btn"><span class="iconify" data-icon="mdi:navigation-variant-outline"></span></div>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <div class="tab-item active">
+        <span class="iconify tab-icon" data-icon="mdi:home-variant"></span>
+        <span class="tab-label">首页</span>
+      </div>
+      <div class="tab-item">
+        <span class="iconify tab-icon" data-icon="mdi:tag-multiple-outline"></span>
+        <span class="tab-label">优惠</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-scan">
+          <span class="iconify" data-icon="mdi:qrcode-scan"></span>
+        </div>
+      </div>
+      <div class="tab-item">
+        <span class="iconify tab-icon" data-icon="mdi:clipboard-list-outline"></span>
+        <span class="tab-label">订单</span>
+      </div>
+      <div class="tab-item">
+        <span class="iconify tab-icon" data-icon="mdi:account-circle-outline"></span>
+        <span class="tab-label">我的</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

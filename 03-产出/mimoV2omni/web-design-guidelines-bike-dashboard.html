@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="两轮数据中枢 - 共享两轮城市运营管理后台">
+    <title>两轮数据中枢 - WCAG Compliant Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --accent-primary: #f97316;
+            --accent-primary-hover: #ea580c;
+            --success: #22c55e;
+            --warning: #eab308;
+            --error: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --focus-ring: 0 0 0 3px rgba(249, 115, 22, 0.5);
+        }
+        
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        :focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+        
+        .skip-link {
+            position: absolute; top: -40px; left: 0;
+            background: var(--accent-primary); color: var(--bg-primary);
+            padding: 8px 16px; text-decoration: none; font-weight: 600; z-index: 1000;
+        }
+        .skip-link:focus { top: 0; }
+        
+        .dashboard-layout { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px; background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0;
+        }
+        
+        .sidebar-header {
+            height: 64px; padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+        }
+        
+        .sidebar-logo {
+            width: 32px; height: 32px; background: var(--accent-primary);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        }
+        
+        .sidebar-logo svg { width: 18px; height: 18px; color: white; }
+        .sidebar-brand { font-size: 18px; font-weight: 600; color: white; }
+        .sidebar-brand span { color: var(--accent-primary); }
+        
+        .sidebar-nav { flex: 1; padding: 16px; overflow-y: auto; }
+        
+        .sidebar-section { margin-bottom: 24px; }
+        .sidebar-section-title {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--text-tertiary);
+            padding: 0 12px; margin-bottom: 8px;
+        }
+        
+        .sidebar-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 8px 12px; font-size: 14px; font-weight: 500;
+            color: var(--text-secondary); text-decoration: none;
+            border-radius: 8px; transition: all 150ms ease;
+        }
+        .sidebar-link:hover { background: var(--bg-tertiary); color: white; }
+        .sidebar-link.active { background: var(--accent-primary); color: white; }
+        .sidebar-link svg { width: 18px; height: 18px; }
+        
+        .sidebar-footer {
+            padding: 16px; border-top: 1px solid var(--border);
+        }
+        .sidebar-user {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .sidebar-avatar {
+            width: 32px; height: 32px; background: var(--bg-tertiary);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: 600; font-size: 12px; color: white;
+        }
+        .sidebar-user-name { font-size: 13px; font-weight: 500; color: white; }
+        .sidebar-user-email { font-size: 11px; color: var(--text-tertiary); }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1; margin-left: 260px; display: flex; flex-direction: column;
+        }
+        
+        .topbar {
+            height: 64px; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px; display: flex; align-items: center;
+            justify-content: space-between; position: sticky; top: 0; z-index: 50;
+        }
+        .topbar-title { font-size: 16px; font-weight: 600; }
+        .topbar-subtitle { font-size: 12px; color: var(--text-tertiary); }
+        
+        .topbar-actions { display: flex; align-items: center; gap: 16px; }
+        .topbar-status {
+            display: flex; align-items: center; gap: 8px;
+            padding: 4px 12px; background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 9999px;
+        }
+        .topbar-status-dot {
+            width: 6px; height: 6px; background: var(--success);
+            border-radius: 50%; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .topbar-status-text { font-size: 12px; font-weight: 500; color: var(--success); }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 8px 16px; font-family: inherit; font-size: 13px;
+            font-weight: 500; border-radius: 6px; border: 1px solid transparent;
+            cursor: pointer; transition: all 150ms ease; text-decoration: none;
+        }
+        .btn:focus-visible { box-shadow: var(--focus-ring); }
+        .btn-primary { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+        .btn-primary:hover { background: var(--accent-primary-hover); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+        
+        .dashboard-body { flex: 1; padding: 32px; }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 24px;
+        }
+        .stat-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .stat-card-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .stat-card-badge {
+            padding: 2px 8px; font-size: 11px; font-weight: 500; border-radius: 4px;
+        }
+        .stat-card-badge.positive { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+        .stat-card-badge.negative { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+        .stat-card-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 32px;
+            font-weight: 700; color: white; margin-bottom: 4px;
+        }
+        .stat-card-value.highlight { color: var(--accent-primary); }
+        .stat-card-change { font-size: 12px; color: var(--text-tertiary); }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;
+        }
+        
+        .panel {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden;
+        }
+        .panel-header {
+            padding: 16px 24px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-title { font-size: 14px; font-weight: 600; }
+        .panel-action { font-size: 12px; color: var(--accent-primary); text-decoration: none; }
+        .panel-action:hover { text-decoration: underline; }
+        .panel-body { padding: 24px; }
+        
+        /* Map */
+        .map-container {
+            height: 380px; background: var(--bg-primary);
+            border-radius: 8px; position: relative; overflow: hidden;
+        }
+        .map-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .map-marker {
+            position: absolute; width: 10px; height: 10px; border-radius: 50%;
+        }
+        .map-marker.active { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .map-marker.warning { background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); animation: pulse 2s infinite; }
+        .map-legend {
+            position: absolute; bottom: 16px; right: 16px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px;
+        }
+        .map-legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+        .map-legend-item:last-child { margin-bottom: 0; }
+        .map-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        
+        /* Tickets */
+        .ticket-list { max-height: 380px; overflow-y: auto; }
+        .ticket-item {
+            padding: 16px; border-bottom: 1px solid var(--border); transition: background 150ms ease;
+        }
+        .ticket-item:hover { background: var(--bg-tertiary); }
+        .ticket-item:last-child { border-bottom: none; }
+        .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .ticket-title { font-size: 13px; font-weight: 500; }
+        .ticket-badge {
+            padding: 2px 8px; font-size: 10px; font-weight: 600;
+            text-transform: uppercase; border-radius: 4px;
+        }
+        .ticket-badge.urgent { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+        .ticket-badge.processing { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .ticket-badge.resolved { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+        .ticket-meta { font-size: 11px; color: var(--text-tertiary); display: flex; gap: 12px; }
+        
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary);
+            background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+        }
+        .data-table td {
+            padding: 16px; font-size: 13px; color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table tr:hover { background: var(--bg-tertiary); }
+        .data-table .mono { font-family: 'JetBrains Mono', monospace; color: white; }
+        
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 4px 10px; font-size: 11px; font-weight: 500; border-radius: 4px;
+        }
+        .status-badge.active { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+        .status-badge.warning { background: rgba(234, 179, 8, 0.1); color: var(--warning); }
+        .status-badge.error { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .status-dot.active { background: var(--success); }
+        .status-dot.warning { background: var(--warning); }
+        .status-dot.error { background: var(--error); }
+        
+        /* Live Feed */
+        .live-feed {
+            background: var(--bg-primary); border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; max-height: 180px; overflow-y: auto;
+        }
+        .feed-item {
+            display: flex; gap: 16px; padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .feed-time { color: var(--text-tertiary); min-width: 80px; }
+        .feed-type { min-width: 80px; }
+        .feed-type.order { color: var(--accent-primary); }
+        .feed-type.unlock { color: var(--info); }
+        .feed-type.charge { color: var(--success); }
+        .feed-type.alert { color: var(--error); }
+        .feed-content { color: var(--text-secondary); }
+        
+        /* Responsive */
+        @media (max-width: 1280px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+        }
+        
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <div class="dashboard-layout">
+        <aside class="sidebar" role="navigation" aria-label="主导航">
+            <div class="sidebar-header">
+                <div class="sidebar-logo" aria-hidden="true">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <span class="sidebar-brand">BIKE<span>OPS</span></span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">
+                    <p class="sidebar-section-title">主要功能</p>
+                    <a href="#" class="sidebar-link active" aria-current="page">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                        数据概览
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+                        车辆监控
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                        工单管理
+                    </a>
+                </div>
+                <div class="sidebar-section">
+                    <p class="sidebar-section-title">运营管理</p>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        用户管理
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        收入报表
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar" aria-hidden="true">A</div>
+                    <div>
+                        <p class="sidebar-user-name">Admin</p>
+                        <p class="sidebar-user-email">admin@bikeops.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <main id="main-content" class="main-content" role="main">
+            <header class="topbar">
+                <div>
+                    <h1 class="topbar-title">运营控制台</h1>
+                    <p class="topbar-subtitle">实时监控与数据管理平台</p>
+                </div>
+                <div class="topbar-actions">
+                    <div class="topbar-status" role="status" aria-label="系统状态：在线">
+                        <span class="topbar-status-dot" aria-hidden="true"></span>
+                        <span class="topbar-status-text">系统在线</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary">退出系统</button>
+                </div>
+            </header>
+            
+            <div class="dashboard-body">
+                <section aria-label="关键指标统计">
+                    <h2 class="sr-only">关键指标统计</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-label">在线车辆</span>
+                                <span class="stat-card-badge positive">+12.4%</span>
+                            </div>
+                            <p class="stat-card-value highlight" aria-label="在线车辆数量：2847">2,847</p>
+                            <p class="stat-card-change">较昨日 +314</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-label">今日订单</span>
+                                <span class="stat-card-badge positive">+8.2%</span>
+                            </div>
+                            <p class="stat-card-value" aria-label="今日订单数量：1459">1,459</p>
+                            <p class="stat-card-change">较昨日 +111</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-label">待处理工单</span>
+                                <span class="stat-card-badge negative">+3</span>
+                            </div>
+                            <p class="stat-card-value" aria-label="待处理工单数量：23">23</p>
+                            <p class="stat-card-change">3个紧急工单</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-label">今日收入</span>
+                                <span class="stat-card-badge positive">+15.6%</span>
+                            </div>
+                            <p class="stat-card-value" aria-label="今日收入：18420元">¥18,420</p>
+                            <p class="stat-card-change">较昨日 +2,486</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <div class="dashboard-grid">
+                    <section class="panel" aria-labelledby="map-title">
+                        <div class="panel-header">
+                            <h2 id="map-title" class="panel-title">车辆分布热力图</h2>
+                            <a href="#" class="panel-action">查看全屏地图 →</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="map-container" role="img" aria-label="车辆分布地图显示">
+                                <div class="map-grid" aria-hidden="true"></div>
+                                <div class="map-marker active" style="top: 25%; left: 30%;" role="presentation"></div>
+                                <div class="map-marker active" style="top: 40%; left: 55%;" role="presentation"></div>
+                                <div class="map-marker warning" style="top: 60%; left: 45%;" role="presentation"></div>
+                                <div class="map-marker active" style="top: 35%; left: 70%;" role="presentation"></div>
+                                <div class="map-marker active" style="top: 75%; left: 60%;" role="presentation"></div>
+                                <div class="map-marker warning" style="top: 45%; left: 25%;" role="presentation"></div>
+                                <div class="map-legend" aria-label="图例">
+                                    <div class="map-legend-item">
+                                        <span class="map-legend-dot" style="background: var(--success);" aria-hidden="true"></span>
+                                        <span>正常运行</span>
+                                    </div>
+                                    <div class="map-legend-item">
+                                        <span class="map-legend-dot" style="background: var(--accent-primary);" aria-hidden="true"></span>
+                                        <span>需要维护</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="panel" aria-labelledby="tickets-title">
+                        <div class="panel-header">
+                            <h2 id="tickets-title" class="panel-title">实时工单</h2>
+                            <a href="#" class="panel-action">查看全部 →</a>
+                        </div>
+                        <div class="ticket-list">
+                            <article class="ticket-item">
+                                <div class="ticket-header">
+                                    <h3 class="ticket-title">车辆 #2847 电池故障</h3>
+                                    <span class="ticket-badge urgent">紧急</span>
+                                </div>
+                                <div class="ticket-meta"><span>朝阳区</span><time>10分钟前</time></div>
+                            </article>
+                            <article class="ticket-item">
+                                <div class="ticket-header">
+                                    <h3 class="ticket-title">定位异常 - 车辆 #1923</h3>
+                                    <span class="ticket-badge processing">处理中</span>
+                                </div>
+                                <div class="ticket-meta"><span>海淀区</span><time>25分钟前</time></div>
+                            </article>
+                            <article class="ticket-item">
+                                <div class="ticket-header">
+                                    <h3 class="ticket-title">定期保养 - 批次 #B45</h3>
+                                    <span class="ticket-badge resolved">已完成</span>
+                                </div>
+                                <div class="ticket-meta"><span>西城区</span><time>1小时前</time></div>
+                            </article>
+                            <article class="ticket-item">
+                                <div class="ticket-header">
+                                    <h3 class="ticket-title">用户投诉 - 扣费异常</h3>
+                                    <span class="ticket-badge urgent">紧急</span>
+                                </div>
+                                <div class="ticket-meta"><span>用户 #U892</span><time>2小时前</time></div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+                
+                <section class="panel" aria-labelledby="fleet-title">
+                    <div class="panel-header">
+                        <h2 id="fleet-title" class="panel-title">车辆状态监控</h2>
+                        <a href="#" class="panel-action">导出数据 →</a>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <caption class="sr-only">车辆状态列表</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">车辆ID</th>
+                                    <th scope="col">位置区域</th>
+                                    <th scope="col">电量状态</th>
+                                    <th scope="col">最后使用</th>
+                                    <th scope="col">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="mono">#EV-2847</td>
+                                    <td>朝阳区 - 国贸CBD</td>
+                                    <td>85%</td>
+                                    <td>5分钟前</td>
+                                    <td><span class="status-badge active"><span class="status-dot active" aria-hidden="true"></span>可用车辆</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="mono">#EV-2848</td>
+                                    <td>海淀区 - 中关村</td>
+                                    <td style="color: var(--warning);">12%</td>
+                                    <td>1小时前</td>
+                                    <td><span class="status-badge warning"><span class="status-dot warning" aria-hidden="true"></span>需要充电</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="mono">#EV-2849</td>
+                                    <td>西城区 - 金融街</td>
+                                    <td>67%</td>
+                                    <td>30分钟前</td>
+                                    <td><span class="status-badge active"><span class="status-dot active" aria-hidden="true"></span>可用车辆</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="mono">#EV-2850</td>
+                                    <td>东城区 - 王府井</td>
+                                    <td>45%</td>
+                                    <td>45分钟前</td>
+                                    <td><span class="status-badge active"><span class="status-dot active" aria-hidden="true"></span>可用车辆</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="mono">#EV-2851</td>
+                                    <td>丰台区 - 方庄</td>
+                                    <td style="color: var(--error);">3%</td>
+                                    <td>2小时前</td>
+                                    <td><span class="status-badge error"><span class="status-dot error" aria-hidden="true"></span>紧急维护</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <section class="panel" style="margin-top: 24px;" aria-labelledby="feed-title">
+                    <div class="panel-header">
+                        <h2 id="feed-title" class="panel-title">实时数据流</h2>
+                        <div class="topbar-status" style="margin: 0;" role="status" aria-label="数据流状态：实时">
+                            <span class="topbar-status-dot" aria-hidden="true"></span>
+                            <span class="topbar-status-text">LIVE</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="live-feed" role="log" aria-live="polite" aria-label="实时事件日志">
+                            <div class="feed-item">
+                                <span class="feed-time">[14:23:15]</span>
+                                <span class="feed-type order">订单完成</span>
+                                <span class="feed-content">用户 #U782 完成骑行 - 车辆 #EV-2847 - 收入 ¥3.5</span>
+                            </div>
+                            <div class="feed-item">
+                                <span class="feed-time">[14:22:58]</span>
+                                <span class="feed-type unlock">车辆解锁</span>
+                                <span class="feed-content">用户 #U451 解锁车辆 #EV-2849</span>
+                            </div>
+                            <div class="feed-item">
+                                <span class="feed-time">[14:22:30]</span>
+                                <span class="feed-type charge">充电完成</span>
+                                <span class="feed-content">车辆 #EV-2852 充电至95%</span>
+                            </div>
+                            <div class="feed-item">
+                                <span class="feed-time">[14:21:45]</span>
+                                <span class="feed-type order">工单更新</span>
+                                <span class="feed-content">工单 #T-284 已分配给维护员 张三</span>
+                            </div>
+                            <div class="feed-item">
+                                <span class="feed-time">[14:21:12]</span>
+                                <span class="feed-type alert">异常检测</span>
+                                <span class="feed-content">车辆 #EV-2851 定位信号异常</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <style>.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }</style>
+</body>
+</html>

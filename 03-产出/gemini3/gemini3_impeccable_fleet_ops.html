@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Ops Center - Impeccable Bento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg: oklch(98% 0.01 260);
+            --surface: oklch(100% 0 0);
+            --fg: oklch(20% 0.02 260);
+            --fg-muted: oklch(55% 0.02 260);
+            --primary: oklch(55% 0.2 250); /* Pro Blue */
+            --primary-soft: oklch(92% 0.05 250);
+            --border: oklch(90% 0.01 260);
+            --success: oklch(70% 0.15 150);
+            --warn: oklch(75% 0.15 60);
+            --err: oklch(65% 0.2 25);
+            
+            --font: 'Geist', sans-serif;
+            --r-lg: 20px;
+            --r-md: 12px;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--fg);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        aside {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--primary);
+        }
+
+        nav { display: flex; flex-direction: column; gap: 8px; }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            color: var(--fg-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .nav-item:hover:not(.active) {
+            background: oklch(96% 0.01 260);
+            color: var(--fg);
+        }
+
+        /* --- Main Content --- */
+        main {
+            padding: 32px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+        }
+
+        /* --- Bento Grid --- */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 180px);
+            gap: 24px;
+        }
+
+        .bento-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s var(--ease);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px oklch(0% 0 0 / 0.05);
+        }
+
+        /* Span Controls */
+        .span-2-w { grid-column: span 2; }
+        .span-2-h { grid-row: span 2; }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .card-title { font-size: 14px; font-weight: 600; color: var(--fg-muted); }
+
+        .metric-val { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+
+        .trend {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .trend.up { background: oklch(95% 0.02 150); color: var(--success); }
+        .trend.down { background: oklch(95% 0.02 25); color: var(--err); }
+
+        /* --- GIS Map Module --- */
+        .map-card {
+            background: oklch(90% 0.02 260);
+            background-image: radial-gradient(circle at 1px 1px, oklch(100% 0 0 / 0.5) 1px, transparent 0);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .map-ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .map-ui button {
+            width: 40px;
+            height: 40px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        /* --- Alert Feed --- */
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .alert-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .alert-info h4 { font-size: 14px; font-weight: 600; }
+        .alert-info p { font-size: 12px; color: var(--fg-muted); }
+
+        /* --- Mock Chart --- */
+        .sparkline {
+            width: 100%;
+            height: 60px;
+            margin-top: 12px;
+            stroke: var(--primary);
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="logo">
+            <i data-lucide="zap" fill="currentColor"></i>
+            CITY FLOW
+        </div>
+        <nav>
+            <div class="nav-item active">
+                <i data-lucide="layout-dashboard" size="20"></i>
+                运营总览
+            </div>
+            <div class="nav-item">
+                <i data-lucide="map" size="20"></i>
+                地图调度
+            </div>
+            <div class="nav-item">
+                <i data-lucide="bike" size="20"></i>
+                车队资产
+            </div>
+            <div class="nav-item">
+                <i data-lucide="battery-charging" size="20"></i>
+                能源管理
+            </div>
+            <div class="nav-item">
+                <i data-lucide="clipboard-list" size="20"></i>
+                运维工单
+            </div>
+            <div class="nav-item">
+                <i data-lucide="bar-chart-3" size="20"></i>
+                数据报表
+            </div>
+        </nav>
+
+        <div style="margin-top: auto;">
+            <div class="nav-item">
+                <i data-lucide="settings" size="20"></i>
+                系统设置
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <h1 style="font-size: 24px; font-weight: 700;">城市实时态势</h1>
+            <div class="user-profile">
+                <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 50%;"></div>
+                <span style="font-size: 14px; font-weight: 600;">管理员 Admin</span>
+                <i data-lucide="chevron-down" size="14"></i>
+            </div>
+        </header>
+
+        <div class="bento-grid">
+            <!-- Metric 1 -->
+            <div class="bento-card">
+                <div class="card-header">
+                    <span class="card-title">今日订单</span>
+                    <i data-lucide="shopping-bag" size="18" color="var(--fg-muted)"></i>
+                </div>
+                <div class="metric-val">12,482</div>
+                <div class="trend up">
+                    <i data-lucide="trending-up" size="12"></i> 14.2%
+                </div>
+            </div>
+
+            <!-- Metric 2 -->
+            <div class="bento-card">
+                <div class="card-header">
+                    <span class="card-title">平均骑行时长</span>
+                    <i data-lucide="clock" size="18" color="var(--fg-muted)"></i>
+                </div>
+                <div class="metric-val">18.5 min</div>
+                <div class="trend down">
+                    <i data-lucide="trending-down" size="12"></i> 2.1%
+                </div>
+            </div>
+
+            <!-- GIS Map (Large) -->
+            <div class="bento-card span-2-w span-2-h map-card">
+                <div style="text-align: center; color: var(--fg-muted);">
+                    <i data-lucide="map-pin" size="48" style="opacity: 0.2;"></i>
+                    <p style="font-size: 14px; margin-top: 12px;">实时地理信息系统 (GIS) 加载中...</p>
+                </div>
+                <div class="map-ui">
+                    <button><i data-lucide="plus" size="16"></i></button>
+                    <button><i data-lucide="minus" size="16"></i></button>
+                    <button><i data-lucide="layers" size="16"></i></button>
+                </div>
+            </div>
+
+            <!-- Metric 3 -->
+            <div class="bento-card">
+                <div class="card-header">
+                    <span class="card-title">车辆可用率</span>
+                    <i data-lucide="check-circle" size="18" color="var(--fg-muted)"></i>
+                </div>
+                <div class="metric-val">94.2%</div>
+                <div style="margin-top: 12px; height: 4px; background: var(--primary-soft); border-radius: 2px;">
+                    <div style="width: 94.2%; height: 100%; background: var(--success); border-radius: 2px;"></div>
+                </div>
+            </div>
+
+            <!-- Metric 4 -->
+            <div class="bento-card">
+                <div class="card-header">
+                    <span class="card-title">低电预警</span>
+                    <i data-lucide="battery-low" size="18" color="oklch(65% 0.2 60)"></i>
+                </div>
+                <div class="metric-val">342</div>
+                <p style="font-size: 12px; color: var(--fg-muted); margin-top: 8px;">需要立即换电</p>
+            </div>
+
+            <!-- Alerts List -->
+            <div class="bento-card span-2-w">
+                <div class="card-header">
+                    <span class="card-title">实时异常告警</span>
+                    <span style="font-size: 12px; color: var(--primary); cursor: pointer;">查看全部</span>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon" style="background: var(--err);"></div>
+                    <div class="alert-info">
+                        <h4>非法移位: BJ-8829</h4>
+                        <p>朝阳区三里屯南路 · 2分钟前</p>
+                    </div>
+                    <button class="status-pill" style="margin-left: auto; border: none; background: var(--primary-soft); color: var(--primary);">指派</button>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon" style="background: var(--warn);"></div>
+                    <div class="alert-info">
+                        <h4>车辆聚集: HD-1203</h4>
+                        <p>海淀区中关村大街 · 5分钟前</p>
+                    </div>
+                    <button class="status-pill" style="margin-left: auto; border: none; background: var(--primary-soft); color: var(--primary);">忽略</button>
+                </div>
+            </div>
+
+            <!-- Fleet Health Sparkline -->
+            <div class="bento-card">
+                <div class="card-header">
+                    <span class="card-title">运维效率趋势</span>
+                </div>
+                <svg class="sparkline" viewBox="0 0 100 60">
+                    <path d="M0,50 Q20,10 40,40 T80,20 L100,30" />
+                </svg>
+                <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 11px; color: var(--fg-muted);">
+                    <span>08:00</span>
+                    <span>12:00</span>
+                    <span>16:00</span>
+                </div>
+            </div>
+
+            <!-- Revenue -->
+            <div class="bento-card">
+                <div class="card-header">
+                    <span class="card-title">今日营收 (GMV)</span>
+                    <i data-lucide="banknote" size="18" color="var(--success)"></i>
+                </div>
+                <div class="metric-val">¥ 42,902</div>
+                <div class="trend up" style="margin-top: 8px;">+8.4%</div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

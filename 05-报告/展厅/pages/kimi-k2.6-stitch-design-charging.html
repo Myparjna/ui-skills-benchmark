@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=375, initial-scale=1.0">
+<title>闪电充 - 电动汽车充电小程序</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1677FF;
+    --primary-light: #E6F4FF;
+    --success: #52C41A;
+    --warning: #FA8C16;
+    --danger: #F5222D;
+    --bg: #F5F6FA;
+    --bg-white: #FFFFFF;
+    --text: #1F2937;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    --border: #E5E7EB;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    background: #222; display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; padding: 20px;
+  }
+  /* Phone Frame */
+  .phone {
+    width: 390px; height: 844px; background: var(--bg); border-radius: 48px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.35); overflow: hidden; position: relative;
+    border: 10px solid #1a1a1a; display: flex; flex-direction: column;
+  }
+  .notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 32px;
+    background: #1a1a1a; border-radius: 0 0 24px 24px; z-index: 20;
+  }
+  /* Status Bar */
+  .status-bar {
+    height: 48px; background: var(--bg-white); display: flex; align-items: flex-end;
+    justify-content: space-between; padding: 0 24px 8px; font-size: 13px; font-weight: 600;
+    color: var(--text); position: relative; z-index: 10;
+  }
+  .status-bar .time { font-variant-numeric: tabular-nums; }
+  .status-bar .icons { display: flex; gap: 4px; align-items: center; }
+  .status-bar .icons span { font-size: 12px; }
+  /* Main Content Scroll Area */
+  .main { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 90px; }
+  .main::-webkit-scrollbar { display: none; }
+  /* Header */
+  .app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0958D9 100%); color: #fff;
+    padding: 12px 20px 20px; position: relative;
+  }
+  .app-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .app-header h1 { font-size: 18px; font-weight: 700; }
+  .app-header .location { font-size: 12px; opacity: 0.85; display: flex; align-items: center; gap: 4px; }
+  /* Search */
+  .search-bar {
+    background: rgba(255,255,255,0.95); border-radius: var(--radius-md); padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .search-bar input { border: none; outline: none; flex: 1; font-size: 14px; color: var(--text); background: transparent; font-family: inherit; }
+  /* Map Area */
+  .map-area {
+    height: 220px; background: linear-gradient(180deg, #E8F4FD 0%, #F0F9FF 100%); position: relative;
+    overflow: hidden;
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(22,119,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22,119,255,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .map-road {
+    position: absolute; background: rgba(255,255,255,0.85); border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .map-marker {
+    position: absolute; display: flex; flex-direction: column; align-items: center; cursor: pointer;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+  .map-marker .pin {
+    width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    display: grid; place-items: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .map-marker .pin span { transform: rotate(45deg); }
+  .map-marker .pin.free { background: var(--success); color: #fff; }
+  .map-marker .pin.busy { background: var(--warning); color: #fff; }
+  .map-marker .pin.fault { background: var(--danger); color: #fff; }
+  .map-marker .count {
+    margin-top: 4px; background: rgba(255,255,255,0.95); padding: 2px 8px; border-radius: 100px;
+    font-size: 10px; font-weight: 700; color: var(--text); box-shadow: var(--shadow);
+  }
+  .map-loc-btn {
+    position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px; border-radius: 50%;
+    background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; font-size: 18px;
+    border: none; cursor: pointer; color: var(--primary);
+  }
+  /* Quick Actions */
+  .quick-actions {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    padding: 16px 16px 8px;
+  }
+  .quick-btn {
+    background: var(--bg-white); border-radius: var(--radius-md); padding: 14px 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px;
+    color: var(--text); box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .quick-btn .icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; }
+  .quick-btn:nth-child(1) .icon { background: var(--primary-light); }
+  .quick-btn:nth-child(2) .icon { background: #FFF7E6; }
+  .quick-btn:nth-child(3) .icon { background: #F6FFED; }
+  .quick-btn:nth-child(4) .icon { background: #FFF2F0; }
+  /* Banner */
+  .banner {
+    margin: 8px 16px 12px; background: linear-gradient(135deg, #FFF7E6 0%, #FFF2E8 100%);
+    border-radius: var(--radius-md); padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    border: 1px solid #FFD8BF;
+  }
+  .banner .tag { background: var(--warning); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .banner p { font-size: 13px; color: var(--text); font-weight: 500; }
+  /* Section Title */
+  .section-title {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px 8px; font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .section-title a { font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500; }
+  /* Station List */
+  .station-list { padding: 0 16px; }
+  .station-card {
+    background: var(--bg-white); border-radius: var(--radius-md); padding: 16px; margin-bottom: 10px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .station-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .station-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .station-dist { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .station-info { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .station-info span { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+  .station-status { display: flex; gap: 10px; margin-bottom: 10px; }
+  .pile-tag {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500;
+    padding: 3px 8px; border-radius: 100px;
+  }
+  .pile-tag.fast { background: #E6F4FF; color: var(--primary); }
+  .pile-tag.slow { background: #F6FFED; color: var(--success); }
+  .pile-tag.full { background: #FFF7E6; color: var(--warning); }
+  .station-price { display: flex; justify-content: space-between; align-items: center; }
+  .price { font-size: 18px; font-weight: 900; color: var(--danger); }
+  .price-unit { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+  .station-tag { font-size: 11px; color: var(--primary); background: var(--primary-light); padding: 3px 8px; border-radius: 4px; }
+  /* Status Dot */
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .dot.free { background: var(--success); }
+  .dot.busy { background: var(--warning); }
+  .dot.fault { background: var(--danger); }
+  /* Tab Bar */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: var(--bg-white);
+    border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: flex-start;
+    padding-top: 8px; z-index: 30;
+  }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: var(--text-muted); text-decoration: none; padding: 4px 8px; }
+  .tab-item.active { color: var(--primary); }
+  .tab-item .tab-icon { font-size: 22px; }
+  .tab-scan {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--success) 0%, var(--primary) 100%);
+    display: grid; place-items: center; color: #fff; font-size: 26px;
+    box-shadow: 0 4px 14px rgba(22,119,255,0.35); margin-top: -20px;
+    border: 3px solid var(--bg-white);
+  }
+  /* Filter bar */
+  .filter-bar {
+    display: flex; gap: 8px; padding: 0 16px 10px; overflow-x: auto;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: 100px;
+    padding: 5px 14px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; cursor: pointer;
+  }
+  .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="status-bar">
+    <span class="time">09:41</span>
+    <div class="icons">
+      <span>📶</span>
+      <span>📡</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="app-header">
+      <div class="app-header-top">
+        <div>
+          <h1>闪电充</h1>
+          <div class="location">📍 杭州市 · 滨江区</div>
+        </div>
+        <span style="font-size:20px;">🔔</span>
+      </div>
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" placeholder="搜索充电站、地址、桩编号" />
+        <span style="font-size:16px;">📷</span>
+      </div>
+    </div>
+
+    <div class="map-area">
+      <div class="map-grid"></div>
+      <div class="map-road" style="width:4px;height:80%;left:35%;top:10%;"></div>
+      <div class="map-road" style="height:4px;width:70%;left:15%;top:45%;"></div>
+      <div class="map-road" style="width:4px;height:60%;left:65%;top:25%;"></div>
+      <div class="map-road" style="height:4px;width:50%;left:35%;top:65%;"></div>
+
+      <div class="map-marker" style="left:28%;top:35%;">
+        <div class="pin free"><span>⚡</span></div>
+        <div class="count">8空闲</div>
+      </div>
+      <div class="map-marker" style="left:58%;top:28%;">
+        <div class="pin busy"><span>🔌</span></div>
+        <div class="count">1空闲</div>
+      </div>
+      <div class="map-marker" style="left:48%;top:58%;">
+        <div class="pin free"><span>⚡</span></div>
+        <div class="count">5空闲</div>
+      </div>
+      <div class="map-marker" style="left:72%;top:48%;">
+        <div class="pin fault"><span>🔧</span></div>
+        <div class="count">维护中</div>
+      </div>
+      <div class="map-marker" style="left:38%;top:72%;">
+        <div class="pin free"><span>⚡</span></div>
+        <div class="count">12空闲</div>
+      </div>
+
+      <button class="map-loc-btn">📍</button>
+    </div>
+
+    <div class="quick-actions">
+      <div class="quick-btn">
+        <div class="icon">🔋</div>
+        <span>附近电站</span>
+      </div>
+      <div class="quick-btn">
+        <div class="icon">🏷️</div>
+        <span>优惠券</span>
+      </div>
+      <div class="quick-btn">
+        <div class="icon">📜</div>
+        <span>我的订单</span>
+      </div>
+      <div class="quick-btn">
+        <div class="icon">❤️</div>
+        <span>收藏</span>
+      </div>
+    </div>
+
+    <div class="banner">
+      <span class="tag">限时</span>
+      <p>充100送20，夜间充电低至0.38元/度</p>
+    </div>
+
+    <div class="section-title">
+      <span>附近充电站</span>
+      <a href="#">全部 ></a>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-chip active">综合排序</div>
+      <div class="filter-chip">距离最近</div>
+      <div class="filter-chip">价格最低</div>
+      <div class="filter-chip">快充优先</div>
+      <div class="filter-chip">免费停车</div>
+    </div>
+
+    <div class="station-list">
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">🔋 滨江智慧谷超充站</span>
+          <span class="station-dist">📍 0.8km</span>
+        </div>
+        <div class="station-info">
+          <span>⭐ 4.9分</span>
+          <span>🅿️ 免费停车2h</span>
+          <span>🏪 24h营业</span>
+        </div>
+        <div class="station-status">
+          <span class="pile-tag fast"><span class="dot free"></span> 快充 6/8空闲</span>
+          <span class="pile-tag slow"><span class="dot free"></span> 慢充 2/4空闲</span>
+        </div>
+        <div class="station-price">
+          <div><span class="price">¥0.68</span><span class="price-unit"> /度（含服务费）</span></div>
+          <span class="station-tag">PLUS会员站</span>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">🔋 星光大道充电站</span>
+          <span class="station-dist">📍 1.2km</span>
+        </div>
+        <div class="station-info">
+          <span>⭐ 4.7分</span>
+          <span>🅿️ 收费停车</span>
+          <span>🏪 24h营业</span>
+        </div>
+        <div class="station-status">
+          <span class="pile-tag fast"><span class="dot free"></span> 快充 1/6空闲</span>
+          <span class="pile-tag full"><span class="dot busy"></span> 慢充 0/2占用</span>
+        </div>
+        <div class="station-price">
+          <div><span class="price">¥0.85</span><span class="price-unit"> /度（含服务费）</span></div>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">🔋 龙湖天街地下充电站</span>
+          <span class="station-dist">📍 1.5km</span>
+        </div>
+        <div class="station-info">
+          <span>⭐ 4.8分</span>
+          <span>🅿️ 消费免停3h</span>
+          <span>🏪 10:00-22:00</span>
+        </div>
+        <div class="station-status">
+          <span class="pile-tag fast"><span class="dot free"></span> 快充 4/10空闲</span>
+          <span class="pile-tag slow"><span class="dot free"></span> 慢充 3/6空闲</span>
+        </div>
+        <div class="station-price">
+          <div><span class="price">¥0.72</span><span class="price-unit"> /度（含服务费）</span></div>
+          <span class="station-tag">即插即充</span>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-header">
+          <span class="station-name">🔋 西兴地铁站充电站</span>
+          <span class="station-dist">📍 2.1km</span>
+        </div>
+        <div class="station-info">
+          <span>⭐ 4.5分</span>
+          <span>🅿️ 免费停车</span>
+          <span>🏪 24h营业</span>
+        </div>
+        <div class="station-status">
+          <span class="pile-tag fast"><span class="dot fault"></span> 快充 维护中</span>
+          <span class="pile-tag slow"><span class="dot free"></span> 慢充 2/4空闲</span>
+        </div>
+        <div class="station-price">
+          <div><span class="price">¥0.58</span><span class="price-unit"> /度（含服务费）</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <a href="#" class="tab-item active">
+      <span class="tab-icon">🏠</span>
+      <span>首页</span>
+    </a>
+    <a href="#" class="tab-item">
+      <span class="tab-icon">🏷️</span>
+      <span>省钱</span>
+    </a>
+    <a href="#" class="tab-item">
+      <div class="tab-scan">📷</div>
+    </a>
+    <a href="#" class="tab-item">
+      <span class="tab-icon">📜</span>
+      <span>订单</span>
+    </a>
+    <a href="#" class="tab-item">
+      <span class="tab-icon">👤</span>
+      <span>我的</span>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

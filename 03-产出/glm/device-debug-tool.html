@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弱电设备调试工具 v1.0</title>
+
+<!-- ===== 在线字体：钉钉进步体（标题） ===== -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-ding-talk-jin-bu-ti-regular/font.css">
+
+<!-- ===== 在线字体：Maple Mono CN Regular（日志/代码区） ===== -->
+<link rel="stylesheet" href="https://chinese-fonts-cdn.deno.dev/packages/maple-mono-cn/dist/MapleMono-CN-Regular/result.css">
+
+<style>
+/* ===== 全局 & 字体 ===== */
+:root {
+  --primary: #3b5998;
+  --primary-dark: #2d4373;
+  --primary-light: #4c6bb6;
+  --success: #2ecc71;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --info: #3498db;
+  --bg-body: #f0f2f5;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-body);
+  height: 100vh; overflow: hidden; color: var(--text-primary);
+}
+.font-title { font-family: 'DingTalk JinBuTi', sans-serif; }
+.font-mono { font-family: 'Maple Mono CN', 'Consolas', monospace; }
+
+/* ===== 顶部导航栏 — 浅色主题 ===== */
+.topbar {
+  height: 54px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  color: var(--text-primary);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  position: relative;
+  z-index: 10;
+  border-bottom: 1.5px solid #eef1f6;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-logo {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, #5b7eea, #3b5998);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(59,89,152,0.25);
+}
+.topbar h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-primary); }
+.topbar-version { 
+  font-size: 11px; 
+  color: #fff;
+  background: linear-gradient(135deg, #e8edfb, #c5d0f0); 
+  padding: 3px 10px; 
+  border-radius: 10px; 
+  margin-left: 8px;
+  font-family: 'Maple Mono CN', monospace;
+  font-weight: 700;
+  color: #3949ab;
+}
+.topbar-right { display: flex; gap: 10px; }
+.btn-top {
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; align-items: center; gap: 5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.btn-top:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+.btn-top-blue { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+.btn-top-gray { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+.btn-top-orange { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+
+/* ===== 主体布局 ===== */
+.main-container { display: flex; height: calc(100vh - 52px); }
+
+/* ===== 左侧边栏 ===== */
+.sidebar {
+  width: 260px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.sidebar-header {
+  padding: 16px 18px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+}
+.sidebar-header h2 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.count-badge {
+  background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+  color: #3949ab;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* 搜索区域 */
+.search-area { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; background: #fafbfc; }
+.search-row {
+  display: flex; gap: 8px;
+  margin-bottom: 10px; align-items: center;
+}
+.search-row input, .search-row select {
+  border: 1.5px solid #dde4ed;
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 12px;
+  outline: none;
+  background: #fff;
+  transition: all 0.2s;
+  color: var(--text-primary);
+}
+.search-row input:focus, .search-row select:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(59,89,152,0.1);
+}
+.ip-input { flex: 1; min-width: 0; }
+.port-input { width: 58px; text-align: center; }
+.protocol-select { width: 72px; }
+
+.action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.action-btn {
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+  letter-spacing: 0.3px;
+}
+.action-btn:hover { transform: translateY(-1.5px); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+.btn-ping { background: linear-gradient(135deg, #1565c0, #1976d2); }
+.btn-port { background: linear-gradient(135deg, #2e7d32, #43a047); }
+.btn-batch { background: linear-gradient(135deg, #ef6c00, #fb8c00); }
+.btn-clear { background: linear-gradient(135deg, #546e7780, #78909c80); }
+
+/* 工具栏 */
+.toolbar-icons {
+  display: flex; gap: 6px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+}
+.tool-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  background: #f5f7fa;
+  transition: all 0.2s;
+  border: 1.5px solid transparent;
+}
+.tool-icon:hover { background: #e8ecf1; border-color: #c5cae9; }
+.tool-icon.active { background: var(--primary); box-shadow: 0 2px 8px rgba(59,89,152,0.3); }
+.tool-icon.active img { filter:brightness(0) invert(1); }
+
+/* 设备列表 */
+.device-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+.device-list::-webkit-scrollbar { width: 5px; }
+.device-list::-webkit-scrollbar-thumb { background: #d0d4db; border-radius: 3px; }
+.device-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f6fa;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border-left: 3px solid transparent;
+}
+.device-item:hover { background: #f8faff; }
+.device-item.active {
+  background: linear-gradient(90deg, #e8ecf5, #fff);
+  border-left-color: var(--primary);
+}
+.item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.item-name { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.item-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.item-status-dot.online { background: var(--success); }
+.item-info { font-size: 11px; color: var(--text-secondary); line-height: 1.8; padding-left: 22px; }
+
+/* ===== 中间主内容 ===== */
+.main-content {
+  flex: 1;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+.content-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.content-scroll::-webkit-scrollbar { width: 6px; }
+.content-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+/* 快捷操作 */
+.section-title {
+  font-size: 14px; font-weight: 700;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  color: var(--text-primary);
+}
+.quick-actions { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+.quick-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 18px 22px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1.5px solid #eef1f6;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 88px;
+}
+.quick-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(59,89,152,0.12);
+  border-color: #c5cae9;
+  background: #fafbff;
+}
+.quick-btn .icon-wrap {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  transition: transform 0.2s;
+}
+.quick-btn:hover .icon-wrap { transform: scale(1.08); }
+.icon-cam { background: #e3f2fd; }
+.icon-door { background: #fce4ec; }
+.icon-barrier { background: #fff3e0; }
+.icon-card { background: #f3e5f5; }
+.icon-net { background: #e8f5e9; }
+.icon-server { background: #efebe9; }
+.quick-btn .label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex; align-items: center; gap: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1.5px solid #eef1f6;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+}
+.stat-card:nth-child(1)::before { background: var(--success); }
+.stat-card:nth-child(2)::before { background: var(--danger); }
+.stat-card:nth-child(3)::before { background: var(--warning); }
+.stat-card:nth-child(4)::before { background: var(--info); }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+.stat-icon {
+  width: 50px; height: 50px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.stat-value { font-size: 30px; font-weight: 800; line-height: 1; font-family: 'DingTalk JinBuTi', sans-serif; }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
+.text-green { color: var(--success); }
+.text-red { color: var(--danger); }
+.text-yellow { color: var(--warning); }
+.text-blue { color: var(--info); }
+
+/* 表格区域 */
+.table-section {
+  background: var(--bg-card);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1.5px solid #eef1f6;
+  overflow: hidden;
+}
+.table-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1.5px solid #f0f2f5;
+}
+.table-header h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.refresh-btn {
+  padding: 6px 14px;
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 4px;
+}
+.refresh-btn:hover { background: #e0e7ff; transform: translateY(-1px); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  background: #f8fafc;
+  padding: 13px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border-bottom: 1.5px solid #eef1f6;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.data-table td {
+  padding: 13px 16px;
+  font-size: 12.5px;
+  border-bottom: 1px solid #f5f7fa;
+  color: var(--text-secondary);
+}
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state .empty-text { font-size: 14px; font-weight: 600; }
+.empty-state .empty-hint { font-size: 12px; margin-top: 6px; opacity: 0.7; }
+
+/* ===== 右侧日志面板 ===== */
+.right-panel {
+  width: 300px;
+  background: #0f1219;
+  color: #8b95a5;
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+.panel-tabs {
+  display: flex; padding: 14px 18px 0;
+  gap: 20px;
+  border-bottom: 1px solid #1e2330;
+}
+.panel-tab {
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #4a5568;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.panel-tab.active { color: #e2e8f0; border-bottom-color: #4285f4; }
+.panel-actions { display: flex; gap: 14px; margin-left: auto; }
+.panel-action {
+  font-size: 11px;
+  color: #4a5568;
+  cursor: pointer;
+  padding: 10px 0;
+  transition: color 0.2s;
+  font-weight: 500;
+}
+.panel-action:hover { color: #8b95a5; }
+.log-container {
+  flex: 1; overflow-y: auto;
+  padding: 14px 18px;
+  font-size: 11.5px;
+  line-height: 2;
+}
+.log-container::-webkit-scrollbar { width: 4px; }
+.log-container::-webkit-scrollbar-thumb { background: #2d3342; border-radius: 2px; }
+.log-entry { margin-bottom: 2px; word-break: break-all; }
+.log-time { color: #4a5568; }
+.log-info { color: #68d391; }
+.log-warn { color: #f6ad55; }
+.log-error { color: #fc8181; }
+
+/* 浮动元素 */
+.fab-float {
+  position: fixed; bottom: 28px; right: 320px;
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #4285f4, #1a73e8);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(26,115,232,0.4);
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.fab-float:hover { transform: scale(1.08) rotate(5deg); box-shadow: 0 8px 28px rgba(26,115,232,0.5); }
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff7043, #e64a19);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px;
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 101;
+  box-shadow: 0 4px 14px rgba(230,74,25,0.35);
+  border: 2px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.avatar:hover { transform: scale(1.1); }
+
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/device-desktop-analytics.svg" width="20" height="20" alt="" style="filter:brightness(0) invert(1);">
+    </div>
+    <h1 class="font-title">弱电设备调试工具</h1>
+    <span class="topbar-version">v1.0</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-top btn-top-blue">
+      <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/file-export.svg" width="14" height="14" alt="">
+      导出报告
+    </button>
+    <button class="btn-top btn-top-gray">
+      <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/trash.svg" width="14" height="14" alt="">
+      清除设备
+    </button>
+    <button class="btn-top btn-top-orange">
+      <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/plus.svg" width="14" height="14" alt="">
+      加载示例
+    </button>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div class="main-container">
+
+  <!-- 左侧边栏 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>
+        <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/list-details.svg" width="16" height="16" alt="" style="filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(600%) hue-rotate(190deg);"> 
+        设备列表
+      </h2>
+      <span class="count-badge">14</span>
+    </div>
+
+    <!-- 搜索与操作 -->
+    <div class="search-area">
+      <div class="search-row">
+        <input type="text" class="ip-input" placeholder="输入 IP 地址..." value="192.168.1.64">
+        <input type="text" class="port-input" placeholder="端口" value="80">
+        <select class="protocol-select">
+          <option>HTTP</option><option>TCP</option><option>UDP</option><option>ICMP</option>
+        </select>
+      </div>
+      <div class="action-btns">
+        <button class="action-btn btn-ping">
+          <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/radar-2.svg" width="13" height="13" alt="" style="filter:brightness(0) invert(1);">
+          Ping检测
+        </button>
+        <button class="action-btn btn-port">
+          <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/plug-connected.svg" width="13" height="13" alt="" style="filter:brightness(0) invert(1);">
+          端口扫描
+        </button>
+        <button class="action-btn btn-batch">
+          <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/bolt.svg" width="13" height="13" alt="" style="filter:brightness(0) invert(1);">
+          批量检测
+        </button>
+        <button class="action-btn btn-clear">
+          <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/eraser.svg" width="13" height="13" alt="" style="filter:brightness(0) invert(1);">
+          清空结果
+        </button>
+      </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar-icons">
+      <div class="tool-icon active" title="列表视图"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/layout-list.svg" width="17" height="17" alt="" style="filter:brightness(0) invert(1);"></div>
+      <div class="tool-icon" title="网格视图"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/layout-grid.svg" width="17" height="17" alt="" style="filter:brightness(0) saturate(100%) invert(50%) sepia(20%) saturate(500%) hue-rotate(190deg);"></div>
+      <div class="tool-icon" title="树形视图"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/tree.svg" width="17" height="17" alt="" style="filter:brightness(0) saturate(100%) invert(45%) sepia(80%) saturate(600%) hue-rotate(130deg);"></div>
+      <div class="tool-icon" title="拓扑视图"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/network.svg" width="17" height="17" alt="" style="filter:brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(600%) hue-rotate(20deg);"></div>
+    </div>
+
+    <!-- 设备列表 -->
+    <div class="device-list">
+      <div class="device-item active">
+        <div class="item-header">
+          <div class="item-name">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/camera.svg" width="16" height="16" alt="" style="vertical-align:middle;filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(600%) hue-rotate(190deg);">
+            海康摄像头-大门
+            <span class="item-status-dot"></span>
+          </div>
+        </div>
+        <div class="item-info">
+          IP：192.168.1.64　位置：大门岗亭<br>型号：DS-2CD7T96
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="item-header">
+          <div class="item-name">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/camera.svg" width="16" height="16" alt="" style="vertical-align:middle;filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(600%) hue-rotate(190deg);">
+            海康摄像头-围墙
+            <span class="item-status-dot"></span>
+          </div>
+        </div>
+        <div class="item-info">
+          IP：192.168.1.65　位置：围墙东侧<br>型号：DS-2CD7T86
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="item-header">
+          <div class="item-name">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/car.svg" width="16" height="16" alt="" style="vertical-align:middle;filter:brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(600%) hue-rotate(20deg);">
+            大华摄像机-停车场
+            <span class="item-status-dot"></span>
+          </div>
+        </div>
+        <div class="item-info">
+          IP：192.168.1.66　位置：停车场入口<br>型号：DH-IPC-HFW
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="item-header">
+          <div class="item-name">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/phone-incoming.svg" width="16" height="16" alt="" style="vertical-align:middle;filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(600%) hue-rotate(190deg);">
+            海康对讲机-门卫
+            <span class="item-status-dot"></span>
+          </div>
+        </div>
+        <div class="item-info">
+          IP：192.168.1.67　位置：中心广场<br>型号：DS-KDTC
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="item-header">
+          <div class="item-name">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/key.svg" width="16" height="16" alt="" style="vertical-align:middle;filter:brightness(0) saturate(100%) invert(40%) sepia(30%) saturate(400%) hue-rotate(10deg);">
+            门禁主机-办公楼
+            <span class="item-status-dot"></span>
+          </div>
+        </div>
+        <div class="item-info">
+          IP：192.168.1.100　位置：办公大楼大堂<br>型号：DS-K2804
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="item-header">
+          <div class="item-name">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/key.svg" width="16" height="16" alt="" style="vertical-align:middle;filter:brightness(0) saturate(100%) invert(40%) sepia(30%) saturate(400%) hue-rotate(10deg);">
+            门禁主机-车间
+            <span class="item-status-dot"></span>
+          </div>
+        </div>
+        <div class="item-info">
+          IP：192.168.1.101　位置：生产车间<br>型号：DS-K2602
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中间内容区 -->
+  <div class="main-content">
+    <div class="content-scroll">
+
+      <!-- 快捷操作 -->
+      <div class="section-title">
+        <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/bolt.svg" width="18" height="18" alt="" style="filter:brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(600%) hue-rotate(20deg);">
+        快捷操作
+      </div>
+      <div class="quick-actions">
+        <div class="quick-btn">
+          <div class="icon-wrap icon-cam"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/video.svg" width="22" height="22" alt="" style="filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(500%) hue-rotate(190deg);"></div>
+          <span class="label">监控测试</span>
+        </div>
+        <div class="quick-btn">
+          <div class="icon-wrap icon-door"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/door.svg" width="22" height="22" alt="" style="filter:brightness(0) saturate(100%) invert(30%) sepia(95%) saturate(2000%) hue-rotate(340deg);"></div>
+          <span class="label">门禁测试</span>
+        </div>
+        <div class="quick-btn">
+          <div class="icon-wrap icon-barrier"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/barrier-block.svg" width="22" height="22" alt="" style="filter:brightness(0) saturate(100%) invert(50%) sepia(90%) saturate(600%) hue-rotate(20deg);"></div>
+          <span class="label">道闸测试</span>
+        </div>
+        <div class="quick-btn">
+          <div class="icon-wrap icon-card"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/credit-card.svg" width="22" height="22" alt="" style="filter:brightness(0) saturate(100%) invert(30%) sepia(85%) saturate(1500%) hue-rotate(280deg);"></div>
+          <span class="label">刷卡测试</span>
+        </div>
+        <div class="quick-btn">
+          <div class="icon-wrap icon-net"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/world-www.svg" width="22" height="22" alt="" style="filter:brightness(0) saturate(100%) invert(45%) sepia(80%) saturate(600%) hue-rotate(130deg);"></div>
+          <span class="label">网络测试</span>
+        </div>
+        <div class="quick-btn">
+          <div class="icon-wrap icon-server"><img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/server.svg" width="22" height="22" alt="" style="filter:brightness(0) saturate(100%) invert(40%) sepia(30%) saturate(400%) hue-rotate(10deg);"></div>
+          <span class="label">服务器测试</span>
+        </div>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e8f5e9;">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/circle-check.svg" width="26" height="26" alt="" style="filter:brightness(0) saturate(100%) invert(45%) sepia(80%) saturate(600%) hue-rotate(130deg);">
+          </div>
+          <div>
+            <div class="stat-value text-green">0</div>
+            <div class="stat-label">在线设备</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#ffebee;">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/circle-x.svg" width="26" height="26" alt="" style="filter:brightness(0) saturate(100%) invert(28%) sepia(95%) saturate(2500%) hue-rotate(345deg);">
+          </div>
+          <div>
+            <div class="stat-value text-red">14</div>
+            <div class="stat-label">离线设备</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fff8e1;">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/loader-2.svg" width="26" height="26" alt="" style="filter:brightness(0) saturate(100%) invert(55%) sepia(90%) saturate(700%) hue-rotate(15deg);">
+          </div>
+          <div>
+            <div class="stat-value text-yellow">0</div>
+            <div class="stat-label">检测中</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e3f2fd;">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/chart-bar.svg" width="26" height="26" alt="" style="filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(600%) hue-rotate(190deg);">
+          </div>
+          <div>
+            <div class="stat-value text-blue">14</div>
+            <div class="stat-label">设备总数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 结果表格 -->
+      <div class="table-section">
+        <div class="table-header">
+          <h3>
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/table.svg" width="16" height="16" alt="" style="filter:brightness(0) saturate(100%) invert(50%) sepia(20%) saturate(500%) hue-rotate(190deg);">
+            测试结果
+          </h3>
+          <button class="refresh-btn">
+            <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/refresh.svg" width="12" height="12" alt="" style="filter:brightness(0) saturate(100%) invert(35%) sepia(90%) saturate(600%) hue-rotate(190deg);">
+            刷新
+          </button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>设备名称</th><th>IP地址</th><th>类型</th><th>Ping状态</th><th>端口状态</th><th>响应时间</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <div class="empty-icon">
+                    <img src="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons/inbox.svg" width="40" height="40" alt="" style="opacity:0.35;filter:brightness(0) saturate(100%) invert(60%) sepia(10%) saturate(300%) hue-rotate(190deg);">
+                  </div>
+                  <div class="empty-text">暂无测试结果</div>
+                  <div class="empty-hint">请选取设备或执行 Ping 检测后刷新</div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 右侧日志面板 -->
+  <div class="right-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active">测试日志</div>
+      <div class="panel-actions">
+        <span class="panel-action">清空</span>
+        <span class="panel-action">自动滚动</span>
+      </div>
+    </div>
+    <div class="log-container font-mono" id="logContainer">
+      <div class="log-entry"><span class="log-time">[17:43:01]</span> <span class="log-warn">⚡ 系统启动，等待操作...</span></div>
+      <div class="log-entry"><span class="log-time">[17:43:02]</span> <span class="log-info">✓ 加载设备列表完成</span></div>
+      <div class="log-entry"><span class="log-time">[17:43:02]</span> <span class="log-info">✓ 共发现 14 台待检设备</span></div>
+      <div class="log-entry"><span class="log-time">[17:43:03]</span> <span class="log-warn">⏸ 等待用户指令...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 浮动按钮 & 头像 -->
+<div class="fab-font-title fab-float" onclick="alert('帮助中心\n\n快捷键:\nF5 - Ping全量扫描\nF6 - 端口批量检测')">?</div>
+<div class="avatar" onclick="alert('当前用户: Admin')">👤</div>
+
+<script>
+// 设备列表点击切换
+document.querySelectorAll('.device-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.device-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+    const name = this.querySelector('.item-name').textContent.trim();
+    addLog('info', `▶ 已选中设备: ${name}`);
+  });
+});
+
+// 工具栏图标切换
+document.querySelectorAll('.tool-icon').forEach(icon => {
+  icon.addEventListener('click', function() {
+    document.querySelectorAll('.tool-icon').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Ping检测
+document.querySelector('.btn-ping').addEventListener('click', () => {
+  const ip = document.querySelector('.ip-input').value || '192.168.1.64';
+  addLog('warn', `📡 开始 Ping 检测: ${ip} ...`);
+  setTimeout(() => { addLog('error', `✗ ${ip} — Ping 超时，目标不可达`); }, 900);
+});
+
+// 端口扫描
+document.querySelector('.btn-port').addEventListener('click', () => {
+  const ip = document.querySelector('.ip-input').value || '192.168.1.64';
+  const port = document.querySelector('.port-input').value || '80';
+  addLog('warn', `🔌 开始端口扫描: ${ip}:${port} ...`);
+  setTimeout(() => { addLog('error', `✗ ${ip}:${port} — 端口未开放 / 连接拒绝`); }, 900);
+});
+
+// 批量检测
+document.querySelector('.btn-batch').addEventListener('click', () => {
+  addLog('warn', '⚡ 开始批量检测所有设备...');
+  let count = 0, total = 14;
+  const interval = setInterval(() => {
+    count++;
+    addLog('info', `[${String(count).padStart(2,'0')}/${total}] 正在检测第 ${count} 台设备...`);
+    if (count >= total) {
+      clearInterval(interval);
+      addLog('warn', '▬▬▬ 批量检测完成！在线: 0 | 离线: 14 ▬▬▬');
+    }
+  }, 320);
+});
+
+// 清空结果
+document.querySelector('.btn-clear').addEventListener('click', () => {
+  document.getElementById('logContainer').innerHTML = '';
+  addLog('info', '🧹 已清空所有检测结果');
+});
+
+// 刷新
+document.querySelector('.refresh-btn').addEventListener('click', () => {
+  addLog('info', '🔄 已刷新测试结果数据');
+});
+
+// 快捷操作
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const label = this.querySelector('.label').textContent;
+    addLog(`info`, `▶ 执行 ${label} 模块...`);
+  });
+});
+
+// 日志输出
+function addLog(type, msg) {
+  const c = document.getElementById('logContainer');
+  const t = new Date().toTimeString().slice(0,8);
+  const tc = type==='info'?'log-info':type==='warn'?'log-warn':'log-error';
+  const e = document.createElement('div');
+  e.className = 'log-entry';
+  e.innerHTML = `<span class="log-time">[${t}]</span> <span class="${tc}">${msg}</span>`;
+  c.appendChild(e);
+  c.scrollTop = c.scrollHeight;
+}
+</script>
+
+</body>
+</html>

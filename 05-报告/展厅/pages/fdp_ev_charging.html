@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuroraCharge — 极光充</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#05080f;
+  --fg:#f0f4ff;
+  --muted:rgba(160,180,210,.7);
+  --font-main:'Sora',sans-serif;
+  --font-body:'Instrument Sans',sans-serif;
+  --aurora-1:#06b6d4;
+  --aurora-2:#3b82f6;
+  --aurora-3:#8b5cf6;
+  --aurora-4:#10b981;
+  --aurora-5:#f59e0b;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--fg);overflow-x:hidden;}
+
+/* ===== AURORA / MESH GRADIENT BACKGROUND ===== */
+.aurora-bg{
+  position:fixed;top:-20%;left:-20%;width:140%;height:140%;z-index:0;pointer-events:none;
+  overflow:hidden;
+}
+.aurora-blob{
+  position:absolute;border-radius:50%;filter:blur(120px);opacity:.35;
+  animation:blobFloat 12s ease-in-out infinite;
+}
+.ab-1{width:600px;height:600px;background:radial-gradient(circle,var(--aurora-1),transparent 70%);top:-5%;left:-5%;animation-delay:0s;}
+.ab-2{width:500px;height:500px;background:radial-gradient(circle,var(--aurora-2),transparent 70%);top:30%;right:-8%;animation-delay:-3s;}
+.ab-3{width:450px;height:450px;background:radial-gradient(circle,var(--aurora-3),transparent 70%);bottom:-5%;left:30%;animation-delay:-6s;}
+.ab-4{width:350px;height:350px;background:radial-gradient(circle,var(--aurora-4),transparent 70%);top:60%;left:55%;animation-delay:-9s;}
+@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-25px,35px) scale(.95)}}
+
+/* Animated gradient mesh overlay */
+.mesh-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(6,182,212,.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 20%, rgba(59,130,246,.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 70%, rgba(139,92,246,.08) 0%, transparent 50%);
+  background-size:200% 200%;
+  animation:morphMesh 15s ease-in-out infinite;
+}
+@keyframes morphMesh{0%,100%{background-position:0% 0%,100% 0%,50% 100%}50%{background-position:100% 100%,0% 50%,100% 0%}}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmerGlow{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes lineFlow{to{stroke-dashoffset:0}}
+@keyframes pulseAurora{0%,100%{box-shadow:0 0 30px rgba(6,182,212,.2),0 0 60px rgba(59,130,246,.1)}50%{box-shadow:0 0 50px rgba(6,182,212,.35),0 0 90px rgba(139,92,246,.15)}}
+
+/* ===== NAV ===== */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:100;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 44px;background:rgba(5,8,15,.5);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);}
+.nav-logo{font-family:var(--font-main);font-size:1.35rem;font-weight:800;letter-spacing:-.04em;display:flex;align-items:center;gap:10px;}
+.nav-logo span.iconify{color:var(--aurora-1);font-size:1.5rem;}
+.nav-links{display:flex;gap:36px;}
+.nav-link{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:500;transition:color .3s ease;position:relative;}
+.nav-link:hover{color:var(--fg);}
+.nav-link::after{content:'';position:absolute;bottom:-5px;left:0;width:0;height:2px;background:linear-gradient(90deg,var(--aurora-1),var(--aurora-3));border-radius:1px;transition:width .4s cubic-bezier(.34,1.56,.64,1);}
+.nav-link:hover::after{width:100%;}
+.nav-cta{padding:11px 26px;border-radius:14px;background:linear-gradient(135deg,var(--aurora-1),var(--aurora-2));color:#fff;border:none;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 6px 28px rgba(6,182,212,.3);}
+.nav-cta:hover{transform:translateY(-3px);box-shadow:0 14px 42px rgba(6,182,212,.45);}
+
+/* ===== HERO ===== */
+.hero-section{position:relative;z-index:2;min-height:95vh;display:flex;align-items:center;padding:120px 44px 80px;}
+.hero-content{max-width:640px;}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:28px;font-size:.78rem;font-weight:600;color:var(--aurora-1);background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.18);margin-bottom:28px;width:fit-content;backdrop-filter:blur(10px);animation:fadeUp .9s cubic-bezier(.34,1.56,.64,1) both;}
+.hero-title{font-family:var(--font-main);font-size:clamp(2.6rem,5.5vw,4.2rem);font-weight:800;line-height:1.05;letter-spacing:-.03em;margin-bottom:24px;animation:fadeUp .9s cubic-bezier(.34,1.56,.64,1) both;animation-delay:.12s;}
+.hero-title .grad-text{background:linear-gradient(135deg,var(--aurora-1),var(--aurora-2),var(--aurora-3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:textShimmer 4s linear infinite;}
+@keyframes textShimmer{0%{background-position:0% center}100%{background-position:200% center}}
+.hero-desc{font-size:1.1rem;color:var(--muted);line-height:1.8;margin-bottom:38px;max-width:520px;animation:fadeUp .9s cubic-bezier(.34,1.56,.64,1) both;animation-delay:.24s;}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;animation:fadeUp .9s cubic-bezier(.34,1.56,.64,1) both;animation-delay:.36s;}
+.btn-hero-primary{padding:16px 36px;border-radius:16px;background:linear-gradient(135deg,var(--aurora-1),var(--aurora-2));color:#fff;border:none;font-size:1rem;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(6,182,212,.35);display:inline-flex;align-items:center;gap:10px;}
+.btn-hero-primary:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 18px 52px rgba(6,182,212,.5);}
+.btn-hero-outline{padding:16px 32px;border-radius:16px;background:rgba(255,255,255,.04);color:var(--fg);border:1px solid rgba(255,255,255,.1);font-size:1rem;font-weight:600;cursor:pointer;font-family:var(--font-body);backdrop-filter:blur(10px);transition:all .35s ease;display:inline-flex;align-items:center;gap:10px;}
+.btn-hero-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(6,182,212,.3);}
+
+/* Hero right side - visual element */
+.hero-visual{position:absolute;right:5%;top:50%;transform:translateY(-50%);width:min(480px,40vw);aspect-ratio:1;display:flex;align-items:center;justify-content:center;z-index:2;}
+.hero-ring{
+  width:85%;aspect-ratio:1;border-radius:50%;
+  border:2px solid transparent;
+  background:linear-gradient(var(--bg),var(--bg)) padding-box,
+             linear-gradient(135deg,var(--aurora-1),var(--aurora-3),var(--aurora-4)) border-box;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;animation:pulseAurora 5s ease-in-out infinite;
+}
+.hero-ring-inner{
+  width:80%;aspect-ratio:1;border-radius:50%;
+  background:linear-gradient(135deg,rgba(6,182,212,.08),rgba(139,92,246,.08));
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(6,182,212,.15);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+}
+.hri-icon{font-size:3.5rem;color:var(--aurora-1);margin-bottom:12px;filter:drop-shadow(0 0 20px rgba(6,182,212,.5));}
+.hri-text{font-family:var(--font-main);font-size:1.1rem;font-weight:600;color:var(--fg);}
+.hri-sub{font-size:.84rem;color:var(--muted);margin-top:4px;}
+
+/* ===== STATION MAP SECTION ===== */
+.map-section{position:relative;z-index:2;padding:0 44px;margin-top:-40px;}
+.map-container{max-width:1280px;border-radius:28px;overflow:hidden;position:relative;
+  background:linear-gradient(145deg,rgba(6,182,212,.03),rgba(139,92,246,.03));
+  border:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px);
+}
+.map-header{padding:28px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.05);}
+.map-title{font-family:var(--font-main);font-size:1.3rem;font-weight:700;}
+.map-filters{display:flex;gap:10px;}
+.filter-chip{padding:8px 16px;border-radius:12px;font-size:.82rem;font-weight:500;background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:all .3s ease;font-family:var(--font-body);}
+.filter-chip.active,.filter-chip:hover{background:rgba(6,182,212,.12);color:var(--aurora-1);border-color:rgba(6,182,212,.2);}
+.map-body{height:380px;position:relative;background:linear-gradient(170deg,#0a1020,#060b16,#0a1225);
+  overflow:hidden;}
+/* Grid lines for map effect */
+.map-grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(6,182,212,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(6,182,212,.04) 1px,transparent 1px);
+  background-size:50px 50px;}
+/* Station markers on map */
+.station-marker{position:absolute;width:16px;height:16px;border-radius:50%;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+.sm-dot{width:100%;height:100%;border-radius:50%;animation:shimmerGlow 2.5s ease-in-out infinite;}
+.sm-pulse{position:absolute;top:-4px;left:-4px;width:24px;height:24px;border-radius:50%;border:2px solid currentColor;opacity:.3;animation:pulseRing 2s ease-out infinite;}
+@keyframes pulseRing{0%{transform:scale(.8);opacity:.5}100%{transform:scale(2);opacity:0}}
+.sm-1{top:30%;left:22%;color:var(--aurora-1);} .sm-1 .sm-dot{background:var(--aurora-1);box-shadow:0 0 16px rgba(6,182,212,.5)}
+.sm-2{top:50%;left:48%;color:var(--aurora-4);} .sm-2 .sm-dot{background:var(--aurora-4);box-shadow:0 0 16px rgba(16,185,129,.5)}
+.sm-3{top:65%;left:68%;color:var(--aurora-2);} .sm-3 .sm-dot{background:var(--aurora-2);box-shadow:0 0 16px rgba(59,130,246,.5)}
+.sm-4{top:40%;left:35%;color:var(--aurora-5);} .sm-4 .sm-dot{background:var(--aurora-5);box-shadow:0 0 16px rgba(245,158,11,.5)}
+
+/* Map floating info card on map */
+.map-info-card{position:absolute;bottom:20px;left:20px;max-width:300px;padding:20px 24px;border-radius:18px;
+  background:rgba(5,8,15,.85);backdrop-filter:blur(24px);border:1px solid rgba(6,182,212,.15);
+  box-shadow:0 16px 48px rgba(0,0,0,.4);}
+.mic-name{font-family:var(--font-main);font-size:1.05rem;font-weight:700;margin-bottom:4px;}
+.mic-addr{font-size:.8rem;color:var(--muted);margin-bottom:12px;}
+.mic-stats{display:flex;gap:16px;}
+.mis-item{text-align:center;}
+.mis-val{font-family:var(--font-main);font-size:1.05rem;font-weight:700;color:var(--aurora-1);}
+.mis-lbl{font-size:.7rem;color:var(--muted);}
+
+/* ===== FEATURED STATIONS ===== */
+.stations-section{position:relative;z-index:2;padding:80px 44px 60px;max-width:1280px;margin:0 auto;}
+.sec-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:36px;}
+.sec-title{font-family:var(--font-main);font-size:2rem;font-weight:800;letter-spacing:-.02em;}
+.sec-sub{font-size:.88rem;color:var(--muted);margin-top:6px;}
+.sec-action{color:var(--aurora-1);text-decoration:none;font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:gap .3s ease;}
+.sec-action:hover{gap:12px;}
+
+.stations-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+.station-card{border-radius:22px;overflow:hidden;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);
+  transition:all .45s cubic-bezier(.34,1.56,.64,1);position:relative;
+}
+.station-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--aurora-1),var(--aurora-3));opacity:0;transition:opacity .4s ease;}
+.station-card:hover::before{opacity:1;}
+.station-card:hover{transform:translateY(-6px);border-color:rgba(6,182,212,.18);
+  box-shadow:0 20px 56px rgba(6,182,212,.1);}
+.sc-image{height:180px;overflow:hidden;position:relative;}
+.sc-image img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease;}
+.station-card:hover .sc-image img{transform:scale(1.08);}
+.sc-image-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(5,8,15,.9),transparent 60%);}
+.sc-badge{position:absolute;top:14px;left:14px;padding:5px 13px;border-radius:20px;font-size:.74rem;font-weight:700;
+  backdrop-filter:blur(10px);z-index:1;}
+.sc-badge.hot{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.2);}
+.sc-badge.new{background:rgba(6,182,212,.15);color:var(--aurora-1);border:1px solid rgba(6,182,212,.2);}
+.sc-body{padding:22px;}
+.sc-name{font-family:var(--font-main);font-size:1.1rem;font-weight:700;margin-bottom:4px;}
+.sc-location{font-size:.82rem;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:14px;}
+.sc-specs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.spec-tag{padding:4px 10px;border-radius:8px;font-size:.73rem;font-weight:500;background:rgba(6,182,212,.08);color:var(--aurora-1);}
+.spec-tag.green{background:rgba(16,185,129,.08);color:var(--aurora-4);}
+.spec-tag.amber{background:rgba(245,158,11,.08);color:var(--aurora-5);}
+.sc-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid rgba(255,255,255,.05);}
+.sc-price{font-family:var(--font-main);font-size:1.25rem;font-weight:700;
+  background:linear-gradient(135deg,var(--aurora-1),var(--aurora-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sc-price-unit{font-size:.78rem;-webkit-text-fill-color:var(--muted);font-weight:400;}
+.sc-btn{padding:8px 18px;border-radius:10px;background:rgba(6,182,212,.1);color:var(--aurora-1);border:1px solid rgba(6,182,212,.2);
+  font-size:.83rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:all .3s ease;}
+.sc-btn:hover{background:var(--aurora-1);color:#fff;}
+
+/* ===== DIAGONAL CTA SECTION ===== */
+.cta-diagonal{position:relative;z-index:2;margin:0 44px 60px;border-radius:28px;overflow:hidden;
+  min-height:320px;display:flex;align-items:center;padding:0;
+  background:linear-gradient(135deg,rgba(6,182,212,.08),rgba(139,92,246,.08));
+  border:1px solid rgba(255,255,255,.06);}
+.cta-bg-img{position:absolute;inset:0;z-index:0;}
+.cta-bg-img img{width:100%;height:100%;object-fit:cover;opacity:.15;mix-blend-mode:luminosity;}
+.cta-diagonal::before{
+  content:'';position:absolute;inset:0;z-index:1;
+  background:repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 40px,
+    rgba(6,182,212,.03) 40px,
+    rgba(6,182,212,.03) 41px
+  );
+}
+.cta-content{position:relative;z-index:2;padding:48px 56px;max-width:580px;}
+.cta-title{font-family:var(--font-main);font-size:2rem;font-weight:800;margin-bottom:14px;letter-spacing:-.02em;}
+.cta-title span{background:linear-gradient(135deg,var(--aurora-1),var(--aurora-4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.cta-desc{font-size:1rem;color:var(--muted);line-height:1.7;margin-bottom:28px;}
+.cta-btn{padding:15px 34px;border-radius:16px;background:linear-gradient(135deg,var(--aurora-1),var(--aurora-2));color:#fff;border:none;
+  font-size:1rem;font-weight:700;cursor:pointer;font-family:var(--font-body);
+  box-shadow:0 8px 32px rgba(6,182,212,.35);transition:all .4s cubic-bezier(.34,1.56,.64,1);display:inline-flex;align-items:center;gap:10px;}
+.cta-btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 18px 48px rgba(6,182,212,.5);}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .stations-grid{grid-template-columns:1fr 1fr;}
+  .hero-visual{display:none;}
+  .hero-section{padding-left:28px;padding-right:28px;text-align:center;}
+  .hero-content{margin:0 auto;}
+  .hero-actions{justify-content:center;}
+  .map-section,.stations-section,.cta-diagonal{margin-left:28px;margin-right:28px;padding-left:0;padding-right:0;}
+  .navbar{padding:0 28px;}
+}
+@media(max-width:640px){
+  .stations-grid{grid-template-columns:1fr;}
+  .nav-links{display:none;}
+  .hero-section{min-height:auto;padding-top:110px;padding-bottom:60px;}
+  .map-section,.stations-section,.cta-diagonal{margin-left:16px;margin-right:16px;}
+  .cta-content{padding:32px 24px;}
+  .navbar{padding:0 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Aurora Background -->
+<div class="aurora-bg">
+  <div class="aurora-blob ab-1"></div>
+  <div class="aurora-blob ab-2"></div>
+  <div class="aurora-blob ab-3"></div>
+  <div class="aurora-blob ab-4"></div>
+</div>
+<div class="mesh-overlay"></div>
+
+<!-- NAV -->
+<nav class="navbar">
+  <div class="nav-logo"><span class="iconify" data-icon="mdi:lightning-bolt-circle"></span> AuroraCharge</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#">充电站</a>
+    <a class="nav-link" href="#">价格方案</a>
+    <a class="nav-link" href="#">企业服务</a>
+    <a class="nav-link" href="#">关于我们</a>
+  </div>
+  <button class="nav-cta">开始充电</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="hero-content">
+    <div class="hero-tag"><span class="iconify" data-icon="mdi:star-four-points-small"></span> 宁波市最大充电网络运营商</div>
+    <h1 class="hero-title">为每一次出行<br/><span class="grad-text">注入极光能量</span></h1>
+    <p class="hero-desc">覆盖宁波全域 2800+ 充电桩，从超快充到慢充，从城市核心到高速服务区。智能匹配最优站点，让充电像加油一样便捷。</p>
+    <div class="hero-actions">
+      <button class="btn-hero-primary">寻找附近电站 <span class="iconify" data-icon="mdi:map-marker-radius"></span></button>
+      <button class="btn-hero-outline">了解价格 <span class="iconify" data-icon="mdi:information-outline"></span></button>
+    </div>
+  </div>
+
+  <!-- Hero Visual Ring -->
+  <div class="hero-visual">
+    <div class="hero-ring">
+      <div class="hero-ring-inner">
+        <span class="iconify hri-icon" data-icon="mdi:ev-station"></span>
+        <div class="hri-text">2,847 站点在线</div>
+        <div class="hri-sub">实时数据更新</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP SECTION -->
+<section class="map-section">
+  <div class="map-container">
+    <div class="map-header">
+      <h2 class="map-title">充电站地图</h2>
+      <div class="map-filters">
+        <span class="filter-chip active">全部</span>
+        <span class="filter-chip">快充</span>
+        <span class="filter-chip">超充</span>
+        <span class="filter-chip">免费停车</span>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="map-grid"></div>
+      <div class="station-marker sm-1"><div class="sm-dot"></div><div class="sm-pulse"></div></div>
+      <div class="station-marker sm-2"><div class="sm-dot"></div><div class="sm-pulse"></div></div>
+      <div class="station-marker sm-3"><div class="sm-dot"></div><div class="sm-pulse"></div></div>
+      <div class="station-marker sm-4"><div class="sm-dot"></div><div class="sm-pulse"></div></div>
+      <div class="map-info-card">
+        <div class="mic-name">万达广场超级站</div>
+        <div class="mic-addr"><span class="iconify" data-icon="mdi:map-marker" style="font-size:.8rem;vertical-align:middle"></span> 江北区清河路269号 B1</div>
+        <div class="mic-stats">
+          <div class="mis-item"><div class="mis-val">24/28</div><div class="mis-lbl">可用</div></div>
+          <div class="mis-item"><div class="mis-val">480kW</div><div class="mis-lbl">最大功率</div></div>
+          <div class="mis-item"><div class="mis-val">¥1.28</div><div class="mis-lbl">单价</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATIONS -->
+<section class="stations-section">
+  <div class="sec-header">
+    <div><h2 class="sec-title">热门充电站</h2><p class="sec-sub">基于实时使用数据和用户评价精选</p></div>
+    <a class="sec-action" href="#">查看全部 <span class="iconify" data-icon="mdi:arrow-right"></span></a>
+  </div>
+  <div class="stations-grid">
+
+    <div class="station-card">
+      <div class="sc-image">
+        <img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&q=80" alt="充电站" loading="lazy"/>
+        <div class="sc-image-overlay"></div>
+        <span class="sc-badge hot">热门</span>
+      </div>
+      <div class="sc-body">
+        <div class="sc-name">万达广场超级充电站</div>
+        <div class="sc-location"><span class="iconify" data-icon="mdi:map-marker"></span> 江北区 · 1.2km</div>
+        <div class="sc-specs">
+          <span class="spec-tag">480kW 超充</span>
+          <span class="spec-tag green">空闲 24</span>
+          <span class="spec-tag">24h</span>
+        </div>
+        <div class="sc-bottom">
+          <div class="sc-price">¥1.28<span class="sc-price-unit">/kWh</span></div>
+          <button class="sc-btn">导航</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="station-card">
+      <div class="sc-image">
+        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80" alt="充电站" loading="lazy"/>
+        <div class="sc-image-overlay"></div>
+        <span class="sc-badge new">新上线</span>
+      </div>
+      <div class="sc-body">
+        <div class="sc-name">奥体中心光储充一体站</div>
+        <div class="sc-location"><span class="iconify" data-icon="mdi:map-marker"></span> 鄞州区 · 3.5km</div>
+        <div class="sc-specs">
+          <span class="spec-tag">360kW 快充</span>
+          <span class="spec-tag green">空闲 18</span>
+          <span class="spec-tag amber">光伏储能</span>
+        </div>
+        <div class="sc-bottom">
+          <div class="sc-price">¥1.08<span class="sc-price-unit">/kWh</span></div>
+          <button class="sc-btn">导航</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="station-card">
+      <div class="sc-image">
+        <img src="https://images.unsplash.com/photo-1562913011-0cda7b68bdf8?w=600&q=80" alt="充电站" loading="lazy"/>
+        <div class="sc-image-overlay"></div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-name">高新区科创园站</div>
+        <div class="sc-location"><span class="iconify" data-icon="mdi:map-marker"></span> 高新区 · 4.8km</div>
+        <div class="sc-specs">
+          <span class="spec-tag">180kW 快充</span>
+          <span class="spec-tag green">空闲 20</span>
+          <span class="spec-tag">免费停车</span>
+        </div>
+        <div class="sc-bottom">
+          <div class="sc-price">¥0.98<span class="sc-price-unit">/kWh</span></div>
+          <button class="sc-btn">导航</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIAGONAL CTA -->
+<section class="cta-diagonal">
+  <div class="cta-bg-img"><img src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=1200&q=80" alt="" loading="lazy"/></div>
+  <div class="cta-content">
+    <h2 class="cta-title">开启您的<span>绿色出行</span>新体验</h2>
+    <p class="cta-desc">注册即享首单 8 折优惠，更有月度套餐、企业账户等专属方案。加入超过 50 万车主的充电网络。</p>
+    <button class="cta-btn">立即注册 <span class="iconify" data-icon="mdi:arrow-right"></span></button>
+  </div>
+</section>
+
+<script>
+document.querySelectorAll('.animate-on-scroll').forEach((el,i)=>{
+  el.style.opacity='0';el.style.transform='translateY(30px)';
+  el.style.transition='all .7s cubic-bezier(.34,1.56,.64,1)';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';obs.unobserve(e.target);}});},{threshold:0.15});
+document.querySelectorAll('.animate-on-scroll').forEach(el=>obs.observe(el));
+
+// Filter chip interaction
+document.querySelectorAll('.filter-chip').forEach(chip=>{
+  chip.addEventListener('click',function(){
+    document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

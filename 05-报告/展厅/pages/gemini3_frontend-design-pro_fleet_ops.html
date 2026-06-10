@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Command - OLED Luxury Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pure-black: #000000;
+            --oled-gray: #0A0A0A;
+            --electric-blue: #00D1FF;
+            --deep-blue: #003366;
+            --hazard-orange: #FF8A00;
+            --border-glow: rgba(0, 209, 255, 0.3);
+            --font-main: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: crosshair;
+        }
+
+        body {
+            background-color: var(--pure-black);
+            color: #FFFFFF;
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            width: 80px;
+            background: var(--oled-gray);
+            border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 0;
+            gap: 40px;
+        }
+
+        .nav-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-icon.active {
+            color: var(--electric-blue);
+            background: rgba(0, 209, 255, 0.1);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+            background: radial-gradient(circle at 50% 50%, #050505 0%, #000 100%);
+        }
+
+        header {
+            grid-column: span 4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--electric-blue);
+            text-shadow: 0 0 10px var(--border-glow);
+        }
+
+        .system-status {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Dashboard Units */
+        .unit {
+            background: var(--oled-gray);
+            border: 0.5px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .unit:hover {
+            border-color: var(--electric-blue);
+        }
+
+        .unit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 10px;
+            background: var(--electric-blue);
+        }
+
+        .unit h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 15px;
+        }
+
+        /* KPI Style */
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 5px;
+        }
+
+        .kpi-trend {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: #00FF94;
+        }
+
+        /* Map Unit */
+        .map-unit {
+            grid-column: span 3;
+            grid-row: span 2;
+            background: #050505;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--electric-blue), transparent);
+            animation: scan 4s linear infinite;
+            opacity: 0.2;
+        }
+
+        @keyframes scan {
+            from { top: 0; }
+            to { top: 100%; }
+        }
+
+        /* Alerts List */
+        .alert-unit {
+            grid-column: span 1;
+            grid-row: span 2;
+        }
+
+        .alert-item {
+            padding: 12px 0;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .alert-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 5px;
+            background: var(--hazard-orange);
+            box-shadow: 0 0 10px var(--hazard-orange);
+        }
+
+        .alert-content h4 {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .alert-content p {
+            font-size: 0.7rem;
+            opacity: 0.4;
+            margin-top: 4px;
+        }
+
+        /* Charts / Data Grid */
+        .data-grid {
+            grid-column: span 4;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        /* Micro GLOW effect */
+        .glow-text {
+            color: var(--electric-blue);
+            text-shadow: 0 0 10px var(--electric-blue);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--pure-black); }
+        ::-webkit-scrollbar-thumb { background: var(--deep-blue); }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="nav-icon active">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        </div>
+        <div class="nav-icon">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+        </div>
+        <div class="nav-icon">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 16h7v7l9-13h-7z"/></svg>
+        </div>
+        <div class="nav-icon">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <div class="title-group">
+                <h1>City Fleet Core</h1>
+            </div>
+            <div class="system-status">
+                <span>SECURE CONNECTION: <span class="glow-text">ENCRYPTED</span></span>
+                <span>LATENCY: <span class="glow-text">14ms</span></span>
+                <span id="clock">23:54:12</span>
+            </div>
+        </header>
+
+        <div class="unit">
+            <h3>Total Revenue</h3>
+            <div class="kpi-value">¥1,248,500</div>
+            <div class="kpi-trend">↑ 12.4% vs Prev</div>
+        </div>
+        <div class="unit">
+            <h3>Active Sessions</h3>
+            <div class="kpi-value">32,192</div>
+            <div class="kpi-trend">↑ 4.1% Today</div>
+        </div>
+        <div class="unit">
+            <h3>Fleet Integrity</h3>
+            <div class="kpi-value">98.2%</div>
+            <div class="kpi-trend">STABLE</div>
+        </div>
+        <div class="unit">
+            <h3>Energy Reserve</h3>
+            <div class="kpi-value">64%</div>
+            <div class="kpi-trend" style="color: var(--hazard-orange);">REFILL REQUIRED</div>
+        </div>
+
+        <div class="unit map-unit">
+            <div class="scan-line"></div>
+            <div style="font-size: 0.7rem; position: absolute; top: 10px; right: 10px; opacity: 0.3; font-family: var(--font-mono);">GRID_ALPHA_09</div>
+            <!-- Simulated Map Visualization -->
+            <svg width="80%" height="80%" viewBox="0 0 800 500" style="opacity: 0.6;">
+                <path d="M100 100 L200 150 L300 120 L500 200 L700 150" fill="none" stroke="var(--deep-blue)" stroke-width="1"/>
+                <circle cx="200" cy="150" r="4" fill="var(--electric-blue)" class="glow-text"/>
+                <circle cx="500" cy="200" r="4" fill="var(--electric-blue)"/>
+                <circle cx="300" cy="120" r="4" fill="var(--hazard-orange)"/>
+                <text x="210" y="155" fill="white" font-size="10" font-family="var(--font-mono)">NODE_ID: 882</text>
+            </svg>
+        </div>
+
+        <div class="unit alert-unit">
+            <h3>Critical Incidents</h3>
+            <div class="alert-item">
+                <div class="alert-dot"></div>
+                <div class="alert-content">
+                    <h4>Zone Violation: District 05</h4>
+                    <p>Unit #9218 exited boundary</p>
+                </div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-dot"></div>
+                <div class="alert-content">
+                    <h4>Low Voltage: E-Bike Stack</h4>
+                    <p>22 units require immediate swap</p>
+                </div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-dot" style="background: red; box-shadow: 0 0 10px red;"></div>
+                <div class="alert-content">
+                    <h4>Hardware Failure: IoT Node</h4>
+                    <p>Subsystem 12-B offline</p>
+                </div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-dot" style="background: #FFF; box-shadow: 0 0 10px #FFF;"></div>
+                <div class="alert-content">
+                    <h4>Audit Required</h4>
+                    <p>Weekly compliance report pending</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-grid">
+            <div class="unit" style="background: linear-gradient(to bottom right, var(--oled-gray), #000);">
+                <h3>Swap Station Alpha</h3>
+                <div style="font-family: var(--font-mono); font-size: 1.5rem;">92% <span style="font-size: 0.7rem; opacity: 0.4;">READY</span></div>
+            </div>
+            <div class="unit">
+                <h3>Swap Station Beta</h3>
+                <div style="font-family: var(--font-mono); font-size: 1.5rem;">45% <span style="font-size: 0.7rem; opacity: 0.4;">BUSY</span></div>
+            </div>
+            <div class="unit">
+                <h3>Human Ops</h3>
+                <div style="font-family: var(--font-mono); font-size: 1.5rem;">12 <span style="font-size: 0.7rem; opacity: 0.4;">ON_FIELD</span></div>
+            </div>
+            <div class="unit" style="border-color: var(--hazard-orange);">
+                <h3>System Logs</h3>
+                <div style="font-family: var(--font-mono); font-size: 0.6rem; opacity: 0.6; height: 40px; overflow: hidden;">
+                    > RUNNING COMPLIANCE CHECK...<br>
+                    > NO VIOLATIONS DETECTED.<br>
+                    > PING HANGZHOU_CENTRAL: 12ms
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Real-time Clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0];
+            document.getElementById('clock').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Mouse Trail / Interaction
+        document.body.addEventListener('mousemove', (e) => {
+            const glow = document.createElement('div');
+            glow.style.position = 'fixed';
+            glow.style.width = '2px';
+            glow.style.height = '2px';
+            glow.style.background = 'var(--electric-blue)';
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+            glow.style.boxShadow = '0 0 10px var(--electric-blue)';
+            glow.style.pointerEvents = 'none';
+            glow.style.transition = 'opacity 0.5s';
+            document.body.appendChild(glow);
+            
+            setTimeout(() => {
+                glow.style.opacity = '0';
+                setTimeout(() => glow.remove(), 500);
+            }, 100);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>运营后台 · shadcn/ui</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --card: #ffffff;
+      --card-foreground: #09090b;
+      --popover: #ffffff;
+      --popover-foreground: #09090b;
+      --primary: #18181b;
+      --primary-foreground: #fafafa;
+      --secondary: #f4f4f5;
+      --secondary-foreground: #18181b;
+      --muted: #f4f4f5;
+      --muted-foreground: #71717a;
+      --accent: #f4f4f5;
+      --accent-foreground: #18181b;
+      --destructive: #ef4444;
+      --destructive-foreground: #fafafa;
+      --border: #e4e4e7;
+      --input: #e4e4e7;
+      --ring: #a1a1aa;
+      --radius: 0.5rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: #09090b;
+      color: #a1a1aa;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 50;
+    }
+
+    .sidebar-header {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-logo {
+      width: 32px;
+      height: 32px;
+      background: var(--background);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--foreground);
+    }
+
+    .sidebar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fafafa;
+      letter-spacing: -0.01em;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 10px;
+      overflow-y: auto;
+    }
+
+    .sidebar-group {
+      margin-bottom: 8px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #a1a1aa;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255,255,255,0.05);
+      color: #fafafa;
+    }
+
+    .sidebar-item.active {
+      background: rgba(255,255,255,0.09);
+      color: #fafafa;
+    }
+
+    .sidebar-item i {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 14px 20px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px;
+      color: #52525b;
+    }
+
+    /* Main */
+    .main {
+      flex: 1;
+      margin-left: 260px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: var(--background);
+    }
+
+    /* Header */
+    .header {
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: var(--background);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+
+    .breadcrumb a {
+      color: var(--muted-foreground);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .breadcrumb a:hover {
+      color: var(--foreground);
+    }
+
+    .breadcrumb .current {
+      color: var(--foreground);
+      font-weight: 500;
+    }
+
+    .breadcrumb-sep {
+      color: var(--border);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .select {
+      height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--background);
+      font-size: 13px;
+      color: var(--foreground);
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .select:hover {
+      border-color: var(--ring);
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      background: var(--secondary);
+      border-radius: 6px;
+      padding: 2px;
+      height: 34px;
+    }
+
+    .tab {
+      padding: 0 14px;
+      height: 30px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .tab:hover {
+      color: var(--foreground);
+    }
+
+    .tab.active {
+      background: var(--background);
+      color: var(--foreground);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Content */
+    .content {
+      flex: 1;
+      padding: 24px 28px 32px;
+      max-width: 1440px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--foreground);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    .card-subtitle {
+      font-size: 12.5px;
+      color: var(--muted-foreground);
+      margin-top: 2px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .card-body-nopad {
+      padding: 0;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: box-shadow 0.15s;
+    }
+
+    .kpi-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .kpi-label {
+      font-size: 13px;
+      color: var(--muted-foreground);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-value {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--foreground);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .kpi-footer {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .badge-green {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-red {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .badge-yellow {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .badge-blue {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+    }
+
+    .badge-destructive {
+      background: var(--destructive);
+      color: var(--destructive-foreground);
+    }
+
+    /* Two column layouts */
+    .two-col {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    .two-col-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* Map Card */
+    .map-container {
+      position: relative;
+      height: 380px;
+      background: #f8fafc;
+      border-radius: calc(var(--radius) - 2px);
+      overflow: hidden;
+    }
+
+    .map-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(59,130,246,0.08) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(34,197,94,0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(168,85,247,0.05) 0%, transparent 50%);
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(148,163,184,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,0.12) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .map-roads {
+      position: absolute;
+      inset: 0;
+    }
+
+    .road {
+      position: absolute;
+      background: rgba(148,163,184,0.18);
+      border-radius: 2px;
+    }
+
+    .road-h {
+      height: 4px;
+    }
+
+    .road-v {
+      width: 4px;
+    }
+
+    .map-point {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .map-point:hover {
+      transform: scale(1.4);
+    }
+
+    .map-point.green { background: #22c55e; }
+    .map-point.yellow { background: #eab308; }
+    .map-point.red { background: #ef4444; }
+    .map-point.blue { background: #3b82f6; }
+
+    .map-legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      gap: 14px;
+      background: rgba(255,255,255,0.95);
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      color: var(--muted-foreground);
+    }
+
+    .map-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .map-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Table */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      border-bottom: 1px solid var(--border);
+      background: var(--secondary);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--foreground);
+    }
+
+    .table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table tr:hover td {
+      background: var(--accent);
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: var(--radius);
+      font-size: 12.5px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: #27272a;
+    }
+
+    .btn-outline {
+      background: var(--background);
+      color: var(--foreground);
+      border-color: var(--border);
+    }
+
+    .btn-outline:hover {
+      background: var(--secondary);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted-foreground);
+      border-color: transparent;
+    }
+
+    .btn-ghost:hover {
+      background: var(--secondary);
+      color: var(--foreground);
+    }
+
+    .btn-sm {
+      height: 28px;
+      padding: 0 8px;
+      font-size: 11.5px;
+    }
+
+    /* Progress bar */
+    .progress {
+      width: 100%;
+      height: 8px;
+      background: var(--secondary);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-bar.green { background: #22c55e; }
+    .progress-bar.yellow { background: #eab308; }
+    .progress-bar.red { background: #ef4444; }
+    .progress-bar.blue { background: #3b82f6; }
+
+    .progress-row {
+      margin-bottom: 16px;
+    }
+
+    .progress-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .progress-label {
+      color: var(--foreground);
+      font-weight: 500;
+    }
+
+    .progress-value {
+      color: var(--muted-foreground);
+      font-size: 12px;
+    }
+
+    /* Quick actions grid */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 24px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--background);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      color: var(--foreground);
+    }
+
+    .action-btn:hover {
+      background: var(--secondary);
+      border-color: var(--ring);
+    }
+
+    .action-btn i {
+      width: 24px;
+      height: 24px;
+      color: var(--muted-foreground);
+    }
+
+    .action-btn span {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Separator */
+    .separator {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--ring);
+    }
+
+    /* Tooltip-like hover on table rows */
+    .table-row-action {
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .table tr:hover .table-row-action {
+      opacity: 1;
+    }
+
+    /* Status dot */
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    /* Responsive fallback */
+    @media (max-width: 1280px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+      .two-col-bottom { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i data-lucide="bike" style="width:18px;height:18px"></i>
+        </div>
+        <div class="sidebar-title">两轮运营后台</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-group">
+          <div class="sidebar-item active">
+            <i data-lucide="layout-dashboard"></i>
+            <span>运营总览</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="map"></i>
+            <span>地图调度</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="truck"></i>
+            <span>车队资产</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="battery-charging"></i>
+            <span>电池能源</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="clipboard-list"></i>
+            <span>运维工单</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="shield"></i>
+            <span>规则区域</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="scale"></i>
+            <span>合规监管</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="bar-chart-3"></i>
+            <span>数据报表</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="users"></i>
+            <span>组织权限</span>
+          </div>
+          <div class="sidebar-item">
+            <i data-lucide="settings"></i>
+            <span>系统配置</span>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        v2.4.1 · shadcn/ui
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <nav class="breadcrumb">
+            <a href="#">首页</a>
+            <span class="breadcrumb-sep">/</span>
+            <a href="#">运营管理</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="current">运营总览</span>
+          </nav>
+        </div>
+        <div class="header-right">
+          <div class="select">
+            <i data-lucide="map-pin" style="width:13px;height:13px"></i>
+            <span>深圳市</span>
+            <i data-lucide="chevron-down" style="width:13px;height:13px;margin-left:4px"></i>
+          </div>
+          <div class="tabs">
+            <button class="tab active">今日</button>
+            <button class="tab">昨日</button>
+            <button class="tab">本周</button>
+            <button class="tab">本月</button>
+          </div>
+          <div class="avatar">张</div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="content">
+        <!-- KPI Cards -->
+        <section class="section">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">
+                <i data-lucide="receipt" style="width:14px;height:14px"></i>
+                今日订单数
+              </div>
+              <div class="kpi-value">28,641</div>
+              <div class="kpi-footer">
+                <span class="badge badge-green">
+                  <i data-lucide="arrow-up" style="width:11px;height:11px"></i>
+                  +12.5%
+                </span>
+                <span style="font-size:12px;color:var(--muted-foreground)">较昨日</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">
+                <i data-lucide="bike" style="width:14px;height:14px"></i>
+                活跃车辆
+              </div>
+              <div class="kpi-value">18,932</div>
+              <div class="kpi-footer">
+                <span class="badge badge-green">
+                  <i data-lucide="arrow-up" style="width:11px;height:11px"></i>
+                  +5.3%
+                </span>
+                <span style="font-size:12px;color:var(--muted-foreground)">较昨日</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">
+                <i data-lucide="gauge" style="width:14px;height:14px"></i>
+                可用率
+              </div>
+              <div class="kpi-value">86.4%</div>
+              <div class="kpi-footer">
+                <span class="badge badge-red">
+                  <i data-lucide="arrow-down" style="width:11px;height:11px"></i>
+                  -1.2%
+                </span>
+                <span style="font-size:12px;color:var(--muted-foreground)">较昨日</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">
+                <i data-lucide="alert-circle" style="width:14px;height:14px"></i>
+                待处理工单
+              </div>
+              <div class="kpi-value">147</div>
+              <div class="kpi-footer">
+                <span class="badge badge-green">
+                  <i data-lucide="arrow-down" style="width:11px;height:11px"></i>
+                  -8.7%
+                </span>
+                <span style="font-size:12px;color:var(--muted-foreground)">较昨日</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Middle Section: Map + Alerts -->
+        <section class="section">
+          <div class="two-col">
+            <!-- Map Card -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">地图调度</div>
+                  <div class="card-subtitle">实时车辆分布与调度状态</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <button class="btn btn-outline btn-sm">
+                    <i data-lucide="filter" style="width:12px;height:12px"></i>
+                    筛选
+                  </button>
+                  <button class="btn btn-primary btn-sm">
+                    <i data-lucide="navigation" style="width:12px;height:12px"></i>
+                    刷新定位
+                  </button>
+                </div>
+              </div>
+              <div class="card-body card-body-nopad">
+                <div class="map-container">
+                  <div class="map-bg"></div>
+                  <div class="map-grid"></div>
+                  <div class="map-roads">
+                    <div class="road road-h" style="top:25%;left:0;width:100%;"></div>
+                    <div class="road road-h" style="top:55%;left:0;width:100%;"></div>
+                    <div class="road road-h" style="top:78%;left:0;width:100%;"></div>
+                    <div class="road road-v" style="left:18%;top:0;height:100%;"></div>
+                    <div class="road road-v" style="left:42%;top:0;height:100%;"></div>
+                    <div class="road road-v" style="left:65%;top:0;height:100%;"></div>
+                    <div class="road road-v" style="left:85%;top:0;height:100%;"></div>
+                  </div>
+                  <div class="map-point green" style="top:22%;left:16%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:28%;left:40%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:18%;left:63%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:52%;left:20%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:58%;left:44%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:48%;left:67%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:75%;left:15%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:82%;left:43%;" title="正常运营"></div>
+                  <div class="map-point green" style="top:72%;left:66%;" title="正常运营"></div>
+                  <div class="map-point yellow" style="top:32%;left:25%;" title="低电量"></div>
+                  <div class="map-point yellow" style="top:62%;left:58%;" title="低电量"></div>
+                  <div class="map-point yellow" style="top:80%;left:80%;" title="低电量"></div>
+                  <div class="map-point red" style="top:35%;left:55%;" title="故障待修"></div>
+                  <div class="map-point red" style="top:65%;left:30%;" title="故障待修"></div>
+                  <div class="map-point blue" style="top:45%;left:78%;" title="换电站"></div>
+                  <div class="map-point blue" style="top:70%;left:50%;" title="换电站"></div>
+                  <div class="map-legend">
+                    <div class="map-legend-item"><div class="map-legend-dot" style="background:#22c55e"></div>正常</div>
+                    <div class="map-legend-item"><div class="map-legend-dot" style="background:#eab308"></div>低电</div>
+                    <div class="map-legend-item"><div class="map-legend-dot" style="background:#ef4444"></div>故障</div>
+                    <div class="map-legend-item"><div class="map-legend-dot" style="background:#3b82f6"></div>换电</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alert Card -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">告警列表</div>
+                  <div class="card-subtitle">最近告警事件与处理状态</div>
+                </div>
+                <button class="btn btn-ghost btn-sm">查看全部</button>
+              </div>
+              <div class="card-body card-body-nopad">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>时间</th>
+                      <th>类型</th>
+                      <th>级别</th>
+                      <th style="text-align:right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>09:14</td>
+                      <td>车辆倾倒</td>
+                      <td><span class="badge badge-destructive">紧急</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-primary btn-sm">处理</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>09:08</td>
+                      <td>低电量预警</td>
+                      <td><span class="badge badge-yellow">警告</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-outline btn-sm">派单</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>08:52</td>
+                      <td>围栏越界</td>
+                      <td><span class="badge badge-yellow">警告</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-outline btn-sm">定位</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>08:41</td>
+                      <td>车辆倾倒</td>
+                      <td><span class="badge badge-destructive">紧急</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-primary btn-sm">处理</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>08:35</td>
+                      <td>信号丢失</td>
+                      <td><span class="badge badge-green">一般</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-ghost btn-sm">忽略</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>08:22</td>
+                      <td>电池异常</td>
+                      <td><span class="badge badge-yellow">警告</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-outline btn-sm">检修</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>08:10</td>
+                      <td>长时间未动</td>
+                      <td><span class="badge badge-green">一般</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-ghost btn-sm">忽略</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>07:58</td>
+                      <td>堆车预警</td>
+                      <td><span class="badge badge-yellow">警告</span></td>
+                      <td style="text-align:right">
+                        <div class="table-actions table-row-action">
+                          <button class="btn btn-outline btn-sm">调度</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bottom Section: Supply/Demand + Quick Actions -->
+        <section class="section">
+          <div class="two-col-bottom">
+            <!-- Supply/Demand Card -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">供需调度</div>
+                  <div class="card-subtitle">区域车辆分布与缺口分析</div>
+                </div>
+                <button class="btn btn-outline btn-sm">
+                  <i data-lucide="download" style="width:12px;height:12px"></i>
+                  导出
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="progress-row">
+                  <div class="progress-header">
+                    <span class="progress-label">南山区 · 科技园</span>
+                    <span class="progress-value">缺车 124 辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar red" style="width:72%"></div>
+                  </div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-header">
+                    <span class="progress-label">福田区 · 车公庙</span>
+                    <span class="progress-value">缺车 89 辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar red" style="width:58%"></div>
+                  </div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-header">
+                    <span class="progress-label">罗湖区 · 东门老街</span>
+                    <span class="progress-value">堆车 156 辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar yellow" style="width:85%"></div>
+                  </div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-header">
+                    <span class="progress-label">宝安区 · 西乡</span>
+                    <span class="progress-value">堆车 67 辆</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar yellow" style="width:45%"></div>
+                  </div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-header">
+                    <span class="progress-label">龙华区 · 民治</span>
+                    <span class="progress-value">平衡</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar green" style="width:35%"></div>
+                  </div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-header">
+                    <span class="progress-label">龙岗区 · 坂田</span>
+                    <span class="progress-value">平衡</span>
+                  </div>
+                  <div class="progress">
+                    <div class="progress-bar green" style="width:28%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">快捷操作</div>
+                  <div class="card-subtitle">常用运维指令一键发起</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="action-grid">
+                  <button class="action-btn">
+                    <i data-lucide="git-branch"></i>
+                    <span>创建调度</span>
+                  </button>
+                  <button class="action-btn">
+                    <i data-lucide="battery-charging"></i>
+                    <span>创建换电</span>
+                  </button>
+                  <button class="action-btn">
+                    <i data-lucide="send"></i>
+                    <span>批量指令</span>
+                  </button>
+                  <button class="action-btn">
+                    <i data-lucide="search"></i>
+                    <span>车辆检索</span>
+                  </button>
+                </div>
+                <div class="separator"></div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+                    <span style="color:var(--muted-foreground)">今日已创建调度</span>
+                    <span style="font-weight:600">42 单</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+                    <span style="color:var(--muted-foreground)">今日已完成换电</span>
+                    <span style="font-weight:600">186 组</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+                    <span style="color:var(--muted-foreground)">批量指令下发中</span>
+                    <span style="font-weight:600">3 条</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+                    <span style="color:var(--muted-foreground)">车辆检索记录</span>
+                    <span style="font-weight:600">1,204 次</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

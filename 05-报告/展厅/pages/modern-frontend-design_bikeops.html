@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityFleet 运营后台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Cabinet+Grotesk:wght@400..800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --slate-50: oklch(0.96 0.01 250);
+      --slate-100: oklch(0.9 0.015 250);
+      --slate-400: oklch(0.6 0.03 250);
+      --slate-600: oklch(0.45 0.03 250);
+      --slate-800: oklch(0.25 0.03 250);
+      --slate-900: oklch(0.18 0.02 250);
+      --slate-950: oklch(0.12 0.015 250);
+      --electric-blue: oklch(0.6 0.22 250);
+      --electric-blue-light: oklch(0.75 0.15 250);
+      --electric-blue-dark: oklch(0.5 0.2 250);
+      --success: oklch(0.65 0.18 150);
+      --warning: oklch(0.75 0.16 80);
+      --danger: oklch(0.6 0.2 25);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--slate-950);
+      color: oklch(0.95 0.01 250);
+      overflow-x: hidden;
+    }
+
+    .font-display {
+      font-family: 'Cabinet Grotesk', sans-serif;
+    }
+
+    .grain::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .liquid-glass-hover:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bento-card {
+      border-radius: 20px;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+    }
+
+    .bento-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(40px) scale(0.97);
+      animation: scroll-reveal-anim linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 30%;
+    }
+
+    @keyframes scroll-reveal-anim {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--slate-400);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .data-table td {
+      padding: 14px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 0.2s ease;
+    }
+
+    .data-table tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .metric-value {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .trend-up {
+      color: var(--success);
+    }
+
+    .trend-down {
+      color: var(--danger);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .chart-bar {
+      border-radius: 4px;
+      background: linear-gradient(180deg, var(--electric-blue) 0%, var(--electric-blue-dark) 100%);
+      transition: opacity 0.2s ease;
+    }
+
+    .chart-bar:hover {
+      opacity: 0.8;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: var(--slate-400);
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-link:hover,
+    .sidebar-link.active {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--electric-blue-light);
+    }
+
+    .sidebar-link.active {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    @starting-style {
+      .scroll-reveal {
+        opacity: 0;
+        transform: translateY(40px) scale(0.97);
+      }
+    }
+  </style>
+</head>
+<body class="grain">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 fixed left-0 top-0 bottom-0 liquid-glass z-40 hidden lg:flex flex-col">
+      <div class="p-6 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[var(--electric-blue)] flex items-center justify-center">
+          <i data-lucide="bike" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <p class="font-display font-bold text-lg leading-none">CityFleet</p>
+          <p class="text-xs text-[var(--slate-400)] mt-0.5">城市运营管理</p>
+        </div>
+      </div>
+      <nav class="flex-1 px-4 py-4 space-y-1">
+        <a href="#" class="sidebar-link active">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          总览 Dashboard
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="map" class="w-4 h-4"></i>
+          车辆调度
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="battery" class="w-4 h-4"></i>
+          电池管理
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          告警中心
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+          工单管理
+        </a>
+        <a href="#" class="sidebar-link">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          合规监管
+        </a>
+      </nav>
+      <div class="p-4 border-t border-white/5">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+          <div class="w-9 h-9 rounded-full bg-[var(--slate-800)] flex items-center justify-center text-sm font-medium">OP</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">运营管理员</p>
+            <p class="text-xs text-[var(--slate-400)]">杭州分区</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 p-6 md:p-8">
+      <!-- Header -->
+      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 scroll-reveal">
+        <div>
+          <h1 class="font-display text-3xl font-bold">运营总览</h1>
+          <p class="text-sm text-[var(--slate-400)] mt-1">实时监控 · 2026年4月14日 星期一</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="liquid-glass liquid-glass-hover px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            导出报表
+          </button>
+          <button class="px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2" style="background: var(--electric-blue);">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            新建工单
+          </button>
+        </div>
+      </header>
+
+      <!-- KPI Bento Grid -->
+      <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bento-card liquid-glass p-6 scroll-reveal" style="animation-delay: 0.05s">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[var(--electric-blue)]/15 flex items-center justify-center text-[var(--electric-blue)]">
+              <i data-lucide="bike" class="w-5 h-5"></i>
+            </div>
+            <span class="badge bg-[var(--success)]/10 text-[var(--success)]">+2.4%</span>
+          </div>
+          <p class="metric-value text-white">12,847</p>
+          <p class="text-sm text-[var(--slate-400)] mt-1">在运车辆总数</p>
+        </div>
+        <div class="bento-card liquid-glass p-6 scroll-reveal" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[var(--warning)]/10 flex items-center justify-center text-[var(--warning)]">
+              <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <span class="badge bg-[var(--success)]/10 text-[var(--success)]">+5.1%</span>
+          </div>
+          <p class="metric-value text-white">46,203</p>
+          <p class="text-sm text-[var(--slate-400)] mt-1">今日骑行订单</p>
+        </div>
+        <div class="bento-card liquid-glass p-6 scroll-reveal" style="animation-delay: 0.15s">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[var(--danger)]/10 flex items-center justify-center text-[var(--danger)]">
+              <i data-lucide="alert-circle" class="w-5 h-5"></i>
+            </div>
+            <span class="badge bg-[var(--danger)]/10 text-[var(--danger)]">-1.2%</span>
+          </div>
+          <p class="metric-value text-white">23</p>
+          <p class="text-sm text-[var(--slate-400)] mt-1">待处理告警</p>
+        </div>
+        <div class="bento-card liquid-glass p-6 scroll-reveal" style="animation-delay: 0.2s">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[oklch(0.7_0.1_200)]/10 flex items-center justify-center text-[oklch(0.7_0.1_200)]">
+              <i data-lucide="wrench" class="w-5 h-5"></i>
+            </div>
+            <span class="badge bg-[var(--success)]/10 text-[var(--success)]">+8.3%</span>
+          </div>
+          <p class="metric-value text-white">156</p>
+          <p class="text-sm text-[var(--slate-400)] mt-1">今日完成工单</p>
+        </div>
+      </section>
+
+      <!-- Middle Bento Row -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <!-- Fleet Health -->
+        <div class="bento-card liquid-glass p-6 scroll-reveal lg:col-span-2" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="font-display text-lg font-semibold">车辆健康分布</h3>
+              <p class="text-xs text-[var(--slate-400)]">实时 fleet 状态监控</p>
+            </div>
+            <button class="text-xs text-[var(--electric-blue)] font-medium">查看详情</button>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center p-4 rounded-2xl bg-white/5">
+              <div class="w-12 h-12 rounded-full bg-[var(--success)]/15 flex items-center justify-center text-[var(--success)] mx-auto mb-3">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+              </div>
+              <p class="text-2xl font-bold font-display">11,240</p>
+              <p class="text-xs text-[var(--slate-400)] mt-1">健康运营</p>
+            </div>
+            <div class="text-center p-4 rounded-2xl bg-white/5">
+              <div class="w-12 h-12 rounded-full bg-[var(--warning)]/10 flex items-center justify-center text-[var(--warning)] mx-auto mb-3">
+                <i data-lucide="battery-warning" class="w-6 h-6"></i>
+              </div>
+              <p class="text-2xl font-bold font-display">892</p>
+              <p class="text-xs text-[var(--slate-400)] mt-1">低电量</p>
+            </div>
+            <div class="text-center p-4 rounded-2xl bg-white/5">
+              <div class="w-12 h-12 rounded-full bg-[var(--danger)]/10 flex items-center justify-center text-[var(--danger)] mx-auto mb-3">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+              </div>
+              <p class="text-2xl font-bold font-display">412</p>
+              <p class="text-xs text-[var(--slate-400)] mt-1">故障待修</p>
+            </div>
+            <div class="text-center p-4 rounded-2xl bg-white/5">
+              <div class="w-12 h-12 rounded-full bg-[var(--slate-400)]/10 flex items-center justify-center text-[var(--slate-400)] mx-auto mb-3">
+                <i data-lucide="pause-circle" class="w-6 h-6"></i>
+              </div>
+              <p class="text-2xl font-bold font-display">303</p>
+              <p class="text-xs text-[var(--slate-400)] mt-1">离线停运</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery Status -->
+        <div class="bento-card liquid-glass p-6 scroll-reveal" style="animation-delay: 0.15s">
+          <h3 class="font-display text-lg font-semibold mb-2">电池状态</h3>
+          <p class="text-xs text-[var(--slate-400)] mb-6">全 fleet 平均电量 67%</p>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span>高电量 (>80%)</span>
+                <span class="text-[var(--success)]">42%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--success)]" style="width: 42%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span>正常 (30%-80%)</span>
+                <span class="text-[var(--electric-blue)]">38%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--electric-blue)]" style="width: 38%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span>低电量 (<30%)</span>
+                <span class="text-[var(--warning)]">15%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--warning)]" style="width: 15%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-2">
+                <span>需换电 (<10%)</span>
+                <span class="text-[var(--danger)]">5%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--danger)]" style="width: 5%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Supply-Demand & Alerts Bento -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <!-- Supply-Demand Chart -->
+        <div class="bento-card liquid-glass p-6 scroll-reveal lg:col-span-2" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="font-display text-lg font-semibold">供需缺口分析</h3>
+              <p class="text-xs text-[var(--slate-400)]">过去24小时各区域车辆供需比</p>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[var(--electric-blue)]"></span> 需求</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[var(--success)]"></span> 供给</span>
+            </div>
+          </div>
+          <div class="h-48 flex items-end justify-between gap-3 px-2">
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 85%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 72%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">西湖区</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 92%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 65%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">上城区</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 68%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 80%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">滨江区</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 78%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 70%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">拱墅区</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 95%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 55%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">余杭区</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 60%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 85%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">萧山区</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-2 group">
+              <div class="w-full flex items-end justify-center gap-1 h-40">
+                <div class="chart-bar w-3" style="height: 72%"></div>
+                <div class="w-3 rounded-[2px] bg-[var(--success)]/60" style="height: 68%"></div>
+              </div>
+              <span class="text-[10px] text-[var(--slate-400)]">钱塘区</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Center -->
+        <div class="bento-card liquid-glass p-0 overflow-hidden scroll-reveal" style="animation-delay: 0.15s">
+          <div class="p-5 border-b border-white/5">
+            <h3 class="font-display text-lg font-semibold">告警中心</h3>
+          </div>
+          <div class="p-4 space-y-3 max-h-[280px] overflow-y-auto">
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-[var(--danger)]/5 border border-[var(--danger)]/10">
+              <div class="w-8 h-8 rounded-lg bg-[var(--danger)]/10 flex items-center justify-center text-[var(--danger)] flex-shrink-0 mt-0.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium">车辆倾倒告警</p>
+                <p class="text-xs text-[var(--slate-400)] truncate">余杭区未来科技城大道 · B-2841</p>
+                <p class="text-[10px] text-[var(--slate-400)] mt-1">10 分钟前</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-[var(--warning)]/5 border border-[var(--warning)]/10">
+              <div class="w-8 h-8 rounded-lg bg-[var(--warning)]/10 flex items-center justify-center text-[var(--warning)] flex-shrink-0 mt-0.5">
+                <i data-lucide="battery-warning" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium">低电量预警</p>
+                <p class="text-xs text-[var(--slate-400)] truncate">西湖区文三路 · E-1092 等 12 辆</p>
+                <p class="text-[10px] text-[var(--slate-400)] mt-1">25 分钟前</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-[var(--electric-blue)]/5 border border-[var(--electric-blue)]/10">
+              <div class="w-8 h-8 rounded-lg bg-[var(--electric-blue)]/10 flex items-center justify-center text-[var(--electric-blue)] flex-shrink-0 mt-0.5">
+                <i data-lucide="map-pin-off" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium">禁停区停放</p>
+                <p class="text-xs text-[var(--slate-400)] truncate">上城区西湖大道 · 检测到 8 辆</p>
+                <p class="text-[10px] text-[var(--slate-400)] mt-1">32 分钟前</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Work Orders & Compliance -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Work Orders Table -->
+        <div class="bento-card liquid-glass p-0 overflow-hidden scroll-reveal" style="animation-delay: 0.1s">
+          <div class="p-5 border-b border-white/5 flex items-center justify-between">
+            <h3 class="font-display text-lg font-semibold">待处理工单</h3>
+            <button class="text-xs text-[var(--electric-blue)] font-medium">查看全部</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>工单号</th>
+                  <th>类型</th>
+                  <th>区域</th>
+                  <th>状态</th>
+                  <th>优先级</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono text-[var(--slate-400)]">WO-20260414-001</td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="battery" class="w-3.5 h-3.5 text-[var(--electric-blue)]"></i>
+                      <span>换电</span>
+                    </div>
+                  </td>
+                  <td>西湖区</td>
+                  <td><span class="status-dot bg-[var(--warning)]"></span>处理中</td>
+                  <td><span class="badge bg-[var(--danger)]/10 text-[var(--danger)]">高</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-[var(--slate-400)]">WO-20260414-002</td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="wrench" class="w-3.5 h-3.5 text-[var(--warning)]"></i>
+                      <span>维修</span>
+                    </div>
+                  </td>
+                  <td>余杭区</td>
+                  <td><span class="status-dot bg-[var(--electric-blue)]"></span>待分配</td>
+                  <td><span class="badge bg-[var(--warning)]/10 text-[var(--warning)]">中</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-[var(--slate-400)]">WO-20260414-003</td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[var(--success)]"></i>
+                      <span>调度</span>
+                    </div>
+                  </td>
+                  <td>上城区</td>
+                  <td><span class="status-dot bg-[var(--electric-blue)]"></span>待分配</td>
+                  <td><span class="badge bg-[var(--success)]/10 text-[var(--success)]">低</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-[var(--slate-400)]">WO-20260414-004</td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5 text-[var(--slate-400)]"></i>
+                      <span>清理</span>
+                    </div>
+                  </td>
+                  <td>滨江区</td>
+                  <td><span class="status-dot bg-[var(--warning)]"></span>处理中</td>
+                  <td><span class="badge bg-[var(--warning)]/10 text-[var(--warning)]">中</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Compliance -->
+        <div class="bento-card liquid-glass p-6 scroll-reveal" style="animation-delay: 0.15s">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="font-display text-lg font-semibold">合规监管</h3>
+              <p class="text-xs text-[var(--slate-400)]">本月考核指标达成情况</p>
+            </div>
+            <div class="w-12 h-12 rounded-full border-2 border-[var(--success)] flex items-center justify-center">
+              <span class="text-sm font-bold text-[var(--success)]">98</span>
+            </div>
+          </div>
+          <div class="space-y-5">
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span>头盔佩戴率</span>
+                <span class="text-[var(--success)]">96.2%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--success)]" style="width: 96.2%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span>车辆合规停放率</span>
+                <span class="text-[var(--success)]">94.8%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--success)]" style="width: 94.8%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span>用户投诉响应时效</span>
+                <span class="text-[var(--electric-blue)]">2.4h</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--electric-blue)]" style="width: 88%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span>车辆年检覆盖率</span>
+                <span class="text-[var(--warning)]">87.5%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--warning)]" style="width: 87.5%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="mt-12 pt-6 border-t border-white/5 text-center text-xs text-[var(--slate-400)] scroll-reveal">
+        <p>CityFleet 城市共享两轮运营管理后台 · © 2026</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

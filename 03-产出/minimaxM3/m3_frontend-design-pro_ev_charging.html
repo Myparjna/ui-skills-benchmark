@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>易充 EV - 聚合充电平台</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+      background: #e8e8e8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: #F5F5F5;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.25), 0 0 0 12px #1a1a1a;
+    }
+    .status-bar {
+      height: 44px;
+      background: #1677FF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      position: relative;
+      z-index: 50;
+    }
+    .status-bar::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: #1677FF;
+    }
+    .content-scroll {
+      height: calc(812px - 44px - 80px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+    }
+    .content-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .map-container {
+      height: 220px;
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      margin: 0 16px;
+    }
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .map-road {
+      position: absolute;
+      background: rgba(255,255,255,0.85);
+      border-radius: 4px;
+    }
+    .station-marker {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .station-marker:hover {
+      transform: translate(-50%, -100%) scale(1.1);
+    }
+    .marker-bubble {
+      background: white;
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #1677FF;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      white-space: nowrap;
+      margin-bottom: 4px;
+      border: 2px solid #1677FF;
+    }
+    .marker-dot {
+      width: 12px;
+      height: 12px;
+      background: #1677FF;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .marker-dot.green {
+      background: #52C41A;
+    }
+    .marker-dot.orange {
+      background: #FA8C16;
+    }
+    .current-location {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #1677FF;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 0 0 4px rgba(22,119,255,0.3);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(22,119,255,0.3); }
+      50% { box-shadow: 0 0 0 8px rgba(22,119,255,0.1); }
+    }
+    .tab-bar {
+      height: 80px;
+      background: white;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding-top: 8px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 4px 12px;
+      transition: all 0.2s;
+    }
+    .tab-item.active {
+      color: #1677FF;
+    }
+    .tab-item:not(.active) {
+      color: #999;
+    }
+    .tab-icon {
+      width: 24px;
+      height: 24px;
+    }
+    .tab-label {
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .scan-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1677FF 0%, #52C41A 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 16px rgba(22,119,255,0.4);
+      margin-top: -20px;
+      border: 4px solid white;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .scan-btn:hover {
+      transform: scale(1.05);
+    }
+    .station-card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .station-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag-green {
+      background: #f6ffed;
+      color: #52C41A;
+      border: 1px solid #b7eb8f;
+    }
+    .tag-orange {
+      background: #fff7e6;
+      color: #FA8C16;
+      border: 1px solid #ffd591;
+    }
+    .tag-blue {
+      background: #e6f4ff;
+      color: #1677FF;
+      border: 1px solid #91caff;
+    }
+    .price-highlight {
+      color: #FA8C16;
+      font-weight: 700;
+    }
+    .plus-card {
+      background: linear-gradient(135deg, #fffbe6 0%, #fff7e6 100%);
+      border: 1px solid #ffe58f;
+      border-radius: 12px;
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .plus-card::before {
+      content: '';
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 80px;
+      height: 80px;
+      background: rgba(250,140,22,0.08);
+      border-radius: 50%;
+    }
+    .banner-slide {
+      background: linear-gradient(135deg, #1677FF 0%, #0958d9 100%);
+      border-radius: 12px;
+      padding: 16px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .banner-slide::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 120px;
+      height: 120px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+    .quick-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+    }
+    .filter-btn {
+      background: white;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #333;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1f1f1f;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: #1677FF;
+      border-radius: 2px;
+    }
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.35s;
+      transform-origin: 50% 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="position: absolute; left: 50%; transform: translateX(-50%); width: 120px; height: 28px; background: #1a1a1a; border-radius: 14px; bottom: -14px;"></div>
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 5-5v-5z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"/><path d="M22 11v4"/><path d="M6 11v4"/><path d="M10 11v4"/></svg>
+      </div>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="content-scroll">
+      <!-- Header 搜索区 -->
+      <div style="background: #1677FF; padding: 8px 16px 20px; position: relative;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 4px; color: white; font-size: 13px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span style="font-weight: 500;">广州市天河区</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div style="flex: 1;"></div>
+          <div style="color: white; font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; display: flex; align-items: center; gap: 4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            26°C
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="flex: 1; background: white; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span style="color: #999; font-size: 14px;">搜索充电站、地址或桩编号</span>
+          </div>
+          <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner 活动区 -->
+      <div style="padding: 12px 16px;">
+        <div class="banner-slide">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+              <div style="font-size: 11px; background: rgba(255,255,255,0.25); display: inline-block; padding: 3px 10px; border-radius: 10px; margin-bottom: 8px; font-weight: 600;">限时特惠</div>
+              <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; line-height: 1.3;">PLUS会员充电6折起</div>
+              <div style="font-size: 13px; opacity: 0.9; margin-bottom: 10px;">开通即享每月5张满减券 + 停车减免</div>
+              <div style="display: inline-block; background: white; color: #1677FF; padding: 6px 16px; border-radius: 16px; font-size: 13px; font-weight: 700; cursor: pointer;">立即开通</div>
+            </div>
+            <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷入口 -->
+      <div style="padding: 0 16px 16px;">
+        <div style="background: white; border-radius: 12px; padding: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #e6f4ff;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">附近桩</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #f6ffed;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="2"><path d="M3 7v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"/><path d="M17 21v-8"/><path d="M7 21v-8"/><path d="M7 3v5h10V3"/><path d="M9 3v5"/><path d="M15 3v5"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">扫码充电</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #fff7e6;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FA8C16" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">我的订单</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #f9f0ff;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#722ed1" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5a8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">在线客服</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #fff1f0;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f5222d" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">充电记录</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #e6fffb;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#13c2c2" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">钱包</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #fff2e8;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fa541c" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">优惠券</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div class="quick-icon" style="background: #f0f5ff;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f54eb" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34l-4.24-4.24"/></svg>
+            </div>
+            <span style="font-size: 12px; color: #333; font-weight: 500;">更多</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 地图视图 -->
+      <div style="padding: 0 16px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div class="section-title">地图找桩</div>
+          <div style="display: flex; gap: 6px;">
+            <button class="filter-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              筛选
+            </button>
+            <button class="filter-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              附近
+            </button>
+          </div>
+        </div>
+        <div class="map-container">
+          <div class="map-grid"></div>
+          <!-- 模拟道路 -->
+          <div class="map-road" style="width: 200px; height: 8px; top: 60px; left: 20px; transform: rotate(-10deg);"></div>
+          <div class="map-road" style="width: 8px; height: 150px; top: 30px; left: 140px; transform: rotate(5deg);"></div>
+          <div class="map-road" style="width: 180px; height: 8px; top: 140px; left: 60px; transform: rotate(5deg);"></div>
+          <div class="map-road" style="width: 120px; height: 6px; top: 100px; left: 200px; transform: rotate(-30deg);"></div>
+          
+          <!-- 当前位置 -->
+          <div class="current-location" style="top: 110px; left: 100px;"></div>
+          
+          <!-- 站点标记 -->
+          <div class="station-marker" style="top: 70px; left: 160px;">
+            <div class="marker-bubble">8空闲</div>
+            <div class="marker-dot green"></div>
+          </div>
+          <div class="station-marker" style="top: 130px; left: 240px;">
+            <div class="marker-bubble">3空闲</div>
+            <div class="marker-dot green"></div>
+          </div>
+          <div class="station-marker" style="top: 160px; left: 80px;">
+            <div class="marker-bubble">12空闲</div>
+            <div class="marker-dot green"></div>
+          </div>
+          <div class="station-marker" style="top: 90px; left: 280px;">
+            <div class="marker-bubble">1空闲</div>
+            <div class="marker-dot orange"></div>
+          </div>
+          <div class="station-marker" style="top: 180px; left: 200px;">
+            <div class="marker-bubble">6空闲</div>
+            <div class="marker-dot green"></div>
+          </div>
+
+          <!-- 地图控件 -->
+          <div style="position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="width: 36px; height: 36px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+            </div>
+            <div style="width: 36px; height: 36px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+          </div>
+
+          <!-- 图例 -->
+          <div style="position: absolute; left: 10px; bottom: 10px; background: white; border-radius: 8px; padding: 8px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; gap: 10px; font-size: 11px;">
+            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #52C41A; border-radius: 50%;"></span>空闲</div>
+            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #FA8C16; border-radius: 50%;"></span>繁忙</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 附近站点 -->
+      <div style="padding: 0 16px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div class="section-title">附近站点</div>
+          <div style="font-size: 13px; color: #1677FF; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 2px;">
+            查看全部
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+        <!-- 站点1 -->
+        <div class="station-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 700; color: #1f1f1f; margin-bottom: 4px; line-height: 1.3;">特来电天河智慧城快充站</div>
+              <div style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                天河区高唐路321号 · 距您0.8km
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="font-size: 18px; font-weight: 700; color: #FA8C16;">1.28<span style="font-size: 12px; color: #999; font-weight: 400;">元/度</span></div>
+              <div style="font-size: 11px; color: #999;">含服务费</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+            <span class="tag tag-green">快充</span>
+            <span class="tag tag-blue">24小时</span>
+            <span class="tag tag-orange">免费停车2h</span>
+            <span class="tag" style="background: #f5f5f5; color: #666; border: 1px solid #e8e8e8;">特来电</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f5f5f5;">
+            <div style="display: flex; gap: 16px; font-size: 13px;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #52C41A; font-weight: 700;">8</span>
+                <span style="color: #999;">空闲</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #FA8C16; font-weight: 700;">4</span>
+                <span style="color: #999;">充电中</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #999; font-weight: 700;">12</span>
+                <span style="color: #999;">总桩数</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2px; font-size: 12px; color: #FA8C16;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#FA8C16" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              4.8分
+            </div>
+          </div>
+        </div>
+
+        <!-- 站点2 -->
+        <div class="station-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 700; color: #1f1f1f; margin-bottom: 4px; line-height: 1.3;">星星充电万科广场超充站</div>
+              <div style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                天河区华观路193号 · 距您1.2km
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="font-size: 18px; font-weight: 700; color: #FA8C16;">1.45<span style="font-size: 12px; color: #999; font-weight: 400;">元/度</span></div>
+              <div style="font-size: 11px; color: #999;">含服务费</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+            <span class="tag tag-green">超充250kW</span>
+            <span class="tag tag-blue">24小时</span>
+            <span class="tag tag-orange">PLUS专享价</span>
+            <span class="tag" style="background: #f5f5f5; color: #666; border: 1px solid #e8e8e8;">星星充电</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f5f5f5;">
+            <div style="display: flex; gap: 16px; font-size: 13px;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #52C41A; font-weight: 700;">3</span>
+                <span style="color: #999;">空闲</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #FA8C16; font-weight: 700;">5</span>
+                <span style="color: #999;">充电中</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #999; font-weight: 700;">8</span>
+                <span style="color: #999;">总桩数</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2px; font-size: 12px; color: #FA8C16;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#FA8C16" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              4.6分
+            </div>
+          </div>
+        </div>
+
+        <!-- 站点3 -->
+        <div class="station-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 700; color: #1f1f1f; margin-bottom: 4px; line-height: 1.3;">云快充棠东社区充电站</div>
+              <div style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                天河区棠东东路15号 · 距您1.5km
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="font-size: 18px; font-weight: 700; color: #FA8C16;">0.78<span style="font-size: 12px; color: #999; font-weight: 400;">元/度</span></div>
+              <div style="font-size: 11px; color: #999;">含服务费</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+            <span class="tag" style="background: #e6f4ff; color: #1677FF; border: 1px solid #91caff;">慢充</span>
+            <span class="tag tag-blue">夜间优惠</span>
+            <span class="tag" style="background: #f5f5f5; color: #666; border: 1px solid #e8e8e8;">云快充</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f5f5f5;">
+            <div style="display: flex; gap: 16px; font-size: 13px;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #52C41A; font-weight: 700;">12</span>
+                <span style="color: #999;">空闲</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #FA8C16; font-weight: 700;">2</span>
+                <span style="color: #999;">充电中</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #999; font-weight: 700;">14</span>
+                <span style="color: #999;">总桩数</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2px; font-size: 12px; color: #FA8C16;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#FA8C16" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              4.5分
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLUS会员 -->
+      <div style="padding: 0 16px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div class="section-title">PLUS会员</div>
+          <div style="font-size: 13px; color: #1677FF; font-weight: 500; cursor: pointer;">了解详情</div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;">
+          <div style="min-width: 160px;" class="plus-card">
+            <div style="font-size: 13px; font-weight: 700; color: #FA8C16; margin-bottom: 6px;">银卡会员</div>
+            <div style="font-size: 22px; font-weight: 700; color: #1f1f1f; margin-bottom: 2px;">¥2.9<span style="font-size: 12px; font-weight: 400; color: #666;">/月</span></div>
+            <div style="font-size: 11px; color: #999; margin-bottom: 10px;">首月体验价</div>
+            <div style="font-size: 12px; color: #666; line-height: 1.6;">
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                充电6折起
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                月省约¥50
+              </div>
+            </div>
+          </div>
+          
+          <div style="min-width: 160px;" class="plus-card">
+            <div style="font-size: 13px; font-weight: 700; color: #FA8C16; margin-bottom: 6px;">金卡会员</div>
+            <div style="font-size: 22px; font-weight: 700; color: #1f1f1f; margin-bottom: 2px;">¥19.9<span style="font-size: 12px; font-weight: 400; color: #666;">/月</span></div>
+            <div style="font-size: 11px; color: #999; margin-bottom: 10px;">或季卡更省</div>
+            <div style="font-size: 12px; color: #666; line-height: 1.6;">
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                8折专属价
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                月省约¥100
+              </div>
+            </div>
+          </div>
+          
+          <div style="min-width: 160px;" class="plus-card">
+            <div style="font-size: 13px; font-weight: 700; color: #FA8C16; margin-bottom: 6px;">超级会员</div>
+            <div style="font-size: 22px; font-weight: 700; color: #1f1f1f; margin-bottom: 2px;">¥99<span style="font-size: 12px; font-weight: 400; color: #666;">/年</span></div>
+            <div style="font-size: 11px; color: #999; margin-bottom: 10px;">限时特惠</div>
+            <div style="font-size: 12px; color: #666; line-height: 1.6;">
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                最低折扣
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                月省约¥158
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 优惠券快捷入口 -->
+      <div style="padding: 0 16px 20px;">
+        <div style="background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%); border-radius: 12px; padding: 14px; border: 1px solid #ffe58f; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #FA8C16, #ffc53d); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #1f1f1f;">您有3张优惠券待使用</div>
+              <div style="font-size: 12px; color: #999;">满20减5 · 充电8折券 · 停车减免券</div>
+            </div>
+          </div>
+          <div style="background: #FA8C16; color: white; padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0;">去使用</div>
+        </div>
+      </div>
+
+      <!-- 底部留白给TabBar -->
+      <div style="height: 20px;"></div>
+    </div>
+
+    <!-- 底部 TabBar -->
+    <div class="tab-bar">
+      <div class="tab-item active">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="tab-label">首页</span>
+      </div>
+      <div class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="tab-label">省钱</span>
+      </div>
+      <div class="scan-btn">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 7v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"/><path d="M17 21v-8"/><path d="M7 21v-8"/><path d="M7 3v5h10V3"/><path d="M9 3v5"/><path d="M15 3v5"/></svg>
+      </div>
+      <div class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span class="tab-label">订单</span>
+      </div>
+      <div class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="tab-label">我的</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 初始化 Lucide icons（如页面中有 data-lucide 属性则自动渲染）
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>闪充电 — 智能充电桩服务平台</title>
+<style>
+/* ========== DESIGN TOKENS ========== */
+:root {
+  --color-primary: #0a2e1f;
+  --color-primary-light: #0d3d2a;
+  --color-secondary: #0b3d5c;
+  --color-accent: #00d68f;
+  --color-accent-light: #00f5a0;
+  --color-accent-dark: #00b87a;
+  --color-warning: #f5a623;
+  --color-danger: #e5493a;
+  --color-white: #ffffff;
+  --color-bg: #f0f4f2;
+  --color-card: #ffffff;
+  --color-gray-100: #f5f7f5;
+  --color-gray-200: #e8ece9;
+  --color-gray-300: #bcc4bd;
+  --color-gray-400: #8a948b;
+  --color-gray-500: #5a645b;
+  --color-gray-600: #3a443b;
+  --color-gray-700: #1a241b;
+
+  --color-plus: #c8a85c;
+  --color-plus-light: #e0c87c;
+
+  --font-system: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+
+  --tab-height: 56px;
+  --nav-height: 44px;
+  --safe-bottom: 34px;
+}
+
+/* ========== RESET ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  display: flex; justify-content: center; align-items: flex-start;
+  min-height: 100vh; background: #e0e5e0; font-family: var(--font-system);
+  padding: 20px;
+}
+
+/* Phone frame */
+.phone-frame {
+  width: 375px; height: 812px; overflow: hidden; position: relative;
+  background: var(--color-bg); 
+  border-radius: 32px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+}
+.phone-screen {
+  width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
+  padding-bottom: calc(var(--tab-height) + var(--safe-bottom) + 8px);
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.phone-screen::-webkit-scrollbar { display: none; }
+
+/* Status bar */
+.status-bar {
+  height: 32px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--space-lg); background: var(--color-white); font-size: 0.7rem;
+  color: var(--color-gray-600);
+}
+
+/* ========== TAB PAGES ========== */
+.tab-page { display: none; padding: 0 var(--space-md); }
+.tab-page.active { display: block; }
+
+/* ========== TAB BAR ========== */
+.tab-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: calc(var(--tab-height) + var(--safe-bottom));
+  background: var(--color-white);
+  border-top: 1px solid var(--color-gray-200);
+  display: flex; padding-bottom: var(--safe-bottom);
+  z-index: 100;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; cursor: pointer; color: var(--color-gray-400);
+  font-size: 0.65rem; transition: var(--transition-fast); gap: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-item .tab-icon { font-size: 1.25rem; }
+.tab-item.active { color: var(--color-accent-dark); }
+.tab-item.scan-tab { position: relative; }
+.tab-item.scan-tab .scan-btn {
+  width: 48px; height: 48px; border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  color: var(--color-white); display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; margin-top: -20px; box-shadow: 0 2px 12px rgba(0,182,122,0.4);
+}
+
+/* ========== HOME PAGE ========== */
+.home-header {
+  padding: var(--space-md) 0; display: flex; align-items: center;
+  justify-content: space-between;
+}
+.home-header .location {
+  display: flex; align-items: center; gap: var(--space-xxs);
+  font-size: 0.9rem; font-weight: 600; color: var(--color-gray-700);
+}
+.home-header .location .loc-icon { color: var(--color-accent-dark); font-size: 1rem; }
+.header-actions { display: flex; gap: var(--space-sm); }
+.header-btn {
+  width: 34px; height: 34px; border-radius: var(--radius-full);
+  background: var(--color-white); display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: var(--color-gray-500); box-shadow: var(--shadow-sm);
+}
+
+/* Search */
+.search-box {
+  display: flex; align-items: center; background: var(--color-white);
+  border-radius: var(--radius-xl); padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md); box-shadow: var(--shadow-sm); gap: var(--space-sm);
+}
+.search-box .search-icon { color: var(--color-gray-400); font-size: 1rem; }
+.search-box input {
+  flex: 1; border: none; outline: none; font-size: 0.85rem;
+  font-family: var(--font-system); color: var(--color-gray-700);
+}
+.search-box input::placeholder { color: var(--color-gray-300); }
+
+/* Map area */
+.mini-map {
+  width: 100%; height: 220px; border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #d5e8da 0%, #c5dcc8 30%, #b8d4c0 60%, #c8e0d0 100%);
+  margin-bottom: var(--space-md); position: relative; overflow: hidden;
+}
+.mini-map::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(2px 2px at 20% 30%, var(--color-accent-dark), transparent),
+    radial-gradient(2px 2px at 50% 60%, var(--color-accent), transparent),
+    radial-gradient(2px 2px at 70% 25%, var(--color-accent-dark), transparent),
+    radial-gradient(2px 2px at 40% 70%, var(--color-accent), transparent),
+    radial-gradient(2px 2px at 85% 55%, var(--color-accent-dark), transparent);
+}
+.map-legend {
+  position: absolute; bottom: var(--space-sm); left: var(--space-sm);
+  background: var(--color-white); border-radius: var(--radius-sm);
+  padding: var(--space-xxs) var(--space-sm); font-size: 0.7rem;
+  display: flex; gap: var(--space-sm); color: var(--color-gray-500);
+  box-shadow: var(--shadow-sm);
+}
+.map-legend span { display: flex; align-items: center; gap: 4px; }
+.map-legend .dot {
+  width: 8px; height: 8px; border-radius: var(--radius-full);
+}
+.map-legend .dot.fast { background: var(--color-accent); }
+.map-legend .dot.slow { background: var(--color-warning); }
+.map-nearby {
+  position: absolute; top: var(--space-sm); left: 50%; transform: translateX(-50%);
+  background: var(--color-white); border-radius: var(--radius-xl);
+  padding: var(--space-xs) var(--space-lg); font-size: 0.78rem;
+  font-weight: 500; color: var(--color-gray-600); box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+
+/* ========== STATION CARDS ========== */
+.section-title {
+  font-size: 1rem; font-weight: 600; color: var(--color-gray-700);
+  margin: var(--space-md) 0 var(--space-sm);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-title .more {
+  font-size: 0.78rem; color: var(--color-gray-400); font-weight: 400;
+}
+.station-card {
+  background: var(--color-white); border-radius: var(--radius-md);
+  padding: var(--space-md); margin-bottom: var(--space-sm);
+  box-shadow: var(--shadow-sm); display: flex; gap: var(--space-sm);
+}
+.station-card .station-rank {
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+  color: var(--color-white); display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+}
+.station-card .station-rank.rank-s { background: linear-gradient(135deg, #f5a623, #f7b84e); }
+.station-card .station-info { flex: 1; }
+.station-card .station-name {
+  font-size: 0.9rem; font-weight: 600; color: var(--color-gray-700);
+  display: flex; align-items: center; gap: var(--space-xs);
+}
+.station-card .star-tag {
+  font-size: 0.6rem; background: linear-gradient(135deg, #f5a623, #f7b84e);
+  color: var(--color-white); padding: 1px 6px; border-radius: var(--radius-sm);
+}
+.station-card .station-meta {
+  font-size: 0.72rem; color: var(--color-gray-400); margin-top: 4px;
+  display: flex; gap: var(--space-md);
+}
+.station-card .station-ports {
+  display: flex; gap: var(--space-xs); margin-top: var(--space-xs); flex-wrap: wrap;
+}
+.port-tag {
+  font-size: 0.65rem; padding: 2px 8px; border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+.port-tag.fast { background: #e0faf1; color: var(--color-accent-dark); }
+.port-tag.slow { background: #fff3e0; color: #e65100; }
+.station-card .station-dist {
+  font-size: 0.78rem; color: var(--color-gray-500);
+  display: flex; align-items: center; gap: 4px; margin-top: var(--space-xs);
+}
+.price-tag {
+  font-size: 0.75rem; color: var(--color-accent-dark); font-weight: 600;
+  margin-top: var(--space-xs);
+}
+
+/* ========== PLUS MEMBERSHIP BANNER ========== */
+.plus-banner {
+  background: linear-gradient(135deg, #1a1a2e 0%, #272740 50%, #1a1a2e 100%);
+  border-radius: var(--radius-md); padding: var(--space-md);
+  margin: var(--space-md) 0; position: relative; overflow: hidden;
+}
+.plus-banner::before {
+  content: ''; position: absolute; top: -20px; right: -20px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,168,92,0.15) 0%, transparent 70%);
+}
+.plus-banner .plus-header {
+  display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);
+}
+.plus-logo { color: var(--color-plus); font-size: 1.3rem; }
+.plus-banner h3 { color: var(--color-plus-light); font-size: 0.95rem; }
+.plus-banner p { color: rgba(255,255,255,0.6); font-size: 0.72rem; margin-bottom: var(--space-sm); }
+.plus-benefits {
+  display: flex; gap: var(--space-md);
+}
+.plus-benefit {
+  text-align: center; color: rgba(255,255,255,0.8); font-size: 0.7rem;
+}
+.plus-benefit .pb-val { color: var(--color-plus-light); font-size: 1.1rem; font-weight: 700; }
+.btn-plus {
+  display: inline-block; margin-top: var(--space-sm);
+  background: linear-gradient(135deg, var(--color-plus), #d4a840);
+  color: #1a1a2e; padding: 6px 16px; border-radius: var(--radius-xl);
+  font-size: 0.75rem; font-weight: 600; cursor: pointer;
+}
+
+/* ========== ENERGY PACKS ========== */
+.pack-scroll {
+  display: flex; gap: var(--space-sm); overflow-x: auto;
+  padding-bottom: var(--space-xs); -webkit-overflow-scrolling: touch;
+}
+.pack-scroll::-webkit-scrollbar { display: none; }
+.pack-card {
+  flex-shrink: 0; width: 140px; background: var(--color-white);
+  border-radius: var(--radius-md); padding: var(--space-md);
+  text-align: center; box-shadow: var(--shadow-sm);
+  border: 1px solid transparent; transition: all 0.2s ease;
+}
+.pack-card.featured { border-color: var(--color-accent); }
+.pack-card .pack-amount { font-size: 1.6rem; font-weight: 700; color: var(--color-primary); }
+.pack-card .pack-amount span { font-size: 0.9rem; }
+.pack-card .pack-price { font-size: 1.1rem; font-weight: 600; color: var(--color-accent-dark); margin: var(--space-xs) 0; }
+.pack-card .pack-save { font-size: 0.65rem; color: var(--color-danger); }
+
+/* ========== SAVE PAGE ========== */
+.save-banner {
+  background: linear-gradient(135deg, #0a2e1f, #0d3d2a);
+  border-radius: var(--radius-md); padding: var(--space-lg);
+  color: var(--color-white); margin-top: var(--space-md);
+}
+.save-banner h3 { color: var(--color-accent-light); font-size: 1rem; margin-bottom: var(--space-sm); }
+.save-banner .bonus { font-size: 2rem; font-weight: 700; color: var(--color-accent); }
+.save-banner .bonus span { font-size: 1rem; }
+.save-list { margin-top: var(--space-md); }
+.save-item {
+  background: var(--color-white); border-radius: var(--radius-sm);
+  padding: var(--space-md); margin-bottom: var(--space-sm);
+  display: flex; align-items: center; gap: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+.save-item .save-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.save-item .save-icon.coupon { background: #fff3e0; color: #f5a623; }
+.save-item .save-icon.discount { background: #e8f5e9; color: #2e7d32; }
+
+/* ========== SCAN PAGE ========== */
+.scan-container { text-align: center; padding: var(--space-2xl) 0; }
+.scan-frame {
+  width: 220px; height: 220px; margin: 0 auto var(--space-xl);
+  border: 2px solid var(--color-accent); border-radius: var(--radius-md);
+  position: relative; background: rgba(0,0,0,0.03);
+}
+.scan-frame::before, .scan-frame::after {
+  content: ''; position: absolute; width: 30px; height: 30px;
+  border-color: var(--color-accent);
+}
+.scan-frame::before {
+  top: -2px; left: -2px; border-top: 3px solid var(--color-accent); border-left: 3px solid var(--color-accent);
+}
+.scan-frame::after {
+  bottom: -2px; right: -2px; border-bottom: 3px solid var(--color-accent); border-right: 3px solid var(--color-accent);
+}
+.scan-line {
+  position: absolute; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  animation: scanLine 2s ease-in-out infinite;
+}
+@keyframes scanLine {
+  0%, 100% { top: 20%; }
+  50% { top: 80%; }
+}
+
+/* ========== CHARGING STATUS PAGE ========== */
+.charge-status {
+  background: var(--color-white); border-radius: var(--radius-md);
+  padding: var(--space-lg); text-align: center; box-shadow: var(--shadow-sm);
+  margin-top: var(--space-md);
+}
+.charge-status .charge-icon {
+  font-size: 3rem; color: var(--color-accent); margin-bottom: var(--space-sm);
+}
+.charge-status h2 { color: var(--color-gray-700); font-size: 1.1rem; margin-bottom: var(--space-xs); }
+.charge-progress {
+  width: 100%; height: 6px; background: var(--color-gray-200);
+  border-radius: var(--radius-full); margin: var(--space-md) 0; overflow: hidden;
+}
+.charge-progress .progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+  border-radius: var(--radius-full); width: 62%; animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.charge-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+.charge-stat { text-align: center; }
+.charge-stat .cs-val { font-size: 1.1rem; font-weight: 700; color: var(--color-gray-700); }
+.charge-stat .cs-label { font-size: 0.65rem; color: var(--color-gray-400); }
+
+/* ========== ORDERS PAGE ========== */
+.order-tabs {
+  display: flex; gap: 0; margin: var(--space-md) 0;
+  background: var(--color-gray-200); border-radius: var(--radius-xl);
+  padding: 2px;
+}
+.order-tab {
+  flex: 1; text-align: center; padding: var(--space-xs) var(--space-sm);
+  font-size: 0.8rem; cursor: pointer; border-radius: var(--radius-xl);
+  color: var(--color-gray-500); transition: all 0.2s ease;
+}
+.order-tab.active { background: var(--color-white); color: var(--color-gray-700); font-weight: 500; box-shadow: var(--shadow-sm); }
+.order-card {
+  background: var(--color-white); border-radius: var(--radius-md);
+  padding: var(--space-md); margin-bottom: var(--space-sm); box-shadow: var(--shadow-sm);
+}
+.order-card .order-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--space-sm);
+}
+.order-card .order-id { font-size: 0.8rem; color: var(--color-gray-500); font-weight: 500; }
+.order-card .order-status { font-size: 0.7rem; padding: 2px 8px; border-radius: var(--radius-sm); }
+.order-card .order-status.ongoing { background: #e0faf1; color: var(--color-accent-dark); }
+.order-card .order-status.done { background: var(--color-gray-200); color: var(--color-gray-500); }
+.order-card .order-station { font-size: 0.85rem; color: var(--color-gray-600); font-weight: 500; }
+.order-card .order-meta {
+  display: flex; justify-content: space-between; font-size: 0.72rem;
+  color: var(--color-gray-400); margin-top: var(--space-xs);
+}
+
+/* ========== PROFILE PAGE ========== */
+.profile-header {
+  background: linear-gradient(135deg, #0a2e1f, #0d3d2a);
+  border-radius: var(--radius-md); padding: var(--space-lg);
+  color: var(--color-white); margin-top: var(--space-md);
+  display: flex; align-items: center; gap: var(--space-md);
+}
+.profile-avatar {
+  width: 56px; height: 56px; border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.15); display: flex; align-items: center;
+  justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+}
+.profile-name { font-size: 1rem; font-weight: 600; }
+.profile-meta { font-size: 0.72rem; color: rgba(255,255,255,0.65); margin-top: 2px; }
+.profile-plus-tag {
+  display: inline-block; background: linear-gradient(135deg, var(--color-plus), #d4a840);
+  color: #1a1a2e; font-size: 0.6rem; padding: 2px 8px; border-radius: var(--radius-sm);
+  font-weight: 600; margin-top: var(--space-xs);
+}
+.menu-group { margin-top: var(--space-lg); }
+.menu-group h4 {
+  font-size: 0.75rem; color: var(--color-gray-400); padding: 0 var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+.menu-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--color-white); padding: var(--space-md);
+  border-radius: var(--radius-sm); margin-bottom: 2px; cursor: pointer;
+}
+.menu-item .mi-left { display: flex; align-items: center; gap: var(--space-sm); }
+.menu-item .mi-icon { font-size: 1rem; color: var(--color-gray-500); }
+.menu-item .mi-label { font-size: 0.85rem; color: var(--color-gray-700); }
+.menu-item .mi-arrow { color: var(--color-gray-300); font-size: 0.8rem; }
+
+/* ========== TRANSITIONS ========== */
+:root { --transition-fast: 0.15s ease; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span style="display:flex;gap:4px;">&#9641; &#9641; &#9641; &#9641; &#9642;</span>
+  </div>
+  <div class="phone-screen" id="phoneScreen">
+
+    <!-- ===== TAB 1: HOME ===== -->
+    <div class="tab-page active" data-tab="home">
+      <div class="home-header">
+        <div class="location">
+          <span class="loc-icon">&#9906;</span> 广州市天河区
+          <span style="font-size:0.7rem;color:var(--color-gray-400);">&#9660;</span>
+        </div>
+        <div class="header-actions">
+          <div class="header-btn">&#9783;</div>
+          <div class="header-btn">&#9741;</div>
+        </div>
+      </div>
+      <div class="search-box">
+        <span class="search-icon">&#9740;</span>
+        <input type="text" placeholder="搜索充电站、商圈或地址">
+      </div>
+      <div class="mini-map">
+        <div class="map-nearby">&#9735; 附近 12 个充电站可用</div>
+        <div class="map-legend">
+          <span><span class="dot fast"></span>快充</span>
+          <span><span class="dot slow"></span>慢充</span>
+          <span>&#9737; 空闲 &gt;3</span>
+        </div>
+      </div>
+
+      <!-- PLUS Membership Banner -->
+      <div class="plus-banner">
+        <div class="plus-header">
+          <span class="plus-logo">&#9834;</span>
+          <h3>闪电 PLUS 会员</h3>
+        </div>
+        <p>每月赠送60度充电额度，享全网充电8折优惠</p>
+        <div class="plus-benefits">
+          <div class="plus-benefit">
+            <div class="pb-val">8折</div>
+            <div>充电优惠</div>
+          </div>
+          <div class="plus-benefit">
+            <div class="pb-val">60度</div>
+            <div>每月赠送</div>
+          </div>
+          <div class="plus-benefit">
+            <div class="pb-val">2倍</div>
+            <div>积分加速</div>
+          </div>
+          <div class="plus-benefit">
+            <div class="pb-val">VIP</div>
+            <div>专属桩位</div>
+          </div>
+        </div>
+        <span class="btn-plus">&#9737; 立即开通 19.9/月</span>
+      </div>
+
+      <!-- Stations -->
+      <div class="section-title">&#9737; 附近充电站 <span class="more">查看全部 &gt;</span></div>
+      <div class="station-card">
+        <div class="station-rank rank-s">S</div>
+        <div class="station-info">
+          <div class="station-name">
+            天河城超级充电站 <span class="star-tag">&#9737; 五星站</span>
+          </div>
+          <div class="station-meta">
+            <span>&#9735; 1.2km</span>
+            <span>空闲 8/12</span>
+          </div>
+          <div class="station-ports">
+            <span class="port-tag fast">&#9889; 快充 120kW</span>
+            <span class="port-tag slow">&#9789; 慢充 7kW</span>
+          </div>
+          <div class="price-tag">&#9789; 0.68元/度 起</div>
+        </div>
+      </div>
+      <div class="station-card">
+        <div class="station-rank">A</div>
+        <div class="station-info">
+          <div class="station-name">珠江新城充电站</div>
+          <div class="station-meta">
+            <span>&#9735; 2.5km</span>
+            <span>空闲 5/8</span>
+          </div>
+          <div class="station-ports">
+            <span class="port-tag fast">&#9889; 快充 60kW</span>
+          </div>
+          <div class="price-tag">&#9789; 0.72元/度 起</div>
+        </div>
+      </div>
+      <div class="station-card">
+        <div class="station-rank">A</div>
+        <div class="station-info">
+          <div class="station-name">琶洲国际会展充电站</div>
+          <div class="station-meta">
+            <span>&#9735; 3.8km</span>
+            <span>空闲 15/20</span>
+          </div>
+          <div class="station-ports">
+            <span class="port-tag fast">&#9889; 快充 180kW</span>
+            <span class="port-tag fast">&#9889; 超充 360kW</span>
+            <span class="port-tag slow">&#9789; 慢充 7kW</span>
+          </div>
+          <div class="price-tag">&#9789; 0.65元/度 起</div>
+        </div>
+      </div>
+
+      <!-- Energy Packs -->
+      <div class="section-title">&#9730; 充电能量包 <span class="more">更多 &gt;</span></div>
+      <div class="pack-scroll">
+        <div class="pack-card featured">
+          <div class="pack-amount">100<span>度</span></div>
+          <div class="pack-price">CNY 68</div>
+          <div class="pack-save">省12元</div>
+        </div>
+        <div class="pack-card">
+          <div class="pack-amount">200<span>度</span></div>
+          <div class="pack-price">CNY 128</div>
+          <div class="pack-save">省28元</div>
+        </div>
+        <div class="pack-card">
+          <div class="pack-amount">500<span>度</span></div>
+          <div class="pack-price">CNY 299</div>
+          <div class="pack-save">省81元</div>
+        </div>
+        <div class="pack-card">
+          <div class="pack-amount">1000<span>度</span></div>
+          <div class="pack-price">CNY 568</div>
+          <div class="pack-save">省192元</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: SAVE ===== -->
+    <div class="tab-page" data-tab="save">
+      <div class="save-banner">
+        <h3>PLUS会员专属</h3>
+        <div class="bonus">CNY <span>28.60</span></div>
+        <p style="font-size:0.78rem;color:rgba(255,255,255,0.6);">本月已省充电费用</p>
+      </div>
+      <div class="section-title">&#9737; 限时优惠 <span class="more">全部 &gt;</span></div>
+      <div class="save-list">
+        <div class="save-item">
+          <div class="save-icon coupon">&#9730;</div>
+          <div style="flex:1;">
+            <div style="font-size:0.85rem;font-weight:500;color:var(--color-gray-700);">充电服务费6折券</div>
+            <div style="font-size:0.7rem;color:var(--color-gray-400);">有效期至 2026.06.30</div>
+          </div>
+          <span class="btn-plus" style="font-size:0.7rem;">立即领取</span>
+        </div>
+        <div class="save-item">
+          <div class="save-icon discount">&#9789;</div>
+          <div style="flex:1;">
+            <div style="font-size:0.85rem;font-weight:500;color:var(--color-gray-700);">满50减10元</div>
+            <div style="font-size:0.7rem;color:var(--color-gray-400);">全场通用 | 剩余3张</div>
+          </div>
+          <span style="font-size:0.7rem;color:var(--color-accent-dark);">去使用</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 3: SCAN ===== -->
+    <div class="tab-page" data-tab="scan">
+      <div class="scan-container">
+        <div class="scan-frame">
+          <div class="scan-line"></div>
+        </div>
+        <p style="color:var(--color-gray-500);font-size:0.9rem;margin-bottom:var(--space-sm);">将充电桩二维码放入框内</p>
+        <p style="color:var(--color-gray-400);font-size:0.75rem;">对准设备二维码自动识别</p>
+        <button class="btn-plus" style="margin-top:var(--space-xl);">手动输入设备编号</button>
+      </div>
+    </div>
+
+    <!-- ===== TAB 4: ORDERS ===== -->
+    <div class="tab-page" data-tab="orders">
+      <div class="order-tabs">
+        <div class="order-tab active">全部</div>
+        <div class="order-tab">进行中</div>
+        <div class="order-tab">已完成</div>
+        <div class="order-tab">已取消</div>
+      </div>
+      <div class="order-card">
+        <div class="order-header">
+          <span class="order-id">订单号: 20260605142033001</span>
+          <span class="order-status ongoing">充电中</span>
+        </div>
+        <div class="order-station">天河城超级充电站 A03号桩</div>
+        <div style="margin-top:var(--space-sm);">
+          <div class="charge-progress">
+            <div class="progress-fill" style="width:62%;"></div>
+          </div>
+        </div>
+        <div class="order-meta">
+          <span>已充 24.6度 | 62%</span>
+          <span>预估 CNY 16.73</span>
+        </div>
+        <div class="order-meta">
+          <span>2026-06-05 14:20</span>
+          <span>预计 15:50 充满</span>
+        </div>
+        <div style="text-align:right;margin-top:var(--space-sm);">
+          <button style="background:var(--color-accent);color:white;border:none;padding:6px 16px;border-radius:var(--radius-xl);font-size:0.75rem;cursor:pointer;">停止充电</button>
+        </div>
+      </div>
+      <div class="order-card">
+        <div class="order-header">
+          <span class="order-id">订单号: 20260604181055002</span>
+          <span class="order-status done">已完成</span>
+        </div>
+        <div class="order-station">琶洲国际会展充电站 B07号桩</div>
+        <div class="order-meta">
+          <span>充电 42.8度</span>
+          <span>CNY 29.96</span>
+        </div>
+        <div class="order-meta">
+          <span>2026-06-04 18:10</span>
+          <span>耗时 48分钟</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 5: PROFILE ===== -->
+    <div class="tab-page" data-tab="profile">
+      <div class="profile-header">
+        <div class="profile-avatar">&#9787;</div>
+        <div>
+          <div class="profile-name">闪电用户_2026</div>
+          <div class="profile-meta">ID: SD2026XXXXXX</div>
+          <span class="profile-plus-tag">&#9737; PLUS会员</span>
+        </div>
+      </div>
+      <div class="menu-group">
+        <h4>我的钱包</h4>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9789;</span><span class="mi-label">余额</span></div>
+          <span style="color:var(--color-gray-700);font-size:0.85rem;font-weight:500;">CNY 186.50</span>
+        </div>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9737;</span><span class="mi-label">积分</span></div>
+          <span style="color:var(--color-accent-dark);font-size:0.85rem;font-weight:500;">12,860</span>
+        </div>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9730;</span><span class="mi-label">优惠券</span></div>
+          <span style="color:var(--color-gray-400);">4张 <span class="mi-arrow">&gt;</span></span>
+        </div>
+      </div>
+      <div class="menu-group">
+        <h4>常用功能</h4>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9740;</span><span class="mi-label">充电记录</span></div>
+          <span class="mi-arrow">&gt;</span>
+        </div>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9874;</span><span class="mi-label">我的能量包</span></div>
+          <span class="mi-arrow">&gt;</span>
+        </div>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9741;</span><span class="mi-label">常用车辆</span></div>
+          <span class="mi-arrow">&gt;</span>
+        </div>
+        <div class="menu-item">
+          <div class="mi-left"><span class="mi-icon">&#9881;</span><span class="mi-label">设置</span></div>
+          <span class="mi-arrow">&gt;</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB BAR ===== -->
+  <div class="tab-bar">
+    <div class="tab-item active" data-tab="home">
+      <span class="tab-icon">&#9681;</span> 首页
+    </div>
+    <div class="tab-item" data-tab="save">
+      <span class="tab-icon">&#9834;</span> 省钱
+    </div>
+    <div class="tab-item scan-tab" data-tab="scan">
+      <div class="scan-btn">&#9740;</div>
+    </div>
+    <div class="tab-item" data-tab="orders">
+      <span class="tab-icon">&#9742;</span> 订单
+    </div>
+    <div class="tab-item" data-tab="profile">
+      <span class="tab-icon">&#9787;</span> 我的
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const tab = this.getAttribute('data-tab');
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.tab-page[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('phoneScreen').scrollTop = 0;
+  });
+});
+
+document.querySelectorAll('.order-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

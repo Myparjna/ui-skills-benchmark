@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>运营后台 - Nuxt UI Dashboard 风格</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<style>
+/* ========== Nuxt UI Dashboard Tokens ========== */
+:root {
+  --ui-primary: 79 70 229;
+  --ui-primary-hover: 67 56 202;
+  --ui-primary-light: 238 242 255;
+  --ui-success: 34 197 94;
+  --ui-warning: 234 179 8;
+  --ui-error: 239 68 68;
+  --ui-info: 59 130 246;
+  --ui-neutral-50: 250 250 250;
+  --ui-neutral-100: 244 245 246;
+  --ui-neutral-200: 235 236 240;
+  --ui-neutral-300: 214 216 220;
+  --ui-neutral-400: 163 167 176;
+  --ui-neutral-500: 115 120 129;
+  --ui-neutral-600: 82 86 95;
+  --ui-neutral-700: 64 66 72;
+  --ui-neutral-800: 45 48 55;
+  --ui-neutral-900: 27 29 33;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: rgb(var(--ui-neutral-50));
+  color: rgb(var(--ui-neutral-900));
+  display: flex;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== Sidebar ========== */
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  background: rgb(var(--ui-white));
+  border-right: 1px solid rgb(var(--ui-neutral-200));
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+}
+.sidebar-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgb(var(--ui-neutral-200));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+.sidebar-brand { font-weight: 700; font-size: 15px; color: rgb(var(--ui-neutral-900)); }
+.sidebar-brand span { font-weight: 400; font-size: 12px; color: rgb(var(--ui-neutral-500)); display: block; }
+
+.sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+.nav-group-label {
+  padding: 8px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgb(var(--ui-neutral-400));
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-decoration: none;
+  color: rgb(var(--ui-neutral-700));
+  font-size: 13.5px;
+  font-weight: 500;
+  margin: 1px 0;
+}
+.nav-item:hover { background: rgb(var(--ui-neutral-100)); color: rgb(var(--ui-neutral-900)); }
+.nav-item.active {
+  background: rgb(var(--ui-primary-light));
+  color: rgb(var(--ui-primary));
+  font-weight: 600;
+}
+.nav-item .iconify { font-size: 18px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: rgb(var(--ui-error));
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 9999px;
+}
+
+.sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid rgb(var(--ui-neutral-200));
+}
+.user-row { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#4F46E5,#7C3AED); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+.user-name { font-size: 13px; font-weight: 600; color: rgb(var(--ui-neutral-800)); }
+.user-role { font-size: 11.5px; color: rgb(var(--ui-neutral-500)); }
+
+/* ========== Main Area ========== */
+.main-area { flex: 1; margin-left: 250px; display: flex; flex-direction: column; }
+
+/* Top Bar */
+.topbar {
+  height: 56px;
+  background: rgb(var(--ui-white));
+  border-bottom: 1px solid rgb(var(--ui-neutral-200));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky; top: 0; z-index: 30;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.breadcrumb { font-size: 13px; color: rgb(var(--ui-neutral-500)); }
+.breadcrumb strong { color: rgb(var(--ui-neutral-900)); font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: rgb(var(--ui-neutral-500));
+  transition: all 150ms;
+  position: relative;
+}
+.icon-btn:hover { background: rgb(var(--ui-neutral-100)); color: rgb(var(--ui-neutral-700)); }
+.icon-btn .dot {
+  position: absolute; top: 8px; right: 8px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgb(var(--ui-error));
+}
+
+/* ========== Content ========== */
+.content { padding: 24px; flex: 1; }
+
+/* UAlert */
+.u-alert {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 16px; border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 13.5px; line-height: 1.55;
+  border: 1px solid;
+}
+.u-alert--info {
+  background: rgb(var(--ui-info-light));
+  border-color: rgba(59,130,246,0.2);
+  color: #1d4ed8;
+}
+.u-alert .alert-icon { flex-shrink: 0; font-size: 20px; margin-top: 1px; }
+
+/* KPI Cards Row */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: rgb(var(--ui-white));
+  border: 1px solid rgb(var(--ui-neutral-200));
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--ui-shadow-sm);
+  transition: all 180ms ease;
+}
+.kpi-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.kpi-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.kpi-card__label { font-size: 13px; color: rgb(var(--ui-neutral-500)); font-weight: 500; }
+.kpi-card__icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.kpi-card__icon--blue   { background: #EEF2FF; color: #4F46E5; }
+.kpi-card__icon--green  { background: #ECFDF5; color: #059669; }
+.kpi-card__icon--amber  { background: #FFFbeb; color: #D97706; }
+.kpi-card__icon--rose   { background: #FFF1F2; color: #E11D48; }
+.kpi-card__value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.kpi-card__trend { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12.5px; font-weight: 500; }
+.trend-up { color: #059669; }
+.trend-down { color: #E11D48; }
+
+/* Table Section */
+.table-section {
+  background: rgb(var(--ui-white));
+  border: 1px solid rgb(var(--ui-neutral-200));
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--ui-shadow-sm);
+}
+.section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgb(var(--ui-neutral-200));
+}
+.section-title { font-size: 15px; font-weight: 600; color: rgb(var(--ui-neutral-900)); }
+
+/* UButton variants */
+.u-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  font-size: 13px; font-weight: 600;
+  border-radius: 8px;
+  border: none; cursor: pointer;
+  transition: all 150ms ease;
+}
+.u-btn--primary { background: rgb(var(--ui-primary)); color: white; }
+.u-btn--primary:hover { background: rgb(var(--ui-primary-hover)); }
+.u-btn--ghost { background: transparent; color: rgb(var(--ui-neutral-700)); border: 1px solid rgb(var(--ui-neutral-300)); }
+.u-btn--ghost:hover { background: rgb(var(--ui-neutral-100)); }
+
+/* UTable style */
+.u-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.u-table thead th {
+  padding: 10px 18px;
+  text-align: left;
+  font-size: 11.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: rgb(var(--ui-neutral-500));
+  border-bottom: 1px solid rgb(var(--ui-neutral-200));
+  background: rgb(var(--ui-neutral-50));
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 120ms;
+}
+.u-table thead th:hover { color: rgb(var(--ui-neutral-700)); }
+.th-sort { display: inline-flex; align-items: center; gap: 4px; }
+.sort-icon { opacity: 0.35; font-size: 12px; }
+.u-table tbody tr {
+  border-bottom: 1px solid rgb(var(--ui-neutral-100));
+  transition: background 120ms;
+}
+.u-table tbody tr:nth-child(even) { background: rgb(250 250 252 / 0.5); }
+.u-table tbody tr:hover { background: rgb(var(--ui-primary-light)); }
+.u-table td { padding: 12px 18px; color: rgb(var(--ui-neutral-700)); vertical-align: middle; }
+.td-name { font-weight: 600; color: rgb(var(--ui-neutral-900)); }
+
+/* Status badges in table */
+.badge-status {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 600;
+}
+.badge-online    { background: #ecfdf5; color: #047857; }
+.badge-offline   { background: #fef2f2; color: #dc2626; }
+.badge-maintain  { background: #fffbeb; color: #b45309; }
+
+/* Action buttons in table row */
+.row-actions { display: flex; gap: 6px; }
+.action-dot {
+  width: 30px; height: 30px;
+  border-radius: 6px;
+  border: 1px solid rgb(var(--ui-neutral-200));
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: rgb(var(--ui-neutral-500));
+  font-size: 15px;
+  transition: all 120ms;
+  position: relative;
+}
+.action-dot:hover { background: rgb(var(--ui-neutral-100)); border-color: rgb(var(--ui-neutral-300)); }
+
+/* Dropdown menu (UDropdownMenu simulation) */
+.dropdown-menu {
+  display: none; position: absolute;
+  right: 0; top: calc(100% + 4px);
+  background: rgb(var(--ui-white));
+  border: 1px solid rgb(var(--ui-neutral-200));
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.05);
+  padding: 5px; min-width: 160px;
+  z-index: 60;
+}
+.action-dot:focus-within .dropdown-menu,
+.action-dot.open .dropdown-menu { display: block; }
+.dd-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-size: 13px; color: rgb(var(--ui-neutral-700));
+  cursor: pointer; transition: background 100ms;
+  text-decoration: none;
+  border: none; background: none; width: 100%;
+}
+.dd-item:hover { background: rgb(var(--ui-neutral-100)); }
+.dd-item.danger { color: rgb(var(--ui-error)); }
+.dd-divider { height: 1px; background: rgb(var(--ui-neutral-200)); margin: 4px 0; }
+
+/* Pagination */
+.table-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 22px;
+  border-top: 1px solid rgb(var(--ui-neutral-200));
+  font-size: 12.5px; color: rgb(var(--ui-neutral-500));
+}
+.pagination { display: flex; gap: 3px; }
+.page-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px; border: 1px solid rgb(var(--ui-neutral-200));
+  background: transparent; color: rgb(var(--ui-neutral-600));
+  font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: all 120ms;
+}
+.page-btn:hover { background: rgb(var(--ui-neutral-100)); }
+.page-btn.active { background: rgb(var(--ui-primary)); color: white; border-color: rgb(var(--ui-primary)); }
+
+/* Slideover Panel */
+.slideover-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3); z-index: 70;
+}
+.slideover-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 420px; max-width: 90vw;
+  background: rgb(var(--ui-white));
+  border-left: 1px solid rgb(var(--ui-neutral-200));
+  box-shadow: -10px 0 40px rgba(0,0,0,0.15);
+  z-index: 80;
+  transform: translateX(100%);
+  transition: transform 280ms cubic-bezier(0.4,0,0.2,1);
+  display: flex; flex-direction: column;
+}
+.slideover-panel.open { transform: translateX(0); }
+.slideover-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid rgb(var(--ui-neutral-200));
+  display: flex; justify-content: space-between; align-items: center;
+}
+.slideover-title { font-size: 16px; font-weight: 600; }
+.close-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: none; background: rgb(var(--ui-neutral-100));
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: rgb(var(--ui-neutral-600));
+  transition: all 120ms;
+}
+.close-btn:hover { background: rgb(var(--ui-neutral-200)); }
+.slideover-body { padding: 22px; overflow-y: auto; flex: 1; }
+.detail-field { margin-bottom: 16px; }
+.detail-label { font-size: 11.5px; font-weight: 600; color: rgb(var(--ui-neutral-500)); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+.detail-value { font-size: 14px; color: rgb(var(--ui-neutral-800)); font-weight: 500; }
+
+/* Mini chart placeholder */
+.mini-chart { height: 80px; border-radius: 8px; background: linear-gradient(to right, rgba(79,70,229,0.08) 0%, rgba(79,70,229,0.03) 100%); display: flex; align-items: flex-end; padding: 8px; gap: 3px; }
+.chart-bar { flex: 1; border-radius: 2px 2px 0 0; background: rgb(79 70 229 / 0.3); min-height: 8px; transition: height 300ms ease; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo"><span class="iconify" data-icon="i-heroicons-bolt-solid"></span></div>
+    <div class="sidebar-brand">ChargeOps <span>管理平台</span></div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">概览</div>
+    <a class="nav-item active"><span class="iconify" data-icon="i-heroicons-squares-2x2"></span> 工作台</a>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-chart-bar"></span> 数据分析</a>
+
+    <div class="nav-group-label">站点管理</div>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-map-pin"></span> 站点列表</a>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-plug"></span> 电桩管理 <span class="nav-badge">5</span></a>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-cpu-chip"></span> 设备监控</a>
+
+    <div class="nav-group-label">业务</div>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-receipt-percent"></span> 计费策略</a>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-credit-card"></span> 财务中心</a>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-users"></span> 用户管理</a>
+
+    <div class="nav-group-label">系统</div>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-cog-6-tooth"></span> 系统设置</a>
+    <a class="nav-item"><span class="iconify" data-icon="i-heroicons-shield-check"></span> 审计日志</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="avatar">李</div>
+      <div><div class="user-name">李明辉</div><div class="user-role">超级管理员</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-area">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb"><strong>工作台</strong> &nbsp;/&nbsp; 运营总览</div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" aria-label="搜索"><span class="iconify" data-icon="i-heroicons-magnifying-glass" style="font-size:18px;"></span></button>
+      <button class="icon-btn" aria-label="通知"><span class="iconify" data-icon="i-heroicons-bell" style="font-size:18px;"></span><span class="dot"></span></button>
+      <button class="icon-btn" aria-label="消息"><span class="iconify" data-icon="i-heroicons-chat-bubble-left" style="font-size:18px;"></span></button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- UAlert -->
+    <div class="u-alert u-alert--info">
+      <span class="iconify alert-icon" data-icon="i-heroicons-information-circle-solid"></span>
+      <div>
+        <strong>系统公告：</strong>今晚 22:00-23:00 将进行平台维护升级，届时部分功能可能暂时不可用。请提前安排充电任务。
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid" aria-label="关键指标">
+      <article class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">今日充电量</span>
+          <div class="kpi-card__icon kpi-card__icon--blue"><span class="iconify" data-icon="i-heroicons-bolt"></span></div>
+        </div>
+        <div class="kpi-card__value">12,847<span style="font-size:16px;font-weight:500;color:#71717a;"> kWh</span></div>
+        <div class="kpi-card__trend trend-up"><span class="iconify" data-icon="i-heroicons-arrow-trending-up"></span> 较昨日 +12.3%</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">在线站点</span>
+          <div class="kpi-card__icon kpi-card__icon--green"><span class="iconify" data-icon="i-heroicons-server-stack"></span></div>
+        </div>
+        <div class="kpi-card__value">128<span style="font-size:16px;font-weight:500;color:#71717a;"> /132</span></div>
+        <div class="kpi-card__trend trend-up"><span class="iconify" data-icon="i-heroicons-arrow-trending-up"></span> 在线率 97.0%</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">今日营收</span>
+          <div class="kpi-card__icon kpi-card__icon--amber"><span class="iconify" data-icon="i-heroicons-currency-dollar"></span></div>
+        </div>
+        <div class="kpi-card__value">¥68,520</div>
+        <div class="kpi-card__trend trend-up"><span class="iconify" data-icon="i-heroicons-arrow-trending-up"></span> 较昨日 +8.7%</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-card__header">
+          <span class="kpi-card__label">故障告警</span>
+          <div class="kpi-card__icon kpi-card__icon--rose"><span class="iconify" data-icon="i-heroicons-exclamation-triangle"></span></div>
+        </div>
+        <div class="kpi-card__value">5<span style="font-size:16px;font-weight:500;color:#71717a;"> 条</span></div>
+        <div class="kpi-card__trend trend-down"><span class="iconify" data-icon="i-heroicons-arrow-trending-down"></span> 较昨日 -28.6%</div>
+      </article>
+    </section>
+
+    <!-- Table Section -->
+    <section class="table-section">
+      <div class="section-header">
+        <h2 class="section-title">站点运行状态</h2>
+        <div style="display:flex;gap:8px;">
+          <button class="u-btn u-btn--ghost"><span class="iconify" data-icon="i-heroicons-funnel"></span> 筛选</button>
+          <button class="u-btn u-btn--primary"><span class="iconify" data-icon="i-heroicons-plus"></span> 新建站点</button>
+        </div>
+      </div>
+
+      <table class="u-table" role="grid">
+        <thead>
+          <tr>
+            <th><div class="th-sort">站点名称 <span class="iconify sort-icon" data-icon="i-heroicons-arrows-up-down"></span></div></th>
+            <th><div class="th-sort">电桩数 <span class="iconify sort-icon" data-icon="i-heroicons-arrows-up-down"></span></div></th>
+            <th><div class="th-sort">状态 <span class="iconify sort-icon" data-icon="i-heroicons-arrows-up-down"></span></div></th>
+            <th><div class="th-sort">今日电量(kWh) <span class="iconify sort-icon" data-icon="i-heroicons-arrows-up-down"></span></div></th>
+            <th><div class="th-sort">今日营收(¥) <span class="iconify sort-icon" data-icon="i-heroicons-arrows-up-down"></span></div></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-name">宁波东部新城充电站</td>
+            <td>18</td>
+            <td><span class="badge-status badge-online"><span class="iconify" data-icon="i-heroicons-check-circle" style="font-size:12px;"></span> 正常运行</span></td>
+            <td>2,340</td>
+            <td>¥12,450</td>
+            <td><div class="row-actions"><button class="action-dot"><span class="iconify" data-icon="i-heroicons-ellipsis-horizontal"></span></button></div></td>
+          </tr>
+          <tr>
+            <td class="td-name">杭州湾新区超充站</td>
+            <td>20</td>
+            <td><span class="badge-status badge-online"><span class="iconify" data-icon="i-heroicons-check-circle" style="font-size:12px;"></span> 正常运行</span></td>
+            <td>3,890</td>
+            <td>¥19,230</td>
+            <td><div class="row-actions"><button class="action-dot"><span class="iconify" data-icon="i-heroicons-ellipsis-horizontal"></span></button></div></td>
+          </tr>
+          <tr>
+            <td class="td-name">北仑港城快速站</td>
+            <td>10</td>
+            <td><span class="badge-status badge-maintain"><span class="iconify" data-icon="i-heroicons-wrench-screwdriver" style="font-size:12px;"></span> 维护中</span></td>
+            <td>860</td>
+            <td>¥4,320</td>
+            <td><div class="row-actions"><button class="action-dot"><span class="iconify" data-icon="i-heroicons-ellipsis-horizontal"></span></button></div></td>
+          </tr>
+          <tr>
+            <td class="td-name">镇海庄市光储充站</td>
+            <td>20</td>
+            <td><span class="badge-status badge-online"><span class="iconify" data-icon="i-heroicons-check-circle" style="font-size:12px;"></span> 正常运行</span></td>
+            <td>4,210</td>
+            <td>¥21,080</td>
+            <td><div class="row-actions"><button class="action-dot"><span class="iconify" data-icon="i-heroicons-ellipsis-horizontal"></span></button></div></td>
+          </tr>
+          <tr>
+            <td class="td-name">慈溪观海卫服务站</td>
+            <td>8</td>
+            <td><span class="badge-status badge-offline"><span class="iconify" data-icon="i-heroicons-x-circle" style="font-size:12px;"></span> 离线</span></td>
+            <td>0</td>
+            <td>¥0</td>
+            <td><div class="row-actions"><button class="action-dot"><span class="iconify" data-icon="i-heroicons-ellipsis-horizontal"></span></button></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="table-footer">
+        <span>共 128 条记录，每页显示 5 条</span>
+        <div class="pagination">
+          <button class="page-btn"><span class="iconify" data-icon="i-heroicons-chevron-left"></span></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">...</button>
+          <button class="page-btn">26</button>
+          <button class="page-btn"><span class="iconify" data-icon="i-heroicons-chevron-right"></span></button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- USlideover Detail Panel -->
+<div class="slideover-backdrop" id="slideoverBackdrop"></div>
+<aside class="slideover-panel" id="detailPanel">
+  <div class="slideover-header">
+    <h3 class="slideover-title">站点详情</h3>
+    <button class="close-btn" onclick="toggleSlideover()"><span class="iconify" data-icon="i-heroicons-x-mark"></span></button>
+  </div>
+  <div class="slideover-body">
+    <div class="detail-field">
+      <div class="detail-label">站点名称</div>
+      <div class="detail-value">宁波东部新城充电站</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">地址</div>
+      <div class="detail-value">鄞州区中山东路与福明路交叉口</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">设备数量</div>
+      <div class="detail-value">直流快充 × 12 &nbsp; 交流慢充 × 6</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">功率范围</div>
+      <div class="detail-value">60 kW ~ 180 kW（超级快充）</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">计费标准</div>
+      <div class="detail-value">电费 ¥1.20/度 &nbsp; 服务费 ¥0.60/度</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">近7日趋势</div>
+      <div class="mini-chart">
+        <div class="chart-bar" style="height:35%"></div><div class="chart-bar" style="height:52%"></div>
+        <div class="chart-bar" style="height:41%"></div><div class="chart-bar" style="height:68%"></div>
+        <div class="chart-bar" style="height:78%"></div><div class="chart-bar" style="height:62%"></div>
+        <div class="chart-bar" style="height:85%"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script>
+function toggleSlideover() {
+  document.getElementById('detailPanel').classList.toggle('open');
+  const backdrop = document.getElementById('slideoverBackdrop');
+  backdrop.style.display = backdrop.style.display === 'block' ? 'none' : 'block';
+}
+document.querySelectorAll('.action-dot').forEach(btn => btn.addEventListener('click', function() {
+  this.classList.toggle('open');
+}));
+</script>
+
+</body>
+</html>

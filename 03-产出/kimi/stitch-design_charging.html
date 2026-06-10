@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>极速充电 - EV Charging</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tech: { DEFAULT: '#1677FF', 50: '#E6F4FF', 100: '#BAE0FF', 500: '#1677FF', 600: '#0958D9' },
+            success: { DEFAULT: '#52C41A', 50: '#F6FFED', 500: '#52C41A' },
+            warn: { DEFAULT: '#FA8C16', 50: '#FFF7E6', 500: '#FA8C16' },
+          },
+          fontFamily: {
+            sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 2px 12px rgba(0, 0, 0, 0.06)',
+            'float': '0 8px 24px rgba(22, 119, 255, 0.18)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #f5f7fa;
+    }
+    .mobile-frame {
+      max-width: 428px;
+      margin: 0 auto;
+      background: #f5f7fa;
+      min-height: 100vh;
+      position: relative;
+      box-shadow: 0 0 60px rgba(0,0,0,0.08);
+    }
+    @media (min-width: 640px) {
+      .mobile-frame {
+        min-height: 90vh;
+        margin-top: 5vh;
+        margin-bottom: 5vh;
+        border-radius: 40px;
+        overflow: hidden;
+      }
+    }
+    .scan-btn-outer {
+      background: linear-gradient(135deg, #1677FF 0%, #52C41A 100%);
+      box-shadow: 0 6px 20px rgba(22, 119, 255, 0.35);
+    }
+    .map-pattern {
+      background-image: url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80");
+      background-size: cover;
+      background-position: center;
+    }
+    .station-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .station-card:active {
+      transform: scale(0.98);
+    }
+    .tab-active {
+      color: #1677FF;
+    }
+    .tab-inactive {
+      color: #8c8c8c;
+    }
+    .pill-tag {
+      border-radius: 4px;
+    }
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+    .charging-pulse {
+      animation: pulse-orange 2s infinite;
+    }
+    @keyframes pulse-orange {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(250, 140, 22, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(250, 140, 22, 0); }
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-200">
+
+  <div class="mobile-frame">
+    <!-- Status Bar Simulation -->
+    <div class="bg-white px-6 pt-3 pb-2 flex items-center justify-between text-sm font-semibold text-slate-900">
+      <span>9:41</span>
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="signal" class="w-4 h-4"></i>
+        <i data-lucide="wifi" class="w-4 h-4"></i>
+        <i data-lucide="battery-full" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-white px-4 pb-3 rounded-b-2xl shadow-card sticky top-0 z-20">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-tech flex items-center justify-center">
+            <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="font-semibold text-slate-900 text-lg">极速充电</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="relative p-2 rounded-full hover:bg-slate-50">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </button>
+          <button class="p-2 rounded-full hover:bg-slate-50">
+            <i data-lucide="message-circle" class="w-5 h-5 text-slate-600"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Location Pill -->
+      <div class="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 px-3 py-2 rounded-xl w-fit">
+        <i data-lucide="map-pin" class="w-4 h-4 text-tech"></i>
+        <span>杭州市 · 萧山区 · 钱江世纪城</span>
+        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+      </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="pb-28 px-4 pt-4 space-y-4 hide-scrollbar overflow-y-auto" style="max-height: calc(100vh - 180px);">
+      
+      <!-- Map Hero Card -->
+      <div class="relative rounded-2xl overflow-hidden h-44 map-pattern shadow-card">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/20 to-black/50"></div>
+        <div class="absolute inset-0 p-4 flex flex-col justify-between">
+          <div class="flex items-start justify-between">
+            <div class="px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur text-xs font-medium text-slate-800">
+              附近 12 个充电站
+            </div>
+            <button class="w-9 h-9 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-sm">
+              <i data-lucide="navigation" class="w-4 h-4 text-tech"></i>
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 py-2.5 rounded-xl bg-white/95 backdrop-blur text-sm font-medium text-slate-800 flex items-center justify-center gap-2">
+              <i data-lucide="map" class="w-4 h-4 text-tech"></i> 地图模式
+            </button>
+            <button class="flex-1 py-2.5 rounded-xl bg-tech text-sm font-medium text-white flex items-center justify-center gap-2">
+              <i data-lucide="list" class="w-4 h-4"></i> 列表模式
+            </button>
+          </div>
+        </div>
+        <!-- Map Pins -->
+        <div class="absolute top-12 left-16 w-8 h-8 rounded-full bg-success/90 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg">8</div>
+        <div class="absolute top-20 right-20 w-8 h-8 rounded-full bg-warn/90 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg">3</div>
+        <div class="absolute bottom-20 left-24 w-8 h-8 rounded-full bg-tech/90 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg">1</div>
+      </div>
+
+      <!-- Quick Filters -->
+      <div class="flex gap-2 overflow-x-auto hide-scrollbar">
+        <button class="px-4 py-2 rounded-lg bg-tech text-white text-sm font-medium whitespace-nowrap">全部</button>
+        <button class="px-4 py-2 rounded-lg bg-white text-slate-600 text-sm font-medium border border-slate-100 whitespace-nowrap">快充</button>
+        <button class="px-4 py-2 rounded-lg bg-white text-slate-600 text-sm font-medium border border-slate-100 whitespace-nowrap">免费停车</button>
+        <button class="px-4 py-2 rounded-lg bg-white text-slate-600 text-sm font-medium border border-slate-100 whitespace-nowrap">PLUS会员站</button>
+        <button class="px-4 py-2 rounded-lg bg-white text-slate-600 text-sm font-medium border border-slate-100 whitespace-nowrap">高速服务区</button>
+      </div>
+
+      <!-- Charging Status Card (Active Session) -->
+      <div class="rounded-2xl bg-white p-4 shadow-card border-l-4 border-warn">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-warn charging-pulse"></span>
+            <span class="text-sm font-semibold text-slate-900">正在充电中</span>
+          </div>
+          <span class="text-xs text-slate-400">预计 32 分钟后充满</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="relative w-16 h-16">
+            <svg class="w-16 h-16 progress-ring">
+              <circle cx="32" cy="32" r="28" stroke="#f0f0f0" stroke-width="4" fill="none"></circle>
+              <circle cx="32" cy="32" r="28" stroke="#FA8C16" stroke-width="4" fill="none" stroke-dasharray="175.9" stroke-dashoffset="52.8" stroke-linecap="round"></circle>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-xs font-bold text-slate-900">70%</span>
+            </div>
+          </div>
+          <div class="flex-1 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p class="text-lg font-bold text-slate-900">24.5</p>
+              <p class="text-xs text-slate-400">已充 kWh</p>
+            </div>
+            <div>
+              <p class="text-lg font-bold text-slate-900">65.2</p>
+              <p class="text-xs text-slate-400">功率 kW</p>
+            </div>
+            <div>
+              <p class="text-lg font-bold text-warn">¥18.4</p>
+              <p class="text-xs text-slate-400">实时费用</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nearby Stations -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-slate-900">附近充电站</h3>
+          <div class="flex items-center gap-1 text-sm text-tech">
+            <span>综合排序</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        
+        <div class="space-y-3">
+          <!-- Station 1 -->
+          <div class="station-card bg-white rounded-xl p-4 shadow-card">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h4 class="font-medium text-slate-900">特来电 · 钱江世纪城超充站</h4>
+                <p class="text-xs text-slate-400 mt-0.5">杭州市萧山区市心北路2000号</p>
+              </div>
+              <span class="text-sm font-bold text-slate-900">0.68<span class="text-xs font-normal text-slate-400">/度</span></span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="pill-tag px-2 py-0.5 bg-tech-50 text-tech text-xs">超充站</span>
+              <span class="pill-tag px-2 py-0.5 bg-success-50 text-success text-xs">免费停车2h</span>
+              <span class="pill-tag px-2 py-0.5 bg-warn-50 text-warn text-xs">PLUS 6折</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-sm">
+                <span class="flex items-center gap-1 text-success"><i data-lucide="zap" class="w-3.5 h-3.5"></i> 快充 8/10</span>
+                <span class="flex items-center gap-1 text-slate-400"><i data-lucide="battery-charging" class="w-3.5 h-3.5"></i> 慢充 2/4</span>
+              </div>
+              <span class="text-xs text-slate-400">200m</span>
+            </div>
+          </div>
+
+          <!-- Station 2 -->
+          <div class="station-card bg-white rounded-xl p-4 shadow-card">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h4 class="font-medium text-slate-900">星星充电 · 万象汇地下站</h4>
+                <p class="text-xs text-slate-400 mt-0.5">杭州市萧山区金城路927号B2层</p>
+              </div>
+              <span class="text-sm font-bold text-slate-900">0.75<span class="text-xs font-normal text-slate-400">/度</span></span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="pill-tag px-2 py-0.5 bg-slate-100 text-slate-600 text-xs">地下停车场</span>
+              <span class="pill-tag px-2 py-0.5 bg-success-50 text-success text-xs">免停3h</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-sm">
+                <span class="flex items-center gap-1 text-success"><i data-lucide="zap" class="w-3.5 h-3.5"></i> 快充 5/8</span>
+                <span class="flex items-center gap-1 text-warn"><i data-lucide="battery-charging" class="w-3.5 h-3.5"></i> 慢充 1/6</span>
+              </div>
+              <span class="text-xs text-slate-400">450m</span>
+            </div>
+          </div>
+
+          <!-- Station 3 -->
+          <div class="station-card bg-white rounded-xl p-4 shadow-card">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h4 class="font-medium text-slate-900">云快充 · 博地中心充电站</h4>
+                <p class="text-xs text-slate-400 mt-0.5">杭州市萧山区盈丰路博地中心</p>
+              </div>
+              <span class="text-sm font-bold text-slate-900">0.62<span class="text-xs font-normal text-slate-400">/度</span></span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="pill-tag px-2 py-0.5 bg-tech-50 text-tech text-xs">即插即充</span>
+              <span class="pill-tag px-2 py-0.5 bg-warn-50 text-warn text-xs">能量包可用</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-sm">
+                <span class="flex items-center gap-1 text-success"><i data-lucide="zap" class="w-3.5 h-3.5"></i> 快充 12/16</span>
+                <span class="flex items-center gap-1 text-slate-400"><i data-lucide="battery-charging" class="w-3.5 h-3.5"></i> 慢充 4/4</span>
+              </div>
+              <span class="text-xs text-slate-400">680m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Membership Banner -->
+      <div class="rounded-2xl p-4 bg-gradient-to-r from-tech to-tech-600 text-white shadow-float">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs opacity-90 mb-1">开通 PLUS 会员</p>
+            <p class="font-semibold">充电低至 6 折 · 每月 5 张满减券</p>
+            <p class="text-xs opacity-80 mt-1">月省上限约 ¥50</p>
+          </div>
+          <button class="px-4 py-2 rounded-lg bg-white text-tech text-sm font-semibold whitespace-nowrap">立即开通</button>
+        </div>
+      </div>
+
+      <!-- Quick Actions Grid -->
+      <div>
+        <h3 class="font-semibold text-slate-900 mb-3">常用功能</h3>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-tech-50 flex items-center justify-center">
+              <i data-lucide="wallet" class="w-5 h-5 text-tech"></i>
+            </div>
+            <span class="text-xs text-slate-600">钱包</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-success-50 flex items-center justify-center">
+              <i data-lucide="ticket" class="w-5 h-5 text-success"></i>
+            </div>
+            <span class="text-xs text-slate-600">卡券</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-warn-50 flex items-center justify-center">
+              <i data-lucide="file-text" class="w-5 h-5 text-warn"></i>
+            </div>
+            <span class="text-xs text-slate-600">发票</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
+              <i data-lucide="car" class="w-5 h-5 text-purple-500"></i>
+            </div>
+            <span class="text-xs text-slate-600">车辆</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center">
+              <i data-lucide="heart-pulse" class="w-5 h-5 text-rose-500"></i>
+            </div>
+            <span class="text-xs text-slate-600">电池卫士</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-cyan-50 flex items-center justify-center">
+              <i data-lucide="leaf" class="w-5 h-5 text-cyan-500"></i>
+            </div>
+            <span class="text-xs text-slate-600">碳积分</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+              <i data-lucide="headphones" class="w-5 h-5 text-amber-500"></i>
+            </div>
+            <span class="text-xs text-slate-600">客服</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-card">
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+              <i data-lucide="more-horizontal" class="w-5 h-5 text-slate-500"></i>
+            </div>
+            <span class="text-xs text-slate-600">更多</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Promo Cards -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl bg-gradient-to-br from-warn-50 to-amber-100 p-3">
+          <p class="text-xs text-warn font-medium">限时优惠</p>
+          <p class="text-sm font-semibold text-slate-900 mt-1">满30减5</p>
+          <p class="text-xs text-slate-500 mt-0.5">今日可用</p>
+        </div>
+        <div class="rounded-xl bg-gradient-to-br from-tech-50 to-blue-100 p-3">
+          <p class="text-xs text-tech font-medium">能量包预售</p>
+          <p class="text-sm font-semibold text-slate-900 mt-1">100度 ¥58</p>
+          <p class="text-xs text-slate-500 mt-0.5">锁定低价</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Tab Bar -->
+    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-2 pt-2 pb-6 flex items-end justify-between z-30">
+      <button class="flex-1 flex flex-col items-center gap-1 py-1 tab-active">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium">首页</span>
+      </button>
+      <button class="flex-1 flex flex-col items-center gap-1 py-1 tab-inactive">
+        <i data-lucide="tag" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium">省钱</span>
+      </button>
+      <div class="flex-1 flex justify-center -mt-6">
+        <button class="w-14 h-14 rounded-full scan-btn-outer flex items-center justify-center border-4 border-[#f5f7fa]">
+          <i data-lucide="scan-line" class="w-6 h-6 text-white"></i>
+        </button>
+      </div>
+      <button class="flex-1 flex flex-col items-center gap-1 py-1 tab-inactive">
+        <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium">订单</span>
+      </button>
+      <button class="flex-1 flex flex-col items-center gap-1 py-1 tab-inactive">
+        <i data-lucide="user" class="w-6 h-6"></i>
+        <span class="text-[10px] font-medium">我的</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
