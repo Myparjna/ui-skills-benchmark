@@ -1,22 +1,23 @@
-# 前端设计技能测评
+# UI Skills Benchmark
 
 > **测评领域**: 前端设计 (Frontend Design / Web Page)
-> **测评日期**: 2026-04-17 (首版) / 2026-06-02 (M3 加测)
-> **测评状态**: 已完成 (含 M3 加测)
+> **测评日期**: 2026-04-17 (首版) / 2026-06-02 (M3 加测) / 2026-06-10 (Kimi K2.6 + DeepSeek V4)
+> **测评状态**: 已完成
 > **线上展厅**: https://frontend-design-skills-showcase.pages.dev
+> **GitHub**: https://github.com/Myparjna/ui-skills-benchmark
 
 ---
 
 ## 项目概述
 
-本项目横向对比 **7 个 AI 模型** 在 **前端设计 skill** 驱动下的页面生成效果。
+本项目横向对比 **9 个 AI 模型** 在 **前端设计 skill** 驱动下的页面生成效果。
 
 - **测评目标**: 验证不同模型在使用相同/不同 design skill 时的页面生成质量差异
 - **测评维度**: 视觉表现、设计系统一致性、响应式适配、代码质量
-- **参与模型**: Kimi 2.5、Mimo V2 Omni、GLM、Gemini 3、Gemini 3.5、Mimo V2.5、MiniMax M3
+- **参与模型**: Kimi K2.6、Kimi 2.5、DeepSeek V4、Mimo V2.5、Mimo V2 Omni、GLM、MiniMax M3、Gemini 3、Gemini 3.5
 - **测评技能数**: 14 款公共 design skill + 各模型独占 skill
 - **测试场景**: 3 个产品场景（官网 / 小程序 / 后台）
-- **总页面数**: 262 个 HTML 页面
+- **总页面数**: 349 个 HTML 页面
 
 ---
 
@@ -37,17 +38,19 @@
 
 | 模型 | 页面数 | 公共 skill | 独占 skill | 备注 |
 |------|--------|------------|------------|------|
-| **Kimi 2.5** | 48 | 12 | 4 | Apple Inspired / Linear Inspired / 不使用skills / impeccable |
-| **Mimo V2 Omni** | 46 | 12 | 3 | Apple Inspired / Linear Inspired / 不使用skills |
-| **GLM** | 48 | 12 | 4 | Apple Inspired / Linear Inspired / impeccable / 不使用skills |
-| **Gemini 3** | 39 | 12 | 1 | 不使用skills |
-| **Gemini 3.5** | 33 | 12 | 1 | 不使用skills |
-| **Mimo V2.5** | 42 | 14 | 4 | impeccable / taste-skill / modern-web-design / superdesign |
-| **MiniMax M3** | 42 | 14 | 4 | impeccable / taste-skill / modern-web-design / superdesign |
+| **Kimi K2.6** | 42 | 14 | 0 | 14 款公共 skill，无独占 skill |
+| **Kimi 2.5** | 48 | 10 | 4 | Apple Inspired / Linear Inspired / 不使用skills / impeccable |
+| **DeepSeek V4** | 42 | 10 | 1 | 不使用skills（DeepSeek 独占演绎） |
+| **Mimo V2.5** | 42 | 10 | 4 | impeccable / taste-skill / modern-web-design / superdesign |
+| **Mimo V2 Omni** | 46 | 10 | 3 | Apple Inspired / Linear Inspired / 不使用skills |
+| **GLM** | 48 | 10 | 4 | Apple Inspired / Linear Inspired / impeccable / 不使用skills |
+| **MiniMax M3** | 42 | 10 | 4 | impeccable / taste-skill / modern-web-design / superdesign |
+| **Gemini 3** | 39 | 10 | 1 | 不使用skills |
+| **Gemini 3.5** | 33 | 10 | 1 | 不使用skills |
 
 - **最佳整体表现**: Kimi 2.5（页面数最多，独占 skill 效果好）
 - **最佳反 LLM 审美**: MiniMax M3 (impeccable / taste-skill / design-taste-frontend 三款反 LLM skill 渲染质量最高，0 console error)
-- **展厅部署**: 所有 262 页聚合展示于 Cloudflare Pages
+- **展厅部署**: 所有 349 页聚合展示于 Cloudflare Pages
 
 ---
 
