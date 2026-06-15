@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星空航空 | Starlight Airlines</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
+    <style>
+        :root {
+            --primary: #0A1F44;
+            --accent: #C9A961;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+        }
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: #050A15;
+            color: #E8E8E8;
+            overflow-x: hidden;
+        }
+        
+        /* Glass morphism effect */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card-hover:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                0 16px 48px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        
+        /* Hero gradient */
+        .hero-gradient {
+            background: 
+                radial-gradient(ellipse at top, rgba(10, 31, 68, 0.6) 0%, transparent 60%),
+                radial-gradient(ellipse at bottom, rgba(201, 169, 97, 0.15) 0%, transparent 50%),
+                linear-gradient(180deg, #050A15 0%, #0A1F44 100%);
+        }
+        
+        /* Gold accent */
+        .gold-text {
+            color: var(--accent);
+            background: linear-gradient(135deg, #C9A961 0%, #E8D4A0 50%, #C9A961 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gold-border {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(201, 169, 97, 0.3);
+        }
+        
+        /* Navigation */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Destination cards */
+        .destination-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+        }
+        
+        .destination-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.8) 100%);
+            z-index: 1;
+        }
+        
+        .destination-card img {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .destination-card:hover img {
+            transform: scale(1.08);
+        }
+        
+        /* Button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #C9A961 0%, #B89950 100%);
+            color: #0A1F44;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(201, 169, 97, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #E8E8E8;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Scroll animation */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Membership tiers */
+        .tier-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+        }
+        
+        /* Search bar */
+        .search-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent);
+            outline: none;
+        }
+        
+        /* Feature icon */
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(201, 169, 97, 0.15) 0%, rgba(201, 169, 97, 0.05) 100%);
+            border: 1px solid rgba(201, 169, 97, 0.2);
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-card">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="ri-flight-takeoff-line text-2xl gold-text"></i>
+                    <span class="text-xl font-semibold tracking-wide">星空航空</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#" class="nav-link text-sm">航班查询</a>
+                    <a href="#" class="nav-link text-sm">会员服务</a>
+                    <a href="#" class="nav-link text-sm">目的地</a>
+                    <a href="#" class="nav-link text-sm">关于我们</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="btn-secondary px-5 py-2 rounded-full text-sm">登录</button>
+                    <button class="btn-primary px-5 py-2 rounded-full text-sm">注册</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient min-h-screen flex items-center justify-center relative pt-20">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <h1 class="text-5xl md:text-7xl font-light mb-6 tracking-tight">
+                每一次起飞，都是一次全新的抵达
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+                星空航空，以星辰为引，带您飞往世界每一个角落
+            </p>
+            
+            <!-- Search Bar -->
+            <div class="glass-card rounded-3xl p-6 max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="text-xs text-gray-400 mb-2 block">出发地</label>
+                        <input type="text" placeholder="城市或机场" class="search-input w-full px-4 py-3 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 mb-2 block">目的地</label>
+                        <input type="text" placeholder="城市或机场" class="search-input w-full px-4 py-3 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 mb-2 block">出发日期</label>
+                        <input type="date" class="search-input w-full px-4 py-3 rounded-xl text-sm">
+                    </div>
+                    <div class="flex items-end">
+                        <button class="btn-primary w-full py-3 rounded-xl text-sm">
+                            <i class="ri-search-line mr-2"></i>搜索航班
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-6 mt-4 pt-4 border-t border-white/10">
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="trip-type" checked class="accent-amber-500">
+                        <span>单程</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="trip-type" class="accent-amber-500">
+                        <span>往返</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="trip-type" class="accent-amber-500">
+                        <span>多程</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+            <i class="ri-arrow-down-line text-2xl text-gray-500"></i>
+        </div>
+    </section>
+
+    <!-- Why Choose Us -->
+    <section class="py-24 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-light mb-4">为什么选择星空航空</h2>
+                <p class="text-gray-400">我们以卓越品质，定义航空出行新标准</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Safety -->
+                <div class="glass-card glass-card-hover rounded-3xl p-8 fade-in">
+                    <div class="feature-icon mb-6">
+                        <i class="ri-shield-check-line text-2xl gold-text"></i>
+                    </div>
+                    <h3 class="text-xl font-medium mb-3">安全至上</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        连续20年安全飞行记录，全球最高等级安全认证，每一次起降都经过严格把控
+                    </p>
+                </div>
+                
+                <!-- Routes -->
+                <div class="glass-card glass-card-hover rounded-3xl p-8 fade-in">
+                    <div class="feature-icon mb-6">
+                        <i class="ri-global-line text-2xl gold-text"></i>
+                    </div>
+                    <h3 class="text-xl font-medium mb-3">全球航线</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        覆盖120+国际目的地，300+航线网络，连接世界每一个角落
+                    </p>
+                </div>
+                
+                <!-- Cabin -->
+                <div class="glass-card glass-card-hover rounded-3xl p-8 fade-in">
+                    <div class="feature-icon mb-6">
+                        <i class="ri-armchair-line text-2xl gold-text"></i>
+                    </div>
+                    <h3 class="text-xl font-medium mb-3">尊享客舱</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        人体工学座椅，180°平躺商务舱，私人空间让旅途更舒适
+                    </p>
+                </div>
+                
+                <!-- Dining -->
+                <div class="glass-card glass-card-hover rounded-3xl p-8 fade-in">
+                    <div class="feature-icon mb-6">
+                        <i class="ri-restaurant-line text-2xl gold-text"></i>
+                    </div>
+                    <h3 class="text-xl font-medium mb-3">星级餐饮</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        米其林主厨团队精心打造，中西融合美食，云端之上的味觉盛宴
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Destinations -->
+    <section class="py-24 px-6 bg-gradient-to-b from-transparent via-[#0A1F44]/20 to-transparent">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-light mb-4">精选目的地</h2>
+                <p class="text-gray-400">探索世界，从星空开始</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Sanya -->
+                <div class="destination-card h-80 fade-in">
+                    <img src="https://images.unsplash.com/photo-1540979388789-6cee28a1a92e?w=800&h=600&fit=crop" 
+                         alt="三亚" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ri-map-pin-line text-amber-400"></i>
+                            <span class="text-sm text-gray-300">中国·海南</span>
+                        </div>
+                        <h3 class="text-2xl font-medium mb-2">三亚</h3>
+                        <p class="text-sm text-gray-300 mb-4">热带天堂，阳光沙滩</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-amber-400 font-semibold">¥1,280起</span>
+                            <button class="btn-secondary px-4 py-2 rounded-full text-xs">立即预订</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chengdu -->
+                <div class="destination-card h-80 fade-in">
+                    <img src="https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&h=600&fit=crop" 
+                         alt="成都" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ri-map-pin-line text-amber-400"></i>
+                            <span class="text-sm text-gray-300">中国·四川</span>
+                        </div>
+                        <h3 class="text-2xl font-medium mb-2">成都</h3>
+                        <p class="text-sm text-gray-300 mb-4">天府之国，美食之都</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-amber-400 font-semibold">¥980起</span>
+                            <button class="btn-secondary px-4 py-2 rounded-full text-xs">立即预订</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tokyo -->
+                <div class="destination-card h-80 fade-in">
+                    <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=600&fit=crop" 
+                         alt="东京" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ri-map-pin-line text-amber-400"></i>
+                            <span class="text-sm text-gray-300">日本</span>
+                        </div>
+                        <h3 class="text-2xl font-medium mb-2">东京</h3>
+                        <p class="text-sm text-gray-300 mb-4">现代与传统交融的魅力都市</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-amber-400 font-semibold">¥2,480起</span>
+                            <button class="btn-secondary px-4 py-2 rounded-full text-xs">立即预订</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dubai -->
+                <div class="destination-card h-80 fade-in">
+                    <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=600&fit=crop" 
+                         alt="迪拜" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ri-map-pin-line text-amber-400"></i>
+                            <span class="text-sm text-gray-300">阿联酋</span>
+                        </div>
+                        <h3 class="text-2xl font-medium mb-2">迪拜</h3>
+                        <p class="text-sm text-gray-300 mb-4">奢华之都，未来之城</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-amber-400 font-semibold">¥4,980起</span>
+                            <button class="btn-secondary px-4 py-2 rounded-full text-xs">立即预订</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paris -->
+                <div class="destination-card h-80 fade-in">
+                    <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=600&fit=crop" 
+                         alt="巴黎" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ri-map-pin-line text-amber-400"></i>
+                            <span class="text-sm text-gray-300">法国</span>
+                        </div>
+                        <h3 class="text-2xl font-medium mb-2">巴黎</h3>
+                        <p class="text-sm text-gray-300 mb-4">浪漫之都，艺术殿堂</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-amber-400 font-semibold">¥5,680起</span>
+                            <button class="btn-secondary px-4 py-2 rounded-full text-xs">立即预订</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- More destinations -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col items-center justify-center text-center fade-in">
+                    <i class="ri-compass-3-line text-4xl gold-text mb-4"></i>
+                    <h3 class="text-xl font-medium mb-2">探索更多目的地</h3>
+                    <p class="text-gray-400 text-sm mb-6">120+国际航线等您发现</p>
+                    <button class="btn-primary px-6 py-3 rounded-full text-sm">查看全部航线</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Membership -->
+    <section class="py-24 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-light mb-4">星辰会员计划</h2>
+                <p class="text-gray-400">尊享专属礼遇，让每一次飞行都更珍贵</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Silver -->
+                <div class="tier-card glass-card rounded-3xl p-8 fade-in">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center">
+                            <i class="ri-star-line text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-medium">银卡会员</h3>
+                            <p class="text-xs text-gray-400">Silver Member</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            基础里程累积
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            优先值机柜台
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            生日专属礼遇
+                        </li>
+                    </ul>
+                    <button class="btn-secondary w-full py-3 rounded-xl text-sm">加入会员</button>
+                </div>
+                
+                <!-- Gold -->
+                <div class="tier-card glass-card rounded-3xl p-8 relative fade-in">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs px-4 py-1 rounded-full">
+                        热门推荐
+                    </div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                            <i class="ri-star-fill text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-medium gold-text">金卡会员</h3>
+                            <p class="text-xs text-gray-400">Gold Member</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            1.5倍里程累积
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            贵宾休息室 access
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            免费升舱优先
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            专属客服通道
+                        </li>
+                    </ul>
+                    <button class="btn-primary w-full py-3 rounded-xl text-sm">立即升级</button>
+                </div>
+                
+                <!-- Platinum -->
+                <div class="tier-card glass-card rounded-3xl p-8 fade-in">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+                            <i class="ri-vip-diamond-fill text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-medium">铂金会员</h3>
+                            <p class="text-xs text-gray-400">Platinum Member</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            2倍里程累积
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            无限次贵宾休息室
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                             guaranteed 升舱
+                        </li>
+                        <li class="flex items-center gap-2 text-sm text-gray-300">
+                            <i class="ri-check-line text-green-400"></i>
+                            私人管家服务
+                        </li>
+                    </ul>
+                    <button class="btn-secondary w-full py-3 rounded-xl text-sm">了解详情</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Limited Offer Banner -->
+    <section class="py-16 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="glass-card rounded-3xl p-8 md:p-12 relative overflow-hidden fade-in">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-500/20 to-transparent rounded-full blur-3xl"></div>
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="ri-flashlight-fill text-amber-400"></i>
+                            <span class="text-amber-400 text-sm font-medium">限时优惠</span>
+                        </div>
+                        <h3 class="text-3xl font-light mb-3">春季特惠 · 最高立减¥2,000</h3>
+                        <p class="text-gray-400">预订指定航线，享受早鸟优惠价格。活动截止至3月31日</p>
+                    </div>
+                    <button class="btn-primary px-8 py-4 rounded-full text-sm whitespace-nowrap">
+                        立即抢购 <i class="ri-arrow-right-line ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 py-12 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="ri-flight-takeoff-line text-xl gold-text"></i>
+                        <span class="text-lg font-semibold">星空航空</span>
+                    </div>
+                    <p class="text-sm text-gray-400">以星辰为引，带您飞往世界每一个角落</p>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">快速链接</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">航班查询</a></li>
+                        <li><a href="#" class="hover:text-white transition">会员服务</a></li>
+                        <li><a href="#" class="hover:text-white transition">行李服务</a></li>
+                        <li><a href="#" class="hover:text-white transition">特殊协助</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">关于我们</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">公司简介</a></li>
+                        <li><a href="#" class="hover:text-white transition">机队信息</a></li>
+                        <li><a href="#" class="hover:text-white transition">安全记录</a></li>
+                        <li><a href="#" class="hover:text-white transition">加入我们</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">联系方式</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <i class="ri-customer-service-line"></i>
+                            400-888-8888
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="ri-mail-line"></i>
+                            service@starlight-air.com
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="ri-global-line"></i>
+                            www.starlight-air.com
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-gray-500">© 2026 星空航空 Starlight Airlines. All rights reserved.</p>
+                <div class="flex items-center gap-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ri-wechat-line text-xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ri-weibo-line text-xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ri-instagram-line text-xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ri-facebook-line text-xl"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animation
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

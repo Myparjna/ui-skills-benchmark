@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>充电桩 - 扫码充电 即扫即走</title>
+<style>
+:root {
+  --primary: oklch(0.55 0.2 250);
+  --primary-light: oklch(0.7 0.16 250);
+  --primary-dark: oklch(0.45 0.18 250);
+  --success: oklch(0.65 0.18 145);
+  --warning: oklch(0.75 0.16 75);
+  --danger: oklch(0.6 0.22 25);
+  --bg: oklch(0.97 0.01 250);
+  --surface: oklch(1 0 0);
+  --text-primary: oklch(0.2 0.02 250);
+  --text-secondary: oklch(0.45 0.02 250);
+  --text-tertiary: oklch(0.65 0.02 250);
+  --border: oklch(0.92 0.01 250);
+  --shadow-sm: 0 2px 8px oklch(0.2 0.02 250 / 0.06);
+  --shadow-md: 0 4px 16px oklch(0.2 0.02 250 / 0.1);
+  --shadow-lg: 0 8px 32px oklch(0.2 0.02 250 / 0.12);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Phone Frame */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg);
+  border-radius: 40px;
+  box-shadow: 0 24px 60px oklch(0 0 0 / 0.18), 0 0 0 10px #1a1a1a;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Status Bar */
+.status-bar {
+  height: 44px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Header */
+.header {
+  background: var(--surface);
+  padding: 12px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.location-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+  background: var(--border);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+}
+
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+}
+
+.search-bar svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+
+.search-bar input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Main Content */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px;
+}
+
+/* Map Section */
+.map-section {
+  position: relative;
+  height: 280px;
+  background: linear-gradient(135deg, oklch(0.92 0.02 250), oklch(0.88 0.03 250));
+  overflow: hidden;
+}
+
+.map-placeholder {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.map-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(oklch(0.85 0.02 250 / 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.85 0.02 250 / 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.map-pin {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  animation: bounce 2s infinite;
+}
+
+.map-pin svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+  transform: rotate(45deg);
+}
+
+.map-pin:nth-child(2) {
+  top: 30%;
+  left: 25%;
+  animation-delay: 0.3s;
+}
+
+.map-pin:nth-child(3) {
+  top: 50%;
+  right: 30%;
+  animation-delay: 0.6s;
+}
+
+.map-pin:nth-child(4) {
+  bottom: 25%;
+  left: 40%;
+  animation-delay: 0.9s;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: rotate(-45deg) translateY(0); }
+  50% { transform: rotate(-45deg) translateY(-8px); }
+}
+
+.map-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  border: none;
+  cursor: pointer;
+}
+
+.map-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 20px;
+  background: var(--surface);
+  margin-top: -20px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  position: relative;
+  z-index: 10;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.action-item:active {
+  transform: scale(0.95);
+  background: var(--border);
+}
+
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.action-icon.scan {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+}
+
+.action-icon.wallet {
+  background: oklch(0.92 0.08 145);
+  color: var(--success);
+}
+
+.action-icon.vehicle {
+  background: oklch(0.92 0.08 75);
+  color: var(--warning);
+}
+
+.action-icon.member {
+  background: oklch(0.92 0.08 25);
+  color: var(--danger);
+}
+
+.action-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Section */
+.section {
+  padding: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.section-more {
+  font-size: 13px;
+  color: var(--primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.section-more svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Membership Banner */
+.membership-banner {
+  margin: 0 20px 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, oklch(0.25 0.15 250), oklch(0.35 0.18 250));
+  border-radius: var(--radius-lg);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.membership-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, oklch(0.7 0.2 250 / 0.3), transparent);
+  border-radius: 50%;
+}
+
+.membership-content {
+  position: relative;
+  z-index: 1;
+}
+
+.membership-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: oklch(0.75 0.18 80);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.membership-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.membership-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.membership-desc {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-bottom: 16px;
+}
+
+.membership-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: white;
+  color: var(--primary-dark);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+
+.membership-btn:active {
+  transform: scale(0.95);
+}
+
+.membership-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Station List */
+.station-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.station-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.station-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+.station-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.station-info {
+  flex: 1;
+}
+
+.station-name {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.station-address {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.station-distance {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.station-stats {
+  display: flex;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.stat-dot.available {
+  background: var(--success);
+}
+
+.stat-dot.busy {
+  background: var(--warning);
+}
+
+.stat-dot.offline {
+  background: var(--text-tertiary);
+}
+
+.stat-item svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Bottom Navigation */
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.tab-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 0 0 3px 3px;
+}
+
+.tab-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+}
+
+.tab-item.active .tab-icon {
+  color: var(--primary);
+}
+
+.tab-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tab-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.tab-item.active .tab-label {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Scan Button (Center) */
+.scan-btn {
+  position: relative;
+  top: -20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.scan-btn:active {
+  transform: scale(0.92);
+}
+
+.scan-btn svg {
+  width: 26px;
+  height: 26px;
+  color: white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.station-card {
+  animation: fadeIn 300ms ease-out both;
+}
+
+.station-card:nth-child(1) { animation-delay: 50ms; }
+.station-card:nth-child(2) { animation-delay: 100ms; }
+.station-card:nth-child(3) { animation-delay: 150ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="status-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 21l-1.5-1.5c-4.5-3.5-7.5-6.5-7.5-10.5C3 6 5.5 3.5 8.5 3.5c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3 0 5.5 2.5 5.5 5.5 0 4-3 7-7.5 10.5L12 21z"/>
+      </svg>
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <rect x="2" y="6" width="20" height="12" rx="2"/>
+        <rect x="4" y="8" width="4" height="8"/>
+        <rect x="10" y="8" width="4" height="8"/>
+        <rect x="16" y="8" width="4" height="8"/>
+      </svg>
+    </span>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="location">
+        <svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span>杭州市</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
+        <button class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="搜索充电站、地址">
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <!-- Map Section -->
+    <div class="map-section">
+      <div class="map-placeholder">
+        <div class="map-grid"></div>
+        <div class="map-pin">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <div class="map-pin">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <div class="map-pin">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+      </div>
+      <div class="map-controls">
+        <button class="map-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button class="map-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button class="map-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <div class="action-item">
+        <div class="action-icon scan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
+        <span class="action-label">扫码充电</span>
+      </div>
+      <div class="action-item">
+        <div class="action-icon wallet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <span class="action-label">我的钱包</span>
+      </div>
+      <div class="action-item">
+        <div class="action-icon vehicle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V15a1 1 0 0 0 1 1h2"/>
+            <circle cx="6.5" cy="16.5" r="2.5"/>
+            <circle cx="16.5" cy="16.5" r="2.5"/>
+          </svg>
+        </div>
+        <span class="action-label">车辆管理</span>
+      </div>
+      <div class="action-item">
+        <div class="action-icon member">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <span class="action-label">PLUS会员</span>
+      </div>
+    </div>
+
+    <!-- PLUS Membership Banner -->
+    <div class="membership-banner">
+      <div class="membership-content">
+        <div class="membership-badge">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>PLUS会员</span>
+        </div>
+        <div class="membership-title">充电省更多</div>
+        <div class="membership-desc">最高享8折优惠，每月赠送充电券</div>
+        <a href="#" class="membership-btn">
+          <span>立即开通</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Nearby Stations -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">附近充电站</h2>
+        <a href="#" class="section-more">
+          查看全部
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      </div>
+      <div class="station-list">
+        <div class="station-card">
+          <div class="station-header">
+            <div class="station-info">
+              <div class="station-name">西湖文化广场充电站</div>
+              <div class="station-address">西湖区文三路 268号</div>
+            </div>
+            <div class="station-distance">0.8km</div>
+          </div>
+          <div class="station-stats">
+            <div class="stat-item">
+              <span class="stat-dot available"></span>
+              <span>可用 12</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot busy"></span>
+              <span>使用中 8</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot offline"></span>
+              <span>故障 0</span>
+            </div>
+            <div class="stat-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>120kW</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="station-card">
+          <div class="station-header">
+            <div class="station-info">
+              <div class="station-name">武林银泰充电站</div>
+              <div class="station-address">下城区延安路 530号</div>
+            </div>
+            <div class="station-distance">1.2km</div>
+          </div>
+          <div class="station-stats">
+            <div class="stat-item">
+              <span class="stat-dot available"></span>
+              <span>可用 6</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot busy"></span>
+              <span>使用中 14</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot offline"></span>
+              <span>故障 1</span>
+            </div>
+            <div class="stat-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>180kW</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="station-card">
+          <div class="station-header">
+            <div class="station-info">
+              <div class="station-name">黄龙体育中心充电站</div>
+              <div class="station-address">西湖区黄龙路 1号</div>
+            </div>
+            <div class="station-distance">2.1km</div>
+          </div>
+          <div class="station-stats">
+            <div class="stat-item">
+              <span class="stat-dot available"></span>
+              <span>可用 20</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot busy"></span>
+              <span>使用中 5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-dot offline"></span>
+              <span>故障 0</span>
+            </div>
+            <div class="stat-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>240kW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item active">
+      <div class="tab-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="tab-label">首页</span>
+    </div>
+    <div class="tab-item">
+      <div class="tab-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <span class="tab-label">省钱</span>
+    </div>
+    <div class="scan-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+    <div class="tab-item">
+      <div class="tab-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <span class="tab-label">订单</span>
+    </div>
+    <div class="tab-item">
+      <div class="tab-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span class="tab-label">我的</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+const tabs = document.querySelectorAll('.tab-item');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Scan button
+const scanBtn = document.querySelector('.scan-btn');
+scanBtn.addEventListener('click', () => {
+  alert('打开扫码功能');
+});
+
+// Station card click
+const stationCards = document.querySelectorAll('.station-card');
+stationCards.forEach(card => {
+  card.addEventListener('click', () => {
+    const name = card.querySelector('.station-name').textContent;
+    alert(`查看 ${name} 详情`);
+  });
+});
+
+// Action items
+const actionItems = document.querySelectorAll('.action-item');
+actionItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const label = item.querySelector('.action-label').textContent;
+    alert(`打开${label}`);
+  });
+});
+
+// Membership button
+const membershipBtn = document.querySelector('.membership-btn');
+membershipBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  alert('开通PLUS会员');
+});
+</script>
+
+</body>
+</html>

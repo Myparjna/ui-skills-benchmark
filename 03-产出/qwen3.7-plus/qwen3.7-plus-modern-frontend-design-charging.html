@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>闪充出行 - 充电桩小程序</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* ── COLORS (OKLCH) ───────────────── */
+      --bg: oklch(97% 0.005 260);
+      --surface: oklch(100% 0 0);
+      --surface-alt: oklch(95% 0.008 260);
+      --fg: oklch(15% 0.02 260);
+      --fg-muted: oklch(45% 0.02 260);
+      --fg-dim: oklch(65% 0.01 260);
+      --primary: oklch(55% 0.22 250);
+      --primary-up: oklch(60% 0.22 250);
+      --primary-light: oklch(92% 0.05 250);
+      --primary-glow: oklch(55% 0.22 250 / 0.3);
+      --ok: oklch(62% 0.18 155);
+      --ok-light: oklch(92% 0.05 155);
+      --warn: oklch(75% 0.19 65);
+      --warn-light: oklch(94% 0.05 65);
+      --err: oklch(62% 0.22 25);
+      --err-light: oklch(94% 0.03 25);
+      --border: oklch(90% 0.01 260);
+      --border-faint: oklch(93% 0.005 260);
+      --shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.06);
+      --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.08);
+      --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.12);
+
+      /* ── TYPOGRAPHY ──────────────────── */
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+      /* ── RADIUS ──────────────────────── */
+      --r-xs: 0.25rem;
+      --r-sm: 0.5rem;
+      --r: 0.75rem;
+      --r-lg: 1rem;
+      --r-xl: 1.25rem;
+      --r-2xl: 1.5rem;
+      --r-full: 9999px;
+
+      /* ── MOTION ──────────────────────── */
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --dur-fast: 150ms;
+      --dur-base: 250ms;
+      --dur-slow: 400ms;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      background: oklch(88% 0.01 260);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: var(--space-4, 1rem);
+    }
+
+    /* ── PHONE FRAME ───────────────────── */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 2.5rem;
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow-lg), 0 0 0 8px oklch(20% 0.02 260);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── STATUS BAR ────────────────────── */
+    .status-bar {
+      height: 54px;
+      padding: 14px 28px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--fg);
+      flex-shrink: 0;
+    }
+
+    .status-bar-right {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .battery-icon {
+      width: 24px;
+      height: 12px;
+      border: 1.5px solid var(--fg);
+      border-radius: 3px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 2px;
+    }
+
+    .battery-icon::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      width: 2px;
+      height: 6px;
+      background: var(--fg);
+      border-radius: 0 1px 1px 0;
+    }
+
+    .battery-level {
+      width: 75%;
+      height: 100%;
+      background: var(--ok);
+      border-radius: 1px;
+    }
+
+    /* ── MAIN CONTENT ──────────────────── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .main-content::-webkit-scrollbar { display: none; }
+
+    /* ── TAB PAGES ─────────────────────── */
+    .tab-page {
+      display: none;
+      min-height: 100%;
+    }
+
+    .tab-page.active { display: block; }
+
+    /* ── MAP AREA ──────────────────────── */
+    .map-area {
+      height: 320px;
+      background: oklch(90% 0.015 250);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(oklch(0% 0 0 / 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(0% 0 0 / 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .map-road {
+      position: absolute;
+      background: oklch(95% 0.01 250);
+      border-radius: 2px;
+    }
+
+    .map-road.h1 { top: 80px; left: 0; right: 0; height: 12px; }
+    .map-road.h2 { top: 200px; left: 0; right: 0; height: 8px; }
+    .map-road.v1 { left: 100px; top: 0; bottom: 0; width: 10px; }
+    .map-road.v2 { left: 260px; top: 0; bottom: 0; width: 12px; }
+    .map-road.v3 { left: 180px; top: 40px; bottom: 60px; width: 6px; }
+
+    .map-pin {
+      position: absolute;
+      width: 36px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform var(--dur-fast) var(--ease-spring);
+    }
+
+    .map-pin:hover { transform: scale(1.15); }
+
+    .map-pin-head {
+      width: 36px;
+      height: 36px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    .map-pin-head span {
+      transform: rotate(45deg);
+      font-size: 0.875rem;
+    }
+
+    .map-pin.available .map-pin-head { background: var(--primary); }
+    .map-pin.busy .map-pin-head { background: var(--warn); }
+    .map-pin.offline .map-pin-head { background: var(--fg-dim); }
+
+    .map-pin-label {
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: var(--fg);
+      background: var(--surface);
+      padding: 1px 4px;
+      border-radius: var(--r-xs);
+      margin-top: 2px;
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+    }
+
+    .map-user {
+      position: absolute;
+      top: 150px;
+      left: 170px;
+      width: 20px;
+      height: 20px;
+      background: var(--primary);
+      border: 3px solid var(--surface);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--primary-glow), var(--shadow-md);
+      animation: user-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes user-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px var(--primary-glow), var(--shadow-md); }
+      50% { box-shadow: 0 0 0 8px oklch(55% 0.22 250 / 0.15), var(--shadow-md); }
+    }
+
+    .map-controls {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .map-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--surface);
+      border: none;
+      border-radius: var(--r);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      cursor: pointer;
+      color: var(--fg);
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .map-btn:active {
+      transform: scale(0.92);
+      background: var(--surface-alt);
+    }
+
+    .map-locate {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+    }
+
+    .map-search-bar {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 68px;
+      height: 40px;
+      background: var(--surface);
+      border-radius: var(--r-full);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px;
+      color: var(--fg-dim);
+      font-size: 0.875rem;
+    }
+
+    /* ── STATION LIST ──────────────────── */
+    .station-list {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .station-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .station-list-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .station-filter {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-chip {
+      padding: 4px 12px;
+      border-radius: var(--r-full);
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .filter-chip.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .station-card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-faint);
+      display: flex;
+      gap: 14px;
+      transition: all var(--dur-fast) var(--ease-out);
+      cursor: pointer;
+    }
+
+    .station-card:active {
+      transform: scale(0.98);
+      box-shadow: var(--shadow-md);
+    }
+
+    .station-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .station-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+
+    .station-address {
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      margin-bottom: 8px;
+    }
+
+    .station-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .station-tag {
+      padding: 2px 8px;
+      border-radius: var(--r-full);
+      font-size: 0.6875rem;
+      font-weight: 500;
+    }
+
+    .station-tag.fast {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .station-tag.available {
+      background: var(--ok-light);
+      color: var(--ok);
+    }
+
+    .station-tag.discount {
+      background: var(--warn-light);
+      color: oklch(55% 0.19 65);
+    }
+
+    .station-price {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .station-price-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .station-price-unit {
+      font-size: 0.6875rem;
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+
+    .station-price-original {
+      font-size: 0.75rem;
+      color: var(--fg-dim);
+      text-decoration: line-through;
+      margin-top: 2px;
+    }
+
+    /* ── SCAN PAGE ─────────────────────── */
+    .scan-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 20px;
+    }
+
+    .scan-area {
+      width: 240px;
+      height: 240px;
+      border-radius: var(--r-2xl);
+      background: var(--fg);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .scan-corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--primary-up);
+    }
+
+    .scan-corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
+    .scan-corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
+    .scan-corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
+    .scan-corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
+
+    .scan-line {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary-up), transparent);
+      animation: scan-move 2.5s ease-in-out infinite;
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    @keyframes scan-move {
+      0%, 100% { top: 20px; }
+      50% { top: calc(100% - 20px); }
+    }
+
+    .scan-hint {
+      font-size: 0.9375rem;
+      color: var(--fg-muted);
+      margin-bottom: 32px;
+    }
+
+    .scan-actions {
+      display: flex;
+      gap: 32px;
+    }
+
+    .scan-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .scan-action-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--r-xl);
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .scan-action-icon:active {
+      transform: scale(0.92);
+    }
+
+    .scan-action-label {
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      font-weight: 500;
+    }
+
+    /* ── CHARGING STATUS ───────────────── */
+    .charging-status {
+      width: 100%;
+      background: var(--surface);
+      border-radius: var(--r-2xl);
+      padding: 20px;
+      margin-top: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-faint);
+    }
+
+    .charging-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .charging-station {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .charging-badge {
+      padding: 4px 10px;
+      border-radius: var(--r-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--ok-light);
+      color: var(--ok);
+    }
+
+    .charging-visual {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .charging-battery {
+      flex: 1;
+      height: 48px;
+      background: var(--surface-alt);
+      border-radius: var(--r);
+      position: relative;
+      overflow: hidden;
+      border: 2px solid var(--border);
+    }
+
+    .charging-fill {
+      height: 100%;
+      width: 68%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-up));
+      border-radius: calc(var(--r) - 2px);
+      position: relative;
+      animation: charge-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes charge-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+
+    .charging-percent {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .charging-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .charging-detail {
+      text-align: center;
+    }
+
+    .charging-detail-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .charging-detail-label {
+      font-size: 0.6875rem;
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+
+    /* ── ORDERS PAGE ───────────────────── */
+    .orders-page {
+      padding: 20px 16px;
+    }
+
+    .orders-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      background: var(--surface-alt);
+      border-radius: var(--r);
+      padding: 3px;
+    }
+
+    .order-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--fg-muted);
+      border-radius: calc(var(--r) - 2px);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .order-tab.active {
+      background: var(--surface);
+      color: var(--fg);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .order-card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-faint);
+    }
+
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .order-station-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .order-status {
+      padding: 3px 10px;
+      border-radius: var(--r-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .order-status.charging {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .order-status.done {
+      background: var(--ok-light);
+      color: var(--ok);
+    }
+
+    .order-status.pending {
+      background: var(--warn-light);
+      color: oklch(55% 0.19 65);
+    }
+
+    .order-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .order-time {
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+    }
+
+    .order-cost {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .order-energy {
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      margin-top: 4px;
+    }
+
+    /* ── PROFILE PAGE ──────────────────── */
+    .profile-page {
+      padding: 20px 16px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-up));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .profile-name {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .profile-id {
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+
+    .profile-membership {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: var(--r-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .profile-membership.gold {
+      background: oklch(92% 0.08 85);
+      color: oklch(55% 0.18 75);
+    }
+
+    /* ── WALLET CARD ───────────────────── */
+    .wallet-card {
+      background: linear-gradient(135deg, var(--primary), oklch(48% 0.24 260));
+      border-radius: var(--r-2xl);
+      padding: 20px;
+      color: white;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wallet-card::after {
+      content: '';
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: oklch(100% 0 0 / 0.08);
+    }
+
+    .wallet-label {
+      font-size: 0.8125rem;
+      opacity: 0.8;
+      margin-bottom: 4px;
+    }
+
+    .wallet-balance {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .wallet-balance span {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .wallet-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .wallet-btn {
+      padding: 8px 20px;
+      border-radius: var(--r-full);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .wallet-btn.primary {
+      background: white;
+      color: var(--primary);
+    }
+
+    .wallet-btn.secondary {
+      background: oklch(100% 0 0 / 0.2);
+      color: white;
+    }
+
+    .wallet-btn:active { transform: scale(0.95); }
+
+    /* ── PLUS MEMBERSHIP ───────────────── */
+    .plus-card {
+      background: linear-gradient(135deg, oklch(25% 0.05 75), oklch(18% 0.06 75));
+      border-radius: var(--r-2xl);
+      padding: 20px;
+      color: oklch(90% 0.08 85);
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .plus-card::before {
+      content: 'PLUS';
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      opacity: 0.4;
+    }
+
+    .plus-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .plus-desc {
+      font-size: 0.8125rem;
+      opacity: 0.7;
+      margin-bottom: 12px;
+    }
+
+    .plus-tiers {
+      display: flex;
+      gap: 8px;
+    }
+
+    .plus-tier {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: var(--r);
+      background: oklch(100% 0 0 / 0.08);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+      border: 1px solid transparent;
+    }
+
+    .plus-tier.active {
+      border-color: oklch(78% 0.14 75);
+      background: oklch(100% 0 0 / 0.12);
+    }
+
+    .plus-tier-icon {
+      font-size: 1.25rem;
+      margin-bottom: 4px;
+    }
+
+    .plus-tier-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .plus-tier-price {
+      font-size: 0.6875rem;
+      opacity: 0.6;
+      margin-top: 2px;
+    }
+
+    /* ── MENU LIST ─────────────────────── */
+    .menu-section {
+      margin-bottom: 16px;
+    }
+
+    .menu-section-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+      padding: 0 4px;
+      margin-bottom: 8px;
+    }
+
+    .menu-list {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-faint);
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background var(--dur-fast) var(--ease-out);
+      border-bottom: 1px solid var(--border-faint);
+    }
+
+    .menu-item:last-child { border-bottom: none; }
+
+    .menu-item:active { background: var(--surface-alt); }
+
+    .menu-item-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      flex-shrink: 0;
+    }
+
+    .menu-item-icon.blue { background: var(--primary-light); }
+    .menu-item-icon.green { background: var(--ok-light); }
+    .menu-item-icon.yellow { background: var(--warn-light); }
+    .menu-item-icon.red { background: var(--err-light); }
+
+    .menu-item-text {
+      flex: 1;
+    }
+
+    .menu-item-label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--fg);
+    }
+
+    .menu-item-sub {
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      margin-top: 1px;
+    }
+
+    .menu-item-arrow {
+      color: var(--fg-dim);
+      font-size: 0.875rem;
+    }
+
+    /* ── SAVINGS PAGE ──────────────────── */
+    .savings-page {
+      padding: 20px 16px;
+    }
+
+    .savings-banner {
+      background: linear-gradient(135deg, var(--primary), oklch(48% 0.24 260));
+      border-radius: var(--r-2xl);
+      padding: 20px;
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .savings-banner::after {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: oklch(100% 0 0 / 0.06);
+      top: -80px;
+      right: -60px;
+    }
+
+    .savings-total-label {
+      font-size: 0.8125rem;
+      opacity: 0.8;
+    }
+
+    .savings-total-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 4px 0 12px;
+    }
+
+    .savings-total-value span {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .savings-stats {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .savings-stat {
+      text-align: center;
+    }
+
+    .savings-stat-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+
+    .savings-stat-label {
+      font-size: 0.6875rem;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .savings-tips {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .savings-tip {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-faint);
+    }
+
+    .savings-tip-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--r-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .savings-tip-icon.time { background: var(--primary-light); }
+    .savings-tip-icon.offpeak { background: var(--ok-light); }
+    .savings-tip-icon.member { background: oklch(92% 0.08 85); }
+
+    .savings-tip-text {
+      flex: 1;
+    }
+
+    .savings-tip-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .savings-tip-desc {
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+
+    /* ── TAB BAR ───────────────────────── */
+    .tab-bar {
+      height: 83px;
+      background: var(--surface);
+      border-top: 1px solid var(--border-faint);
+      display: flex;
+      align-items: flex-start;
+      padding-top: 8px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .tab-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      border-radius: var(--r);
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .tab-label {
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: var(--fg-dim);
+      transition: color var(--dur-fast) var(--ease-out);
+    }
+
+    .tab-item.active .tab-icon {
+      color: var(--primary);
+    }
+
+    .tab-item.active .tab-label {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab-scan {
+      position: relative;
+      top: -16px;
+    }
+
+    .tab-scan .tab-icon {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-up));
+      border-radius: var(--r-xl);
+      box-shadow: 0 4px 16px var(--primary-glow);
+      color: white;
+      font-size: 1.5rem;
+    }
+
+    .tab-scan .tab-label {
+      margin-top: 2px;
+    }
+
+    /* ── REDUCED MOTION ────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-bar-right">
+        <span style="font-size:0.75rem">5G</span>
+        <div class="battery-icon">
+          <div class="battery-level"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Page: Home (Map) -->
+      <div class="tab-page active" id="page-home">
+        <div class="map-area">
+          <div class="map-grid"></div>
+          <div class="map-road h1"></div>
+          <div class="map-road h2"></div>
+          <div class="map-road v1"></div>
+          <div class="map-road v2"></div>
+          <div class="map-road v3"></div>
+
+          <div class="map-user"></div>
+
+          <div class="map-pin available" style="top:60px;left:80px">
+            <div class="map-pin-head"><span>⚡</span></div>
+            <div class="map-pin-label">8桩空闲</div>
+          </div>
+          <div class="map-pin available" style="top:120px;left:240px">
+            <div class="map-pin-head"><span>⚡</span></div>
+            <div class="map-pin-label">12桩空闲</div>
+          </div>
+          <div class="map-pin busy" style="top:230px;left:130px">
+            <div class="map-pin-head"><span>⚡</span></div>
+            <div class="map-pin-label">3桩空闲</div>
+          </div>
+          <div class="map-pin available" style="top:180px;left:310px">
+            <div class="map-pin-head"><span>⚡</span></div>
+            <div class="map-pin-label">6桩空闲</div>
+          </div>
+          <div class="map-pin offline" style="top:50px;left:320px">
+            <div class="map-pin-head"><span>⚡</span></div>
+            <div class="map-pin-label">维护中</div>
+          </div>
+
+          <div class="map-search-bar">
+            <span>🔍</span>
+            <span>搜索充电站</span>
+          </div>
+
+          <div class="map-controls">
+            <button class="map-btn">+</button>
+            <button class="map-btn">−</button>
+          </div>
+          <div class="map-controls map-locate">
+            <button class="map-btn">📍</button>
+          </div>
+        </div>
+
+        <div class="station-list">
+          <div class="station-list-header">
+            <span class="station-list-title">附近站点</span>
+            <div class="station-filter">
+              <span class="filter-chip active">推荐</span>
+              <span class="filter-chip">最近</span>
+              <span class="filter-chip">低价</span>
+            </div>
+          </div>
+
+          <div class="station-card">
+            <div class="station-info">
+              <div class="station-name">西湖文化广场充电站</div>
+              <div class="station-address">西湖区文化广场B2层 · 0.8km</div>
+              <div class="station-tags">
+                <span class="station-tag fast">快充</span>
+                <span class="station-tag available">8桩可用</span>
+                <span class="station-tag discount">限时优惠</span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="station-price-value">¥0.68</div>
+              <div class="station-price-unit">/度</div>
+              <div class="station-price-original">¥0.85</div>
+            </div>
+          </div>
+
+          <div class="station-card">
+            <div class="station-info">
+              <div class="station-name">滨江银泰充电站</div>
+              <div class="station-address">滨江区江南大道288号 · 1.2km</div>
+              <div class="station-tags">
+                <span class="station-tag fast">快充</span>
+                <span class="station-tag available">12桩可用</span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="station-price-value">¥0.72</div>
+              <div class="station-price-unit">/度</div>
+            </div>
+          </div>
+
+          <div class="station-card">
+            <div class="station-info">
+              <div class="station-name">城西银泰充电站</div>
+              <div class="station-address">拱墅区丰潭路388号 · 2.1km</div>
+              <div class="station-tags">
+                <span class="station-tag fast">快充</span>
+                <span class="station-tag available">3桩可用</span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="station-price-value">¥0.75</div>
+              <div class="station-price-unit">/度</div>
+            </div>
+          </div>
+
+          <div class="station-card">
+            <div class="station-info">
+              <div class="station-name">钱江新城CBD充电站</div>
+              <div class="station-address">上城区钱江路100号 · 3.5km</div>
+              <div class="station-tags">
+                <span class="station-tag fast">超充</span>
+                <span class="station-tag available">6桩可用</span>
+                <span class="station-tag discount">PLUS折扣</span>
+              </div>
+            </div>
+            <div class="station-price">
+              <div class="station-price-value">¥0.65</div>
+              <div class="station-price-unit">/度</div>
+              <div class="station-price-original">¥0.95</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Savings -->
+      <div class="tab-page" id="page-savings">
+        <div class="savings-page">
+          <div class="savings-banner">
+            <div class="savings-total-label">累计省钱</div>
+            <div class="savings-total-value">¥328<span>.50</span></div>
+            <div class="savings-stats">
+              <div class="savings-stat">
+                <div class="savings-stat-value">47</div>
+                <div class="savings-stat-label">充电次数</div>
+              </div>
+              <div class="savings-stat">
+                <div class="savings-stat-value">682</div>
+                <div class="savings-stat-label">总度数(kWh)</div>
+              </div>
+              <div class="savings-stat">
+                <div class="savings-stat-value">¥7.0</div>
+                <div class="savings-stat-label">平均每度省</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:0.9375rem;font-weight:700;color:var(--fg);margin-bottom:12px">省钱攻略</div>
+          <div class="savings-tips">
+            <div class="savings-tip">
+              <div class="savings-tip-icon time">⏰</div>
+              <div class="savings-tip-text">
+                <div class="savings-tip-title">谷电时段充电</div>
+                <div class="savings-tip-desc">23:00-07:00 电费低至0.35元/度，省一半</div>
+              </div>
+            </div>
+            <div class="savings-tip">
+              <div class="savings-tip-icon offpeak">📊</div>
+              <div class="savings-tip-text">
+                <div class="savings-tip-title">错峰智能推荐</div>
+                <div class="savings-tip-desc">系统自动推荐附近低价站点和最优时段</div>
+              </div>
+            </div>
+            <div class="savings-tip">
+              <div class="savings-tip-icon member">👑</div>
+              <div class="savings-tip-text">
+                <div class="savings-tip-title">PLUS会员折扣</div>
+                <div class="savings-tip-desc">金卡会员全场充电享8.5折优惠</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Scan -->
+      <div class="tab-page" id="page-scan">
+        <div class="scan-page">
+          <div class="scan-area">
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="scan-hint">将二维码放入框内，自动识别充电</div>
+          <div class="scan-actions">
+            <div class="scan-action">
+              <div class="scan-action-icon">📷</div>
+              <div class="scan-action-label">相册</div>
+            </div>
+            <div class="scan-action">
+              <div class="scan-action-icon">💡</div>
+              <div class="scan-action-label">手电筒</div>
+            </div>
+            <div class="scan-action">
+              <div class="scan-action-icon">🔢</div>
+              <div class="scan-action-label">输入编号</div>
+            </div>
+          </div>
+
+          <div class="charging-status">
+            <div class="charging-header">
+              <span class="charging-station">西湖文化广场 · A08号桩</span>
+              <span class="charging-badge">充电中</span>
+            </div>
+            <div class="charging-visual">
+              <div class="charging-battery">
+                <div class="charging-fill"></div>
+              </div>
+              <div class="charging-percent">68%</div>
+            </div>
+            <div class="charging-details">
+              <div class="charging-detail">
+                <div class="charging-detail-value">42min</div>
+                <div class="charging-detail-label">已充时间</div>
+              </div>
+              <div class="charging-detail">
+                <div class="charging-detail-value">28.6kWh</div>
+                <div class="charging-detail-label">已充电量</div>
+              </div>
+              <div class="charging-detail">
+                <div class="charging-detail-value">¥19.4</div>
+                <div class="charging-detail-label">当前费用</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Orders -->
+      <div class="tab-page" id="page-orders">
+        <div class="orders-page">
+          <div class="orders-tabs">
+            <div class="order-tab active">全部</div>
+            <div class="order-tab">充电中</div>
+            <div class="order-tab">已完成</div>
+            <div class="order-tab">待支付</div>
+          </div>
+
+          <div class="order-card">
+            <div class="order-top">
+              <span class="order-station-name">西湖文化广场 · A08</span>
+              <span class="order-status charging">充电中</span>
+            </div>
+            <div class="order-info-row">
+              <span class="order-time">今天 14:23 开始</span>
+              <span class="order-cost">¥19.40</span>
+            </div>
+            <div class="order-energy">已充 28.6kWh · 68%</div>
+          </div>
+
+          <div class="order-card">
+            <div class="order-top">
+              <span class="order-station-name">滨江银泰 · B03</span>
+              <span class="order-status done">已完成</span>
+            </div>
+            <div class="order-info-row">
+              <span class="order-time">昨天 22:15 - 23:48</span>
+              <span class="order-cost">¥31.20</span>
+            </div>
+            <div class="order-energy">45.2kWh · 100%</div>
+          </div>
+
+          <div class="order-card">
+            <div class="order-top">
+              <span class="order-station-name">城西银泰 · C12</span>
+              <span class="order-status done">已完成</span>
+            </div>
+            <div class="order-info-row">
+              <span class="order-time">6月13日 08:30 - 09:45</span>
+              <span class="order-cost">¥22.80</span>
+            </div>
+            <div class="order-energy">32.1kWh · 95%</div>
+          </div>
+
+          <div class="order-card">
+            <div class="order-top">
+              <span class="order-station-name">钱江新城CBD · A01</span>
+              <span class="order-status pending">待支付</span>
+            </div>
+            <div class="order-info-row">
+              <span class="order-time">6月12日 16:00 - 17:30</span>
+              <span class="order-cost">¥38.50</span>
+            </div>
+            <div class="order-energy">52.8kWh · 100%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Profile -->
+      <div class="tab-page" id="page-profile">
+        <div class="profile-page">
+          <div class="profile-header">
+            <div class="profile-avatar">陈</div>
+            <div>
+              <div class="profile-name">陈明远</div>
+              <div class="profile-id">ID: EV_202403856</div>
+              <div class="profile-membership gold">👑 金卡会员</div>
+            </div>
+          </div>
+
+          <div class="wallet-card">
+            <div class="wallet-label">钱包余额</div>
+            <div class="wallet-balance"><span>¥</span>256<span>.80</span></div>
+            <div class="wallet-actions">
+              <button class="wallet-btn primary">充值</button>
+              <button class="wallet-btn secondary">账单明细</button>
+            </div>
+          </div>
+
+          <div class="plus-card">
+            <div class="plus-title">闪充 PLUS 会员</div>
+            <div class="plus-desc">解锁更多充电优惠与专属权益</div>
+            <div class="plus-tiers">
+              <div class="plus-tier">
+                <div class="plus-tier-icon">🥈</div>
+                <div class="plus-tier-name">银卡</div>
+                <div class="plus-tier-price">¥9.9/月</div>
+              </div>
+              <div class="plus-tier active">
+                <div class="plus-tier-icon">🥇</div>
+                <div class="plus-tier-name">金卡</div>
+                <div class="plus-tier-price">¥19.9/月</div>
+              </div>
+              <div class="plus-tier">
+                <div class="plus-tier-icon">💎</div>
+                <div class="plus-tier-name">V1</div>
+                <div class="plus-tier-price">¥39.9/月</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-section">
+            <div class="menu-section-title">车辆管理</div>
+            <div class="menu-list">
+              <div class="menu-item">
+                <div class="menu-item-icon blue">🚗</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-label">我的车辆</div>
+                  <div class="menu-item-sub">比亚迪 汉EV · 浙A·D88562</div>
+                </div>
+                <span class="menu-item-arrow">›</span>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon green">📊</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-label">充电报告</div>
+                  <div class="menu-item-sub">本月充电47次，共682度</div>
+                </div>
+                <span class="menu-item-arrow">›</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-section">
+            <div class="menu-section-title">更多服务</div>
+            <div class="menu-list">
+              <div class="menu-item">
+                <div class="menu-item-icon yellow">🎫</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-label">优惠券</div>
+                  <div class="menu-item-sub">3张可用</div>
+                </div>
+                <span class="menu-item-arrow">›</span>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon blue">📍</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-label">收藏站点</div>
+                  <div class="menu-item-sub">已收藏5个站点</div>
+                </div>
+                <span class="menu-item-arrow">›</span>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-icon red">📞</div>
+                <div class="menu-item-text">
+                  <div class="menu-item-label">客服与帮助</div>
+                  <div class="menu-item-sub">在线客服 · 常见问题</div>
+                </div>
+                <span class="menu-item-arrow">›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <div class="tab-item active" data-page="home">
+        <div class="tab-icon">🗺️</div>
+        <div class="tab-label">首页</div>
+      </div>
+      <div class="tab-item" data-page="savings">
+        <div class="tab-icon">💰</div>
+        <div class="tab-label">省钱</div>
+      </div>
+      <div class="tab-item tab-scan" data-page="scan">
+        <div class="tab-icon">⚡</div>
+        <div class="tab-label">扫码</div>
+      </div>
+      <div class="tab-item" data-page="orders">
+        <div class="tab-icon">📋</div>
+        <div class="tab-label">订单</div>
+      </div>
+      <div class="tab-item" data-page="profile">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">我的</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab navigation
+    const tabItems = document.querySelectorAll('.tab-item');
+    const tabPages = document.querySelectorAll('.tab-page');
+
+    tabItems.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const page = tab.dataset.page;
+        tabItems.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        tabPages.forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${page}`).classList.add('active');
+      });
+    });
+
+    // Filter chips
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+
+    // Order tabs
+    document.querySelectorAll('.order-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    // PLUS tiers
+    document.querySelectorAll('.plus-tier').forEach(tier => {
+      tier.addEventListener('click', () => {
+        document.querySelectorAll('.plus-tier').forEach(t => t.classList.remove('active'));
+        tier.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

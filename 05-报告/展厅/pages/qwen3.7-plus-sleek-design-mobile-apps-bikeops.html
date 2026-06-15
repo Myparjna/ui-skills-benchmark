@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享两轮运营管理后台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1677FF;
+            --primary-light: #E6F4FF;
+            --primary-dark: #0958D9;
+            --success: #52C41A;
+            --success-light: #F6FFED;
+            --warning: #FAAD14;
+            --warning-light: #FFFBE6;
+            --danger: #FF4D4F;
+            --danger-light: #FFF2F0;
+            --text: #262626;
+            --text-secondary: #8C8C8C;
+            --bg: #F5F5F5;
+            --white: #FFFFFF;
+            --border: #F0F0F0;
+            --sidebar-width: 240px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #001529;
+            color: var(--white);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            padding: 16px 0;
+        }
+
+        .menu-group {
+            margin-bottom: 8px;
+        }
+
+        .menu-group-title {
+            padding: 8px 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .menu-item.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .menu-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            height: 64px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-current {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-action {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 18px;
+            position: relative;
+        }
+
+        .header-action:hover {
+            background: var(--bg);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .user-profile:hover {
+            background: var(--bg);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Dashboard Content */
+        .dashboard {
+            padding: 24px;
+            flex: 1;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .kpi-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .kpi-icon.blue {
+            background: var(--primary-light);
+        }
+
+        .kpi-icon.green {
+            background: var(--success-light);
+        }
+
+        .kpi-icon.orange {
+            background: var(--warning-light);
+        }
+
+        .kpi-icon.red {
+            background: var(--danger-light);
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        /* Fleet Health */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .fleet-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+
+        .fleet-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .fleet-icon.available {
+            background: var(--success-light);
+        }
+
+        .fleet-icon.in-use {
+            background: var(--primary-light);
+        }
+
+        .fleet-icon.low-battery {
+            background: var(--warning-light);
+        }
+
+        .fleet-icon.faulty {
+            background: var(--danger-light);
+        }
+
+        .fleet-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .fleet-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: var(--bg);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .chart-btn.active {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .chart-placeholder {
+            height: 240px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Battery Distribution */
+        .battery-chart {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 20px;
+            gap: 8px;
+        }
+
+        .battery-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar {
+            width: 100%;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+        }
+
+        .bar-0-20 {
+            background: var(--danger);
+            height: 40px;
+        }
+
+        .bar-20-40 {
+            background: var(--warning);
+            height: 80px;
+        }
+
+        .bar-40-60 {
+            background: #FFC53D;
+            height: 120px;
+        }
+
+        .bar-60-80 {
+            background: #95DE64;
+            height: 160px;
+        }
+
+        .bar-80-100 {
+            background: var(--success);
+            height: 200px;
+        }
+
+        .bar-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .bar-value {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Alerts Section */
+        .alerts-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .alerts-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .alert-tab {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .alert-tab.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--bg);
+        }
+
+        .alert-priority {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .priority-p0 {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .priority-p1 {
+            background: var(--warning);
+            color: var(--white);
+        }
+
+        .priority-p2 {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .alert-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .alert-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .alert-action:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Work Orders */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .order-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .order-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .status-progress {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .status-completed {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .order-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .order-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .order-assignee {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .assignee-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .assignee-name {
+            font-size: 12px;
+        }
+
+        .order-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">🚲</div>
+                <div class="logo-text">运营后台</div>
+            </div>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-group">
+                <div class="menu-group-title">概览</div>
+                <div class="menu-item active">
+                    <div class="menu-icon">📊</div>
+                    <span>数据看板</span>
+                </div>
+            </div>
+            <div class="menu-group">
+                <div class="menu-group-title">运营管理</div>
+                <div class="menu-item">
+                    <div class="menu-icon">🚴</div>
+                    <span>车辆管理</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">📍</div>
+                    <span>电子围栏</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">🔋</div>
+                    <span>电池管理</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">📋</div>
+                    <span>工单中心</span>
+                </div>
+            </div>
+            <div class="menu-group">
+                <div class="menu-group-title">用户运营</div>
+                <div class="menu-item">
+                    <div class="menu-icon">👥</div>
+                    <span>用户管理</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">💰</div>
+                    <span>订单管理</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">🎁</div>
+                    <span>营销活动</span>
+                </div>
+            </div>
+            <div class="menu-group">
+                <div class="menu-group-title">系统</div>
+                <div class="menu-item">
+                    <div class="menu-icon">⚙️</div>
+                    <span>系统设置</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-icon">🔐</div>
+                    <span>权限管理</span>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <span>首页</span>
+                    <span>/</span>
+                    <span class="breadcrumb-current">数据看板</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-action">
+                    🔍
+                </div>
+                <div class="header-action">
+                    🔔
+                    <div class="notification-badge"></div>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">A</div>
+                    <div class="user-name">Admin</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <h1 class="page-title">数据看板</h1>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-label">今日订单</div>
+                        <div class="kpi-icon blue">📦</div>
+                    </div>
+                    <div class="kpi-value">12,847</div>
+                    <div class="kpi-trend trend-up">
+                        <span>↑</span>
+                        <span>12.5% 较昨日</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-label">今日收入</div>
+                        <div class="kpi-icon green">💰</div>
+                    </div>
+                    <div class="kpi-value">¥89,432</div>
+                    <div class="kpi-trend trend-up">
+                        <span>↑</span>
+                        <span>8.3% 较昨日</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-label">车辆可用率</div>
+                        <div class="kpi-icon orange">📊</div>
+                    </div>
+                    <div class="kpi-value">87.3%</div>
+                    <div class="kpi-trend trend-down">
+                        <span>↓</span>
+                        <span>2.1% 较昨日</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-label">日活用户</div>
+                        <div class="kpi-icon blue">👥</div>
+                    </div>
+                    <div class="kpi-value">34,521</div>
+                    <div class="kpi-trend trend-up">
+                        <span>↑</span>
+                        <span>5.7% 较昨日</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fleet Health -->
+            <h2 class="section-title">车队健康</h2>
+            <div class="fleet-grid">
+                <div class="fleet-card">
+                    <div class="fleet-icon available">🟢</div>
+                    <div class="fleet-value">18,420</div>
+                    <div class="fleet-label">可用车辆</div>
+                </div>
+                <div class="fleet-card">
+                    <div class="fleet-icon in-use">🔵</div>
+                    <div class="fleet-value">8,340</div>
+                    <div class="fleet-label">使用中</div>
+                </div>
+                <div class="fleet-card">
+                    <div class="fleet-icon low-battery">🟡</div>
+                    <div class="fleet-value">2,150</div>
+                    <div class="fleet-label">低电量</div>
+                </div>
+                <div class="fleet-card">
+                    <div class="fleet-icon faulty">🔴</div>
+                    <div class="fleet-value">890</div>
+                    <div class="fleet-label">故障车辆</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">供需热力摘要</div>
+                        <div class="chart-actions">
+                            <div class="chart-btn active">今日</div>
+                            <div class="chart-btn">本周</div>
+                            <div class="chart-btn">本月</div>
+                        </div>
+                    </div>
+                    <div class="chart-placeholder">
+                        📈 供需趋势图表区域
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">电池电量分布</div>
+                    </div>
+                    <div class="battery-chart">
+                        <div class="battery-bar">
+                            <div class="bar-value">890</div>
+                            <div class="bar bar-0-20"></div>
+                            <div class="bar-label">0-20%</div>
+                        </div>
+                        <div class="battery-bar">
+                            <div class="bar-value">1,260</div>
+                            <div class="bar bar-20-40"></div>
+                            <div class="bar-label">20-40%</div>
+                        </div>
+                        <div class="battery-bar">
+                            <div class="bar-value">2,150</div>
+                            <div class="bar bar-40-60"></div>
+                            <div class="bar-label">40-60%</div>
+                        </div>
+                        <div class="battery-bar">
+                            <div class="bar-value">4,820</div>
+                            <div class="bar bar-60-80"></div>
+                            <div class="bar-label">60-80%</div>
+                        </div>
+                        <div class="battery-bar">
+                            <div class="bar-value">8,710</div>
+                            <div class="bar bar-80-100"></div>
+                            <div class="bar-label">80-100%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alerts-section">
+                <div class="alerts-header">
+                    <h2 class="section-title" style="margin-bottom: 0;">告警中心</h2>
+                    <div class="alerts-tabs">
+                        <div class="alert-tab active">全部</div>
+                        <div class="alert-tab">P0 紧急</div>
+                        <div class="alert-tab">P1 重要</div>
+                        <div class="alert-tab">P2 一般</div>
+                    </div>
+                </div>
+                <div class="alert-list">
+                    <div class="alert-item">
+                        <div class="alert-priority priority-p0">P0</div>
+                        <div class="alert-content">
+                            <div class="alert-title">西湖区大量车辆离线</div>
+                            <div class="alert-meta">影响 127 辆车 · 10分钟前</div>
+                        </div>
+                        <div class="alert-action">处理</div>
+                    </div>
+                    <div class="alert-item">
+                        <div class="alert-priority priority-p1">P1</div>
+                        <div class="alert-content">
+                            <div class="alert-title">滨江区电子围栏异常</div>
+                            <div class="alert-meta">3处围栏失效 · 25分钟前</div>
+                        </div>
+                        <div class="alert-action">处理</div>
+                    </div>
+                    <div class="alert-item">
+                        <div class="alert-priority priority-p2">P2</div>
+                        <div class="alert-content">
+                            <div class="alert-title">拱墅区充电站响应延迟</div>
+                            <div class="alert-meta">平均响应时间 > 3s · 1小时前</div>
+                        </div>
+                        <div class="alert-action">处理</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Orders -->
+            <h2 class="section-title">工单概览</h2>
+            <div class="orders-grid">
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-status status-pending">待处理</span>
+                    </div>
+                    <div class="order-title">车辆调度 - 西湖区</div>
+                    <div class="order-info">类型: 车辆调度</div>
+                    <div class="order-info">优先级: 高</div>
+                    <div class="order-info">车辆数: 45辆</div>
+                    <div class="order-footer">
+                        <div class="order-assignee">
+                            <div class="assignee-avatar">张</div>
+                            <div class="assignee-name">张工</div>
+                        </div>
+                        <div class="order-time">10:30</div>
+                    </div>
+                </div>
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-status status-progress">进行中</span>
+                    </div>
+                    <div class="order-title">电池更换 - 滨江区</div>
+                    <div class="order-info">类型: 电池维护</div>
+                    <div class="order-info">优先级: 中</div>
+                    <div class="order-info">车辆数: 12辆</div>
+                    <div class="order-footer">
+                        <div class="order-assignee">
+                            <div class="assignee-avatar">李</div>
+                            <div class="assignee-name">李工</div>
+                        </div>
+                        <div class="order-time">09:15</div>
+                    </div>
+                </div>
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-status status-completed">已完成</span>
+                    </div>
+                    <div class="order-title">故障维修 - 拱墅区</div>
+                    <div class="order-info">类型: 硬件维修</div>
+                    <div class="order-info">优先级: 高</div>
+                    <div class="order-info">车辆数: 3辆</div>
+                    <div class="order-footer">
+                        <div class="order-assignee">
+                            <div class="assignee-avatar">王</div>
+                            <div class="assignee-name">王工</div>
+                        </div>
+                        <div class="order-time">08:45</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Menu item click
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                menuItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Chart button click
+        const chartBtns = document.querySelectorAll('.chart-btn');
+        chartBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                chartBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Alert tab click
+        const alertTabs = document.querySelectorAll('.alert-tab');
+        alertTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                alertTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

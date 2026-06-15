@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享两轮运营管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1890FF;
+            --primary-dark: #096DD9;
+            --success: #52C41A;
+            --warning: #FAAD14;
+            --error: #FF4D4F;
+            --text-primary: #262626;
+            --text-secondary: #595959;
+            --text-light: #8C8C8C;
+            --bg-primary: #F0F2F5;
+            --bg-white: #FFFFFF;
+            --bg-dark: #001529;
+            --bg-dark-hover: #002140;
+            --border: #E8E8E8;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.65);
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: var(--bg-dark-hover);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: var(--bg-dark-hover);
+            color: white;
+            border-left-color: var(--primary);
+        }
+
+        .menu-item svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .menu-item span {
+            font-size: 14px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            height: 64px;
+            background: var(--bg-white);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-light);
+        }
+
+        .breadcrumb-current {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .header-icon:hover {
+            background: var(--bg-primary);
+        }
+
+        .header-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-secondary);
+        }
+
+        .badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: var(--error);
+            border-radius: 50%;
+            border: 2px solid var(--bg-white);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .user-info:hover {
+            background: var(--bg-primary);
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .kpi-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .kpi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .kpi-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .kpi-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .kpi-icon.blue {
+            background: var(--primary);
+        }
+
+        .kpi-icon.green {
+            background: var(--success);
+        }
+
+        .kpi-icon.orange {
+            background: var(--warning);
+        }
+
+        .kpi-icon.red {
+            background: var(--error);
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .kpi-unit {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .kpi-trend.up {
+            color: var(--success);
+        }
+
+        .kpi-trend.down {
+            color: var(--error);
+        }
+
+        .kpi-trend svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+        }
+
+        /* Chart Grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-action-btn {
+            padding: 6px 12px;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chart-action-btn:hover {
+            background: var(--border);
+        }
+
+        .chart-action-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .chart-placeholder {
+            height: 280px;
+            background: linear-gradient(135deg, #E6F7FF 0%, #BAE7FF 100%);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Fleet Health */
+        .fleet-health {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .health-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .health-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .health-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .health-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .health-status.good {
+            background: #F6FFED;
+            color: var(--success);
+        }
+
+        .health-status.warning {
+            background: #FFF7E6;
+            color: var(--warning);
+        }
+
+        .health-status.error {
+            background: #FFF1F0;
+            color: var(--error);
+        }
+
+        .health-progress {
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .progress-fill.good {
+            background: var(--success);
+        }
+
+        .progress-fill.warning {
+            background: var(--warning);
+        }
+
+        .progress-fill.error {
+            background: var(--error);
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .health-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .health-stat {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+        }
+
+        .health-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .health-stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Alert Center */
+        .alert-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .alert-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .alert-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .alert-more {
+            font-size: 12px;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .alert-item:hover {
+            background: var(--border);
+        }
+
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .alert-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+
+        .alert-icon.error {
+            background: var(--error);
+        }
+
+        .alert-icon.warning {
+            background: var(--warning);
+        }
+
+        .alert-icon.info {
+            background: var(--primary);
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-message {
+            font-size: 13px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .alert-time {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        /* Work Order Overview */
+        .work-order-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .work-order-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .work-order-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .work-order-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .work-order-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .work-order-icon.pending {
+            background: var(--warning);
+        }
+
+        .work-order-icon.processing {
+            background: var(--primary);
+        }
+
+        .work-order-icon.completed {
+            background: var(--success);
+        }
+
+        .work-order-icon.overdue {
+            background: var(--error);
+        }
+
+        .work-order-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .work-order-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus States */
+        button:focus,
+        a:focus,
+        .menu-item:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                        </svg>
+                    </div>
+                    <span>运营后台</span>
+                </div>
+            </div>
+            <nav class="sidebar-menu">
+                <div class="menu-item active">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3,13H11V11H3V13M3,17H11V15H3V17M3,9H11V7H3V9M13,7V11H21V7H13M13,17V15H21V17H13M13,13V9H21V13H13Z"/>
+                    </svg>
+                    <span>运营总览</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A7,7 0 0,1 19,9C19,11.38 18.24,13.55 16.93,15.25L12,22L7.07,15.25C5.76,13.55 5,11.38 5,9A7,7 0 0,1 12,2M12,4A5,5 0 0,0 7,9A5,5 0 0,0 12,14A5,5 0 0,0 17,9A5,5 0 0,0 12,4Z"/>
+                    </svg>
+                    <span>地图调度</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"/>
+                    </svg>
+                    <span>车队资产</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M13,13V21H11V13H7L12,8L17,13H13M3,3H21V5H3V3Z"/>
+                    </svg>
+                    <span>电池能源</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                    </svg>
+                    <span>运维工单</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                    </svg>
+                    <span>规则区域</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1ZM12,11.99H19C18.47,16.11 15.72,19.78 12,20.93V12H5V6.3L12,3.19V11.99Z"/>
+                    </svg>
+                    <span>合规监管</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3,3H21V21H3V3M5,5V19H19V5H5M7,7H17V9H7V7M7,11H17V13H7V11M7,15H14V17H7V15Z"/>
+                    </svg>
+                    <span>数据报表</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                    </svg>
+                    <span>组织权限</span>
+                </div>
+                <div class="menu-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                    </svg>
+                    <span>系统配置</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="breadcrumb">
+                        <span>首页</span>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-current">运营总览</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+                        </svg>
+                    </div>
+                    <div class="header-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,0 6,12H8A4,4 0 0,1 12,8V6Z"/>
+                        </svg>
+                        <span class="badge"></span>
+                    </div>
+                    <div class="user-info">
+                        <div class="avatar">管</div>
+                        <span class="user-name">管理员</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="content">
+                <h1 class="page-title">运营总览</h1>
+                <p class="page-subtitle">实时监控城市运营数据，掌握业务全局</p>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">今日订单</span>
+                            <div class="kpi-icon blue">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M14,10H2V12H14V10M14,6H2V8H14V6M2,16H10V14H2V16M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value">12,458 <span class="kpi-unit">单</span></div>
+                        <div class="kpi-trend up">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M7,15L12,10L17,15H7Z"/>
+                            </svg>
+                            <span>较昨日 +12.5%</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">今日收入</span>
+                            <div class="kpi-icon green">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value">¥38,920 <span class="kpi-unit">元</span></div>
+                        <div class="kpi-trend up">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M7,15L12,10L17,15H7Z"/>
+                            </svg>
+                            <span>较昨日 +8.3%</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">车辆可用率</span>
+                            <div class="kpi-icon orange">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value">87.5 <span class="kpi-unit">%</span></div>
+                        <div class="kpi-trend down">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M7,9L12,14L17,9H7Z"/>
+                            </svg>
+                            <span>较昨日 -2.1%</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">活跃用户</span>
+                            <div class="kpi-icon red">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value">5,623 <span class="kpi-unit">人</span></div>
+                        <div class="kpi-trend up">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M7,15L12,10L17,15H7Z"/>
+                            </svg>
+                            <span>较昨日 +5.7%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Grid -->
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-title">订单趋势</span>
+                            <div class="chart-actions">
+                                <button class="chart-action-btn active">日</button>
+                                <button class="chart-action-btn">周</button>
+                                <button class="chart-action-btn">月</button>
+                            </div>
+                        </div>
+                        <div class="chart-placeholder">
+                            📊 订单趋势图表区域
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-title">供需热力图</span>
+                            <div class="chart-actions">
+                                <button class="chart-action-btn active">实时</button>
+                            </div>
+                        </div>
+                        <div class="chart-placeholder">
+                            🗺️ 供需热力图区域
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fleet Health -->
+                <div class="fleet-health">
+                    <div class="health-card">
+                        <div class="health-header">
+                            <span class="health-title">车辆健康</span>
+                            <span class="health-status good">良好</span>
+                        </div>
+                        <div class="health-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill good" style="width: 85%"></div>
+                            </div>
+                            <div class="progress-label">
+                                <span>健康率</span>
+                                <span>85%</span>
+                            </div>
+                        </div>
+                        <div class="health-stats">
+                            <div class="health-stat">
+                                <div class="health-stat-value">2,450</div>
+                                <div class="health-stat-label">正常车辆</div>
+                            </div>
+                            <div class="health-stat">
+                                <div class="health-stat-value">380</div>
+                                <div class="health-stat-label">待维修</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="health-card">
+                        <div class="health-header">
+                            <span class="health-title">电池电量</span>
+                            <span class="health-status warning">一般</span>
+                        </div>
+                        <div class="health-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill warning" style="width: 68%"></div>
+                            </div>
+                            <div class="progress-label">
+                                <span>平均电量</span>
+                                <span>68%</span>
+                            </div>
+                        </div>
+                        <div class="health-stats">
+                            <div class="health-stat">
+                                <div class="health-stat-value">1,850</div>
+                                <div class="health-stat-label">电量充足</div>
+                            </div>
+                            <div class="health-stat">
+                                <div class="health-stat-value">980</div>
+                                <div class="health-stat-label">需充电</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="health-card">
+                        <div class="health-header">
+                            <span class="health-title">在线率</span>
+                            <span class="health-status good">优秀</span>
+                        </div>
+                        <div class="health-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill good" style="width: 92%"></div>
+                            </div>
+                            <div class="progress-label">
+                                <span>在线率</span>
+                                <span>92%</span>
+                            </div>
+                        </div>
+                        <div class="health-stats">
+                            <div class="health-stat">
+                                <div class="health-stat-value">2,620</div>
+                                <div class="health-stat-label">在线车辆</div>
+                            </div>
+                            <div class="health-stat">
+                                <div class="health-stat-value">210</div>
+                                <div class="health-stat-label">离线车辆</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Grid -->
+                <div class="alert-grid">
+                    <div class="alert-card">
+                        <div class="alert-header">
+                            <span class="alert-title">告警中心</span>
+                            <span class="alert-more">查看全部 ›</span>
+                        </div>
+                        <div class="alert-list">
+                            <div class="alert-item">
+                                <div class="alert-icon error">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-message">朝阳区发现15辆车辆异常离线</div>
+                                    <div class="alert-time">5分钟前</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon warning">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-message">海淀区3个站点车辆库存不足</div>
+                                    <div class="alert-time">15分钟前</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon info">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-message">系统将于今晚22:00进行维护升级</div>
+                                    <div class="alert-time">1小时前</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert-card">
+                        <div class="alert-header">
+                            <span class="alert-title">工单概览</span>
+                            <span class="alert-more">查看全部 ›</span>
+                        </div>
+                        <div class="alert-list">
+                            <div class="alert-item">
+                                <div class="alert-icon warning">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-message">待处理维修工单 23 个</div>
+                                    <div class="alert-time">实时更新</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon info">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-message">处理中调度工单 45 个</div>
+                                    <div class="alert-time">实时更新</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon error">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-message">逾期未处理工单 8 个</div>
+                                    <div class="alert-time">需要立即处理</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Order Overview -->
+                <div class="work-order-grid">
+                    <div class="work-order-card">
+                        <div class="work-order-icon pending">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                            </svg>
+                        </div>
+                        <div class="work-order-value">23</div>
+                        <div class="work-order-label">待处理</div>
+                    </div>
+
+                    <div class="work-order-card">
+                        <div class="work-order-icon processing">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                            </svg>
+                        </div>
+                        <div class="work-order-value">45</div>
+                        <div class="work-order-label">处理中</div>
+                    </div>
+
+                    <div class="work-order-card">
+                        <div class="work-order-icon completed">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"/>
+                            </svg>
+                        </div>
+                        <div class="work-order-value">156</div>
+                        <div class="work-order-label">已完成</div>
+                    </div>
+
+                    <div class="work-order-card">
+                        <div class="work-order-icon overdue">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                            </svg>
+                        </div>
+                        <div class="work-order-value">8</div>
+                        <div class="work-order-label">逾期未处理</div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Menu item switching
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Chart action buttons
+        document.querySelectorAll('.chart-actions').forEach(group => {
+            group.querySelectorAll('.chart-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    group.querySelectorAll('.chart-action-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+
+        // Work order card click
+        document.querySelectorAll('.work-order-card').forEach(card => {
+            card.addEventListener('click', function() {
+                alert('查看工单详情');
+            });
+        });
+
+        // Alert item click
+        document.querySelectorAll('.alert-item').forEach(item => {
+            item.addEventListener('click', function() {
+                alert('查看告警详情');
+            });
+        });
+    </script>
+</body>
+</html>

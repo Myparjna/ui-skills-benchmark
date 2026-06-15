@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>充电桩小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1677FF;
+            --primary-light: #e6f4ff;
+            --success: #52c41a;
+            --warning: #faad14;
+            --text: #000000;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #e8e8e8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            max-width: 390px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 顶部状态栏 */
+        .status-bar {
+            height: 44px;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--bg);
+        }
+
+        /* 页面容器 */
+        .page {
+            display: none;
+            height: 100%;
+        }
+
+        .page.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 首页 - 地图 */
+        .map-container {
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            width: 100%;
+            border: none;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .station-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .station-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .station-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .station-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .station-distance {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .station-info {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .station-tags {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .tag.fast {
+            background: #fff7e6;
+            color: #fa8c16;
+        }
+
+        /* 省钱页面 */
+        .savings-header {
+            background: linear-gradient(135deg, #1677FF 0%, #4096ff 100%);
+            color: white;
+            padding: 24px 16px;
+            text-align: center;
+        }
+
+        .savings-amount {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .membership-cards {
+            padding: 16px;
+        }
+
+        .member-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .member-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .member-icon.silver { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); }
+        .member-icon.gold { background: linear-gradient(135deg, #ffd700, #ffed4e); }
+        .member-icon.v1 { background: linear-gradient(135deg, #1677FF, #4096ff); }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .member-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .member-price {
+            text-align: right;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .price-unit {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* 扫码页面 */
+        .scan-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .scan-area {
+            width: 280px;
+            height: 280px;
+            border: 3px solid var(--primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            position: relative;
+            background: rgba(22, 119, 255, 0.05);
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            animation: scan 2s ease-in-out infinite;
+        }
+
+        @keyframes scan {
+            0%, 100% { top: 0; }
+            50% { top: 100%; }
+        }
+
+        .scan-tip {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .scan-steps {
+            width: 100%;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            font-size: 14px;
+        }
+
+        /* 订单页面 */
+        .orders-header {
+            background: var(--white);
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 24px;
+        }
+
+        .tab {
+            font-size: 15px;
+            color: var(--text-secondary);
+            padding-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .order-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .order-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .order-station {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .order-status {
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .order-status.charging {
+            background: #e6f4ff;
+            color: var(--primary);
+        }
+
+        .order-status.completed {
+            background: #f6ffed;
+            color: var(--success);
+        }
+
+        .order-info {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .order-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* 我的页面 */
+        .profile-header {
+            background: linear-gradient(135deg, #1677FF 0%, #4096ff 100%);
+            color: white;
+            padding: 32px 16px;
+            text-align: center;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .username {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .user-id {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .wallet-section {
+            padding: 16px;
+        }
+
+        .wallet-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .wallet-balance {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .balance-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .balance-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .wallet-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .action-btn.secondary {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .menu-list {
+            padding: 0 16px 16px;
+        }
+
+        .menu-item {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        .menu-label {
+            font-size: 15px;
+        }
+
+        .menu-arrow {
+            color: var(--text-tertiary);
+        }
+
+        /* 底部导航 */
+        .tab-bar {
+            height: 56px;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .tab-item.active {
+            color: var(--primary);
+        }
+
+        .tab-icon {
+            font-size: 20px;
+        }
+
+        .tab-label {
+            font-size: 11px;
+        }
+
+        /* 扫码按钮特殊样式 */
+        .tab-item.scan-tab {
+            position: relative;
+        }
+
+        .scan-button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-top: -20px;
+            box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>⚡ 充电桩</span>
+        <span>📶 🔋</span>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 首页 - 地图 -->
+        <div class="page active" id="page-home">
+            <div class="map-container">
+                <div class="map-overlay">
+                    <input type="text" class="search-input" placeholder="搜索充电站">
+                </div>
+                🗺️ 地图区域
+            </div>
+            <div class="station-list">
+                <div class="station-card">
+                    <div class="station-header">
+                        <div>
+                            <div class="station-name">西湖文化广场充电站</div>
+                            <div class="station-distance">距离 0.8km</div>
+                        </div>
+                    </div>
+                    <div class="station-info">
+                        <span>🔌 快充 8 个</span>
+                        <span>🔌 慢充 12 个</span>
+                        <span>空闲 15</span>
+                    </div>
+                    <div class="station-tags">
+                        <span class="tag fast">快充</span>
+                        <span class="tag">停车场</span>
+                        <span class="tag">24小时</span>
+                    </div>
+                </div>
+                <div class="station-card">
+                    <div class="station-header">
+                        <div>
+                            <div class="station-name">杭州东站充电站</div>
+                            <div class="station-distance">距离 2.3km</div>
+                        </div>
+                    </div>
+                    <div class="station-info">
+                        <span>🔌 快充 12 个</span>
+                        <span>🔌 慢充 20 个</span>
+                        <span>空闲 28</span>
+                    </div>
+                    <div class="station-tags">
+                        <span class="tag fast">快充</span>
+                        <span class="tag">高铁站</span>
+                        <span class="tag">休息室</span>
+                    </div>
+                </div>
+                <div class="station-card">
+                    <div class="station-header">
+                        <div>
+                            <div class="station-name">滨江物联网街充电站</div>
+                            <div class="station-distance">距离 3.5km</div>
+                        </div>
+                    </div>
+                    <div class="station-info">
+                        <span>🔌 快充 6 个</span>
+                        <span>🔌 慢充 10 个</span>
+                        <span>空闲 14</span>
+                    </div>
+                    <div class="station-tags">
+                        <span class="tag fast">快充</span>
+                        <span class="tag">商圈</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 省钱页面 -->
+        <div class="page" id="page-savings">
+            <div class="savings-header">
+                <div>PLUS会员</div>
+                <div class="savings-amount">¥128.50</div>
+                <div>本月已节省</div>
+            </div>
+            <div class="membership-cards">
+                <div class="member-card">
+                    <div class="member-icon silver">🥈</div>
+                    <div class="member-info">
+                        <div class="member-name">银卡会员</div>
+                        <div class="member-desc">9.5折优惠 · 每月2张优惠券</div>
+                    </div>
+                    <div class="member-price">
+                        <div class="price">¥9.9</div>
+                        <div class="price-unit">/月</div>
+                    </div>
+                </div>
+                <div class="member-card">
+                    <div class="member-icon gold">🥇</div>
+                    <div class="member-info">
+                        <div class="member-name">金卡会员</div>
+                        <div class="member-desc">9折优惠 · 每月5张优惠券 · 优先充电</div>
+                    </div>
+                    <div class="member-price">
+                        <div class="price">¥19.9</div>
+                        <div class="price-unit">/月</div>
+                    </div>
+                </div>
+                <div class="member-card">
+                    <div class="member-icon v1">💎</div>
+                    <div class="member-info">
+                        <div class="member-name">V1会员</div>
+                        <div class="member-desc">8.5折优惠 · 无限优惠券 · 专属客服</div>
+                    </div>
+                    <div class="member-price">
+                        <div class="price">¥39.9</div>
+                        <div class="price-unit">/月</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 扫码页面 -->
+        <div class="page" id="page-scan">
+            <div class="scan-container">
+                <div class="scan-area">
+                    <div class="scan-line"></div>
+                    📷
+                </div>
+                <div class="scan-tip">将二维码放入框内扫描</div>
+                <div class="scan-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">扫描充电桩二维码</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">选择充电金额或时长</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">确认支付开始充电</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-text">充电完成自动停止</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 订单页面 -->
+        <div class="page" id="page-orders">
+            <div class="orders-header">
+                <div class="tabs">
+                    <div class="tab active">进行中</div>
+                    <div class="tab">已完成</div>
+                    <div class="tab">已取消</div>
+                </div>
+            </div>
+            <div class="order-list">
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-station">西湖文化广场充电站</div>
+                        <div class="order-status charging">充电中</div>
+                    </div>
+                    <div class="order-info">
+                        <span>⚡ 快充 3号桩</span>
+                        <span>🔋 已充 32.5kWh</span>
+                    </div>
+                    <div class="order-footer">
+                        <span>开始时间 14:30</span>
+                        <div class="order-price">¥48.75</div>
+                    </div>
+                </div>
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-station">杭州东站充电站</div>
+                        <div class="order-status completed">已完成</div>
+                    </div>
+                    <div class="order-info">
+                        <span>⚡ 快充 7号桩</span>
+                        <span>🔋 充电 45.2kWh</span>
+                    </div>
+                    <div class="order-footer">
+                        <span>2026-06-14 09:15</span>
+                        <div class="order-price">¥67.80</div>
+                    </div>
+                </div>
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-station">滨江物联网街充电站</div>
+                        <div class="order-status completed">已完成</div>
+                    </div>
+                    <div class="order-info">
+                        <span>⚡ 慢充 12号桩</span>
+                        <span>🔋 充电 28.6kWh</span>
+                    </div>
+                    <div class="order-footer">
+                        <span>2026-06-13 18:42</span>
+                        <div class="order-price">¥34.32</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 我的页面 -->
+        <div class="page" id="page-profile">
+            <div class="profile-header">
+                <div class="avatar">👤</div>
+                <div class="username">张三</div>
+                <div class="user-id">ID: 10086</div>
+            </div>
+            <div class="wallet-section">
+                <div class="wallet-card">
+                    <div class="wallet-balance">
+                        <div class="balance-label">钱包余额</div>
+                        <div class="balance-amount">¥256.80</div>
+                    </div>
+                    <div class="wallet-actions">
+                        <button class="action-btn">充值</button>
+                        <button class="action-btn secondary">账单</button>
+                    </div>
+                </div>
+            </div>
+            <div class="menu-list">
+                <div class="menu-item">
+                    <div class="menu-label">🚗 车辆管理</div>
+                    <div class="menu-arrow">›</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-label">🎫 优惠券</div>
+                    <div class="menu-arrow">›</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-label">📍 常用站点</div>
+                    <div class="menu-arrow">›</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-label">⚙️ 设置</div>
+                    <div class="menu-arrow">›</div>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-label">❓ 帮助中心</div>
+                    <div class="menu-arrow">›</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="tab-bar">
+        <div class="tab-item active" data-page="home">
+            <div class="tab-icon">🗺️</div>
+            <div class="tab-label">首页</div>
+        </div>
+        <div class="tab-item" data-page="savings">
+            <div class="tab-icon">💰</div>
+            <div class="tab-label">省钱</div>
+        </div>
+        <div class="tab-item scan-tab" data-page="scan">
+            <div class="scan-button">📷</div>
+            <div class="tab-label">扫码</div>
+        </div>
+        <div class="tab-item" data-page="orders">
+            <div class="tab-icon">📋</div>
+            <div class="tab-label">订单</div>
+        </div>
+        <div class="tab-item" data-page="profile">
+            <div class="tab-icon">👤</div>
+            <div class="tab-label">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 切换页面
+        const tabItems = document.querySelectorAll('.tab-item');
+        const pages = document.querySelectorAll('.page');
+
+        tabItems.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetPage = tab.dataset.page;
+                
+                // 更新tab状态
+                tabItems.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 更新页面显示
+                pages.forEach(page => {
+                    page.classList.remove('active');
+                    if (page.id === `page-${targetPage}`) {
+                        page.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // 订单页面tab切换
+        const orderTabs = document.querySelectorAll('.orders-header .tab');
+        orderTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                orderTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>骑行城市 - 共享两轮运营管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* ── COLORS (OKLCH) ───────────────── */
+      --bg: oklch(10% 0.015 260);
+      --bg-elevated: oklch(13% 0.015 260);
+      --surface: oklch(15% 0.015 260);
+      --surface-up: oklch(18% 0.015 260);
+      --surface-hover: oklch(20% 0.015 260);
+      --fg: oklch(95% 0.005 95);
+      --fg-muted: oklch(65% 0.01 260);
+      --fg-dim: oklch(45% 0.01 260);
+      --primary: oklch(65% 0.22 250);
+      --primary-up: oklch(72% 0.22 250);
+      --primary-light: oklch(65% 0.22 250 / 0.12);
+      --primary-glow: oklch(65% 0.22 250 / 0.25);
+      --ok: oklch(62% 0.18 155);
+      --ok-light: oklch(62% 0.18 155 / 0.12);
+      --warn: oklch(75% 0.19 65);
+      --warn-light: oklch(75% 0.19 65 / 0.12);
+      --err: oklch(62% 0.22 25);
+      --err-light: oklch(62% 0.22 25 / 0.12);
+      --info: oklch(65% 0.15 220);
+      --info-light: oklch(65% 0.15 220 / 0.12);
+      --border: oklch(22% 0.015 260);
+      --border-faint: oklch(18% 0.01 260);
+
+      /* ── TYPOGRAPHY ──────────────────── */
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+      /* ── RADIUS ──────────────────────── */
+      --r-xs: 0.25rem;
+      --r-sm: 0.375rem;
+      --r: 0.5rem;
+      --r-lg: 0.75rem;
+      --r-xl: 1rem;
+      --r-full: 9999px;
+
+      /* ── MOTION ──────────────────────── */
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --dur-fast: 120ms;
+      --dur-base: 200ms;
+      --dur-slow: 350ms;
+
+      /* ── SPACING ─────────────────────── */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.5;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* ── LAYOUT ────────────────────────── */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 56px 1fr;
+      height: 100vh;
+    }
+
+    /* ── TOP NAV ───────────────────────── */
+    .top-nav {
+      grid-column: 1 / -1;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-6);
+      z-index: 20;
+    }
+
+    .top-nav-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--fg);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-up));
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .city-selector {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .city-selector:hover {
+      border-color: var(--fg-dim);
+      color: var(--fg);
+    }
+
+    .top-nav-center {
+      flex: 1;
+      max-width: 480px;
+      margin: 0 var(--space-8);
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--fg-dim);
+      font-size: 0.875rem;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .search-bar:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .search-bar input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--fg);
+      font-size: 0.875rem;
+    }
+
+    .search-bar input::placeholder { color: var(--fg-dim); }
+
+    .search-bar kbd {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      padding: 2px 6px;
+      background: var(--surface-up);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xs);
+      color: var(--fg-dim);
+    }
+
+    .top-nav-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .nav-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+      position: relative;
+      background: none;
+      border: none;
+    }
+
+    .nav-icon-btn:hover {
+      background: var(--surface);
+      color: var(--fg);
+    }
+
+    .nav-icon-btn .badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-elevated);
+    }
+
+    .nav-icon-btn .badge.err { background: var(--err); }
+    .nav-icon-btn .badge.warn { background: var(--warn); }
+
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), oklch(55% 0.2 280));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* ── SIDEBAR ───────────────────────── */
+    .sidebar {
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: var(--space-4) 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .sidebar-section {
+      margin-bottom: var(--space-4);
+    }
+
+    .sidebar-section-title {
+      padding: var(--space-2) var(--space-6);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fg-dim);
+    }
+
+    .sidebar-nav {
+      list-style: none;
+    }
+
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-6);
+      margin: 1px var(--space-2);
+      border-radius: var(--r);
+      font-size: 0.875rem;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .sidebar-nav-item:hover {
+      background: var(--surface);
+      color: var(--fg);
+    }
+
+    .sidebar-nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary-up);
+      font-weight: 500;
+    }
+
+    .sidebar-nav-item .icon {
+      width: 20px;
+      text-align: center;
+      font-size: 0.9375rem;
+    }
+
+    .sidebar-nav-item .nav-badge {
+      margin-left: auto;
+      padding: 1px 6px;
+      border-radius: var(--r-full);
+      font-size: 0.6875rem;
+      font-weight: 600;
+    }
+
+    .sidebar-nav-item .nav-badge.err {
+      background: var(--err-light);
+      color: var(--err);
+    }
+
+    .sidebar-nav-item .nav-badge.warn {
+      background: var(--warn-light);
+      color: var(--warn);
+    }
+
+    .sidebar-nav-item .nav-badge.ok {
+      background: var(--ok-light);
+      color: var(--ok);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: var(--space-4) var(--space-6);
+      border-top: 1px solid var(--border);
+    }
+
+    .env-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      background: var(--ok-light);
+      border-radius: var(--r-full);
+      font-size: 0.75rem;
+      color: var(--ok);
+      font-weight: 500;
+    }
+
+    .env-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      animation: env-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes env-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── MAIN CONTENT ──────────────────── */
+    .main-content {
+      overflow-y: auto;
+      padding: var(--space-6);
+      background: var(--bg);
+    }
+
+    .main-content::-webkit-scrollbar { width: 6px; }
+    .main-content::-webkit-scrollbar-track { background: transparent; }
+    .main-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── PAGE HEADER ───────────────────── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-6);
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--fg-muted);
+      margin-top: var(--space-1);
+    }
+
+    .page-actions {
+      display: flex;
+      gap: var(--space-3);
+    }
+
+    .btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--r);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-up);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--fg-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--fg-dim);
+      color: var(--fg);
+      background: var(--surface);
+    }
+
+    /* ── KPI CARDS ─────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: var(--space-5);
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .kpi-card:hover {
+      border-color: var(--fg-dim);
+      background: var(--surface-up);
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .kpi-label {
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      font-weight: 500;
+    }
+
+    .kpi-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+    }
+
+    .kpi-icon.blue { background: var(--primary-light); }
+    .kpi-icon.green { background: var(--ok-light); }
+    .kpi-icon.yellow { background: var(--warn-light); }
+    .kpi-icon.red { background: var(--err-light); }
+
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-1);
+    }
+
+    .kpi-trend {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .kpi-trend.up { color: var(--ok); }
+    .kpi-trend.down { color: var(--err); }
+    .kpi-trend.neutral { color: var(--fg-muted); }
+
+    /* ── BENTO GRID ────────────────────── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-faint);
+    }
+
+    .panel-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .panel-tab {
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--r);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+      border: none;
+      background: none;
+    }
+
+    .panel-tab:hover { color: var(--fg); }
+
+    .panel-tab.active {
+      background: var(--primary-light);
+      color: var(--primary-up);
+    }
+
+    .panel-body {
+      padding: var(--space-5);
+    }
+
+    /* ── FLEET HEALTH ──────────────────── */
+    .fleet-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-3);
+    }
+
+    .fleet-stat {
+      padding: var(--space-4);
+      background: var(--bg);
+      border-radius: var(--r);
+      border: 1px solid var(--border-faint);
+    }
+
+    .fleet-stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-2);
+    }
+
+    .fleet-stat-label {
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+    }
+
+    .fleet-stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .fleet-stat-dot.green { background: var(--ok); }
+    .fleet-stat-dot.blue { background: var(--primary); }
+    .fleet-stat-dot.yellow { background: var(--warn); }
+    .fleet-stat-dot.red { background: var(--err); }
+
+    .fleet-stat-value {
+      font-size: 1.375rem;
+      font-weight: 700;
+    }
+
+    .fleet-stat-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: var(--space-2);
+      overflow: hidden;
+    }
+
+    .fleet-stat-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width var(--dur-slow) var(--ease-out);
+    }
+
+    .fleet-stat-bar-fill.green { background: var(--ok); }
+    .fleet-stat-bar-fill.blue { background: var(--primary); }
+    .fleet-stat-bar-fill.yellow { background: var(--warn); }
+    .fleet-stat-bar-fill.red { background: var(--err); }
+
+    /* ── BATTERY CHART ─────────────────── */
+    .battery-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 160px;
+      padding: var(--space-4) 0;
+    }
+
+    .battery-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      height: 100%;
+    }
+
+    .battery-bar-container {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .battery-bar {
+      width: 100%;
+      max-width: 32px;
+      border-radius: var(--r-xs) var(--r-xs) 0 0;
+      transition: height var(--dur-slow) var(--ease-out);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .battery-bar:hover {
+      filter: brightness(1.2);
+    }
+
+    .battery-bar::after {
+      content: attr(data-value);
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+      opacity: 0;
+      transition: opacity var(--dur-fast) var(--ease-out);
+    }
+
+    .battery-bar:hover::after { opacity: 1; }
+
+    .battery-bar.range-0-20 { background: var(--err); }
+    .battery-bar.range-20-40 { background: var(--warn); }
+    .battery-bar.range-40-60 { background: oklch(70% 0.15 90); }
+    .battery-bar.range-60-80 { background: var(--ok); }
+    .battery-bar.range-80-100 { background: var(--primary); }
+
+    .battery-bar-label {
+      font-size: 0.6875rem;
+      color: var(--fg-dim);
+    }
+
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border-faint);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    /* ── BOTTOM GRID ───────────────────── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    /* ── HEATMAP SUMMARY ───────────────── */
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: var(--r-xs);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+      position: relative;
+    }
+
+    .heatmap-cell:hover {
+      transform: scale(1.1);
+      z-index: 1;
+    }
+
+    .heatmap-cell.level-0 { background: var(--border-faint); }
+    .heatmap-cell.level-1 { background: oklch(65% 0.22 250 / 0.2); }
+    .heatmap-cell.level-2 { background: oklch(65% 0.22 250 / 0.4); }
+    .heatmap-cell.level-3 { background: oklch(65% 0.22 250 / 0.6); }
+    .heatmap-cell.level-4 { background: oklch(65% 0.22 250 / 0.85); }
+
+    .heatmap-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: var(--space-3);
+      font-size: 0.6875rem;
+      color: var(--fg-dim);
+    }
+
+    .heatmap-legend {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+      justify-content: flex-end;
+    }
+
+    .heatmap-legend-label {
+      font-size: 0.6875rem;
+      color: var(--fg-dim);
+    }
+
+    .heatmap-legend-cells {
+      display: flex;
+      gap: 2px;
+    }
+
+    .heatmap-legend-cell {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    /* ── ALERT CENTER ──────────────────── */
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .alert-item {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border-radius: var(--r);
+      border: 1px solid var(--border-faint);
+      background: var(--bg);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .alert-item:hover {
+      border-color: var(--border);
+      background: var(--surface-hover);
+    }
+
+    .alert-priority {
+      width: 6px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .alert-priority.p0 { background: var(--err); }
+    .alert-priority.p1 { background: var(--warn); }
+    .alert-priority.p2 { background: var(--info); }
+
+    .alert-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .alert-title {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--fg);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .alert-meta {
+      display: flex;
+      gap: var(--space-3);
+      font-size: 0.6875rem;
+      color: var(--fg-dim);
+    }
+
+    .alert-tag {
+      padding: 1px 6px;
+      border-radius: var(--r-full);
+      font-size: 0.625rem;
+      font-weight: 600;
+    }
+
+    .alert-tag.p0 { background: var(--err-light); color: var(--err); }
+    .alert-tag.p1 { background: var(--warn-light); color: var(--warn); }
+    .alert-tag.p2 { background: var(--info-light); color: var(--info); }
+
+    /* ── WORK ORDERS ───────────────────── */
+    .workorder-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .workorder-stat {
+      text-align: center;
+      padding: var(--space-3);
+      background: var(--bg);
+      border-radius: var(--r);
+      border: 1px solid var(--border-faint);
+    }
+
+    .workorder-stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .workorder-stat-label {
+      font-size: 0.6875rem;
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+
+    .workorder-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .workorder-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border-radius: var(--r);
+      background: var(--bg);
+      border: 1px solid var(--border-faint);
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+
+    .workorder-item:hover {
+      border-color: var(--border);
+    }
+
+    .workorder-type {
+      padding: 2px 8px;
+      border-radius: var(--r-full);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .workorder-type.repair { background: var(--err-light); color: var(--err); }
+    .workorder-type.swap { background: var(--warn-light); color: var(--warn); }
+    .workorder-type.inspect { background: var(--info-light); color: var(--info); }
+    .workorder-type.move { background: var(--primary-light); color: var(--primary-up); }
+
+    .workorder-desc {
+      flex: 1;
+      color: var(--fg-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .workorder-time {
+      font-size: 0.6875rem;
+      color: var(--fg-dim);
+      flex-shrink: 0;
+    }
+
+    /* ── SUPPLY DEMAND ─────────────────── */
+    .supply-demand-chart {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .sd-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .sd-label {
+      width: 48px;
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      flex-shrink: 0;
+    }
+
+    .sd-bar-container {
+      flex: 1;
+      display: flex;
+      gap: 2px;
+      height: 24px;
+    }
+
+    .sd-bar {
+      height: 100%;
+      border-radius: var(--r-xs);
+      transition: all var(--dur-fast) var(--ease-out);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .sd-bar:hover { filter: brightness(1.2); }
+
+    .sd-bar.supply { background: var(--primary); }
+    .sd-bar.demand { background: var(--warn); }
+
+    .sd-value {
+      width: 40px;
+      text-align: right;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--fg);
+      flex-shrink: 0;
+    }
+
+    .sd-legend {
+      display: flex;
+      gap: var(--space-4);
+      justify-content: center;
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--border-faint);
+    }
+
+    /* ── RESPONSIVE ────────────────────── */
+    @media (max-width: 1400px) {
+      .bottom-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── REDUCED MOTION ────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-left">
+        <div class="logo">
+          <div class="logo-icon">🚲</div>
+          <span>骑行城市</span>
+        </div>
+        <div class="city-selector">
+          <span>📍</span>
+          <span>杭州市</span>
+          <span style="color:var(--fg-dim)">▾</span>
+        </div>
+      </div>
+      <div class="top-nav-center">
+        <div class="search-bar">
+          <span>🔍</span>
+          <input type="text" placeholder="搜索车辆、站点、工单...">
+          <kbd>⌘K</kbd>
+        </div>
+      </div>
+      <div class="top-nav-right">
+        <button class="nav-icon-btn" title="通知">
+          🔔
+          <span class="badge err"></span>
+        </button>
+        <button class="nav-icon-btn" title="消息">
+          💬
+          <span class="badge warn"></span>
+        </button>
+        <button class="nav-icon-btn" title="设置">⚙️</button>
+        <div class="nav-avatar">管</div>
+      </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">概览</div>
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item active">
+            <span class="icon">📊</span>
+            <span>运营首页</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">🗺️</span>
+            <span>实时监控</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">车队管理</div>
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item">
+            <span class="icon">🚲</span>
+            <span>车辆管理</span>
+            <span class="nav-badge ok">18,420</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">🔋</span>
+            <span>电池管理</span>
+            <span class="nav-badge warn">2,150</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">🔧</span>
+            <span>维修工单</span>
+            <span class="nav-badge err">890</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">📍</span>
+            <span>电子围栏</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">运营中心</div>
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item">
+            <span class="icon">📋</span>
+            <span>订单管理</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">💰</span>
+            <span>财务结算</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">📈</span>
+            <span>数据分析</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">🎯</span>
+            <span>调度中心</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">系统</div>
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item">
+            <span class="icon">⚙️</span>
+            <span>系统设置</span>
+          </li>
+          <li class="sidebar-nav-item">
+            <span class="icon">👥</span>
+            <span>团队管理</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <div class="env-badge">系统运行正常</div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">运营概览</h1>
+          <p class="page-subtitle">杭州市 · 2026年6月15日 · 实时数据</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline">📥 导出报告</button>
+          <button class="btn btn-outline">🔄 刷新数据</button>
+          <button class="btn btn-primary">+ 新建工单</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">今日订单</span>
+            <div class="kpi-icon blue">📋</div>
+          </div>
+          <div class="kpi-value">12,847</div>
+          <div class="kpi-trend up">
+            <span>↑</span>
+            <span>12.5%</span>
+            <span style="color:var(--fg-dim)">vs 昨日</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">今日收入</span>
+            <div class="kpi-icon green">💰</div>
+          </div>
+          <div class="kpi-value">¥89,432</div>
+          <div class="kpi-trend up">
+            <span>↑</span>
+            <span>8.3%</span>
+            <span style="color:var(--fg-dim)">vs 昨日</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">车辆可用率</span>
+            <div class="kpi-icon yellow">📊</div>
+          </div>
+          <div class="kpi-value">87.3%</div>
+          <div class="kpi-trend down">
+            <span>↓</span>
+            <span>1.2%</span>
+            <span style="color:var(--fg-dim)">vs 昨日</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">日活用户</span>
+            <div class="kpi-icon blue">👥</div>
+          </div>
+          <div class="kpi-value">34,521</div>
+          <div class="kpi-trend up">
+            <span>↑</span>
+            <span>5.7%</span>
+            <span style="color:var(--fg-dim)">vs 昨日</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Grid -->
+      <div class="bento-grid">
+        <!-- Battery Distribution -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">电池电量分布</span>
+            <div class="panel-actions">
+              <button class="panel-tab active">今日</button>
+              <button class="panel-tab">本周</button>
+              <button class="panel-tab">本月</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="battery-chart">
+              <div class="battery-bar-group">
+                <div class="battery-bar-container">
+                  <div class="battery-bar range-0-20" style="height:25%" data-value="890"></div>
+                </div>
+                <span class="battery-bar-label">0-20%</span>
+              </div>
+              <div class="battery-bar-group">
+                <div class="battery-bar-container">
+                  <div class="battery-bar range-20-40" style="height:45%" data-value="2,150"></div>
+                </div>
+                <span class="battery-bar-label">20-40%</span>
+              </div>
+              <div class="battery-bar-group">
+                <div class="battery-bar-container">
+                  <div class="battery-bar range-40-60" style="height:65%" data-value="3,420"></div>
+                </div>
+                <span class="battery-bar-label">40-60%</span>
+              </div>
+              <div class="battery-bar-group">
+                <div class="battery-bar-container">
+                  <div class="battery-bar range-60-80" style="height:85%" data-value="5,280"></div>
+                </div>
+                <span class="battery-bar-label">60-80%</span>
+              </div>
+              <div class="battery-bar-group">
+                <div class="battery-bar-container">
+                  <div class="battery-bar range-80-100" style="height:100%" data-value="6,680"></div>
+                </div>
+                <span class="battery-bar-label">80-100%</span>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--err)"></div>
+                <span>低电量 (0-20%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--warn)"></div>
+                <span>偏低 (20-40%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:oklch(70% 0.15 90)"></div>
+                <span>中等 (40-60%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--ok)"></div>
+                <span>良好 (60-80%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--primary)"></div>
+                <span>满电 (80-100%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fleet Health -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">车队健康</span>
+            <div class="panel-actions">
+              <button class="panel-tab active">实时</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="fleet-stats">
+              <div class="fleet-stat">
+                <div class="fleet-stat-header">
+                  <span class="fleet-stat-label">可用</span>
+                  <div class="fleet-stat-dot green"></div>
+                </div>
+                <div class="fleet-stat-value" style="color:var(--ok)">18,420</div>
+                <div class="fleet-stat-bar">
+                  <div class="fleet-stat-bar-fill green" style="width:87%"></div>
+                </div>
+              </div>
+              <div class="fleet-stat">
+                <div class="fleet-stat-header">
+                  <span class="fleet-stat-label">使用中</span>
+                  <div class="fleet-stat-dot blue"></div>
+                </div>
+                <div class="fleet-stat-value" style="color:var(--primary)">8,340</div>
+                <div class="fleet-stat-bar">
+                  <div class="fleet-stat-bar-fill blue" style="width:40%"></div>
+                </div>
+              </div>
+              <div class="fleet-stat">
+                <div class="fleet-stat-header">
+                  <span class="fleet-stat-label">低电量</span>
+                  <div class="fleet-stat-dot yellow"></div>
+                </div>
+                <div class="fleet-stat-value" style="color:var(--warn)">2,150</div>
+                <div class="fleet-stat-bar">
+                  <div class="fleet-stat-bar-fill yellow" style="width:15%"></div>
+                </div>
+              </div>
+              <div class="fleet-stat">
+                <div class="fleet-stat-header">
+                  <span class="fleet-stat-label">故障</span>
+                  <div class="fleet-stat-dot red"></div>
+                </div>
+                <div class="fleet-stat-value" style="color:var(--err)">890</div>
+                <div class="fleet-stat-bar">
+                  <div class="fleet-stat-bar-fill red" style="width:6%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Grid -->
+      <div class="bottom-grid">
+        <!-- Supply & Demand -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">供需热力摘要</span>
+            <div class="panel-actions">
+              <button class="panel-tab active">按区域</button>
+              <button class="panel-tab">按时段</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="supply-demand-chart">
+              <div class="sd-row">
+                <span class="sd-label">西湖区</span>
+                <div class="sd-bar-container">
+                  <div class="sd-bar supply" style="width:70%"></div>
+                  <div class="sd-bar demand" style="width:85%"></div>
+                </div>
+                <span class="sd-value" style="color:var(--warn)">+15%</span>
+              </div>
+              <div class="sd-row">
+                <span class="sd-label">滨江区</span>
+                <div class="sd-bar-container">
+                  <div class="sd-bar supply" style="width:60%"></div>
+                  <div class="sd-bar demand" style="width:55%"></div>
+                </div>
+                <span class="sd-value" style="color:var(--ok)">-5%</span>
+              </div>
+              <div class="sd-row">
+                <span class="sd-label">拱墅区</span>
+                <div class="sd-bar-container">
+                  <div class="sd-bar supply" style="width:45%"></div>
+                  <div class="sd-bar demand" style="width:70%"></div>
+                </div>
+                <span class="sd-value" style="color:var(--warn)">+25%</span>
+              </div>
+              <div class="sd-row">
+                <span class="sd-label">上城区</span>
+                <div class="sd-bar-container">
+                  <div class="sd-bar supply" style="width:80%"></div>
+                  <div class="sd-bar demand" style="width:75%"></div>
+                </div>
+                <span class="sd-value" style="color:var(--ok)">-5%</span>
+              </div>
+              <div class="sd-row">
+                <span class="sd-label">余杭区</span>
+                <div class="sd-bar-container">
+                  <div class="sd-bar supply" style="width:50%"></div>
+                  <div class="sd-bar demand" style="width:40%"></div>
+                </div>
+                <span class="sd-value" style="color:var(--ok)">-10%</span>
+              </div>
+              <div class="sd-row">
+                <span class="sd-label">萧山区</span>
+                <div class="sd-bar-container">
+                  <div class="sd-bar supply" style="width:35%"></div>
+                  <div class="sd-bar demand" style="width:60%"></div>
+                </div>
+                <span class="sd-value" style="color:var(--warn)">+25%</span>
+              </div>
+            </div>
+            <div class="sd-legend">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--primary)"></div>
+                <span>供给</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--warn)"></div>
+                <span>需求</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Center -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">告警中心</span>
+            <div class="panel-actions">
+              <button class="panel-tab active">全部</button>
+              <button class="panel-tab">P0</button>
+              <button class="panel-tab">P1</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="alert-list">
+              <div class="alert-item">
+                <div class="alert-priority p0"></div>
+                <div class="alert-content">
+                  <div class="alert-title">西湖区3个站点离线超过30分钟</div>
+                  <div class="alert-meta">
+                    <span class="alert-tag p0">P0</span>
+                    <span>10分钟前</span>
+                    <span>影响车辆 240+</span>
+                  </div>
+                </div>
+              </div>
+              <div class="alert-item">
+                <div class="alert-priority p0"></div>
+                <div class="alert-content">
+                  <div class="alert-title">滨江区电池温度异常告警</div>
+                  <div class="alert-meta">
+                    <span class="alert-tag p0">P0</span>
+                    <span>25分钟前</span>
+                    <span>涉及12块电池</span>
+                  </div>
+                </div>
+              </div>
+              <div class="alert-item">
+                <div class="alert-priority p1"></div>
+                <div class="alert-content">
+                  <div class="alert-title">拱墅区低电量车辆占比超过15%</div>
+                  <div class="alert-meta">
+                    <span class="alert-tag p1">P1</span>
+                    <span>1小时前</span>
+                    <span>需要调度换电</span>
+                  </div>
+                </div>
+              </div>
+              <div class="alert-item">
+                <div class="alert-priority p1"></div>
+                <div class="alert-content">
+                  <div class="alert-title">上城区早高峰供需失衡预警</div>
+                  <div class="alert-meta">
+                    <span class="alert-tag p1">P1</span>
+                    <span>2小时前</span>
+                    <span>建议提前调度</span>
+                  </div>
+                </div>
+              </div>
+              <div class="alert-item">
+                <div class="alert-priority p2"></div>
+                <div class="alert-content">
+                  <div class="alert-title">余杭区5辆车GPS信号弱</div>
+                  <div class="alert-meta">
+                    <span class="alert-tag p2">P2</span>
+                    <span>3小时前</span>
+                    <span>待检查定位模块</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work Orders -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">工单概览</span>
+            <div class="panel-actions">
+              <button class="panel-tab active">今日</button>
+              <button class="panel-tab">待处理</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="workorder-stats">
+              <div class="workorder-stat">
+                <div class="workorder-stat-value" style="color:var(--err)">23</div>
+                <div class="workorder-stat-label">待处理</div>
+              </div>
+              <div class="workorder-stat">
+                <div class="workorder-stat-value" style="color:var(--warn)">47</div>
+                <div class="workorder-stat-label">进行中</div>
+              </div>
+              <div class="workorder-stat">
+                <div class="workorder-stat-value" style="color:var(--ok)">156</div>
+                <div class="workorder-stat-label">已完成</div>
+              </div>
+            </div>
+            <div class="workorder-list">
+              <div class="workorder-item">
+                <span class="workorder-type repair">维修</span>
+                <span class="workorder-desc">西湖区A032号车刹车故障</span>
+                <span class="workorder-time">15min</span>
+              </div>
+              <div class="workorder-item">
+                <span class="workorder-type swap">换电</span>
+                <span class="workorder-desc">滨江区B12站点批量换电</span>
+                <span class="workorder-time">32min</span>
+              </div>
+              <div class="workorder-item">
+                <span class="workorder-type move">调度</span>
+                <span class="workorder-desc">拱墅区早高峰车辆调度</span>
+                <span class="workorder-time">1h</span>
+              </div>
+              <div class="workorder-item">
+                <span class="workorder-type inspect">巡检</span>
+                <span class="workorder-desc">上城区C站点设备巡检</span>
+                <span class="workorder-time">2h</span>
+              </div>
+              <div class="workorder-item">
+                <span class="workorder-type repair">维修</span>
+                <span class="workorder-desc">余杭区D089号车轮胎破损</span>
+                <span class="workorder-time">3h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Sidebar navigation
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    // Panel tabs
+    document.querySelectorAll('.panel-actions').forEach(group => {
+      group.querySelectorAll('.panel-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          group.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+        });
+      });
+    });
+
+    // Battery bar tooltip
+    document.querySelectorAll('.battery-bar').forEach(bar => {
+      bar.addEventListener('mouseenter', () => {
+        bar.style.filter = 'brightness(1.2)';
+      });
+      bar.addEventListener('mouseleave', () => {
+        bar.style.filter = '';
+      });
+    });
+  </script>
+</body>
+</html>

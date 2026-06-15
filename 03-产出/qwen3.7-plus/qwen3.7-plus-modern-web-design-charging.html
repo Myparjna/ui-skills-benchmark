@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>充电助手 - 电动车充电桩小程序</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --color-primary:#1677FF;
+  --color-primary-light:#4096ff;
+  --color-primary-dark:#0958d9;
+  --color-success:#52c41a;
+  --color-warning:#faad14;
+  --color-danger:#ff4d4f;
+  --color-gold:#d4a853;
+  --color-silver:#94a3b8;
+  --color-white:#ffffff;
+  --color-gray-50:#f8fafc;
+  --color-gray-100:#f1f5f9;
+  --color-gray-200:#e2e8f0;
+  --color-gray-300:#cbd5e1;
+  --color-gray-400:#94a3b8;
+  --color-gray-500:#64748b;
+  --color-gray-600:#475569;
+  --color-gray-700:#334155;
+  --color-gray-800:#1e293b;
+  --color-gray-900:#0f172a;
+
+  --space-xs:4px;
+  --space-sm:8px;
+  --space-md:12px;
+  --space-lg:16px;
+  --space-xl:20px;
+  --space-2xl:24px;
+  --space-3xl:32px;
+
+  --font-size-xs:12px;
+  --font-size-sm:13px;
+  --font-size-base:14px;
+  --font-size-lg:16px;
+  --font-size-xl:18px;
+  --font-size-2xl:20px;
+  --font-size-3xl:24px;
+
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:16px;
+  --radius-xl:20px;
+
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:0 4px 12px rgba(0,0,0,.1);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.12);
+
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --duration-fast:150ms;
+  --duration-normal:250ms;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--color-gray-800);background:var(--color-gray-100);font-size:var(--font-size-base);line-height:1.5}
+button{border:none;cursor:pointer;font-family:inherit;background:none}
+input{border:none;outline:none;font-family:inherit}
+
+/* ===== APP CONTAINER ===== */
+.app{width:390px;height:844px;margin:0 auto;background:var(--color-gray-50);position:relative;overflow:hidden;display:flex;flex-direction:column}
+
+/* ===== PAGES ===== */
+.page{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.page.active{display:flex}
+.page::-webkit-scrollbar{display:none}
+
+/* ===== STATUS BAR ===== */
+.status-bar{height:44px;background:var(--color-white);display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-lg);font-size:var(--font-size-sm);font-weight:600;flex-shrink:0}
+.status-bar__time{color:var(--color-gray-900)}
+.status-bar__icons{display:flex;gap:6px;align-items:center}
+.status-bar__icons i{font-size:14px;color:var(--color-gray-700)}
+
+/* ===== HEADER ===== */
+.header{height:56px;background:var(--color-white);display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-lg);flex-shrink:0;border-bottom:1px solid var(--color-gray-100)}
+.header__title{font-size:var(--font-size-xl);font-weight:600}
+.header__action{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--color-gray-600)}
+.header__action:active{background:var(--color-gray-100)}
+
+/* ===== MAP PAGE ===== */
+.map-container{flex:1;position:relative;background:linear-gradient(135deg,#e0f2fe 0%,#bae6fd 100%)}
+.map-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--space-sm);color:var(--color-primary)}
+.map-placeholder i{font-size:48px;opacity:.5}
+.map-placeholder span{font-size:var(--font-size-sm);opacity:.6}
+.map-markers{position:absolute;inset:0}
+.map-marker{position:absolute;width:40px;height:40px;background:var(--color-primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;box-shadow:0 4px 12px rgba(22,119,255,.3);transform:translate(-50%,-50%);cursor:pointer;transition:transform var(--duration-fast)}
+.map-marker:active{transform:translate(-50%,-50%) scale(.9)}
+.map-marker--selected{background:var(--color-primary-dark);transform:translate(-50%,-50%) scale(1.1)}
+.map-marker__pulse{position:absolute;inset:-8px;border-radius:50%;background:rgba(22,119,255,.2);animation:pulse 2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.5);opacity:0}}
+
+/* ===== STATION LIST ===== */
+.station-list{background:var(--color-white);border-radius:var(--radius-xl) var(--radius-xl) 0 0;margin-top:-20px;position:relative;z-index:10;padding:var(--space-lg);flex-shrink:0;max-height:45%}
+.station-list__header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)}
+.station-list__title{font-size:var(--font-size-lg);font-weight:600}
+.station-list__filter{font-size:var(--font-size-sm);color:var(--color-primary);display:flex;align-items:center;gap:4px}
+.station-cards{display:flex;flex-direction:column;gap:var(--space-md);overflow-y:auto;max-height:calc(100% - 50px)}
+.station-cards::-webkit-scrollbar{display:none}
+.station-card{display:flex;gap:var(--space-md);padding:var(--space-md);background:var(--color-gray-50);border-radius:var(--radius-md);transition:all var(--duration-fast)}
+.station-card:active{background:var(--color-gray-100)}
+.station-card__icon{width:48px;height:48px;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-light));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
+.station-card__info{flex:1;min-width:0}
+.station-card__name{font-size:var(--font-size-base);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.station-card__addr{font-size:var(--font-size-xs);color:var(--color-gray-500);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.station-card__meta{display:flex;gap:var(--space-md);font-size:var(--font-size-xs)}
+.station-card__meta span{display:flex;align-items:center;gap:2px}
+.station-card__meta i{font-size:12px}
+.station-card__meta--available{color:var(--color-success)}
+.station-card__meta--distance{color:var(--color-gray-400)}
+.station-card__price{font-size:var(--font-size-lg);font-weight:700;color:var(--color-primary);flex-shrink:0}
+.station-card__price small{font-size:var(--font-size-xs);font-weight:400;color:var(--color-gray-400)}
+
+/* ===== SAVE MONEY PAGE ===== */
+.save-page{padding:var(--space-lg)}
+.save-banner{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:var(--radius-lg);padding:var(--space-xl);color:#fff;margin-bottom:var(--space-lg);position:relative;overflow:hidden}
+.save-banner__pattern{position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,.1);border-radius:50%}
+.save-banner__title{font-size:var(--font-size-2xl);font-weight:700;margin-bottom:var(--space-xs)}
+.save-banner__desc{font-size:var(--font-size-sm);opacity:.9;margin-bottom:var(--space-md)}
+.save-banner__btn{padding:8px 20px;background:rgba(255,255,255,.2);border-radius:100px;font-size:var(--font-size-sm);font-weight:600;backdrop-filter:blur(10px)}
+.save-banner__btn:active{background:rgba(255,255,255,.3)}
+
+.save-section{margin-bottom:var(--space-xl)}
+.save-section__header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)}
+.save-section__title{font-size:var(--font-size-lg);font-weight:600}
+.save-section__more{font-size:var(--font-size-sm);color:var(--color-gray-400);display:flex;align-items:center;gap:2px}
+
+.save-cards{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)}
+.save-card{background:var(--color-white);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;transition:all var(--duration-fast)}
+.save-card:active{transform:scale(.98)}
+.save-card__icon{width:40px;height:40px;margin:0 auto var(--space-sm);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.save-card__icon--red{background:rgba(255,77,79,.1);color:var(--color-danger)}
+.save-card__icon--orange{background:rgba(250,173,20,.1);color:var(--color-warning)}
+.save-card__icon--green{background:rgba(82,196,26,.1);color:var(--color-success)}
+.save-card__icon--blue{background:rgba(22,119,255,.1);color:var(--color-primary)}
+.save-card__title{font-size:var(--font-size-sm);font-weight:600;margin-bottom:2px}
+.save-card__desc{font-size:var(--font-size-xs);color:var(--color-gray-400)}
+
+/* ===== SCAN PAGE ===== */
+.scan-page{padding:var(--space-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-xl)}
+.scan-frame{width:240px;height:240px;position:relative;border:2px solid var(--color-primary);border-radius:var(--radius-lg);overflow:hidden}
+.scan-frame__corner{position:absolute;width:24px;height:24px;border:3px solid var(--color-primary)}
+.scan-frame__corner--tl{top:0;left:0;border-right:none;border-bottom:none;border-radius:var(--radius-sm) 0 0 0}
+.scan-frame__corner--tr{top:0;right:0;border-left:none;border-bottom:none;border-radius:0 var(--radius-sm) 0 0}
+.scan-frame__corner--bl{bottom:0;left:0;border-right:none;border-top:none;border-radius:0 0 0 var(--radius-sm)}
+.scan-frame__corner--br{bottom:0;right:0;border-left:none;border-top:none;border-radius:0 0 var(--radius-sm) 0}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--color-primary),transparent);animation:scan 2s ease-in-out infinite}
+@keyframes scan{0%{top:0}50%{top:calc(100% - 2px)}100%{top:0}}
+.scan-tip{font-size:var(--font-size-base);color:var(--color-gray-600);text-align:center}
+.scan-tip strong{color:var(--color-primary);display:block;margin-bottom:4px;font-size:var(--font-size-lg)}
+.scan-actions{display:flex;gap:var(--space-lg)}
+.scan-action{display:flex;flex-direction:column;align-items:center;gap:var(--space-xs);color:var(--color-gray-600);font-size:var(--font-size-sm)}
+.scan-action__btn{width:48px;height:48px;background:var(--color-white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--color-primary);box-shadow:var(--shadow-md)}
+.scan-action:active .scan-action__btn{background:var(--color-gray-50)}
+
+/* ===== ORDER PAGE ===== */
+.order-tabs{display:flex;background:var(--color-white);border-bottom:1px solid var(--color-gray-100);flex-shrink:0}
+.order-tab{flex:1;padding:var(--space-md);text-align:center;font-size:var(--font-size-base);color:var(--color-gray-500);position:relative;transition:color var(--duration-fast)}
+.order-tab.active{color:var(--color-primary);font-weight:600}
+.order-tab.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:24px;height:3px;background:var(--color-primary);border-radius:2px}
+.order-list{flex:1;overflow-y:auto;padding:var(--space-lg)}
+.order-list::-webkit-scrollbar{display:none}
+.order-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--color-gray-400);gap:var(--space-md)}
+.order-empty i{font-size:48px;opacity:.3}
+.order-empty span{font-size:var(--font-size-sm)}
+.order-card{background:var(--color-white);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-md);transition:all var(--duration-fast)}
+.order-card:active{transform:scale(.99)}
+.order-card__header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm)}
+.order-card__station{font-size:var(--font-size-base);font-weight:600;display:flex;align-items:center;gap:6px}
+.order-card__station i{color:var(--color-primary);font-size:16px}
+.order-card__status{font-size:var(--font-size-xs);padding:2px 8px;border-radius:100px;font-weight:500}
+.order-card__status--charging{background:rgba(82,196,26,.1);color:var(--color-success)}
+.order-card__status--completed{background:var(--color-gray-100);color:var(--color-gray-500)}
+.order-card__body{display:flex;justify-content:space-between;align-items:flex-end}
+.order-card__info{display:flex;flex-direction:column;gap:2px}
+.order-card__info span{font-size:var(--font-size-xs);color:var(--color-gray-500)}
+.order-card__price{font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary)}
+.order-card__price small{font-size:var(--font-size-xs);font-weight:400;color:var(--color-gray-400)}
+.order-card__footer{display:flex;gap:var(--space-sm);margin-top:var(--space-md);padding-top:var(--space-md);border-top:1px solid var(--color-gray-100)}
+.order-card__btn{flex:1;padding:8px;border-radius:var(--radius-sm);font-size:var(--font-size-sm);font-weight:500;text-align:center;transition:all var(--duration-fast)}
+.order-card__btn--primary{background:var(--color-primary);color:#fff}
+.order-card__btn--primary:active{background:var(--color-primary-dark)}
+.order-card__btn--secondary{background:var(--color-gray-100);color:var(--color-gray-600)}
+.order-card__btn--secondary:active{background:var(--color-gray-200)}
+
+/* ===== PROFILE PAGE ===== */
+.profile-header{background:linear-gradient(135deg,var(--color-primary) 0%,#0958d9 100%);padding:var(--space-xl) var(--space-lg);color:#fff;position:relative;overflow:hidden}
+.profile-header__pattern{position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:rgba(255,255,255,.1);border-radius:50%}
+.profile-user{display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg)}
+.profile-avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px;backdrop-filter:blur(10px)}
+.profile-info{flex:1}
+.profile-name{font-size:var(--font-size-lg);font-weight:600;margin-bottom:2px}
+.profile-id{font-size:var(--font-size-xs);opacity:.8}
+.profile-vip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:linear-gradient(135deg,#d4a853,#f0d78c);border-radius:100px;font-size:var(--font-size-xs);font-weight:600;color:#78350f}
+
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md)}
+.profile-stat{text-align:center}
+.profile-stat__value{font-size:var(--font-size-xl);font-weight:700;margin-bottom:2px}
+.profile-stat__label{font-size:var(--font-size-xs);opacity:.8}
+
+.profile-section{padding:var(--space-lg)}
+.profile-menu{background:var(--color-white);border-radius:var(--radius-md);overflow:hidden}
+.profile-menu__item{display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--color-gray-100);transition:background var(--duration-fast)}
+.profile-menu__item:last-child{border-bottom:none}
+.profile-menu__item:active{background:var(--color-gray-50)}
+.profile-menu__icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+.profile-menu__icon--blue{background:rgba(22,119,255,.1);color:var(--color-primary)}
+.profile-menu__icon--green{background:rgba(82,196,26,.1);color:var(--color-success)}
+.profile-menu__icon--orange{background:rgba(250,173,20,.1);color:var(--color-warning)}
+.profile-menu__icon--red{background:rgba(255,77,79,.1);color:var(--color-danger)}
+.profile-menu__icon--purple{background:rgba(139,92,246,.1);color:#8b5cf6}
+.profile-menu__text{flex:1;font-size:var(--font-size-base)}
+.profile-menu__arrow{color:var(--color-gray-400);font-size:14px}
+
+/* ===== TAB BAR ===== */
+.tab-bar{height:64px;background:var(--color-white);display:flex;border-top:1px solid var(--color-gray-100);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--color-gray-400);font-size:var(--font-size-xs);position:relative;transition:color var(--duration-fast)}
+.tab.active{color:var(--color-primary)}
+.tab i{font-size:22px}
+.tab--scan{position:relative}
+.tab--scan .tab__icon{width:44px;height:44px;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-light));border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;margin-top:-16px;box-shadow:0 4px 12px rgba(22,119,255,.3)}
+
+/* ===== MODAL ===== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:1000}
+.modal.active{display:flex}
+.modal__content{background:var(--color-white);border-radius:var(--radius-xl) var(--radius-xl) 0 0;width:100%;max-height:80%;overflow-y:auto;animation:slideUp .3s var(--ease-out)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal__header{display:flex;justify-content:space-between;align-items:center;padding:var(--space-lg);border-bottom:1px solid var(--color-gray-100);position:sticky;top:0;background:var(--color-white);z-index:1}
+.modal__title{font-size:var(--font-size-lg);font-weight:600}
+.modal__close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--color-gray-500)}
+.modal__close:active{background:var(--color-gray-100)}
+.modal__body{padding:var(--space-lg)}
+
+/* ===== CHARGING MODAL ===== */
+.charging-status{text-align:center;padding:var(--space-xl) 0}
+.charging-status__icon{width:80px;height:80px;margin:0 auto var(--space-lg);background:linear-gradient(135deg,var(--color-success),#389e0d);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px}
+.charging-status__title{font-size:var(--font-size-xl);font-weight:600;margin-bottom:var(--space-xs)}
+.charging-status__desc{font-size:var(--font-size-sm);color:var(--color-gray-500);margin-bottom:var(--space-xl)}
+.charging-info{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-xl)}
+.charging-info__item{background:var(--color-gray-50);border-radius:var(--radius-sm);padding:var(--space-md);text-align:center}
+.charging-info__value{font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);margin-bottom:2px}
+.charging-info__label{font-size:var(--font-size-xs);color:var(--color-gray-500)}
+.charging-actions{display:flex;gap:var(--space-md)}
+.charging-btn{flex:1;padding:14px;border-radius:var(--radius-md);font-size:var(--font-size-base);font-weight:600;text-align:center;transition:all var(--duration-fast)}
+.charging-btn--primary{background:var(--color-primary);color:#fff}
+.charging-btn--primary:active{background:var(--color-primary-dark)}
+.charging-btn--secondary{background:var(--color-gray-100);color:var(--color-gray-600)}
+.charging-btn--secondary:active{background:var(--color-gray-200)}
+
+/* ===== WALLET MODAL ===== */
+.wallet-balance{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:var(--radius-lg);padding:var(--space-xl);color:#fff;text-align:center;margin-bottom:var(--space-xl)}
+.wallet-balance__label{font-size:var(--font-size-sm);opacity:.9;margin-bottom:var(--space-xs)}
+.wallet-balance__value{font-size:var(--font-size-3xl);font-weight:700}
+.wallet-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-xl)}
+.wallet-action{background:var(--color-white);border:1px solid var(--color-gray-200);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;transition:all var(--duration-fast)}
+.wallet-action:active{border-color:var(--color-primary);background:rgba(22,119,255,.05)}
+.wallet-action i{font-size:24px;color:var(--color-primary);margin-bottom:var(--space-xs)}
+.wallet-action span{display:block;font-size:var(--font-size-sm);font-weight:500}
+
+.wallet-records__title{font-size:var(--font-size-base);font-weight:600;margin-bottom:var(--space-md)}
+.wallet-record{display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md) 0;border-bottom:1px solid var(--color-gray-100)}
+.wallet-record:last-child{border-bottom:none}
+.wallet-record__icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+.wallet-record__icon--in{background:rgba(82,196,26,.1);color:var(--color-success)}
+.wallet-record__icon--out{background:rgba(255,77,79,.1);color:var(--color-danger)}
+.wallet-record__info{flex:1}
+.wallet-record__title{font-size:var(--font-size-sm);font-weight:500;margin-bottom:2px}
+.wallet-record__time{font-size:var(--font-size-xs);color:var(--color-gray-400)}
+.wallet-record__amount{font-size:var(--font-size-base);font-weight:600}
+.wallet-record__amount--in{color:var(--color-success)}
+.wallet-record__amount--out{color:var(--color-danger)}
+
+/* ===== VEHICLE MODAL ===== */
+.vehicle-list{display:flex;flex-direction:column;gap:var(--space-md)}
+.vehicle-card{background:var(--color-white);border:1px solid var(--color-gray-200);border-radius:var(--radius-md);padding:var(--space-md);display:flex;align-items:center;gap:var(--space-md);transition:all var(--duration-fast)}
+.vehicle-card:active{border-color:var(--color-primary)}
+.vehicle-card__icon{width:48px;height:48px;background:var(--color-gray-50);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--color-primary)}
+.vehicle-card__info{flex:1}
+.vehicle-card__name{font-size:var(--font-size-base);font-weight:600;margin-bottom:2px}
+.vehicle-card__plate{font-size:var(--font-size-sm);color:var(--color-gray-500)}
+.vehicle-card__default{padding:2px 8px;background:var(--color-primary);color:#fff;border-radius:100px;font-size:var(--font-size-xs)}
+.vehicle-add{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);padding:var(--space-md);background:var(--color-gray-50);border-radius:var(--radius-md);color:var(--color-primary);font-size:var(--font-size-sm);font-weight:500;transition:all var(--duration-fast)}
+.vehicle-add:active{background:var(--color-gray-100)}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <span class="status-bar__time">9:41</span>
+    <div class="status-bar__icons">
+      <i class="ri-signal-wifi-fill"></i>
+      <i class="ri-battery-2-charge-fill"></i>
+    </div>
+  </div>
+
+  <!-- MAP PAGE -->
+  <div class="page active" id="page-map">
+    <div class="map-container">
+      <div class="map-placeholder">
+        <i class="ri-map-2-line"></i>
+        <span>地图加载中...</span>
+      </div>
+      <div class="map-markers">
+        <div class="map-marker map-marker--selected" style="left:40%;top:35%">
+          <div class="map-marker__pulse"></div>
+          <i class="ri-flashlight-fill"></i>
+        </div>
+        <div class="map-marker" style="left:60%;top:45%"><i class="ri-flashlight-fill"></i></div>
+        <div class="map-marker" style="left:30%;top:55%"><i class="ri-flashlight-fill"></i></div>
+        <div class="map-marker" style="left:70%;top:30%"><i class="ri-flashlight-fill"></i></div>
+      </div>
+    </div>
+    <div class="station-list">
+      <div class="station-list__header">
+        <span class="station-list__title">附近充电站</span>
+        <button class="station-list__filter"><i class="ri-filter-3-line"></i> 筛选</button>
+      </div>
+      <div class="station-cards">
+        <div class="station-card">
+          <div class="station-card__icon"><i class="ri-flashlight-fill"></i></div>
+          <div class="station-card__info">
+            <div class="station-card__name">西湖文化广场充电站</div>
+            <div class="station-card__addr">杭州市下城区中山北路266号</div>
+            <div class="station-card__meta">
+              <span class="station-card__meta--available"><i class="ri-checkbox-circle-fill"></i> 8/10 可用</span>
+              <span class="station-card__meta--distance"><i class="ri-map-pin-line"></i> 350m</span>
+            </div>
+          </div>
+          <div class="station-card__price">¥1.2<small>/度</small></div>
+        </div>
+        <div class="station-card">
+          <div class="station-card__icon"><i class="ri-flashlight-fill"></i></div>
+          <div class="station-card__info">
+            <div class="station-card__name">武林广场充电站</div>
+            <div class="station-card__addr">杭州市下城区武林广场21号</div>
+            <div class="station-card__meta">
+              <span class="station-card__meta--available"><i class="ri-checkbox-circle-fill"></i> 5/8 可用</span>
+              <span class="station-card__meta--distance"><i class="ri-map-pin-line"></i> 520m</span>
+            </div>
+          </div>
+          <div class="station-card__price">¥1.3<small>/度</small></div>
+        </div>
+        <div class="station-card">
+          <div class="station-card__icon"><i class="ri-flashlight-fill"></i></div>
+          <div class="station-card__info">
+            <div class="station-card__name">杭州大厦充电站</div>
+            <div class="station-card__addr">杭州市下城区武林广场29号</div>
+            <div class="station-card__meta">
+              <span class="station-card__meta--available"><i class="ri-checkbox-circle-fill"></i> 3/6 可用</span>
+              <span class="station-card__meta--distance"><i class="ri-map-pin-line"></i> 680m</span>
+            </div>
+          </div>
+          <div class="station-card__price">¥1.25<small>/度</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE MONEY PAGE -->
+  <div class="page" id="page-save">
+    <div class="header">
+      <button class="header__action"><i class="ri-arrow-left-s-line"></i></button>
+      <span class="header__title">省钱中心</span>
+      <button class="header__action"><i class="ri-more-2-fill"></i></button>
+    </div>
+    <div class="save-page">
+      <div class="save-banner">
+        <div class="save-banner__pattern"></div>
+        <div class="save-banner__title">PLUS会员</div>
+        <div class="save-banner__desc">充电低至8折，每月赠送优惠券</div>
+        <button class="save-banner__btn">立即开通</button>
+      </div>
+
+      <div class="save-section">
+        <div class="save-section__header">
+          <span class="save-section__title">会员等级</span>
+          <button class="save-section__more">查看全部 <i class="ri-arrow-right-s-line"></i></button>
+        </div>
+        <div class="save-cards">
+          <div class="save-card">
+            <div class="save-card__icon save-card__icon--blue"><i class="ri-vip-diamond-fill"></i></div>
+            <div class="save-card__title">银卡会员</div>
+            <div class="save-card__desc">充电9.5折</div>
+          </div>
+          <div class="save-card">
+            <div class="save-card__icon save-card__icon--orange"><i class="ri-vip-crown-2-fill"></i></div>
+            <div class="save-card__title">金卡会员</div>
+            <div class="save-card__desc">充电9折</div>
+          </div>
+          <div class="save-card">
+            <div class="save-card__icon save-card__icon--green"><i class="ri-star-fill"></i></div>
+            <div class="save-card__title">V1会员</div>
+            <div class="save-card__desc">充电8.5折</div>
+          </div>
+          <div class="save-card">
+            <div class="save-card__icon save-card__icon--red"><i class="ri-fire-fill"></i></div>
+            <div class="save-card__title">限时活动</div>
+            <div class="save-card__desc">首单立减5元</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="save-section">
+        <div class="save-section__header">
+          <span class="save-section__title">优惠券</span>
+          <button class="save-section__more">3张可用 <i class="ri-arrow-right-s-line"></i></button>
+        </div>
+        <div class="save-cards">
+          <div class="save-card">
+            <div class="save-card__icon save-card__icon--red"><i class="ri-coupon-fill"></i></div>
+            <div class="save-card__title">满50减5</div>
+            <div class="save-card__desc">有效期至6.30</div>
+          </div>
+          <div class="save-card">
+            <div class="save-card__icon save-card__icon--orange"><i class="ri-gift-fill"></i></div>
+            <div class="save-card__title">新人礼包</div>
+            <div class="save-card__desc">含3张优惠券</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCAN PAGE -->
+  <div class="page" id="page-scan">
+    <div class="header">
+      <button class="header__action"><i class="ri-arrow-left-s-line"></i></button>
+      <span class="header__title">扫码充电</span>
+      <button class="header__action"><i class="ri-more-2-fill"></i></button>
+    </div>
+    <div class="scan-page">
+      <div class="scan-frame">
+        <div class="scan-frame__corner scan-frame__corner--tl"></div>
+        <div class="scan-frame__corner scan-frame__corner--tr"></div>
+        <div class="scan-frame__corner scan-frame__corner--bl"></div>
+        <div class="scan-frame__corner scan-frame__corner--br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="scan-tip">
+        <strong>将二维码放入框内扫描</strong>
+        请对准充电桩上的二维码
+      </div>
+      <div class="scan-actions">
+        <div class="scan-action">
+          <div class="scan-action__btn"><i class="ri-image-line"></i></div>
+          <span>相册</span>
+        </div>
+        <div class="scan-action">
+          <div class="scan-action__btn"><i class="ri-flashlight-line"></i></div>
+          <span>手电筒</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER PAGE -->
+  <div class="page" id="page-order">
+    <div class="header">
+      <button class="header__action"><i class="ri-arrow-left-s-line"></i></button>
+      <span class="header__title">我的订单</span>
+      <button class="header__action"><i class="ri-more-2-fill"></i></button>
+    </div>
+    <div class="order-tabs">
+      <div class="order-tab active">进行中</div>
+      <div class="order-tab">已完成</div>
+      <div class="order-tab">已取消</div>
+    </div>
+    <div class="order-list">
+      <div class="order-card">
+        <div class="order-card__header">
+          <div class="order-card__station"><i class="ri-flashlight-fill"></i> 西湖文化广场充电站</div>
+          <span class="order-card__status order-card__status--charging">充电中</span>
+        </div>
+        <div class="order-card__body">
+          <div class="order-card__info">
+            <span>开始时间：2026-06-15 09:30</span>
+            <span>已充电：12.5度 | 预计还需 45分钟</span>
+          </div>
+          <div class="order-card__price">¥15.0<small></small></div>
+        </div>
+        <div class="order-card__footer">
+          <button class="order-card__btn order-card__btn--secondary">查看详情</button>
+          <button class="order-card__btn order-card__btn--primary">结束充电</button>
+        </div>
+      </div>
+      <div class="order-card">
+        <div class="order-card__header">
+          <div class="order-card__station"><i class="ri-flashlight-fill"></i> 武林广场充电站</div>
+          <span class="order-card__status order-card__status--completed">已完成</span>
+        </div>
+        <div class="order-card__body">
+          <div class="order-card__info">
+            <span>2026-06-14 14:20 - 15:45</span>
+            <span>充电：28.3度 | 时长：1小时25分</span>
+          </div>
+          <div class="order-card__price">¥34.0<small></small></div>
+        </div>
+        <div class="order-card__footer">
+          <button class="order-card__btn order-card__btn--secondary">再次充电</button>
+          <button class="order-card__btn order-card__btn--secondary">评价</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE PAGE -->
+  <div class="page" id="page-profile">
+    <div class="profile-header">
+      <div class="profile-header__pattern"></div>
+      <div class="profile-user">
+        <div class="profile-avatar"><i class="ri-user-3-fill"></i></div>
+        <div class="profile-info">
+          <div class="profile-name">张三</div>
+          <div class="profile-id">ID: 13800138000</div>
+        </div>
+        <div class="profile-vip"><i class="ri-vip-crown-2-fill"></i> 金卡会员</div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat__value">128</div>
+          <div class="profile-stat__label">充电次数</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat__value">2,450</div>
+          <div class="profile-stat__label">累计度数</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat__value">¥89</div>
+          <div class="profile-stat__label">已节省</div>
+        </div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-menu">
+        <div class="profile-menu__item" onclick="showModal('wallet')">
+          <div class="profile-menu__icon profile-menu__icon--blue"><i class="ri-wallet-3-fill"></i></div>
+          <span class="profile-menu__text">我的钱包</span>
+          <i class="ri-arrow-right-s-line profile-menu__arrow"></i>
+        </div>
+        <div class="profile-menu__item" onclick="showModal('vehicle')">
+          <div class="profile-menu__icon profile-menu__icon--green"><i class="ri-car-fill"></i></div>
+          <span class="profile-menu__text">车辆管理</span>
+          <i class="ri-arrow-right-s-line profile-menu__arrow"></i>
+        </div>
+        <div class="profile-menu__item">
+          <div class="profile-menu__icon profile-menu__icon--orange"><i class="ri-coupon-3-fill"></i></div>
+          <span class="profile-menu__text">优惠券</span>
+          <i class="ri-arrow-right-s-line profile-menu__arrow"></i>
+        </div>
+        <div class="profile-menu__item">
+          <div class="profile-menu__icon profile-menu__icon--red"><i class="ri-vip-crown-2-fill"></i></div>
+          <span class="profile-menu__text">会员中心</span>
+          <i class="ri-arrow-right-s-line profile-menu__arrow"></i>
+        </div>
+        <div class="profile-menu__item">
+          <div class="profile-menu__icon profile-menu__icon--purple"><i class="ri-settings-3-fill"></i></div>
+          <span class="profile-menu__text">设置</span>
+          <i class="ri-arrow-right-s-line profile-menu__arrow"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <div class="tab active" data-page="map">
+      <i class="ri-map-2-fill"></i>
+      <span>首页</span>
+    </div>
+    <div class="tab" data-page="save">
+      <i class="ri-coupon-3-fill"></i>
+      <span>省钱</span>
+    </div>
+    <div class="tab tab--scan" data-page="scan">
+      <div class="tab__icon"><i class="ri-qr-scan-2-fill"></i></div>
+      <span>扫码</span>
+    </div>
+    <div class="tab" data-page="order">
+      <i class="ri-file-list-3-fill"></i>
+      <span>订单</span>
+    </div>
+    <div class="tab" data-page="profile">
+      <i class="ri-user-3-fill"></i>
+      <span>我的</span>
+    </div>
+  </div>
+</div>
+
+<!-- CHARGING MODAL -->
+<div class="modal" id="modal-charging">
+  <div class="modal__content">
+    <div class="modal__header">
+      <span class="modal__title">充电中</span>
+      <button class="modal__close" onclick="hideModal('charging')"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <div class="charging-status">
+        <div class="charging-status__icon"><i class="ri-flashlight-fill"></i></div>
+        <div class="charging-status__title">正在充电</div>
+        <div class="charging-status__desc">西湖文化广场充电站 · 3号桩</div>
+      </div>
+      <div class="charging-info">
+        <div class="charging-info__item">
+          <div class="charging-info__value">12.5<small style="font-size:12px;font-weight:400">度</small></div>
+          <div class="charging-info__label">已充电量</div>
+        </div>
+        <div class="charging-info__item">
+          <div class="charging-info__value">¥15.0</div>
+          <div class="charging-info__label">当前费用</div>
+        </div>
+        <div class="charging-info__item">
+          <div class="charging-info__value">45<small style="font-size:12px;font-weight:400">min</small></div>
+          <div class="charging-info__label">预计剩余</div>
+        </div>
+        <div class="charging-info__item">
+          <div class="charging-info__value">68<small style="font-size:12px;font-weight:400">%</small></div>
+          <div class="charging-info__label">电池电量</div>
+        </div>
+      </div>
+      <div class="charging-actions">
+        <button class="charging-btn charging-btn--secondary">暂停充电</button>
+        <button class="charging-btn charging-btn--primary">结束充电</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WALLET MODAL -->
+<div class="modal" id="modal-wallet">
+  <div class="modal__content">
+    <div class="modal__header">
+      <span class="modal__title">我的钱包</span>
+      <button class="modal__close" onclick="hideModal('wallet')"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <div class="wallet-balance">
+        <div class="wallet-balance__label">账户余额</div>
+        <div class="wallet-balance__value">¥256.80</div>
+      </div>
+      <div class="wallet-actions">
+        <div class="wallet-action">
+          <i class="ri-add-circle-line"></i>
+          <span>充值</span>
+        </div>
+        <div class="wallet-action">
+          <i class="ri-withdraw-line"></i>
+          <span>提现</span>
+        </div>
+      </div>
+      <div class="wallet-records__title">交易记录</div>
+      <div class="wallet-record">
+        <div class="wallet-record__icon wallet-record__icon--out"><i class="ri-flashlight-fill"></i></div>
+        <div class="wallet-record__info">
+          <div class="wallet-record__title">充电消费</div>
+          <div class="wallet-record__time">2026-06-15 09:30</div>
+        </div>
+        <div class="wallet-record__amount wallet-record__amount--out">-¥15.00</div>
+      </div>
+      <div class="wallet-record">
+        <div class="wallet-record__icon wallet-record__icon--in"><i class="ri-add-circle-fill"></i></div>
+        <div class="wallet-record__info">
+          <div class="wallet-record__title">充值</div>
+          <div class="wallet-record__time">2026-06-14 10:00</div>
+        </div>
+        <div class="wallet-record__amount wallet-record__amount--in">+¥100.00</div>
+      </div>
+      <div class="wallet-record">
+        <div class="wallet-record__icon wallet-record__icon--out"><i class="ri-flashlight-fill"></i></div>
+        <div class="wallet-record__info">
+          <div class="wallet-record__title">充电消费</div>
+          <div class="wallet-record__time">2026-06-14 14:20</div>
+        </div>
+        <div class="wallet-record__amount wallet-record__amount--out">-¥34.00</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VEHICLE MODAL -->
+<div class="modal" id="modal-vehicle">
+  <div class="modal__content">
+    <div class="modal__header">
+      <span class="modal__title">车辆管理</span>
+      <button class="modal__close" onclick="hideModal('vehicle')"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal__body">
+      <div class="vehicle-list">
+        <div class="vehicle-card">
+          <div class="vehicle-card__icon"><i class="ri-car-fill"></i></div>
+          <div class="vehicle-card__info">
+            <div class="vehicle-card__name">特斯拉 Model 3</div>
+            <div class="vehicle-card__plate">浙A·12345</div>
+          </div>
+          <span class="vehicle-card__default">默认</span>
+        </div>
+        <div class="vehicle-card">
+          <div class="vehicle-card__icon"><i class="ri-car-fill"></i></div>
+          <div class="vehicle-card__info">
+            <div class="vehicle-card__name">比亚迪 汉EV</div>
+            <div class="vehicle-card__plate">浙A·67890</div>
+          </div>
+        </div>
+        <button class="vehicle-add"><i class="ri-add-line"></i> 添加车辆</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+const tabs=document.querySelectorAll('.tab');
+const pages=document.querySelectorAll('.page');
+tabs.forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    const pageId=tab.dataset.page;
+    tabs.forEach(t=>t.classList.remove('active'));
+    pages.forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-'+pageId).classList.add('active');
+  });
+});
+
+// Order tabs
+const orderTabs=document.querySelectorAll('.order-tab');
+orderTabs.forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    orderTabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Modal
+function showModal(id){
+  document.getElementById('modal-'+id).classList.add('active');
+}
+function hideModal(id){
+  document.getElementById('modal-'+id).classList.remove('active');
+}
+
+// Close modal on backdrop click
+document.querySelectorAll('.modal').forEach(modal=>{
+  modal.addEventListener('click',(e)=>{
+    if(e.target===modal){
+      modal.classList.remove('active');
+    }
+  });
+});
+
+// Map marker click
+document.querySelectorAll('.map-marker').forEach(marker=>{
+  marker.addEventListener('click',()=>{
+    document.querySelectorAll('.map-marker').forEach(m=>m.classList.remove('map-marker--selected'));
+    marker.classList.add('map-marker--selected');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>充电桩 - 电动车充电服务</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #1677FF;
+            --primary-light: #4096ff;
+            --primary-dark: #0958d9;
+            --success: #52c41a;
+            --warning: #faad14;
+            --danger: #ff4d4f;
+            --text-primary: #1f1f1f;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --bg-primary: #f5f7fa;
+            --bg-white: #ffffff;
+            --border: #e8e8e8;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Mobile Container */
+        .mobile-container {
+            width: 390px;
+            height: 844px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 44px;
+            background: var(--bg-white);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-time {
+            color: var(--text-primary);
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .status-icons span {
+            font-size: 12px;
+        }
+
+        /* Page Content */
+        .page-content {
+            height: calc(100% - 44px - 70px);
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        /* Map Section */
+        .map-section {
+            height: 320px;
+            background: linear-gradient(135deg, #e6f4ff 0%, #bae0ff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320"><rect fill="%23e6f4ff" width="400" height="320"/><path d="M0 200 Q100 180 200 200 T400 200" stroke="%2391caff" fill="none" stroke-width="2"/><path d="M0 220 Q100 200 200 220 T400 220" stroke="%2391caff" fill="none" stroke-width="2"/><path d="M0 240 Q100 220 200 240 T400 240" stroke="%2391caff" fill="none" stroke-width="2"/><circle cx="120" cy="150" r="8" fill="%231677FF"/><circle cx="200" cy="180" r="8" fill="%231677FF"/><circle cx="280" cy="140" r="8" fill="%231677FF"/><circle cx="160" cy="200" r="6" fill="%2352c41a"/><circle cx="240" cy="160" r="6" fill="%2352c41a"/><circle cx="320" cy="190" r="6" fill="%23faad14"/></svg>') center/cover;
+        }
+
+        .map-search {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .map-search-icon {
+            color: var(--text-tertiary);
+            font-size: 18px;
+        }
+
+        .map-search input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .map-search input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .map-filter {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            background: var(--bg-white);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Station List */
+        .station-list {
+            padding: 16px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .section-title h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .section-title a {
+            font-size: 12px;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .station-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .station-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .station-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .station-location {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .station-distance {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .station-details {
+            display: flex;
+            gap: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .station-detail {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .station-detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .station-detail-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .station-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .station-tag {
+            background: #e6f4ff;
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .station-tag.green {
+            background: #f6ffed;
+            color: var(--success);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            padding: 0 16px 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .action-item {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 16px 8px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 20px;
+            color: white;
+        }
+
+        .action-item span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--bg-white);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding-bottom: 10px;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text-tertiary);
+        }
+
+        .tab-item.active .tab-icon {
+            color: var(--primary);
+        }
+
+        .tab-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .tab-item.active .tab-label {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .tab-scan {
+            position: relative;
+            margin-top: -20px;
+        }
+
+        .tab-scan .tab-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(22, 119, 255, 0.4);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-white);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            width: 390px;
+            max-height: 80%;
+            padding: 24px;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--text-tertiary);
+        }
+
+        /* Charging Flow */
+        .charging-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .charging-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .charging-step.completed .step-number {
+            background: var(--success);
+        }
+
+        .charging-step.active {
+            background: #e6f4ff;
+            border: 1px solid var(--primary);
+        }
+
+        .charging-step.active .step-number {
+            background: var(--primary);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Charging Progress */
+        .charging-progress {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: var(--radius-md);
+            color: white;
+            text-align: center;
+        }
+
+        .progress-value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            width: 68%;
+            transition: width 0.3s;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* Membership Card */
+        .membership-card {
+            background: linear-gradient(135deg, #1f1f1f 0%, #434343 100%);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .membership-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .membership-tier {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tier-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #c0c0c0, #e0e0e0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .tier-badge.gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+        }
+
+        .tier-badge.v1 {
+            background: linear-gradient(135deg, #e5e4e2, #ffffff);
+        }
+
+        .membership-level {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .membership-points {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .membership-benefits {
+            display: flex;
+            gap: 12px;
+        }
+
+        .benefit-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius-sm);
+        }
+
+        .benefit-value {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .benefit-label {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* Wallet */
+        .wallet-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .wallet-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .wallet-balance {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .wallet-balance .currency {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .wallet-balance .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .wallet-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .wallet-btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .wallet-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .wallet-btn.secondary {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+
+        /* Vehicle Card */
+        .vehicle-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .vehicle-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #e6f4ff, #bae0ff);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .vehicle-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .vehicle-info p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .vehicle-status {
+            margin-left: auto;
+            padding: 4px 10px;
+            background: #f6ffed;
+            color: var(--success);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Page Views */
+        .page-view {
+            display: none;
+        }
+
+        .page-view.active {
+            display: block;
+        }
+
+        /* Savings Page */
+        .savings-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            padding: 20px 16px;
+            color: white;
+            border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+        }
+
+        .savings-amount {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .savings-amount .label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .savings-amount .value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .savings-stats {
+            display: flex;
+            gap: 12px;
+        }
+
+        .savings-stat {
+            flex: 1;
+            background: rgba(255,255,255,0.15);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            text-align: center;
+        }
+
+        .savings-stat .value {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .savings-stat .label {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .savings-list {
+            padding: 16px;
+        }
+
+        .savings-item {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .savings-item-icon {
+            width: 40px;
+            height: 40px;
+            background: #f6ffed;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .savings-item-info {
+            flex: 1;
+        }
+
+        .savings-item-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .savings-item-info p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .savings-item-amount {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        /* Orders Page */
+        .orders-header {
+            padding: 16px;
+            background: var(--bg-white);
+        }
+
+        .orders-tabs {
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .orders-tab {
+            padding: 12px 0;
+            font-size: 14px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .orders-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 500;
+        }
+
+        .orders-list {
+            padding: 16px;
+        }
+
+        .order-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .order-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .order-station {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .order-status {
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .order-status.completed {
+            background: #f6ffed;
+            color: var(--success);
+        }
+
+        .order-status.charging {
+            background: #e6f4ff;
+            color: var(--primary);
+        }
+
+        .order-details {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .order-detail {
+            text-align: center;
+        }
+
+        .order-detail .label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .order-detail .value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Profile Page */
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            padding: 30px 16px 40px;
+            color: white;
+            text-align: center;
+            border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 28px;
+        }
+
+        .profile-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .profile-id {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .profile-menu {
+            padding: 16px;
+            margin-top: -20px;
+        }
+
+        .menu-group {
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .menu-label {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .menu-arrow {
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+                <span>📶</span>
+                <span>📡</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Home Page -->
+            <div class="page-view active" id="page-home">
+                <!-- Map Section -->
+                <div class="map-section">
+                    <div class="map-overlay"></div>
+                    <div class="map-search">
+                        <span class="map-search-icon">🔍</span>
+                        <input type="text" placeholder="搜索充电站、地址">
+                    </div>
+                    <div class="map-filter">
+                        <div class="filter-chip active">
+                            <span>⚡</span> 快充
+                        </div>
+                        <div class="filter-chip">
+                            <span>🔌</span> 慢充
+                        </div>
+                        <div class="filter-chip">
+                            <span>🅿️</span> 停车免费
+                        </div>
+                        <div class="filter-chip">
+                            <span>🏪</span> 有便利店
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <div class="action-item">
+                        <div class="action-icon">📱</div>
+                        <span>扫码充电</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-icon">🎫</div>
+                        <span>优惠券</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-icon">📊</div>
+                        <span>充电报告</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-icon">🎁</div>
+                        <span>邀请有礼</span>
+                    </div>
+                </div>
+
+                <!-- Station List -->
+                <div class="station-list">
+                    <div class="section-title">
+                        <h3>附近充电站</h3>
+                        <a href="#">查看更多 →</a>
+                    </div>
+
+                    <div class="station-card">
+                        <div class="station-header">
+                            <div class="station-info">
+                                <h4>万达广场充电站</h4>
+                                <div class="station-location">
+                                    <span>📍</span> 朝阳区建国路88号
+                                </div>
+                            </div>
+                            <div class="station-distance">1.2km</div>
+                        </div>
+                        <div class="station-details">
+                            <div class="station-detail">
+                                <span class="station-detail-value">12</span>
+                                <span class="station-detail-label">空闲枪</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">¥1.2</span>
+                                <span class="station-detail-label">每度电</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">120kW</span>
+                                <span class="station-detail-label">最大功率</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">24h</span>
+                                <span class="station-detail-label">营业时间</span>
+                            </div>
+                        </div>
+                        <div class="station-tags">
+                            <span class="station-tag">快充</span>
+                            <span class="station-tag green">停车免费</span>
+                            <span class="station-tag">有卫生间</span>
+                        </div>
+                    </div>
+
+                    <div class="station-card">
+                        <div class="station-header">
+                            <div class="station-info">
+                                <h4>银泰中心充电站</h4>
+                                <div class="station-location">
+                                    <span>📍</span> 东城区东长安街1号
+                                </div>
+                            </div>
+                            <div class="station-distance">2.5km</div>
+                        </div>
+                        <div class="station-details">
+                            <div class="station-detail">
+                                <span class="station-detail-value">8</span>
+                                <span class="station-detail-label">空闲枪</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">¥1.5</span>
+                                <span class="station-detail-label">每度电</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">180kW</span>
+                                <span class="station-detail-label">最大功率</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">24h</span>
+                                <span class="station-detail-label">营业时间</span>
+                            </div>
+                        </div>
+                        <div class="station-tags">
+                            <span class="station-tag">超充</span>
+                            <span class="station-tag green">停车免费</span>
+                            <span class="station-tag">便利店</span>
+                        </div>
+                    </div>
+
+                    <div class="station-card">
+                        <div class="station-header">
+                            <div class="station-info">
+                                <h4>国贸中心充电站</h4>
+                                <div class="station-location">
+                                    <span>📍</span> 朝阳区国贸商城B2
+                                </div>
+                            </div>
+                            <div class="station-distance">3.1km</div>
+                        </div>
+                        <div class="station-details">
+                            <div class="station-detail">
+                                <span class="station-detail-value">5</span>
+                                <span class="station-detail-label">空闲枪</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">¥1.8</span>
+                                <span class="station-detail-label">每度电</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">240kW</span>
+                                <span class="station-detail-label">最大功率</span>
+                            </div>
+                            <div class="station-detail">
+                                <span class="station-detail-value">6-22</span>
+                                <span class="station-detail-label">营业时间</span>
+                            </div>
+                        </div>
+                        <div class="station-tags">
+                            <span class="station-tag">超充</span>
+                            <span class="station-tag">地下停车场</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Savings Page -->
+            <div class="page-view" id="page-savings">
+                <div class="savings-header">
+                    <div class="savings-amount">
+                        <div class="label">累计节省</div>
+                        <div class="value">¥ 368.50</div>
+                    </div>
+                    <div class="savings-stats">
+                        <div class="savings-stat">
+                            <div class="value">156</div>
+                            <div class="label">充电次数</div>
+                        </div>
+                        <div class="savings-stat">
+                            <div class="value">2,840</div>
+                            <div class="label">充电度数</div>
+                        </div>
+                        <div class="savings-stat">
+                            <div class="value">48h</div>
+                            <div class="label">充电时长</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="savings-list">
+                    <div class="section-title">
+                        <h3>省钱记录</h3>
+                    </div>
+
+                    <div class="savings-item">
+                        <div class="savings-item-icon">🎫</div>
+                        <div class="savings-item-info">
+                            <h4>新人优惠券</h4>
+                            <p>2026-06-10 使用</p>
+                        </div>
+                        <div class="savings-item-amount">-¥20.00</div>
+                    </div>
+
+                    <div class="savings-item">
+                        <div class="savings-item-icon">⚡</div>
+                        <div class="savings-item-info">
+                            <h4>谷电时段优惠</h4>
+                            <p>2026-06-08 23:00-07:00</p>
+                        </div>
+                        <div class="savings-item-amount">-¥15.50</div>
+                    </div>
+
+                    <div class="savings-item">
+                        <div class="savings-item-icon">👑</div>
+                        <div class="savings-item-info">
+                            <h4>PLUS会员折扣</h4>
+                            <p>2026-06-05 使用</p>
+                        </div>
+                        <div class="savings-item-amount">-¥32.00</div>
+                    </div>
+
+                    <div class="savings-item">
+                        <div class="savings-item-icon">🎁</div>
+                        <div class="savings-item-info">
+                            <h4>邀请好友奖励</h4>
+                            <p>2026-06-01 邀请成功</p>
+                        </div>
+                        <div class="savings-item-amount">-¥50.00</div>
+                    </div>
+
+                    <div class="savings-item">
+                        <div class="savings-item-icon">💰</div>
+                        <div class="savings-item-info">
+                            <h4>充值赠送</h4>
+                            <p>2026-05-28 充200送20</p>
+                        </div>
+                        <div class="savings-item-amount">-¥20.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scan Page (Placeholder) -->
+            <div class="page-view" id="page-scan">
+                <div style="padding: 40px 16px; text-align: center;">
+                    <div style="width: 200px; height: 200px; background: var(--bg-primary); border-radius: var(--radius-lg); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 60px;">
+                        📷
+                    </div>
+                    <h3 style="font-size: 18px; margin-bottom: 8px;">扫码充电</h3>
+                    <p style="font-size: 14px; color: var(--text-tertiary); margin-bottom: 24px;">将二维码放入框内，即可自动扫描</p>
+                    <button style="width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 600; cursor: pointer;">
+                        开启扫码
+                    </button>
+                </div>
+            </div>
+
+            <!-- Orders Page -->
+            <div class="page-view" id="page-orders">
+                <div class="orders-header">
+                    <div class="orders-tabs">
+                        <div class="orders-tab active">全部</div>
+                        <div class="orders-tab">充电中</div>
+                        <div class="orders-tab">已完成</div>
+                        <div class="orders-tab">待支付</div>
+                    </div>
+                </div>
+
+                <div class="orders-list">
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-station">万达广场充电站</span>
+                            <span class="order-status charging">充电中</span>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail">
+                                <div class="label">充电电量</div>
+                                <div class="value">32.5 kWh</div>
+                            </div>
+                            <div class="order-detail">
+                                <div class="label">充电时长</div>
+                                <div class="value">1小时23分</div>
+                            </div>
+                            <div class="order-detail">
+                                <div class="label">当前费用</div>
+                                <div class="value" style="color: var(--primary);">¥39.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-station">银泰中心充电站</span>
+                            <span class="order-status completed">已完成</span>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail">
+                                <div class="label">充电电量</div>
+                                <div class="value">45.2 kWh</div>
+                            </div>
+                            <div class="order-detail">
+                                <div class="label">充电时长</div>
+                                <div class="value">1小时52分</div>
+                            </div>
+                            <div class="order-detail">
+                                <div class="label">实付金额</div>
+                                <div class="value">¥54.24</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-station">国贸中心充电站</span>
+                            <span class="order-status completed">已完成</span>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail">
+                                <div class="label">充电电量</div>
+                                <div class="value">38.8 kWh</div>
+                            </div>
+                            <div class="order-detail">
+                                <div class="label">充电时长</div>
+                                <div class="value">1小时35分</div>
+                            </div>
+                            <div class="order-detail">
+                                <div class="label">实付金额</div>
+                                <div class="value">¥69.84</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div class="page-view" id="page-profile">
+                <div class="profile-header">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-name">用户_13800138000</div>
+                    <div class="profile-id">ID: 88888888</div>
+                </div>
+
+                <div class="profile-menu">
+                    <!-- Membership -->
+                    <div class="membership-card">
+                        <div class="membership-header">
+                            <div class="membership-tier">
+                                <div class="tier-badge gold">👑</div>
+                                <div>
+                                    <div class="membership-level">金卡会员</div>
+                                    <div class="membership-points">2,680 积分</div>
+                                </div>
+                            </div>
+                            <span style="font-size: 12px; opacity: 0.8;">查看详情 →</span>
+                        </div>
+                        <div class="membership-benefits">
+                            <div class="benefit-item">
+                                <div class="benefit-value">9.5折</div>
+                                <div class="benefit-label">充电折扣</div>
+                            </div>
+                            <div class="benefit-item">
+                                <div class="benefit-value">2x</div>
+                                <div class="benefit-label">积分倍率</div>
+                            </div>
+                            <div class="benefit-item">
+                                <div class="benefit-value">5张</div>
+                                <div class="benefit-label">月度券</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wallet -->
+                    <div class="wallet-card">
+                        <div class="wallet-header">
+                            <span style="font-size: 14px; color: var(--text-secondary);">我的钱包</span>
+                            <span style="font-size: 12px; color: var(--primary);">充值中心 →</span>
+                        </div>
+                        <div class="wallet-balance">
+                            <span class="currency">¥</span>
+                            <span class="amount">256.80</span>
+                        </div>
+                        <div class="wallet-actions">
+                            <button class="wallet-btn primary">充值</button>
+                            <button class="wallet-btn secondary">提现</button>
+                            <button class="wallet-btn secondary">明细</button>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle -->
+                    <div style="margin-bottom: 12px;">
+                        <div class="section-title" style="margin-bottom: 12px;">
+                            <h3>我的车辆</h3>
+                            <a href="#" style="font-size: 12px; color: var(--primary); text-decoration: none;">添加车辆 +</a>
+                        </div>
+                        <div class="vehicle-card">
+                            <div class="vehicle-icon">🚗</div>
+                            <div class="vehicle-info">
+                                <h4>特斯拉 Model 3</h4>
+                                <p>京A·88888 · 白色</p>
+                            </div>
+                            <span class="vehicle-status">默认</span>
+                        </div>
+                    </div>
+
+                    <!-- Menu -->
+                    <div class="menu-group">
+                        <div class="menu-item">
+                            <div class="menu-icon">🎫</div>
+                            <span class="menu-label">我的优惠券</span>
+                            <span class="menu-arrow">›</span>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">📊</div>
+                            <span class="menu-label">充电报告</span>
+                            <span class="menu-arrow">›</span>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">🎁</div>
+                            <span class="menu-label">邀请有礼</span>
+                            <span class="menu-arrow">›</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-group">
+                        <div class="menu-item">
+                            <div class="menu-icon">📍</div>
+                            <span class="menu-label">常用站点</span>
+                            <span class="menu-arrow">›</span>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">📝</div>
+                            <span class="menu-label">意见反馈</span>
+                            <span class="menu-arrow">›</span>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">⚙️</div>
+                            <span class="menu-label">设置</span>
+                            <span class="menu-arrow">›</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab-item active" data-page="home">
+                <div class="tab-icon">🏠</div>
+                <span class="tab-label">首页</span>
+            </div>
+            <div class="tab-item" data-page="savings">
+                <div class="tab-icon">💰</div>
+                <span class="tab-label">省钱</span>
+            </div>
+            <div class="tab-item tab-scan" data-page="scan">
+                <div class="tab-icon">📱</div>
+                <span class="tab-label">扫码</span>
+            </div>
+            <div class="tab-item" data-page="orders">
+                <div class="tab-icon">📋</div>
+                <span class="tab-label">订单</span>
+            </div>
+            <div class="tab-item" data-page="profile">
+                <div class="tab-icon">👤</div>
+                <span class="tab-label">我的</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charging Modal -->
+    <div class="modal-overlay" id="charging-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>充电中</h3>
+                <div class="modal-close" onclick="closeModal()">✕</div>
+            </div>
+
+            <div class="charging-steps">
+                <div class="charging-step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-content">
+                        <h4>扫码成功</h4>
+                        <p>已识别充电桩编号</p>
+                    </div>
+                </div>
+                <div class="charging-step completed">
+                    <div class="step-number">✓</div>
+                    <div class="step-content">
+                        <h4>确认充电</h4>
+                        <p>已启动充电程序</p>
+                    </div>
+                </div>
+                <div class="charging-step active">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>正在充电</h4>
+                        <p>预计还需 45 分钟</p>
+                    </div>
+                </div>
+                <div class="charging-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>结算完成</h4>
+                        <p>充电完成后自动结算</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charging-progress">
+                <div class="progress-value">68%</div>
+                <div class="progress-label">当前电量</div>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">32.5</div>
+                        <div class="stat-label">已充电量(kWh)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">1:23</div>
+                        <div class="stat-label">充电时长</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">¥39.00</div>
+                        <div class="stat-label">当前费用</div>
+                    </div>
+                </div>
+            </div>
+
+            <button style="width: 100%; padding: 14px; margin-top: 20px; background: var(--danger); color: white; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 600; cursor: pointer;">
+                停止充电
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const page = this.dataset.page;
+                
+                // Update tabs
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update pages
+                document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+                document.getElementById(`page-${page}`).classList.add('active');
+                
+                // Show charging modal when clicking scan tab
+                if (page === 'scan') {
+                    setTimeout(() => {
+                        document.getElementById('charging-modal').classList.add('active');
+                    }, 300);
+                }
+            });
+        });
+
+        // Filter chips
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
+        });
+
+        // Orders tabs
+        document.querySelectorAll('.orders-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.orders-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('charging-modal').classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('charging-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Station card click
+        document.querySelectorAll('.station-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.getElementById('charging-modal').classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

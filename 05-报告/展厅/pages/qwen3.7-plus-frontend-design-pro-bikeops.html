@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享两轮运营管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
+    <style>
+        :root {
+            --primary: #1677FF;
+            --primary-light: #E6F4FF;
+            --success: #52C41A;
+            --warning: #FAAD14;
+            --danger: #FF4D4F;
+            --bg: #F5F7FA;
+            --card: #FFFFFF;
+            --text-primary: #1A1A1A;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border: #E8E8E8;
+        }
+        
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background: var(--bg);
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            height: 100vh;
+            background: #001529;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #1677FF 0%, #0958D9 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        
+        .sidebar-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .sidebar-menu {
+            padding: 16px 0;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.65);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            gap: 12px;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+        
+        .menu-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .menu-item i {
+            font-size: 18px;
+        }
+        
+        .menu-item span {
+            font-size: 14px;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: 240px;
+            height: 100vh;
+            overflow-y: auto;
+            background: var(--bg);
+        }
+        
+        /* Header */
+        .header {
+            height: 64px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .breadcrumb-current {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            position: relative;
+        }
+        
+        .header-icon:hover {
+            background: var(--bg);
+        }
+        
+        .header-icon i {
+            font-size: 20px;
+            color: var(--text-secondary);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #1677FF 0%, #0958D9 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Dashboard content */
+        .dashboard {
+            padding: 24px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .kpi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .kpi-icon i {
+            font-size: 20px;
+            color: white;
+        }
+        
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .kpi-trend.up {
+            color: var(--success);
+        }
+        
+        .kpi-trend.down {
+            color: var(--danger);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .kpi-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Grid layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .card-action {
+            font-size: 13px;
+            color: var(--primary);
+            cursor: pointer;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* Fleet health */
+        .fleet-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .fleet-stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 10px;
+        }
+        
+        .fleet-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .fleet-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Battery distribution */
+        .battery-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .battery-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .battery-label {
+            width: 80px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .battery-bar {
+            flex: 1;
+            height: 24px;
+            background: var(--bg);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .battery-fill {
+            height: 100%;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        /* Heatmap */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 4px;
+        }
+        
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            background: var(--bg);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+        }
+        
+        .heatmap-cell[data-level="1"] { background: #E6F4FF; }
+        .heatmap-cell[data-level="2"] { background: #BAE0FF; }
+        .heatmap-cell[data-level="3"] { background: #69B1FF; }
+        .heatmap-cell[data-level="4"] { background: #1677FF; }
+        .heatmap-cell[data-level="5"] { background: #0958D9; }
+        
+        /* Alert list */
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 10px;
+        }
+        
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .alert-icon i {
+            font-size: 16px;
+            color: white;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .alert-time {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        /* Work orders */
+        .order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 10px;
+        }
+        
+        .order-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .order-content {
+            flex: 1;
+        }
+        
+        .order-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .order-meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .order-priority {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="ri-e-bike-2-line text-white text-lg"></i>
+            </div>
+            <div class="sidebar-title">两轮运营平台</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item active">
+                <i class="ri-dashboard-3-line"></i>
+                <span>运营总览</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-map-pin-line"></i>
+                <span>地图调度</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-e-bike-line"></i>
+                <span>车队资产</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-battery-charge-line"></i>
+                <span>电池能源</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-tools-line"></i>
+                <span>运维工单</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-settings-3-line"></i>
+                <span>规则区域</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-shield-check-line"></i>
+                <span>合规监管</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-bar-chart-box-line"></i>
+                <span>数据报表</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-team-line"></i>
+                <span>组织权限</span>
+            </div>
+            <div class="menu-item">
+                <i class="ri-settings-4-line"></i>
+                <span>系统配置</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <span>首页</span>
+                    <i class="ri-arrow-right-s-line"></i>
+                    <span class="breadcrumb-current">运营总览</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-icon">
+                    <i class="ri-search-line"></i>
+                </div>
+                <div class="header-icon">
+                    <i class="ri-notification-3-line"></i>
+                    <div class="notification-badge"></div>
+                </div>
+                <div class="header-icon">
+                    <i class="ri-question-line"></i>
+                </div>
+                <div class="user-avatar">管</div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <h1 class="page-title">运营总览</h1>
+            <p class="page-subtitle">实时监控城市运营数据，快速响应异常情况</p>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #1677FF 0%, #0958D9 100%);">
+                            <i class="ri-shopping-bag-3-line"></i>
+                        </div>
+                        <div class="kpi-trend up">
+                            <i class="ri-arrow-up-line"></i>
+                            <span>12.5%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value">8,542</div>
+                    <div class="kpi-label">今日订单量</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #52C41A 0%, #389E0D 100%);">
+                            <i class="ri-money-cny-circle-line"></i>
+                        </div>
+                        <div class="kpi-trend up">
+                            <i class="ri-arrow-up-line"></i>
+                            <span>8.3%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value">¥125,680</div>
+                    <div class="kpi-label">今日收入</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #FAAD14 0%, #D48806 100%);">
+                            <i class="ri-e-bike-line"></i>
+                        </div>
+                        <div class="kpi-trend down">
+                            <i class="ri-arrow-down-line"></i>
+                            <span>2.1%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value">87.3%</div>
+                    <div class="kpi-label">车辆可用率</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #722ED1 0%, #531DAB 100%);">
+                            <i class="ri-user-3-line"></i>
+                        </div>
+                        <div class="kpi-trend up">
+                            <i class="ri-arrow-up-line"></i>
+                            <span>15.2%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value">3,256</div>
+                    <div class="kpi-label">活跃用户</div>
+                </div>
+            </div>
+
+            <!-- Fleet Health & Battery Distribution -->
+            <div class="dashboard-grid">
+                <!-- Fleet Health -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">车队健康状态</div>
+                        <div class="card-action">查看详情</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="fleet-stats">
+                            <div class="fleet-stat">
+                                <div class="fleet-stat-value" style="color: var(--success);">2,845</div>
+                                <div class="fleet-stat-label">正常运营</div>
+                            </div>
+                            <div class="fleet-stat">
+                                <div class="fleet-stat-value" style="color: var(--warning);">186</div>
+                                <div class="fleet-stat-label">低电量</div>
+                            </div>
+                            <div class="fleet-stat">
+                                <div class="fleet-stat-value" style="color: var(--danger);">42</div>
+                                <div class="fleet-stat-label">故障维修</div>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm text-gray-600">车辆总数</span>
+                                <span class="text-sm font-semibold">3,073 辆</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full flex">
+                                    <div style="width: 92.5%; background: var(--success);"></div>
+                                    <div style="width: 6%; background: var(--warning);"></div>
+                                    <div style="width: 1.5%; background: var(--danger);"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                                <span>正常 92.5%</span>
+                                <span>低电量 6.0%</span>
+                                <span>故障 1.5%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Battery Distribution -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">电池电量分布</div>
+                        <div class="card-action">查看详情</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="battery-chart">
+                            <div class="battery-item">
+                                <div class="battery-label">80-100%</div>
+                                <div class="battery-bar">
+                                    <div class="battery-fill" style="width: 45%; background: var(--success);">45%</div>
+                                </div>
+                            </div>
+                            <div class="battery-item">
+                                <div class="battery-label">60-80%</div>
+                                <div class="battery-bar">
+                                    <div class="battery-fill" style="width: 28%; background: #52C41A;">28%</div>
+                                </div>
+                            </div>
+                            <div class="battery-item">
+                                <div class="battery-label">40-60%</div>
+                                <div class="battery-bar">
+                                    <div class="battery-fill" style="width: 15%; background: var(--warning);">15%</div>
+                                </div>
+                            </div>
+                            <div class="battery-item">
+                                <div class="battery-label">20-40%</div>
+                                <div class="battery-bar">
+                                    <div class="battery-fill" style="width: 8%; background: #FA8C16;">8%</div>
+                                </div>
+                            </div>
+                            <div class="battery-item">
+                                <div class="battery-label">0-20%</div>
+                                <div class="battery-bar">
+                                    <div class="battery-fill" style="width: 4%; background: var(--danger);">4%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heatmap & Alerts -->
+            <div class="dashboard-grid">
+                <!-- Demand Heatmap -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">供需热力图</div>
+                        <div class="card-action">查看详情</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="heatmap-grid">
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="5"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="5"></div>
+                            <div class="heatmap-cell" data-level="5"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="5"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="5"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 text-xs text-gray-500">
+                            <span>低需求</span>
+                            <div class="flex items-center gap-1">
+                                <div class="w-4 h-4 rounded" style="background: #E6F4FF;"></div>
+                                <div class="w-4 h-4 rounded" style="background: #BAE0FF;"></div>
+                                <div class="w-4 h-4 rounded" style="background: #69B1FF;"></div>
+                                <div class="w-4 h-4 rounded" style="background: #1677FF;"></div>
+                                <div class="w-4 h-4 rounded" style="background: #0958D9;"></div>
+                            </div>
+                            <span>高需求</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Center -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">告警中心</div>
+                        <div class="card-action">查看全部</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-list">
+                            <div class="alert-item">
+                                <div class="alert-icon" style="background: var(--danger);">
+                                    <i class="ri-error-warning-line"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">车辆故障告警</div>
+                                    <div class="alert-time">3分钟前 · 朝阳区建国路</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon" style="background: var(--warning);">
+                                    <i class="ri-battery-low-line"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">低电量车辆集中</div>
+                                    <div class="alert-time">15分钟前 · 海淀区中关村</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon" style="background: var(--warning);">
+                                    <i class="ri-map-pin-line"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">违停告警</div>
+                                    <div class="alert-time">28分钟前 · 西城区金融街</div>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon" style="background: var(--primary);">
+                                    <i class="ri-information-line"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">调度任务提醒</div>
+                                    <div class="alert-time">1小时前 · 东城区王府井</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Orders -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">工单概览</div>
+                    <div class="card-action">查看全部</div>
+                </div>
+                <div class="card-body">
+                    <div class="order-list">
+                        <div class="order-item">
+                            <div class="order-status" style="background: var(--danger);"></div>
+                            <div class="order-content">
+                                <div class="order-title">车辆维修 - 刹车系统故障</div>
+                                <div class="order-meta">工单号: WO20260615001 · 创建时间: 09:30</div>
+                            </div>
+                            <div class="order-priority" style="background: #FFF1F0; color: var(--danger);">紧急</div>
+                        </div>
+                        <div class="order-item">
+                            <div class="order-status" style="background: var(--warning);"></div>
+                            <div class="order-content">
+                                <div class="order-title">电池更换 - 电量低于10%</div>
+                                <div class="order-meta">工单号: WO20260615002 · 创建时间: 10:15</div>
+                            </div>
+                            <div class="order-priority" style="background: #FFF7E6; color: var(--warning);">中等</div>
+                        </div>
+                        <div class="order-item">
+                            <div class="order-status" style="background: var(--primary);"></div>
+                            <div class="order-content">
+                                <div class="order-title">车辆调度 - 高需求区域补车</div>
+                                <div class="order-meta">工单号: WO20260615003 · 创建时间: 11:00</div>
+                            </div>
+                            <div class="order-priority" style="background: var(--primary-light); color: var(--primary);">普通</div>
+                        </div>
+                        <div class="order-item">
+                            <div class="order-status" style="background: var(--success);"></div>
+                            <div class="order-content">
+                                <div class="order-title">违停处理 - 车辆移位</div>
+                                <div class="order-meta">工单号: WO20260615004 · 创建时间: 11:30</div>
+                            </div>
+                            <div class="order-priority" style="background: #F6FFED; color: var(--success);">已完成</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Menu item click handler
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

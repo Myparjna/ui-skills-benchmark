@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享两轮运营管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1890ff;
+            --primary-light: #e6f7ff;
+            --success: #52c41a;
+            --success-light: #f6ffed;
+            --warning: #faad14;
+            --warning-light: #fffbe6;
+            --error: #f5222d;
+            --error-light: #fff1f0;
+            --text: #262626;
+            --text-secondary: #595959;
+            --text-tertiary: #8c8c8c;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d9d9d9;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 240px;
+            background: var(--white);
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .logo {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu {
+            flex: 1;
+            padding: 16px 0;
+        }
+
+        .menu-item {
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .menu-item.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+            border-right: 3px solid var(--primary);
+        }
+
+        .menu-icon {
+            font-size: 16px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 顶部导航 */
+        .header {
+            height: 64px;
+            background: var(--white);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .breadcrumb {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notification {
+            position: relative;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--error);
+            color: white;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* 内容区 */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        /* KPI 卡片 */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .kpi-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .kpi-icon.orders { background: var(--primary-light); }
+        .kpi-icon.revenue { background: var(--success-light); }
+        .kpi-icon.availability { background: var(--warning-light); }
+        .kpi-icon.dau { background: #f9f0ff; }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--error);
+        }
+
+        /* 车队健康 */
+        .fleet-section {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .section-action {
+            font-size: 13px;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .fleet-card {
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .fleet-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .fleet-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .fleet-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .fleet-card.available .fleet-value { color: var(--success); }
+        .fleet-card.in-use .fleet-value { color: var(--primary); }
+        .fleet-card.low-battery .fleet-value { color: var(--warning); }
+        .fleet-card.faulty .fleet-value { color: var(--error); }
+
+        /* 图表区域 */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-container {
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        /* 电池电量分布图 */
+        .battery-chart {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 8px;
+        }
+
+        .bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar {
+            width: 100%;
+            max-width: 60px;
+            background: linear-gradient(to top, var(--primary), #69c0ff);
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+        }
+
+        .bar-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .bar-value {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* 供需热力摘要 */
+        .heatmap-summary {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .heat-item {
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid transparent;
+        }
+
+        .heat-item.high {
+            background: #fff1f0;
+            border-color: #ffa39e;
+        }
+
+        .heat-item.medium {
+            background: #fffbe6;
+            border-color: #ffe58f;
+        }
+
+        .heat-item.low {
+            background: #f6ffed;
+            border-color: #b7eb8f;
+        }
+
+        .heat-level {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .heat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .heat-item.high .heat-value { color: var(--error); }
+        .heat-item.medium .heat-value { color: var(--warning); }
+        .heat-item.low .heat-value { color: var(--success); }
+
+        .heat-desc {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* 告警中心 */
+        .alerts-section {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .alerts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .alert-card {
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .alert-card.p0 {
+            background: #fff1f0;
+            border-color: var(--error);
+        }
+
+        .alert-card.p1 {
+            background: #fffbe6;
+            border-color: var(--warning);
+        }
+
+        .alert-card.p2 {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .alert-level {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .alert-card.p0 .alert-level { color: var(--error); }
+        .alert-card.p1 .alert-level { color: var(--warning); }
+        .alert-card.p2 .alert-level { color: var(--primary); }
+
+        .alert-count {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .alert-card.p0 .alert-count { color: var(--error); }
+        .alert-card.p1 .alert-count { color: var(--warning); }
+        .alert-card.p2 .alert-count { color: var(--primary); }
+
+        .alert-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* 工单概览 */
+        .workorders-section {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .workorders-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .workorder-card {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .workorder-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .workorder-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .workorder-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .workorder-card.pending .workorder-value { color: var(--warning); }
+        .workorder-card.processing .workorder-value { color: var(--primary); }
+        .workorder-card.completed .workorder-value { color: var(--success); }
+        .workorder-card.overdue .workorder-value { color: var(--error); }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <div class="logo">🛵 共享两轮运营</div>
+        <nav class="menu">
+            <div class="menu-item active">
+                <span class="menu-icon">📊</span>
+                <span>运营概览</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">🚲</span>
+                <span>车队管理</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">🔋</span>
+                <span>电池管理</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">📍</span>
+                <span>电子围栏</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">💰</span>
+                <span>订单管理</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">👥</span>
+                <span>用户管理</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">🔧</span>
+                <span>运维工单</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">📈</span>
+                <span>数据分析</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">⚙️</span>
+                <span>系统设置</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">🔔</span>
+                <span>告警中心</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-left">
+                <div class="page-title">运营概览</div>
+                <div class="breadcrumb">首页 / 运营概览</div>
+            </div>
+            <div class="header-right">
+                <div class="notification">
+                    🔔
+                    <span class="notification-badge">12</span>
+                </div>
+                <div class="user-info">
+                    <div class="avatar">管</div>
+                    <span>管理员</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区 -->
+        <main class="content">
+            <!-- KPI 卡片 -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-title">今日订单</div>
+                        <div class="kpi-icon orders">📋</div>
+                    </div>
+                    <div class="kpi-value">12,847</div>
+                    <div class="kpi-trend trend-up">
+                        ↑ 8.5% 较昨日
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-title">今日收入</div>
+                        <div class="kpi-icon revenue">💰</div>
+                    </div>
+                    <div class="kpi-value">¥89,432</div>
+                    <div class="kpi-trend trend-up">
+                        ↑ 12.3% 较昨日
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-title">车辆可用率</div>
+                        <div class="kpi-icon availability">✅</div>
+                    </div>
+                    <div class="kpi-value">87.3%</div>
+                    <div class="kpi-trend trend-down">
+                        ↓ 2.1% 较昨日
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-title">日活用户</div>
+                        <div class="kpi-icon dau">👥</div>
+                    </div>
+                    <div class="kpi-value">34,521</div>
+                    <div class="kpi-trend trend-up">
+                        ↑ 5.7% 较昨日
+                    </div>
+                </div>
+            </div>
+
+            <!-- 车队健康 -->
+            <div class="fleet-section">
+                <div class="section-header">
+                    <div class="section-title">车队健康状态</div>
+                    <div class="section-action">查看详情 →</div>
+                </div>
+                <div class="fleet-grid">
+                    <div class="fleet-card available">
+                        <div class="fleet-icon">✅</div>
+                        <div class="fleet-value">18,420</div>
+                        <div class="fleet-label">可用车辆</div>
+                    </div>
+                    <div class="fleet-card in-use">
+                        <div class="fleet-icon">🚴</div>
+                        <div class="fleet-value">8,340</div>
+                        <div class="fleet-label">使用中</div>
+                    </div>
+                    <div class="fleet-card low-battery">
+                        <div class="fleet-icon">🔋</div>
+                        <div class="fleet-value">2,150</div>
+                        <div class="fleet-label">低电量</div>
+                    </div>
+                    <div class="fleet-card faulty">
+                        <div class="fleet-icon">⚠️</div>
+                        <div class="fleet-value">890</div>
+                        <div class="fleet-label">故障车辆</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="charts-row">
+                <!-- 电池电量分布图 -->
+                <div class="chart-card">
+                    <div class="section-header">
+                        <div class="section-title">电池电量分布</div>
+                        <div class="section-action">更多 →</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="battery-chart">
+                            <div class="bar-group">
+                                <div class="bar-value">1,240</div>
+                                <div class="bar" style="height: 60%;"></div>
+                                <div class="bar-label">0-20%</div>
+                            </div>
+                            <div class="bar-group">
+                                <div class="bar-value">2,150</div>
+                                <div class="bar" style="height: 80%;"></div>
+                                <div class="bar-label">20-40%</div>
+                            </div>
+                            <div class="bar-group">
+                                <div class="bar-value">3,890</div>
+                                <div class="bar" style="height: 100%;"></div>
+                                <div class="bar-label">40-60%</div>
+                            </div>
+                            <div class="bar-group">
+                                <div class="bar-value">5,420</div>
+                                <div class="bar" style="height: 90%;"></div>
+                                <div class="bar-label">60-80%</div>
+                            </div>
+                            <div class="bar-group">
+                                <div class="bar-value">4,080</div>
+                                <div class="bar" style="height: 70%;"></div>
+                                <div class="bar-label">80-100%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 供需热力摘要 -->
+                <div class="chart-card">
+                    <div class="section-header">
+                        <div class="section-title">供需热力摘要</div>
+                        <div class="section-action">详情 →</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="heatmap-summary">
+                            <div class="heat-item high">
+                                <div class="heat-level">高需求区域</div>
+                                <div class="heat-value">23</div>
+                                <div class="heat-desc">商圈/地铁站</div>
+                            </div>
+                            <div class="heat-item medium">
+                                <div class="heat-level">中需求区域</div>
+                                <div class="heat-value">47</div>
+                                <div class="heat-desc">居民区/学校</div>
+                            </div>
+                            <div class="heat-item low">
+                                <div class="heat-level">低需求区域</div>
+                                <div class="heat-value">68</div>
+                                <div class="heat-desc">郊区/偏远地区</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 告警中心 -->
+            <div class="alerts-section">
+                <div class="section-header">
+                    <div class="section-title">告警中心</div>
+                    <div class="section-action">全部告警 →</div>
+                </div>
+                <div class="alerts-grid">
+                    <div class="alert-card p0">
+                        <div class="alert-header">
+                            <div class="alert-level">P0 紧急</div>
+                        </div>
+                        <div class="alert-count">3</div>
+                        <div class="alert-desc">大规模故障、安全事故</div>
+                    </div>
+                    <div class="alert-card p1">
+                        <div class="alert-header">
+                            <div class="alert-level">P1 重要</div>
+                        </div>
+                        <div class="alert-count">12</div>
+                        <div class="alert-desc">设备离线、电量异常</div>
+                    </div>
+                    <div class="alert-card p2">
+                        <div class="alert-header">
+                            <div class="alert-level">P2 一般</div>
+                        </div>
+                        <div class="alert-count">28</div>
+                        <div class="alert-desc">低电量提醒、围栏越界</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工单概览 -->
+            <div class="workorders-section">
+                <div class="section-header">
+                    <div class="section-title">工单概览</div>
+                    <div class="section-action">全部工单 →</div>
+                </div>
+                <div class="workorders-grid">
+                    <div class="workorder-card pending">
+                        <div class="workorder-icon">⏳</div>
+                        <div class="workorder-value">156</div>
+                        <div class="workorder-label">待处理</div>
+                    </div>
+                    <div class="workorder-card processing">
+                        <div class="workorder-icon">🔧</div>
+                        <div class="workorder-value">89</div>
+                        <div class="workorder-label">处理中</div>
+                    </div>
+                    <div class="workorder-card completed">
+                        <div class="workorder-icon">✅</div>
+                        <div class="workorder-value">1,247</div>
+                        <div class="workorder-label">已完成</div>
+                    </div>
+                    <div class="workorder-card overdue">
+                        <div class="workorder-icon">⚠️</div>
+                        <div class="workorder-value">7</div>
+                        <div class="workorder-label">已超时</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 菜单切换
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                menuItems.forEach(m => m.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // 模拟数据更新
+        setInterval(() => {
+            const kpiValues = document.querySelectorAll('.kpi-value');
+            kpiValues.forEach((el, index) => {
+                if (index === 0) {
+                    const base = 12847;
+                    const random = Math.floor(Math.random() * 100);
+                    el.textContent = (base + random).toLocaleString();
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>充电桩小程序</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
+    <style>
+        :root {
+            --primary: #1677FF;
+            --primary-light: #E6F4FF;
+            --primary-dark: #0958D9;
+            --success: #52C41A;
+            --warning: #FAAD14;
+            --danger: #FF4D4F;
+            --bg: #F5F7FA;
+            --card: #FFFFFF;
+            --text-primary: #1A1A1A;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border: #E8E8E8;
+        }
+        
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: var(--bg);
+            max-width: 390px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Status bar simulation */
+        .status-bar {
+            height: 44px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Map container */
+        .map-container {
+            height: 320px;
+            background: linear-gradient(135deg, #E6F4FF 0%, #BAE0FF 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(22, 119, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(22, 119, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        /* Map markers */
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+            animation: marker-bounce 2s ease-in-out infinite;
+        }
+        
+        .map-marker i {
+            transform: rotate(45deg);
+            color: white;
+            font-size: 18px;
+        }
+        
+        @keyframes marker-bounce {
+            0%, 100% { transform: rotate(-45deg) translateY(0); }
+            50% { transform: rotate(-45deg) translateY(-4px); }
+        }
+        
+        /* Bottom sheet */
+        .bottom-sheet {
+            position: relative;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            margin-top: -24px;
+            padding: 20px 16px 100px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .sheet-handle {
+            width: 36px;
+            height: 4px;
+            background: #E0E0E0;
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+        
+        /* Station card */
+        .station-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .station-card:active {
+            transform: scale(0.98);
+            background: #FAFAFA;
+        }
+        
+        /* Tab bar */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 390px;
+            height: 80px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            padding-top: 8px;
+            z-index: 100;
+        }
+        
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-item.active {
+            color: var(--primary);
+        }
+        
+        .tab-item i {
+            font-size: 24px;
+            color: var(--text-tertiary);
+        }
+        
+        .tab-item.active i {
+            color: var(--primary);
+        }
+        
+        .tab-item span {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        .tab-item.active span {
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        /* Center scan button */
+        .scan-button {
+            position: relative;
+            top: -20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(22, 119, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+        
+        .scan-button:active {
+            transform: scale(0.95);
+        }
+        
+        .scan-button i {
+            font-size: 28px;
+            color: white !important;
+        }
+        
+        /* Status badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-available {
+            background: #F6FFED;
+            color: var(--success);
+        }
+        
+        .status-busy {
+            background: #FFF7E6;
+            color: var(--warning);
+        }
+        
+        .status-offline {
+            background: #F5F5F5;
+            color: var(--text-tertiary);
+        }
+        
+        /* Member tier */
+        .tier-silver {
+            background: linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 100%);
+        }
+        
+        .tier-gold {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+        
+        .tier-v1 {
+            background: linear-gradient(135deg, #1677FF 0%, #0958D9 100%);
+        }
+        
+        /* Modal overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 24px 24px 0 0;
+            width: 100%;
+            max-width: 390px;
+            padding: 24px 20px 40px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        /* Charging animation */
+        .charging-animation {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary) 0deg, var(--primary) 270deg, #E8E8E8 270deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            position: relative;
+            animation: rotate 3s linear infinite;
+        }
+        
+        .charging-animation::after {
+            content: '';
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        .charging-animation i {
+            position: relative;
+            z-index: 1;
+            font-size: 40px;
+            color: var(--primary);
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            height: 8px;
+            background: #F0F0F0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, #69B1FF 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Wallet card */
+        .wallet-card {
+            background: linear-gradient(135deg, #1677FF 0%, #0958D9 100%);
+            border-radius: 20px;
+            padding: 24px 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .wallet-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        /* Page sections */
+        .page-section {
+            display: none;
+        }
+        
+        .page-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="flex items-center gap-1">
+            <i class="ri-signal-wifi-3-line text-sm"></i>
+            <i class="ri-battery-2-charge-line text-sm"></i>
+        </div>
+    </div>
+
+    <!-- Page 1: Home/Map -->
+    <div id="page-home" class="page-section active">
+        <!-- Map -->
+        <div class="map-container">
+            <!-- Map markers -->
+            <div class="map-marker" style="top: 30%; left: 25%;">
+                <i class="ri-flashlight-fill"></i>
+            </div>
+            <div class="map-marker" style="top: 50%; left: 60%; animation-delay: 0.5s;">
+                <i class="ri-flashlight-fill"></i>
+            </div>
+            <div class="map-marker" style="top: 20%; left: 70%; animation-delay: 1s;">
+                <i class="ri-flashlight-fill"></i>
+            </div>
+            
+            <!-- Location button -->
+            <button class="absolute bottom-32 right-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
+                <i class="ri-focus-3-line text-gray-600"></i>
+            </button>
+            
+            <!-- Filter chips -->
+            <div class="absolute top-4 left-4 right-4 flex gap-2 overflow-x-auto">
+                <button class="flex items-center gap-1 px-3 py-1.5 bg-white rounded-full text-xs font-medium whitespace-nowrap shadow-sm">
+                    <i class="ri-flashlight-fill text-blue-500"></i>
+                    <span>快充</span>
+                </button>
+                <button class="flex items-center gap-1 px-3 py-1.5 bg-white/80 rounded-full text-xs whitespace-nowrap">
+                    <span>慢充</span>
+                </button>
+                <button class="flex items-center gap-1 px-3 py-1.5 bg-white/80 rounded-full text-xs whitespace-nowrap">
+                    <span>空闲</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Sheet -->
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">附近充电站</h2>
+                <button class="text-sm text-blue-500">查看全部</button>
+            </div>
+            
+            <!-- Station List -->
+            <div class="station-card">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-medium mb-1">万达广场充电站</h3>
+                        <p class="text-sm text-gray-500 flex items-center gap-1">
+                            <i class="ri-map-pin-2-line text-xs"></i>
+                            距离 0.8km · 朝阳区建国路
+                        </p>
+                    </div>
+                    <span class="status-badge status-available">
+                        <i class="ri-checkbox-circle-fill text-xs"></i>
+                        空闲
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="flex items-center gap-4 text-sm">
+                        <span class="text-gray-500">快充 <span class="text-blue-500 font-medium">4/6</span></span>
+                        <span class="text-gray-500">慢充 <span class="text-blue-500 font-medium">8/10</span></span>
+                    </div>
+                    <span class="text-blue-500 font-semibold">¥1.2/度</span>
+                </div>
+            </div>
+            
+            <div class="station-card">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-medium mb-1">银泰中心充电站</h3>
+                        <p class="text-sm text-gray-500 flex items-center gap-1">
+                            <i class="ri-map-pin-2-line text-xs"></i>
+                            距离 1.2km · 朝阳区东三环
+                        </p>
+                    </div>
+                    <span class="status-badge status-busy">
+                        <i class="ri-time-fill text-xs"></i>
+                        繁忙
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="flex items-center gap-4 text-sm">
+                        <span class="text-gray-500">快充 <span class="text-orange-500 font-medium">1/6</span></span>
+                        <span class="text-gray-500">慢充 <span class="text-blue-500 font-medium">5/10</span></span>
+                    </div>
+                    <span class="text-blue-500 font-semibold">¥1.5/度</span>
+                </div>
+            </div>
+            
+            <div class="station-card">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-medium mb-1">朝阳公园充电站</h3>
+                        <p class="text-sm text-gray-500 flex items-center gap-1">
+                            <i class="ri-map-pin-2-line text-xs"></i>
+                            距离 2.1km · 朝阳区朝阳公园南路
+                        </p>
+                    </div>
+                    <span class="status-badge status-available">
+                        <i class="ri-checkbox-circle-fill text-xs"></i>
+                        空闲
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="flex items-center gap-4 text-sm">
+                        <span class="text-gray-500">快充 <span class="text-blue-500 font-medium">6/8</span></span>
+                        <span class="text-gray-500">慢充 <span class="text-blue-500 font-medium">12/12</span></span>
+                    </div>
+                    <span class="text-blue-500 font-semibold">¥1.0/度</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 2: Savings -->
+    <div id="page-savings" class="page-section">
+        <div class="p-4 pt-6">
+            <h1 class="text-2xl font-bold mb-6">省钱中心</h1>
+            
+            <!-- Member Card -->
+            <div class="wallet-card mb-6">
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <p class="text-sm opacity-80 mb-1">当前会员等级</p>
+                            <h2 class="text-xl font-bold">PLUS 金卡会员</h2>
+                        </div>
+                        <div class="tier-gold w-12 h-12 rounded-full flex items-center justify-center">
+                            <i class="ri-vip-crown-2-fill text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm opacity-80">账户余额</p>
+                            <p class="text-3xl font-bold mt-1">¥256.80</p>
+                        </div>
+                        <button class="px-4 py-2 bg-white/20 rounded-full text-sm backdrop-blur-sm">
+                            充值
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Benefits -->
+            <h3 class="font-semibold mb-4">会员权益</h3>
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="bg-white rounded-2xl p-4 text-center border border-gray-100">
+                    <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="ri-percent-line text-blue-500 text-lg"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">充电9折</p>
+                </div>
+                <div class="bg-white rounded-2xl p-4 text-center border border-gray-100">
+                    <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="ri-gift-line text-blue-500 text-lg"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">生日礼包</p>
+                </div>
+                <div class="bg-white rounded-2xl p-4 text-center border border-gray-100">
+                    <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="ri-coupon-line text-blue-500 text-lg"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">专属优惠券</p>
+                </div>
+            </div>
+            
+            <!-- Coupons -->
+            <h3 class="font-semibold mb-4">我的优惠券</h3>
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl flex items-center justify-center">
+                            <i class="ri-money-cny-circle-line text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">满50减10元</p>
+                            <p class="text-xs text-gray-500">有效期至 2026-06-30</p>
+                        </div>
+                    </div>
+                    <button class="px-4 py-1.5 bg-blue-500 text-white rounded-full text-sm">使用</button>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl flex items-center justify-center">
+                            <i class="ri-percent-line text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">充电8折券</p>
+                            <p class="text-xs text-gray-500">有效期至 2026-07-15</p>
+                        </div>
+                    </div>
+                    <button class="px-4 py-1.5 bg-blue-500 text-white rounded-full text-sm">使用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3: Scan (Modal) -->
+    <div id="page-scan" class="page-section">
+        <div class="p-4 pt-6">
+            <h1 class="text-2xl font-bold mb-6">扫码充电</h1>
+            
+            <!-- Scan area -->
+            <div class="bg-white rounded-3xl p-8 text-center mb-6 border border-gray-100">
+                <div class="w-48 h-48 mx-auto mb-6 border-4 border-blue-500 rounded-3xl relative overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="ri-qr-scan-2-line text-6xl text-blue-500"></i>
+                    </div>
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent animate-pulse"></div>
+                </div>
+                <p class="text-gray-600 mb-2">将二维码放入框内扫描</p>
+                <p class="text-sm text-gray-400">或手动输入桩号</p>
+            </div>
+            
+            <!-- Charging steps -->
+            <h3 class="font-semibold mb-4">充电流程</h3>
+            <div class="bg-white rounded-2xl p-4 border border-gray-100">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">1</div>
+                    <div class="flex-1">
+                        <p class="font-medium">扫码识别</p>
+                        <p class="text-sm text-gray-500">扫描充电桩二维码</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">2</div>
+                    <div class="flex-1">
+                        <p class="font-medium">确认启动</p>
+                        <p class="text-sm text-gray-500">确认站点信息和费用</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">3</div>
+                    <div class="flex-1">
+                        <p class="font-medium">开始充电</p>
+                        <p class="text-sm text-gray-500">实时监控充电状态</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">4</div>
+                    <div class="flex-1">
+                        <p class="font-medium">自动结算</p>
+                        <p class="text-sm text-gray-500">充电完成自动扣费</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 4: Orders -->
+    <div id="page-orders" class="page-section">
+        <div class="p-4 pt-6">
+            <h1 class="text-2xl font-bold mb-6">我的订单</h1>
+            
+            <!-- Order tabs -->
+            <div class="flex gap-4 mb-6 border-b border-gray-200">
+                <button class="pb-3 text-blue-500 font-medium border-b-2 border-blue-500">全部</button>
+                <button class="pb-3 text-gray-500">进行中</button>
+                <button class="pb-3 text-gray-500">已完成</button>
+            </div>
+            
+            <!-- Order list -->
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-gray-500">2026-06-14 14:30</span>
+                    <span class="status-badge bg-green-50 text-green-600">
+                        <i class="ri-checkbox-circle-fill text-xs"></i>
+                        已完成
+                    </span>
+                </div>
+                <h3 class="font-medium mb-2">万达广场充电站</h3>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="text-sm text-gray-500">
+                        <p>充电量: <span class="text-gray-900">32.5度</span></p>
+                        <p>充电时长: <span class="text-gray-900">1小时28分</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-bold text-blue-500">¥39.00</p>
+                        <p class="text-xs text-gray-400 line-through">¥43.20</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-gray-500">2026-06-12 09:15</span>
+                    <span class="status-badge bg-green-50 text-green-600">
+                        <i class="ri-checkbox-circle-fill text-xs"></i>
+                        已完成
+                    </span>
+                </div>
+                <h3 class="font-medium mb-2">银泰中心充电站</h3>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="text-sm text-gray-500">
+                        <p>充电量: <span class="text-gray-900">28.0度</span></p>
+                        <p>充电时长: <span class="text-gray-900">1小时15分</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-bold text-blue-500">¥42.00</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 border border-gray-100">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-gray-500">2026-06-10 18:45</span>
+                    <span class="status-badge bg-green-50 text-green-600">
+                        <i class="ri-checkbox-circle-fill text-xs"></i>
+                        已完成
+                    </span>
+                </div>
+                <h3 class="font-medium mb-2">朝阳公园充电站</h3>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="text-sm text-gray-500">
+                        <p>充电量: <span class="text-gray-900">45.2度</span></p>
+                        <p>充电时长: <span class="text-gray-900">2小时05分</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-bold text-blue-500">¥45.20</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 5: Profile -->
+    <div id="page-profile" class="page-section">
+        <div class="p-4 pt-6">
+            <!-- Profile header -->
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    张
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold">张先生</h2>
+                    <p class="text-sm text-gray-500 flex items-center gap-1">
+                        <i class="ri-vip-crown-2-fill text-yellow-500"></i>
+                        PLUS 金卡会员
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="bg-white rounded-2xl p-4 text-center border border-gray-100">
+                    <p class="text-2xl font-bold text-blue-500">156</p>
+                    <p class="text-xs text-gray-500 mt-1">充电次数</p>
+                </div>
+                <div class="bg-white rounded-2xl p-4 text-center border border-gray-100">
+                    <p class="text-2xl font-bold text-blue-500">4,580</p>
+                    <p class="text-xs text-gray-500 mt-1">总充电量(度)</p>
+                </div>
+                <div class="bg-white rounded-2xl p-4 text-center border border-gray-100">
+                    <p class="text-2xl font-bold text-blue-500">¥128</p>
+                    <p class="text-xs text-gray-500 mt-1">累计节省</p>
+                </div>
+            </div>
+            
+            <!-- Menu items -->
+            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-4">
+                <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <i class="ri-wallet-3-line text-blue-500 text-xl"></i>
+                    <span class="flex-1">我的钱包</span>
+                    <i class="ri-arrow-right-s-line text-gray-400"></i>
+                </div>
+                <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <i class="ri-car-line text-blue-500 text-xl"></i>
+                    <span class="flex-1">车辆管理</span>
+                    <i class="ri-arrow-right-s-line text-gray-400"></i>
+                </div>
+                <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <i class="ri-invoice-line text-blue-500 text-xl"></i>
+                    <span class="flex-1">发票管理</span>
+                    <i class="ri-arrow-right-s-line text-gray-400"></i>
+                </div>
+                <div class="flex items-center gap-3 p-4">
+                    <i class="ri-customer-service-2-line text-blue-500 text-xl"></i>
+                    <span class="flex-1">客服中心</span>
+                    <i class="ri-arrow-right-s-line text-gray-400"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <i class="ri-settings-3-line text-blue-500 text-xl"></i>
+                    <span class="flex-1">设置</span>
+                    <i class="ri-arrow-right-s-line text-gray-400"></i>
+                </div>
+                <div class="flex items-center gap-3 p-4">
+                    <i class="ri-information-line text-blue-500 text-xl"></i>
+                    <span class="flex-1">关于我们</span>
+                    <i class="ri-arrow-right-s-line text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charging Modal -->
+    <div id="charging-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold">正在充电</h2>
+                <button onclick="closeChargingModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <i class="ri-close-line text-gray-600"></i>
+                </button>
+            </div>
+            
+            <div class="charging-animation">
+                <i class="ri-flashlight-fill"></i>
+            </div>
+            
+            <div class="text-center mb-6">
+                <p class="text-3xl font-bold text-blue-500 mb-1">68%</p>
+                <p class="text-sm text-gray-500">预计还需 25 分钟</p>
+            </div>
+            
+            <div class="bg-gray-50 rounded-2xl p-4 mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-gray-500">充电站</span>
+                    <span class="font-medium">万达广场充电站</span>
+                </div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-gray-500">已充电量</span>
+                    <span class="font-medium">22.5 度</span>
+                </div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-gray-500">充电时长</span>
+                    <span class="font-medium">45 分钟</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">当前费用</span>
+                    <span class="font-bold text-blue-500">¥27.00</span>
+                </div>
+            </div>
+            
+            <button class="w-full py-4 bg-red-500 text-white rounded-2xl font-medium">
+                停止充电
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('home')">
+            <i class="ri-map-2-line"></i>
+            <span>首页</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('savings')">
+            <i class="ri-money-cny-circle-line"></i>
+            <span>省钱</span>
+        </div>
+        <div class="scan-button" onclick="openChargingModal()">
+            <i class="ri-qr-scan-2-line"></i>
+        </div>
+        <div class="tab-item" onclick="switchTab('orders')">
+            <i class="ri-file-list-3-line"></i>
+            <span>订单</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('profile')">
+            <i class="ri-user-3-line"></i>
+            <span>我的</span>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById('page-' + tabName).classList.add('active');
+            
+            // Update tab active state
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+        
+        function openChargingModal() {
+            document.getElementById('charging-modal').classList.add('active');
+        }
+        
+        function closeChargingModal() {
+            document.getElementById('charging-modal').classList.remove('active');
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('charging-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeChargingModal();
+            }
+        });
+    </script>
+</body>
+</html>
