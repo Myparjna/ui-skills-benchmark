@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市级运营管理后台 - 星空出行</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #F1F5F9;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-sidebar: #CBD5E1;
+            --accent-blue: #2563EB;
+            --accent-red: #EF4444;
+            --accent-green: #10B981;
+            --accent-orange: #F59E0B;
+            --border: #E2E8F0;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-sidebar);
+            color: var(--text-sidebar);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header i {
+            color: var(--accent-blue);
+            font-size: 1.5rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 16px 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .top-header {
+            height: 72px;
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .city-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .time-filter {
+            display: flex;
+            background: var(--bg-body);
+            border-radius: var(--radius-md);
+            padding: 4px;
+        }
+
+        .time-btn {
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .time-btn.active {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #1D4ED8;
+        }
+
+        /* Dashboard Scroll Area */
+        .dashboard-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: var(--accent-blue);
+        }
+
+        .kpi-card.alert::before { background-color: var(--accent-red); }
+        .kpi-card.warning::before { background-color: var(--accent-orange); }
+        .kpi-card.success::before { background-color: var(--accent-green); }
+
+        .kpi-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-value {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .kpi-trend {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend-up { color: var(--accent-green); }
+        .trend-down { color: var(--accent-red); }
+
+        /* Complex Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 400px 300px;
+            gap: 24px;
+        }
+
+        .bento-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Map Section (Simulated) */
+        .map-section {
+            grid-column: 1 / 2;
+            grid-row: 1 / 3;
+            position: relative;
+            background-color: #0B1120; /* Dark map vibe */
+            border: none;
+        }
+        
+        .map-section .card-header {
+            background: rgba(15, 23, 42, 0.9);
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .map-visual {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 30% 40%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 70% 60%, rgba(239, 68, 68, 0.15) 0%, transparent 40%);
+            position: relative;
+        }
+
+        .map-grid {
+            width: 100%;
+            height: 100%;
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        .dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        /* Alerts List */
+        .alerts-section {
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+        }
+
+        .list-content {
+            padding: 12px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .alert-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .alert-item:last-child { border-bottom: none; }
+
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .alert-icon.p0 { background: var(--accent-red); }
+        .alert-icon.p1 { background: var(--accent-orange); }
+
+        .alert-body h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .alert-body p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .alert-meta {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Task List */
+        .tasks-section {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+        }
+
+        .task-item {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .task-info p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .task-status {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: #EFF6FF;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
+        .task-status.pending { background: #FEF2F2; color: var(--accent-red); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="ri-ebike-2-fill"></i>
+            <span>星空智控</span>
+        </div>
+        <ul class="nav-list">
+            <li class="nav-item active"><i class="ri-dashboard-line"></i> 运营总览</li>
+            <li class="nav-item"><i class="ri-map-2-line"></i> 地图调度中心</li>
+            <li class="nav-item"><i class="ri-scooter-line"></i> 车队资产</li>
+            <li class="nav-item"><i class="ri-battery-2-charge-line"></i> 电池与能源</li>
+            <li class="nav-item"><i class="ri-tools-line"></i> 运维工单</li>
+            <li class="nav-item"><i class="ri-shield-check-line"></i> 合规监管</li>
+            <li class="nav-item"><i class="ri-bar-chart-box-line"></i> 数据报表</li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <div class="city-selector">
+                    杭州市 <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="time-filter">
+                    <button class="time-btn active">今日</button>
+                    <button class="time-btn">昨日</button>
+                    <button class="time-btn">本周</button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-primary" style="background: var(--bg-body); color: var(--text-primary); border: 1px solid var(--border);">
+                    <i class="ri-download-cloud-2-line"></i> 导出报表
+                </button>
+                <button class="btn-primary">
+                    <i class="ri-add-line"></i> 快捷指令
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Area -->
+        <div class="dashboard-scroll">
+            
+            <!-- KPI Grid -->
+            <div class="kpi-grid">
+                <div class="kpi-card success">
+                    <div class="kpi-title">今日订单量</div>
+                    <div class="kpi-value">124,592</div>
+                    <div class="kpi-trend trend-up"><i class="ri-arrow-up-line"></i> 12.5% 较昨日</div>
+                </div>
+                <div class="kpi-card alert">
+                    <div class="kpi-title">高风险故障车</div>
+                    <div class="kpi-value">843</div>
+                    <div class="kpi-trend trend-down"><i class="ri-arrow-down-line"></i> 可用率跌破90%</div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-title">低电量预警 (<20%)</div>
+                    <div class="kpi-value">2,105</div>
+                    <div class="kpi-trend trend-down"><i class="ri-arrow-up-line"></i> 需紧急调度换电</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">单车日均周转率</div>
+                    <div class="kpi-value">4.2<span style="font-size:1rem;color:var(--text-secondary)"> 次/日</span></div>
+                    <div class="kpi-trend trend-up"><i class="ri-arrow-up-line"></i> 效率达标</div>
+                </div>
+            </div>
+
+            <!-- Bento Grid -->
+            <div class="bento-grid">
+                
+                <!-- Map Center -->
+                <div class="bento-card map-section">
+                    <div class="card-header">
+                        <div class="card-title"><i class="ri-radar-line"></i> 实时调度雷达</div>
+                        <div style="display:flex; gap:12px; font-size: 0.85rem;">
+                            <span style="color:var(--accent-red)"><i class="ri-checkbox-blank-circle-fill"></i> 严重堆积</span>
+                            <span style="color:var(--accent-blue)"><i class="ri-checkbox-blank-circle-fill"></i> 供需平衡</span>
+                        </div>
+                    </div>
+                    <div class="map-visual">
+                        <div class="map-grid"></div>
+                        <!-- Simulated heat points -->
+                        <div class="dot" style="top: 35%; left: 45%; color: var(--accent-red);"></div>
+                        <div class="dot" style="top: 60%; left: 20%; color: var(--accent-blue);"></div>
+                        <div class="dot" style="top: 20%; left: 70%; color: var(--accent-orange);"></div>
+                        <div class="dot" style="top: 75%; left: 60%; color: var(--accent-red);"></div>
+                    </div>
+                </div>
+
+                <!-- Alert Feed -->
+                <div class="bento-card alerts-section">
+                    <div class="card-header">
+                        <div class="card-title"><i class="ri-alarm-warning-line"></i> 实时告警中心</div>
+                        <span style="font-size:0.8rem; background:#FEE2E2; color:#EF4444; padding:2px 8px; border-radius:12px; font-weight:600;">12 P0</span>
+                    </div>
+                    <div class="list-content">
+                        <div class="alert-item">
+                            <div class="alert-icon p0"><i class="ri-error-warning-line"></i></div>
+                            <div class="alert-body">
+                                <h4>西湖区禁停区大量违停</h4>
+                                <p>检测到超过50辆车聚集在龙翔桥地铁站禁停区，面临城管处罚风险。</p>
+                                <div class="alert-meta"><span>#AL-1029</span> <span>2 mins ago</span></div>
+                            </div>
+                        </div>
+                        <div class="alert-item">
+                            <div class="alert-icon p1"><i class="ri-battery-low-line"></i></div>
+                            <div class="alert-body">
+                                <h4>滨江区换电运力不足</h4>
+                                <p>当前区域低电车辆超500台，待派换电工单积压严重。</p>
+                                <div class="alert-meta"><span>#AL-1028</span> <span>15 mins ago</span></div>
+                            </div>
+                        </div>
+                        <div class="alert-item">
+                            <div class="alert-icon p0"><i class="ri-sensor-line"></i></div>
+                            <div class="alert-body">
+                                <h4>设备大面积离线</h4>
+                                <p>萧山区南阳街道附近发现连续30台车辆IoT心跳丢失，疑似被屏蔽。</p>
+                                <div class="alert-meta"><span>#AL-1027</span> <span>22 mins ago</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks -->
+                <div class="bento-card tasks-section">
+                    <div class="card-header">
+                        <div class="card-title"><i class="ri-file-list-3-line"></i> 核心调度任务</div>
+                        <a href="#" style="font-size:0.85rem; color:var(--accent-blue); text-decoration:none;">查看全部</a>
+                    </div>
+                    <div class="list-content" style="padding: 16px 24px;">
+                        <div class="task-item">
+                            <div class="task-info">
+                                <h4>早高峰潮汐调度</h4>
+                                <p>从「西溪银泰」调出150辆至「城西银泰」</p>
+                            </div>
+                            <div class="task-status">执行中</div>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-info">
+                                <h4>高风险电池回收</h4>
+                                <p>回收温度异常电池 (ID: B-99201)</p>
+                            </div>
+                            <div class="task-status pending">待接单</div>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-info">
+                                <h4>地铁站清障处理</h4>
+                                <p>清理凤起路C口违停车辆</p>
+                            </div>
+                            <div class="task-status">执行中</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EV Charging - 聚合充电小程序</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0A0A0C;
+            --bg-card: #16161A;
+            --color-eco: #00FFA3;
+            --color-plus: #7000FF;
+            --color-warning: #FF3B30;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A5;
+            --font-main: 'Space Grotesk', sans-serif;
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: #000;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* Mobile Container */
+        .app-container {
+            width: 100%;
+            max-width: 430px; /* iPhone Pro Max width */
+            background-color: var(--bg-base);
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 40px rgba(0,255,163,0.05);
+        }
+
+        /* Top Map Area (Simulated) */
+        .map-area {
+            height: 45%;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(0, 255, 163, 0.1) 0%, transparent 60%),
+                linear-gradient(to bottom, #16161A, var(--bg-base));
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .map-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            perspective: 1000px;
+            transform: rotateX(60deg) scale(2);
+            transform-origin: bottom center;
+        }
+
+        .marker {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .marker::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--bg-card);
+        }
+
+        .marker-eco { color: var(--color-eco); }
+        .marker-plus { color: #fff; border-color: var(--color-plus); background: rgba(112, 0, 255, 0.2); }
+
+        /* Search & Filters (Overlay on map) */
+        .top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 20px;
+            z-index: 20;
+        }
+
+        .search-box {
+            background: rgba(22, 22, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-family: var(--font-main);
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .filter-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-scroll::-webkit-scrollbar { display: none; }
+
+        .filter-tag {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .filter-tag.active {
+            background: rgba(0, 255, 163, 0.1);
+            border-color: var(--color-eco);
+            color: var(--color-eco);
+        }
+
+        /* Bottom Sheet Area */
+        .bottom-sheet {
+            flex: 1;
+            background: var(--bg-base);
+            border-top-left-radius: var(--radius-lg);
+            border-top-right-radius: var(--radius-lg);
+            margin-top: -20px;
+            z-index: 30;
+            padding: 24px 20px;
+            overflow-y: auto;
+            padding-bottom: 100px; /* Space for nav bar */
+        }
+
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 0 auto 24px;
+        }
+
+        /* Station Cards */
+        .station-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .station-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .station-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .station-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price {
+            text-align: right;
+        }
+
+        .price-val {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--color-eco);
+        }
+
+        .price-unit {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .status-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .status-item {
+            flex: 1;
+            background: rgba(255,255,255,0.03);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .status-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        
+        .status-val.avail { color: var(--color-eco); }
+        .status-label { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* Navigation Bar */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 80px;
+            background: rgba(22, 22, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 10px 10px;
+            z-index: 40;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+
+        .nav-item.active { color: var(--text-primary); }
+        .nav-item i { font-size: 1.4rem; }
+
+        /* Glowing Scan Button */
+        .scan-btn-wrapper {
+            position: relative;
+            top: -20px;
+        }
+
+        .scan-btn {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #00FFA3 0%, #00B8FF 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 255, 163, 0.3);
+            color: #000;
+            font-size: 2rem;
+            border: 4px solid var(--bg-base);
+            z-index: 50;
+        }
+
+        .scan-btn::before {
+            content: '';
+            position: absolute;
+            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 163, 0.5) 0%, transparent 100%);
+            z-index: -1;
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Map Area -->
+        <div class="map-area">
+            <div class="map-grid"></div>
+            
+            <div class="top-bar">
+                <div class="search-box">
+                    <i class="ri-search-line" style="color: var(--text-secondary);"></i>
+                    <input type="text" placeholder="搜索目的地或充电站">
+                </div>
+                <div class="filter-scroll">
+                    <div class="filter-tag active">空闲优先</div>
+                    <div class="filter-tag">大功率快充</div>
+                    <div class="filter-tag">免费停车</div>
+                    <div class="filter-tag" style="border-color: var(--color-plus); color: var(--color-plus);">PLUS会员站</div>
+                </div>
+            </div>
+
+            <!-- Simulated Map Markers -->
+            <div class="marker marker-eco" style="top: 50%; left: 30%;">
+                <i class="ri-charging-pile-2-fill"></i> 8
+            </div>
+            <div class="marker marker-plus" style="top: 65%; left: 70%;">
+                <i class="ri-vip-crown-fill"></i> 12
+            </div>
+            <div class="marker" style="top: 35%; left: 60%; color: var(--text-secondary);">
+                <i class="ri-charging-pile-2-fill"></i> 0
+            </div>
+            
+            <!-- User Location -->
+            <div style="position: absolute; top: 75%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+                <div style="width: 20px; height: 20px; background: #fff; border-radius: 50%; box-shadow: 0 0 0 8px rgba(255,255,255,0.2);"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Sheet -->
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.2rem; font-weight: 600;">附近电站</h2>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">距您 5km 内有 24 座</span>
+            </div>
+
+            <!-- Station Card 1 -->
+            <div class="station-card">
+                <div class="station-header">
+                    <div>
+                        <h3 class="station-title">特来电·软件园超充站</h3>
+                        <div class="station-meta">
+                            <span>1.2km</span> • 
+                            <span>对外开放</span> • 
+                            <span style="color: var(--color-plus);"><i class="ri-vip-crown-line"></i> 会员站</span>
+                        </div>
+                    </div>
+                    <div class="price">
+                        <div class="price-val">1.28</div>
+                        <div class="price-unit">元/度</div>
+                    </div>
+                </div>
+                <div class="status-row">
+                    <div class="status-item">
+                        <div class="status-val avail">8/12</div>
+                        <div class="status-label">快充空闲</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-val">0/4</div>
+                        <div class="status-label">慢充空闲</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-val" style="color: #fff; font-size: 0.9rem; padding-top: 2px;">2小时</div>
+                        <div class="status-label">免费停车</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Station Card 2 -->
+            <div class="station-card">
+                <div class="station-header">
+                    <div>
+                        <h3 class="station-title">星星充电·科技城地下车库</h3>
+                        <div class="station-meta">
+                            <span>2.5km</span> • 
+                            <span>地下负一层</span>
+                        </div>
+                    </div>
+                    <div class="price">
+                        <div class="price-val">0.85</div>
+                        <div class="price-unit">元/度 (谷时)</div>
+                    </div>
+                </div>
+                <div class="status-row">
+                    <div class="status-item">
+                        <div class="status-val avail">14/20</div>
+                        <div class="status-label">快充空闲</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-val avail">2/5</div>
+                        <div class="status-label">慢充空闲</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-val" style="color: var(--text-secondary); font-size: 0.9rem; padding-top: 2px;">收费</div>
+                        <div class="status-label">5元/时</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active">
+                <i class="ri-map-pin-line"></i>
+                <span>找桩</span>
+            </div>
+            <div class="nav-item">
+                <i class="ri-coupon-3-line"></i>
+                <span>省钱</span>
+            </div>
+            
+            <div class="scan-btn-wrapper">
+                <div class="scan-btn">
+                    <i class="ri-qr-scan-2-line"></i>
+                </div>
+            </div>
+            
+            <div class="nav-item">
+                <i class="ri-file-list-3-line"></i>
+                <span>订单</span>
+            </div>
+            <div class="nav-item">
+                <i class="ri-user-3-line"></i>
+                <span>我的</span>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

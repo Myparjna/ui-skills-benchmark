@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="antialiased text-gray-900 bg-gray-50 color-scheme-light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- Removed user-scalable=no and maximum-scale=1.0 per guidelines -->
+    <meta name="theme-color" content="#1677FF">
+    <title>EV充电 - 聚合充电小程序</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"PingFang SC"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            DEFAULT: '#1677FF',
+                            light: '#E6F4FF'
+                        },
+                        success: '#52C41A',
+                        warning: '#FA8C16',
+                        error: '#FF4D4F'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { color-scheme: light dark; }
+        body { 
+            overscroll-behavior-y: none; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        button, a, input { touch-action: manipulation; }
+        .safe-pt { padding-top: env(safe-area-inset-top); }
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        /* Map mock background */
+        .map-bg {
+            background-color: #e5e3df;
+            background-image: radial-gradient(#d4d2cd 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 dark:text-gray-100">
+
+    <!-- Header / Search Bar -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm z-10 safe-pt px-4 py-3 flex items-center space-x-3">
+        <button type="button" class="flex-shrink-0 flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded" aria-label="选择城市">
+            杭州 <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5" aria-hidden="true"></i>
+        </button>
+        <div class="flex-1 relative">
+            <label for="search-station" class="sr-only">搜索充电站</label>
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="search" class="h-4 w-4 text-gray-400" aria-hidden="true"></i>
+            </div>
+            <input type="search" id="search-station" autocomplete="off" class="block w-full pl-9 pr-3 py-2 border-none rounded-full bg-gray-100 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-gray-600 transition-colors" placeholder="搜索目的地/充电站…">
+        </div>
+    </header>
+
+    <!-- Main Content Area (Map) -->
+    <main class="flex-1 relative map-bg dark:bg-gray-800">
+        <!-- Mock Map Markers -->
+        <button type="button" class="absolute top-1/4 left-1/4 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md border border-gray-200 dark:border-gray-700 text-xs font-medium flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="特来电网易站，12个空闲">
+            <span class="w-2 h-2 rounded-full bg-success mr-1.5" aria-hidden="true"></span>
+            <span class="tabular-nums">12</span>
+        </button>
+
+        <button type="button" class="absolute top-1/2 left-2/3 bg-brand text-white px-2 py-1 rounded-md shadow-md text-xs font-medium flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ring-offset-1" aria-label="星星充电阿里站，5个空闲，当前选中">
+            <span class="w-2 h-2 rounded-full bg-white mr-1.5" aria-hidden="true"></span>
+            <span class="tabular-nums">5</span>
+            <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-brand rotate-45"></div>
+        </button>
+
+        <!-- Floating Controls -->
+        <div class="absolute right-4 bottom-32 flex flex-col space-y-3">
+            <button type="button" class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-md flex items-center justify-center text-gray-700 dark:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="路线偏好">
+                <i data-lucide="layers" class="w-5 h-5" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-md flex items-center justify-center text-gray-700 dark:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="定位到当前位置">
+                <i data-lucide="navigation" class="w-5 h-5" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- Bottom Sheet (Station Info) -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl shadow-lg pb-[env(safe-area-inset-bottom)] z-20 transition-transform transform translate-y-0">
+            <!-- Handle -->
+            <div class="w-full flex justify-center py-2" aria-hidden="true">
+                <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            </div>
+            
+            <div class="px-4 pb-24 pt-2">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">星星充电·阿里中心站</h2>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center">
+                            <span class="tabular-nums">1.2</span> km <span class="mx-1">·</span> 免费停车 2 小时
+                        </p>
+                    </div>
+                    <button type="button" class="w-10 h-10 bg-brand-light dark:bg-brand-900/50 text-brand dark:text-brand-400 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="导航前往">
+                        <i data-lucide="corner-up-right" class="w-5 h-5" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <div class="flex space-x-4 mt-4">
+                    <div class="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div class="text-xs text-gray-500 mb-1">快充空闲</div>
+                        <div class="flex items-baseline">
+                            <span class="text-xl font-bold text-success tabular-nums">5</span>
+                            <span class="text-xs text-gray-400 ml-1 tabular-nums">/ 12</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div class="text-xs text-gray-500 mb-1">当前电价</div>
+                        <div class="flex items-baseline">
+                            <span class="text-xl font-bold text-brand tabular-nums">1.25</span>
+                            <span class="text-xs text-gray-400 ml-1">元/度</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom TabBar -->
+    <nav class="absolute bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-pb z-30" aria-label="底部导航">
+        <div class="flex justify-around items-center h-16 relative">
+            <a href="#" class="flex flex-col items-center justify-center w-full h-full text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand" aria-current="page">
+                <i data-lucide="map" class="w-6 h-6 mb-1" aria-hidden="true"></i>
+                <span class="text-[10px] font-medium">找桩</span>
+            </a>
+            <a href="#" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand">
+                <i data-lucide="gift" class="w-6 h-6 mb-1" aria-hidden="true"></i>
+                <span class="text-[10px] font-medium">省钱</span>
+            </a>
+            
+            <!-- Scan Center Button -->
+            <div class="w-full flex justify-center">
+                <button type="button" class="absolute -top-6 w-14 h-14 bg-gradient-to-br from-brand to-cyan-500 rounded-full shadow-lg flex items-center justify-center text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800 transition-transform active:scale-95" aria-label="扫码充电">
+                    <i data-lucide="scan-line" class="w-7 h-7" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <a href="#" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand">
+                <i data-lucide="file-text" class="w-6 h-6 mb-1" aria-hidden="true"></i>
+                <span class="text-[10px] font-medium">订单</span>
+            </a>
+            <a href="#" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand">
+                <i data-lucide="user" class="w-6 h-6 mb-1" aria-hidden="true"></i>
+                <span class="text-[10px] font-medium">我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
