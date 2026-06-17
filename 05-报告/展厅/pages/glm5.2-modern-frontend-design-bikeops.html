@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星骑 · 城市运营管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ═══ Step 0 — OKLCH Design Tokens (dashboard, dark premium) ═══ */
+  :root {
+    --bg:           oklch(7% 0.020 265);
+    --bg-2:         oklch(10% 0.025 265);
+    --surface:      oklch(13% 0.022 265);
+    --surface-up:   oklch(18% 0.025 265);
+    --surface-hover:oklch(20% 0.028 265);
+    --fg:           oklch(96% 0.010 95);
+    --fg-muted:     oklch(68% 0.012 265);
+    --fg-dim:       oklch(46% 0.010 265);
+
+    --primary:      oklch(62% 0.220 280);   /* indigo */
+    --primary-up:   oklch(68% 0.220 280);
+    --primary-2:    oklch(70% 0.210 200);   /* cyan */
+    --accent:       oklch(78% 0.160 75);    /* warm amber */
+    --ok:           oklch(70% 0.190 155);   /* available green */
+    --warn:         oklch(78% 0.190 65);    /* warning amber */
+    --err:          oklch(64% 0.220 25);    /* error red */
+    --info:         oklch(70% 0.200 230);   /* info blue */
+    --border:       oklch(24% 0.018 265);
+    --border-faint: oklch(17% 0.012 265);
+
+    --font:         'Inter', 'Noto Sans SC', system-ui, sans-serif;
+    --font-display: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --r-xs: 0.25rem; --r-sm: 0.375rem; --r: 0.5rem;
+    --r-lg: 0.75rem; --r-xl: 1rem;    --r-2xl: 1.25rem; --r-full: 9999px;
+
+    --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-fast: 150ms; --dur-base: 250ms; --dur-slow: 500ms;
+
+    --sidebar-w: 240px;
+    --sidebar-w-c: 72px;
+  }
+  :root { color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: ""; position: fixed; inset: 0;
+    z-index: 9999; pointer-events: none; opacity: 0.028;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* ── Liquid Glass (used on topbar, floating panels) ── */
+  .liquid-glass {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.06) 0%, oklch(100% 0 0 / 0.02) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid oklch(100% 0 0 / 0.08);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.10), 0 4px 16px oklch(0% 0 0 / 0.20);
+  }
+  .liquid-glass-strong {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.10), oklch(100% 0 0 / 0.03));
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid oklch(100% 0 0 / 0.12);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.15), 0 12px 40px oklch(0% 0 0 / 0.30);
+  }
+
+  /* Native scroll reveals */
+  .reveal {
+    animation: fade-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* @starting-style for modals */
+  .modal-card {
+    opacity: 1; transform: scale(1);
+    transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-spring);
+  }
+  @starting-style { .modal-card { opacity: 0; transform: scale(0.96); } }
+
+  @view-transition { navigation: auto; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0ms !important;
+    }
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: 64px 1fr 32px;
+    grid-template-areas:
+      "sidebar topbar"
+      "sidebar main"
+      "sidebar status";
+    height: 100vh;
+    transition: grid-template-columns var(--dur-base) var(--ease-out);
+  }
+  .app.collapsed { grid-template-columns: var(--sidebar-w-c) 1fr; }
+
+  @media (max-width: 1024px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "topbar"
+        "main"
+        "status";
+    }
+    .sidebar { display: none; }
+  }
+
+  .sidebar { grid-area: sidebar; }
+  .topbar  { grid-area: topbar; }
+  .main    { grid-area: main; overflow-y: auto; overflow-x: hidden; padding: 24px; }
+  .status-bar { grid-area: status; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border-faint);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--r);
+    color: var(--fg-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    position: relative;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: oklch(100% 0 0 / 0.04); color: var(--fg); }
+  .nav-item.active {
+    background: linear-gradient(135deg, oklch(62% 0.22 280 / 0.18), oklch(62% 0.22 280 / 0.05));
+    color: var(--fg);
+    border-color: oklch(62% 0.22 280 / 0.25);
+  }
+  .nav-item.active::before {
+    content: ""; position: absolute; left: -1px; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 18px;
+    background: linear-gradient(180deg, var(--primary), var(--primary-2));
+    border-radius: var(--r-full);
+  }
+  .nav-item .ni { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item .nt { white-space: nowrap; overflow: hidden; }
+  .nav-item .nb {
+    margin-left: auto;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 1px 6px;
+    border-radius: var(--r-full);
+    background: oklch(64% 0.22 25 / 0.18);
+    color: var(--err);
+    font-weight: 600;
+  }
+  .app.collapsed .nav-item .nt,
+  .app.collapsed .nav-item .nb,
+  .app.collapsed .nav-section-label,
+  .app.collapsed .brand-text { display: none; }
+  .app.collapsed .nav-item { justify-content: center; padding: 12px; }
+
+  /* Topbar */
+  .topbar {
+    background: oklch(10% 0.025 265 / 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--border-faint);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    z-index: 30;
+  }
+
+  /* Display */
+  .display { font-family: var(--font-display); letter-spacing: -0.035em; line-height: 1; }
+  .mono { font-family: var(--font-mono); }
+
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .text-gradient-warm {
+    background: linear-gradient(135deg, var(--accent), var(--warn));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* ── Bento card ── */
+  .bento {
+    background: var(--surface);
+    border: 1px solid var(--border-faint);
+    border-radius: var(--r-xl);
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .bento:hover { border-color: var(--border); transform: translateY(-1px); }
+  .bento-accent {
+    background: linear-gradient(135deg, oklch(62% 0.22 280 / 0.08), oklch(70% 0.21 200 / 0.04));
+    border-color: oklch(62% 0.22 280 / 0.20);
+  }
+
+  /* Status dot */
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot-ok   { background: var(--ok); box-shadow: 0 0 6px oklch(70% 0.19 155 / 0.6); }
+  .dot-warn { background: var(--warn); box-shadow: 0 0 6px oklch(78% 0.19 65 / 0.6); }
+  .dot-err  { background: var(--err); box-shadow: 0 0 6px oklch(64% 0.22 25 / 0.6); }
+  .dot-info { background: var(--info); }
+
+  /* Live pulse */
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok);
+    animation: live-pulse 1.8s ease-out infinite;
+  }
+  @keyframes live-pulse {
+    0%   { box-shadow: 0 0 0 0 oklch(70% 0.19 155 / 0.6); }
+    70%  { box-shadow: 0 0 0 7px oklch(70% 0.19 155 / 0); }
+    100% { box-shadow: 0 0 0 0 oklch(70% 0.19 155 / 0); }
+  }
+
+  /* Map (stylized) */
+  .map-canvas {
+    position: relative;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 30% 30%, oklch(20% 0.035 280), transparent 40%),
+      radial-gradient(circle at 70% 60%, oklch(22% 0.04 200), transparent 50%),
+      radial-gradient(circle at 50% 90%, oklch(16% 0.03 280), transparent 60%),
+      linear-gradient(135deg, oklch(11% 0.025 265), oklch(15% 0.025 265));
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(oklch(100% 0 0 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(100% 0 0 / 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.7;
+  }
+  .map-roads {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(115deg, transparent 28%, oklch(40% 0.04 200 / 0.6) 29%, oklch(40% 0.04 200 / 0.6) 31%, transparent 32%),
+      linear-gradient(70deg, transparent 55%, oklch(36% 0.04 250 / 0.5) 56%, oklch(36% 0.04 250 / 0.5) 58%, transparent 59%),
+      linear-gradient(15deg, transparent 70%, oklch(36% 0.04 250 / 0.4) 71%, oklch(36% 0.04 250 / 0.4) 73%, transparent 74%);
+  }
+  .map-heat {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(28px);
+    opacity: 0.65;
+  }
+
+  /* Vehicle cluster pin */
+  .cluster {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: oklch(98% 0 0);
+    border: 1px solid oklch(100% 0 0 / 0.2);
+    box-shadow: 0 4px 12px oklch(0% 0 0 / 0.4);
+    cursor: pointer;
+    transition: transform var(--dur-base) var(--ease-spring);
+  }
+  .cluster:hover { transform: translate(-50%, -50%) scale(1.15); }
+  .cluster-ok    { background: linear-gradient(135deg, var(--ok), oklch(58% 0.19 155)); }
+  .cluster-warn  { background: linear-gradient(135deg, var(--warn), oklch(68% 0.20 35)); }
+  .cluster-err   { background: linear-gradient(135deg, var(--err), oklch(50% 0.22 25)); }
+  .cluster-info  { background: linear-gradient(135deg, var(--info), var(--primary)); }
+
+  /* Bars chart */
+  .bar {
+    flex: 1;
+    background: linear-gradient(180deg, var(--primary), var(--primary-2));
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    transition: all var(--dur-base) var(--ease-out);
+    position: relative;
+  }
+  .bar:hover { background: linear-gradient(180deg, var(--primary-up), var(--primary-2)); }
+  .bar-warn { background: linear-gradient(180deg, var(--warn), oklch(68% 0.20 35)); }
+
+  /* Sparkline */
+  .spark { stroke: var(--primary); stroke-width: 1.5; fill: none; }
+  .spark-fill { fill: var(--primary); opacity: 0.10; }
+
+  /* Table */
+  .table-row {
+    display: grid;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-faint);
+    font-size: 13px;
+    transition: background var(--dur-base);
+  }
+  .table-row:hover { background: oklch(100% 0 0 / 0.03); }
+  .table-row:last-child { border-bottom: 0; }
+
+  /* Chip */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .chip-ok    { background: oklch(70% 0.19 155 / 0.14); color: var(--ok); }
+  .chip-warn  { background: oklch(78% 0.19 65 / 0.14); color: var(--warn); }
+  .chip-err   { background: oklch(64% 0.22 25 / 0.14); color: var(--err); }
+  .chip-info  { background: oklch(70% 0.20 230 / 0.14); color: var(--info); }
+  .chip-primary { background: oklch(62% 0.22 280 / 0.14); color: var(--primary); }
+
+  /* Progress bar */
+  .progress {
+    height: 4px;
+    background: oklch(20% 0.02 265);
+    border-radius: var(--r-full);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-2));
+    border-radius: var(--r-full);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--surface-up); }
+
+  /* Button */
+  .btn-primary {
+    background: var(--primary);
+    color: oklch(98% 0 0);
+    border-radius: var(--r);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 0;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+    box-shadow: 0 0 16px oklch(62% 0.22 280 / 0.3), inset 0 1px 0 oklch(100% 0 0 / 0.18);
+  }
+  .btn-primary:hover { background: var(--primary-up); }
+  .btn-ghost {
+    background: oklch(100% 0 0 / 0.04);
+    color: var(--fg-muted);
+    border: 1px solid var(--border-faint);
+    border-radius: var(--r);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .btn-ghost:hover { color: var(--fg); border-color: var(--border); background: oklch(100% 0 0 / 0.06); }
+
+  *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--r-xs); }
+
+  /* Hide horizontal scroll containers' scrollbars */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ════════════ SIDEBAR ════════════ -->
+  <aside class="sidebar">
+    <!-- Brand -->
+    <div class="flex items-center gap-2.5 px-4 py-4" style="border-bottom: 1px solid var(--border-faint);">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 0 16px oklch(62% 0.22 280 / 0.4);">
+        <i data-lucide="bike" class="w-5 h-5" style="color: oklch(98% 0 0);"></i>
+      </div>
+      <div class="brand-text leading-tight">
+        <div class="font-semibold text-sm">星骑运营</div>
+        <div class="text-[10px] tracking-widest uppercase" style="color: var(--fg-dim);">StarRide Ops</div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-4">
+      <div>
+        <div class="nav-section-label text-[10px] tracking-widest uppercase px-2 pb-2" style="color: var(--fg-dim);">运营</div>
+        <div class="space-y-1">
+          <div class="nav-item active">
+            <i data-lucide="layout-dashboard" class="ni"></i>
+            <span class="nt">运营总览</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="map" class="ni"></i>
+            <span class="nt">地图调度中心</span>
+            <span class="nb">12</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="bike" class="ni"></i>
+            <span class="nt">车队资产</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="battery-charging" class="ni"></i>
+            <span class="nt">电池与能源</span>
+            <span class="nb" style="background: oklch(78% 0.19 65 / 0.18); color: var(--warn);">218</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-section-label text-[10px] tracking-widest uppercase px-2 pb-2" style="color: var(--fg-dim);">执行</div>
+        <div class="space-y-1">
+          <div class="nav-item">
+            <i data-lucide="clipboard-list" class="ni"></i>
+            <span class="nt">运维工单</span>
+            <span class="nb">5</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="shield-alert" class="ni"></i>
+            <span class="nt">规则与区域</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="gavel" class="ni"></i>
+            <span class="nt">合规监管</span>
+            <span class="nb" style="background: oklch(64% 0.22 25 / 0.18); color: var(--err);">2</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-section-label text-[10px] tracking-widest uppercase px-2 pb-2" style="color: var(--fg-dim);">分析</div>
+        <div class="space-y-1">
+          <div class="nav-item">
+            <i data-lucide="bar-chart-3" class="ni"></i>
+            <span class="nt">数据报表</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="users" class="ni"></i>
+            <span class="nt">组织与权限</span>
+          </div>
+          <div class="nav-item">
+            <i data-lucide="settings" class="ni"></i>
+            <span class="nt">配置与对接</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- User card -->
+    <div class="px-3 pb-4">
+      <div class="liquid-glass rounded-xl p-3 flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style="background: linear-gradient(135deg, var(--accent), var(--warn)); color: oklch(15% 0.02 65);">陈</div>
+        <div class="brand-text flex-1 min-w-0 leading-tight">
+          <div class="text-xs font-semibold truncate">陈运维</div>
+          <div class="text-[10px]" style="color: var(--fg-dim);">城市运营经理</div>
+        </div>
+        <i data-lucide="log-out" class="w-4 h-4 brand-text" style="color: var(--fg-dim);"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ════════════ TOPBAR ════════════ -->
+  <header class="topbar">
+    <button id="toggleSidebar" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: oklch(100% 0 0 / 0.05); border: 1px solid var(--border-faint);">
+      <i data-lucide="panel-left" class="w-4 h-4" style="color: var(--fg-muted);"></i>
+    </button>
+
+    <!-- City selector -->
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+      <i data-lucide="map-pin" class="w-3.5 h-3.5" style="color: var(--primary);"></i>
+      <span class="text-sm font-medium">杭州</span>
+      <span class="text-xs" style="color: var(--fg-dim);">·</span>
+      <span class="text-xs" style="color: var(--fg-muted);">西湖/滨江/上城</span>
+      <i data-lucide="chevron-down" class="w-3.5 h-3.5" style="color: var(--fg-dim);"></i>
+    </div>
+
+    <!-- Time range -->
+    <div class="hidden md:flex items-center gap-1 p-1 rounded-lg" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+      <button class="px-2.5 py-1 text-xs rounded-md font-semibold" style="background: var(--primary); color: oklch(98% 0 0);">今日</button>
+      <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--fg-muted);">昨日</button>
+      <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--fg-muted);">本周</button>
+      <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--fg-muted);">本月</button>
+      <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--fg-muted);">自定义</button>
+    </div>
+
+    <!-- Search -->
+    <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg flex-1 max-w-xs" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+      <i data-lucide="search" class="w-3.5 h-3.5" style="color: var(--fg-dim);"></i>
+      <input class="bg-transparent border-0 outline-none text-sm flex-1 placeholder:text-[var(--fg-dim)]" placeholder="搜索车架号 / 订单号 / 用户" />
+      <span class="text-[10px] px-1.5 py-0.5 rounded" style="background: oklch(100% 0 0 / 0.06); color: var(--fg-dim);">⌘K</span>
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+      <!-- Live status -->
+      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background: oklch(70% 0.19 155 / 0.10); border: 1px solid oklch(70% 0.19 155 / 0.20);">
+        <span class="live-dot"></span>
+        <span class="text-xs font-medium" style="color: var(--ok);">实时 · 2.4 万设备在线</span>
+      </div>
+
+      <button class="relative w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+        <i data-lucide="bell" class="w-4 h-4" style="color: var(--fg-muted);"></i>
+        <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center" style="background: var(--err); color: oklch(98% 0 0);">7</span>
+      </button>
+
+      <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style="background: linear-gradient(135deg, var(--accent), var(--warn)); color: oklch(15% 0.02 65);">陈</div>
+    </div>
+  </header>
+
+  <!-- ════════════ MAIN ════════════ -->
+  <main class="main">
+
+    <!-- Page header -->
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-6 reveal">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs tracking-widest uppercase" style="color: var(--primary);">DASHBOARD</span>
+          <span class="chip chip-ok"><span class="dot dot-ok"></span>系统正常</span>
+        </div>
+        <h1 class="display text-3xl font-bold">运营总览 <span class="text-gradient">杭州</span></h1>
+        <p class="text-sm mt-2" style="color: var(--fg-muted);">2026 年 6 月 17 日 · 周三 · 自然日 00:00–24:00 · 上次刷新 18 秒前</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn-ghost inline-flex items-center gap-1.5"><i data-lucide="filter" class="w-3.5 h-3.5"></i>筛选</button>
+        <button class="btn-ghost inline-flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i>导出</button>
+        <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i>创建调度任务</button>
+      </div>
+    </div>
+
+    <!-- ═══ BENTO METRIC GRID (asymmetric) ═══ -->
+    <div class="grid grid-cols-12 gap-4 mb-6">
+
+      <!-- KPI 1: Orders today (large) -->
+      <div class="bento bento-accent col-span-12 md:col-span-4 lg:col-span-3 reveal">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] tracking-widest uppercase" style="color: var(--fg-dim);">ORDERS · 订单数</span>
+          <i data-lucide="trending-up" class="w-4 h-4" style="color: var(--ok);"></i>
+        </div>
+        <div class="display text-3xl font-bold mb-1 text-gradient">48,291</div>
+        <div class="flex items-center gap-2 text-xs">
+          <span style="color: var(--ok);">+12.4%</span>
+          <span style="color: var(--fg-dim);">vs 昨日</span>
+        </div>
+        <!-- Sparkline -->
+        <svg viewBox="0 0 100 30" class="w-full h-8 mt-3">
+          <path class="spark-fill" d="M0,22 L10,18 L20,20 L30,15 L40,12 L50,16 L60,10 L70,8 L80,11 L90,5 L100,7 L100,30 L0,30 Z" />
+          <path class="spark" d="M0,22 L10,18 L20,20 L30,15 L40,12 L50,16 L60,10 L70,8 L80,11 L90,5 L100,7" />
+        </svg>
+      </div>
+
+      <!-- KPI 2: GMV -->
+      <div class="bento col-span-6 md:col-span-4 lg:col-span-3 reveal">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] tracking-widest uppercase" style="color: var(--fg-dim);">GMV · 营收</span>
+          <i data-lucide="trending-up" class="w-4 h-4" style="color: var(--ok);"></i>
+        </div>
+        <div class="display text-3xl font-bold mb-1">¥182,460</div>
+        <div class="flex items-center gap-2 text-xs">
+          <span style="color: var(--ok);">+8.2%</span>
+          <span style="color: var(--fg-dim);">vs 昨日</span>
+        </div>
+        <div class="mt-3 text-[11px]" style="color: var(--fg-muted);">单车日均 ¥6.08 · 退款 ¥1,240</div>
+      </div>
+
+      <!-- KPI 3: Availability -->
+      <div class="bento col-span-6 md:col-span-4 lg:col-span-3 reveal">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] tracking-widest uppercase" style="color: var(--fg-dim);">AVAILABILITY · 可用率</span>
+          <i data-lucide="trending-down" class="w-4 h-4" style="color: var(--warn);"></i>
+        </div>
+        <div class="display text-3xl font-bold mb-1">87.3<span class="text-base" style="color: var(--fg-muted);">%</span></div>
+        <div class="flex items-center gap-2 text-xs">
+          <span style="color: var(--warn);">-1.8%</span>
+          <span style="color: var(--fg-dim);">vs 昨日</span>
+        </div>
+        <div class="progress mt-3">
+          <div class="progress-fill" style="width: 87.3%; background: linear-gradient(90deg, var(--warn), var(--ok));"></div>
+        </div>
+      </div>
+
+      <!-- KPI 4: Rides/Vehicle/Day -->
+      <div class="bento col-span-12 md:col-span-12 lg:col-span-3 reveal">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] tracking-widest uppercase" style="color: var(--fg-dim);">RIDES / VEHICLE / DAY</span>
+          <i data-lucide="trending-up" class="w-4 h-4" style="color: var(--ok);"></i>
+        </div>
+        <div class="display text-3xl font-bold mb-1 text-gradient-warm">5.8</div>
+        <div class="flex items-center gap-2 text-xs">
+          <span style="color: var(--ok);">+0.4</span>
+          <span style="color: var(--fg-dim);">vs 昨日 · 目标 6.0</span>
+        </div>
+        <div class="flex gap-1 mt-3 items-end" style="height: 24px;">
+          <div class="bar" style="height: 40%"></div>
+          <div class="bar" style="height: 55%"></div>
+          <div class="bar" style="height: 50%"></div>
+          <div class="bar" style="height: 70%"></div>
+          <div class="bar" style="height: 65%"></div>
+          <div class="bar" style="height: 80%"></div>
+          <div class="bar" style="height: 90%"></div>
+          <div class="bar" style="height: 75%"></div>
+          <div class="bar" style="height: 85%"></div>
+          <div class="bar" style="height: 92%; background: linear-gradient(180deg, var(--accent), var(--warn));"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Map + Alerts Panel ═══ -->
+    <div class="grid grid-cols-12 gap-4 mb-6">
+
+      <!-- Map -->
+      <div class="bento col-span-12 lg:col-span-8 p-0 reveal" style="padding: 0;">
+        <div class="flex items-center justify-between p-4" style="border-bottom: 1px solid var(--border-faint);">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="display font-bold text-base">地图调度中心</h3>
+              <span class="chip chip-ok"><span class="live-dot" style="width: 6px; height: 6px;"></span>实时</span>
+            </div>
+            <p class="text-xs" style="color: var(--fg-muted);">2.4 万设备 · 18,342 可用 · 4,128 使用中 · 580 故障</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button class="btn-ghost text-xs px-2.5 py-1.5">圈选</button>
+            <button class="btn-ghost text-xs px-2.5 py-1.5">批量指令</button>
+            <button class="btn-primary text-xs px-2.5 py-1.5 inline-flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i>新建任务</button>
+          </div>
+        </div>
+
+        <!-- Map canvas -->
+        <div class="map-canvas" style="height: 380px;">
+          <div class="map-grid"></div>
+          <div class="map-roads"></div>
+
+          <!-- Heat zones -->
+          <div class="map-heat" style="width: 220px; height: 220px; top: 20%; left: 15%; background: radial-gradient(circle, oklch(64% 0.22 25 / 0.6), transparent 70%);"></div>
+          <div class="map-heat" style="width: 260px; height: 260px; top: 45%; left: 55%; background: radial-gradient(circle, oklch(70% 0.20 230 / 0.5), transparent 70%);"></div>
+          <div class="map-heat" style="width: 180px; height: 180px; top: 65%; left: 25%; background: radial-gradient(circle, oklch(78% 0.19 65 / 0.45), transparent 70%);"></div>
+
+          <!-- Clusters -->
+          <div class="cluster cluster-ok" style="left: 22%; top: 28%;">86</div>
+          <div class="cluster cluster-ok" style="left: 38%; top: 55%;">142</div>
+          <div class="cluster cluster-warn" style="left: 58%; top: 38%;">218</div>
+          <div class="cluster cluster-err" style="left: 72%; top: 62%;">14</div>
+          <div class="cluster cluster-info" style="left: 48%; top: 75%;">42</div>
+          <div class="cluster cluster-ok" style="left: 80%; top: 30%;">98</div>
+
+          <!-- Map overlay legend -->
+          <div class="absolute top-3 left-3 liquid-glass-strong rounded-lg p-3">
+            <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">LEGEND</div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-2"><span class="dot dot-ok"></span><span style="color: var(--fg-muted);">可用 18,342</span></div>
+              <div class="flex items-center gap-2"><span class="dot dot-info"></span><span style="color: var(--fg-muted);">使用中 4,128</span></div>
+              <div class="flex items-center gap-2"><span class="dot dot-warn"></span><span style="color: var(--fg-muted);">低电 1,210</span></div>
+              <div class="flex items-center gap-2"><span class="dot dot-err"></span><span style="color: var(--fg-muted);">故障 580</span></div>
+            </div>
+          </div>
+
+          <!-- Layer toggles -->
+          <div class="absolute top-3 right-3 liquid-glass-strong rounded-lg p-1 flex flex-col">
+            <button class="w-8 h-8 rounded flex items-center justify-center" style="background: oklch(62% 0.22 280 / 0.18);"><i data-lucide="bike" class="w-4 h-4" style="color: var(--primary);"></i></button>
+            <button class="w-8 h-8 rounded flex items-center justify-center"><i data-lucide="battery" class="w-4 h-4" style="color: var(--fg-muted);"></i></button>
+            <button class="w-8 h-8 rounded flex items-center justify-center"><i data-lucide="flame" class="w-4 h-4" style="color: var(--fg-muted);"></i></button>
+            <button class="w-8 h-8 rounded flex items-center justify-center"><i data-lucide="hexagon" class="w-4 h-4" style="color: var(--fg-muted);"></i></button>
+          </div>
+
+          <!-- Bottom info -->
+          <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            <div class="liquid-glass rounded-lg px-3 py-2 text-xs flex items-center gap-2">
+              <i data-lucide="mouse-pointer-2" class="w-3.5 h-3.5" style="color: var(--fg-muted);"></i>
+              <span style="color: var(--fg-muted);">点击车辆查看详情 · 框选批量指令</span>
+            </div>
+            <div class="liquid-glass rounded-lg px-3 py-2 text-xs flex items-center gap-2">
+              <i data-lucide="clock" class="w-3.5 h-3.5" style="color: var(--ok);"></i>
+              <span class="mono" style="color: var(--fg-muted);">P95 上报延迟 6.2s</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts panel -->
+      <div class="bento col-span-12 lg:col-span-4 p-0 reveal">
+        <div class="flex items-center justify-between p-4" style="border-bottom: 1px solid var(--border-faint);">
+          <div>
+            <h3 class="display font-bold text-base flex items-center gap-2">告警中心 <span class="chip chip-err">7 待处理</span></h3>
+            <p class="text-xs mt-1" style="color: var(--fg-muted);">按优先级排序 · P90 响应 8min</p>
+          </div>
+          <button class="text-xs" style="color: var(--primary);">查看全部</button>
+        </div>
+        <div class="overflow-y-auto" style="max-height: 380px;">
+
+          <div class="p-3.5 flex items-start gap-3" style="border-bottom: 1px solid var(--border-faint);">
+            <div class="w-1 self-stretch rounded-full" style="background: var(--err);"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <span class="chip chip-err">P0 · 越界</span>
+                <span class="text-[10px] mono" style="color: var(--fg-dim);">2 分钟前</span>
+              </div>
+              <div class="text-sm font-semibold mb-1">车辆聚集堆积 · 西湖景区北门</div>
+              <div class="text-xs" style="color: var(--fg-muted);">42 辆车滞留超 30 分钟 · 已超出围栏</div>
+              <div class="flex items-center gap-2 mt-2">
+                <button class="btn-primary text-[10px] px-2 py-1">派单</button>
+                <button class="btn-ghost text-[10px] px-2 py-1">定位</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 flex items-start gap-3" style="border-bottom: 1px solid var(--border-faint);">
+            <div class="w-1 self-stretch rounded-full" style="background: var(--err);"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <span class="chip chip-err">P0 · 疑似盗损</span>
+                <span class="text-[10px] mono" style="color: var(--fg-dim);">7 分钟前</span>
+              </div>
+              <div class="text-sm font-semibold mb-1">异常轨迹 · 滨江南环路</div>
+              <div class="text-xs" style="color: var(--fg-muted);">车架号 SS-2026-A08234 · 凌晨异地移动</div>
+              <div class="flex items-center gap-2 mt-2">
+                <button class="btn-primary text-[10px] px-2 py-1">锁车</button>
+                <button class="btn-ghost text-[10px] px-2 py-1">轨迹</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 flex items-start gap-3" style="border-bottom: 1px solid var(--border-faint);">
+            <div class="w-1 self-stretch rounded-full" style="background: var(--warn);"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <span class="chip chip-warn">P1 · 禁停</span>
+                <span class="text-[10px] mono" style="color: var(--fg-dim);">12 分钟前</span>
+              </div>
+              <div class="text-sm font-semibold mb-1">违停堆积 · 武林广场地铁口</div>
+              <div class="text-xs" style="color: var(--fg-muted);">18 辆占道 · 已通知运维挪车</div>
+              <div class="flex items-center gap-2 mt-2">
+                <button class="btn-primary text-[10px] px-2 py-1">派单</button>
+                <button class="btn-ghost text-[10px] px-2 py-1">详情</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 flex items-start gap-3" style="border-bottom: 1px solid var(--border-faint);">
+            <div class="w-1 self-stretch rounded-full" style="background: var(--warn);"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <span class="chip chip-warn">P1 · 低电</span>
+                <span class="text-[10px] mono" style="color: var(--fg-dim);">18 分钟前</span>
+              </div>
+              <div class="text-sm font-semibold mb-1">低电车辆聚集 · 上城区域</div>
+              <div class="text-xs" style="color: var(--fg-muted);">218 辆 SOC &lt; 15% · 需换电</div>
+              <div class="flex items-center gap-2 mt-2">
+                <button class="btn-primary text-[10px] px-2 py-1">批量换电</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 flex items-start gap-3">
+            <div class="w-1 self-stretch rounded-full" style="background: var(--info);"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <span class="chip chip-info">P2 · 离线</span>
+                <span class="text-[10px] mono" style="color: var(--fg-dim);">35 分钟前</span>
+              </div>
+              <div class="text-sm font-semibold mb-1">设备离线 · 拱墅子车队</div>
+              <div class="text-xs" style="color: var(--fg-muted);">12 辆 &gt; 10 分钟未上报</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Battery + Supply/Demand ═══ -->
+    <div class="grid grid-cols-12 gap-4 mb-6">
+
+      <!-- Battery distribution -->
+      <div class="bento col-span-12 lg:col-span-5 reveal">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="display font-bold text-base">电池态势 · 电单车</h3>
+            <p class="text-xs mt-1" style="color: var(--fg-muted);">SOC 分布 · 低电 1,210 辆 · 待换电 218 辆</p>
+          </div>
+          <span class="chip chip-warn"><span class="dot dot-warn"></span>低电预警</span>
+        </div>
+
+        <!-- SOC segments -->
+        <div class="space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">0–10% · 紧急</span>
+              <span class="mono font-semibold" style="color: var(--err);">218 辆 · 1.8%</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 4%; background: var(--err);"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">10–30% · 低电</span>
+              <span class="mono font-semibold" style="color: var(--warn);">992 辆 · 8.3%</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 14%; background: var(--warn);"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">30–60% · 正常</span>
+              <span class="mono font-semibold" style="color: var(--info);">3,840 辆 · 32.1%</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 50%; background: var(--info);"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">60–100% · 充足</span>
+              <span class="mono font-semibold" style="color: var(--ok);">6,928 辆 · 57.8%</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 90%; background: var(--ok);"></div></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mt-5 pt-4" style="border-top: 1px solid var(--border-faint);">
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">今日换电</div>
+            <div class="display text-xl font-bold">428<span class="text-xs ml-1" style="color: var(--fg-muted);">次</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">平均耗时</div>
+            <div class="display text-xl font-bold">6.4<span class="text-xs ml-1" style="color: var(--fg-muted);">min</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">成功率</div>
+            <div class="display text-xl font-bold" style="color: var(--ok);">98.2%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supply/Demand -->
+      <div class="bento col-span-12 lg:col-span-7 reveal">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="display font-bold text-base">供需态势 · 潮汐调度</h3>
+            <p class="text-xs mt-1" style="color: var(--fg-muted);">高峰 7:00–9:00 · 17:00–19:00 · 缺车区域 8 · 堆车区域 5</p>
+          </div>
+          <button class="btn-ghost text-xs px-2.5 py-1.5 inline-flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i>生成调度建议</button>
+        </div>
+
+        <!-- 24h bar chart -->
+        <div class="mb-5">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">24H 订单分布（vs 可用车覆盖）</div>
+          <div class="flex items-end gap-1" style="height: 100px;">
+            <div class="bar" style="height: 18%"></div>
+            <div class="bar" style="height: 12%"></div>
+            <div class="bar" style="height: 8%"></div>
+            <div class="bar" style="height: 15%"></div>
+            <div class="bar" style="height: 35%"></div>
+            <div class="bar" style="height: 65%"></div>
+            <div class="bar bar-warn" style="height: 92%"></div>
+            <div class="bar bar-warn" style="height: 98%"></div>
+            <div class="bar" style="height: 78%"></div>
+            <div class="bar" style="height: 55%"></div>
+            <div class="bar" style="height: 48%"></div>
+            <div class="bar" style="height: 52%"></div>
+            <div class="bar" style="height: 58%"></div>
+            <div class="bar" style="height: 50%"></div>
+            <div class="bar" style="height: 45%"></div>
+            <div class="bar" style="height: 60%"></div>
+            <div class="bar" style="height: 75%"></div>
+            <div class="bar bar-warn" style="height: 95%"></div>
+            <div class="bar bar-warn" style="height: 96%"></div>
+            <div class="bar" style="height: 82%"></div>
+            <div class="bar" style="height: 60%"></div>
+            <div class="bar" style="height: 40%"></div>
+            <div class="bar" style="height: 28%"></div>
+            <div class="bar" style="height: 18%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] mt-1.5 mono" style="color: var(--fg-dim);">
+            <span>00</span><span>04</span><span>08</span><span>12</span><span>16</span><span>20</span><span>23</span>
+          </div>
+        </div>
+
+        <!-- Top hot zones -->
+        <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">缺车热点 TOP 5</div>
+        <div class="space-y-2">
+          <div class="flex items-center gap-3 text-xs">
+            <span class="w-6 mono font-bold" style="color: var(--err);">01</span>
+            <span class="flex-1 font-medium">西湖景区北门</span>
+            <span class="chip chip-err">缺 42 辆</span>
+            <button class="text-[10px] px-2 py-0.5 rounded" style="color: var(--primary);">调度 →</button>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="w-6 mono font-bold" style="color: var(--err);">02</span>
+            <span class="flex-1 font-medium">滨江西兴地铁口</span>
+            <span class="chip chip-err">缺 36 辆</span>
+            <button class="text-[10px] px-2 py-0.5 rounded" style="color: var(--primary);">调度 →</button>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="w-6 mono font-bold" style="color: var(--warn);">03</span>
+            <span class="flex-1 font-medium">武林广场 1 号口</span>
+            <span class="chip chip-warn">缺 28 辆</span>
+            <button class="text-[10px] px-2 py-0.5 rounded" style="color: var(--primary);">调度 →</button>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="w-6 mono font-bold" style="color: var(--warn);">04</span>
+            <span class="flex-1 font-medium">钱江新城 D 座</span>
+            <span class="chip chip-warn">缺 22 辆</span>
+            <button class="text-[10px] px-2 py-0.5 rounded" style="color: var(--primary);">调度 →</button>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="w-6 mono font-bold" style="color: var(--warn);">05</span>
+            <span class="flex-1 font-medium">城站火车站东</span>
+            <span class="chip chip-warn">缺 18 辆</span>
+            <button class="text-[10px] px-2 py-0.5 rounded" style="color: var(--primary);">调度 →</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Work Orders Table ═══ -->
+    <div class="bento p-0 mb-6 reveal">
+      <div class="flex items-center justify-between p-4" style="border-bottom: 1px solid var(--border-faint);">
+        <div>
+          <h3 class="display font-bold text-base">运维工单池</h3>
+          <p class="text-xs mt-1" style="color: var(--fg-muted);">待派 12 · 待接 8 · 执行中 34 · 待验收 5 · 超时 3</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 p-1 rounded-lg" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+            <button class="px-2.5 py-1 text-xs rounded-md font-semibold" style="background: var(--primary); color: oklch(98% 0 0);">全部</button>
+            <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--fg-muted);">待派 12</button>
+            <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--fg-muted);">执行中 34</button>
+            <button class="px-2.5 py-1 text-xs rounded-md" style="color: var(--err);">超时 3</button>
+          </div>
+          <button class="btn-ghost text-xs px-2.5 py-1.5 inline-flex items-center gap-1"><i data-lucide="filter" class="w-3 h-3"></i>筛选</button>
+        </div>
+      </div>
+
+      <!-- Table header -->
+      <div class="table-row" style="background: oklch(100% 0 0 / 0.02); font-size: 11px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">
+        <div class="col-span-1">工单号</div>
+        <div class="col-span-2">类型</div>
+        <div class="col-span-3">位置</div>
+        <div class="col-span-2">负责人</div>
+        <div class="col-span-1">优先级</div>
+        <div class="col-span-1">状态</div>
+        <div class="col-span-1">SLA</div>
+        <div class="col-span-1">操作</div>
+      </div>
+
+      <!-- Rows -->
+      <div class="table-row grid-cols-12">
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-muted);">WO-2606-0418</div>
+        <div class="col-span-2"><span class="chip chip-err"><span class="dot dot-err"></span>越界处置</span></div>
+        <div class="col-span-3 text-xs">西湖景区北门 · 42 辆堆积</div>
+        <div class="col-span-2 text-xs"><div class="flex items-center gap-1.5"><div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: oklch(98% 0 0);">王</div>王运维</div></div>
+        <div class="col-span-1"><span class="chip chip-err">P0</span></div>
+        <div class="col-span-1"><span class="chip chip-warn">执行中</span></div>
+        <div class="col-span-1 mono text-xs" style="color: var(--ok);">4min</div>
+        <div class="col-span-1"><button class="text-xs" style="color: var(--primary);">详情</button></div>
+      </div>
+
+      <div class="table-row grid-cols-12">
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-muted);">WO-2606-0417</div>
+        <div class="col-span-2"><span class="chip chip-warn"><span class="dot dot-warn"></span>批量换电</span></div>
+        <div class="col-span-3 text-xs">上城区 · 218 辆低电</div>
+        <div class="col-span-2 text-xs"><div class="flex items-center gap-1.5"><div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style="background: linear-gradient(135deg, var(--accent), var(--warn)); color: oklch(15% 0.02 65);">李</div>李调度</div></div>
+        <div class="col-span-1"><span class="chip chip-warn">P1</span></div>
+        <div class="col-span-1"><span class="chip chip-info">待派</span></div>
+        <div class="col-span-1 mono text-xs" style="color: var(--warn);">临近超时</div>
+        <div class="col-span-1"><button class="text-xs" style="color: var(--primary);">派单</button></div>
+      </div>
+
+      <div class="table-row grid-cols-12">
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-muted);">WO-2606-0416</div>
+        <div class="col-span-2"><span class="chip chip-info"><span class="dot dot-info"></span>故障维修</span></div>
+        <div class="col-span-3 text-xs">滨江南环路 · 车架 SS-2026-A08234</div>
+        <div class="col-span-2 text-xs"><div class="flex items-center gap-1.5"><div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: oklch(98% 0 0);">王</div>王运维</div></div>
+        <div class="col-span-1"><span class="chip chip-warn">P1</span></div>
+        <div class="col-span-1"><span class="chip chip-ok">待验收</span></div>
+        <div class="col-span-1 mono text-xs" style="color: var(--ok);">28min</div>
+        <div class="col-span-1"><button class="text-xs" style="color: var(--primary);">详情</button></div>
+      </div>
+
+      <div class="table-row grid-cols-12">
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-muted);">WO-2606-0415</div>
+        <div class="col-span-2"><span class="chip chip-primary"><span class="dot dot-info"></span>调度搬运</span></div>
+        <div class="col-span-3 text-xs">钱江新城 → 西湖景区 · 30 辆</div>
+        <div class="col-span-2 text-xs"><div class="flex items-center gap-1.5"><div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style="background: linear-gradient(135deg, var(--accent), var(--warn)); color: oklch(15% 0.02 65);">李</div>李调度</div></div>
+        <div class="col-span-1"><span class="chip chip-warn">P1</span></div>
+        <div class="col-span-1"><span class="chip chip-warn">执行中</span></div>
+        <div class="col-span-1 mono text-xs" style="color: var(--ok);">12min</div>
+        <div class="col-span-1"><button class="text-xs" style="color: var(--primary);">详情</button></div>
+      </div>
+
+      <div class="table-row grid-cols-12">
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-muted);">WO-2606-0414</div>
+        <div class="col-span-2"><span class="chip chip-info"><span class="dot dot-info"></span>巡检</span></div>
+        <div class="col-span-3 text-xs">拱墅子车队 · 12 辆离线检查</div>
+        <div class="col-span-2 text-xs"><div class="flex items-center gap-1.5"><div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style="background: linear-gradient(135deg, var(--ok), oklch(58% 0.19 155)); color: oklch(98% 0 0);">张</div>张地勤</div></div>
+        <div class="col-span-1"><span class="chip chip-info">P2</span></div>
+        <div class="col-span-1"><span class="chip chip-warn">执行中</span></div>
+        <div class="col-span-1 mono text-xs" style="color: var(--ok);">45min</div>
+        <div class="col-span-1"><button class="text-xs" style="color: var(--primary);">详情</button></div>
+      </div>
+
+      <div class="table-row grid-cols-12">
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-muted);">WO-2606-0413</div>
+        <div class="col-span-2"><span class="chip chip-err"><span class="dot dot-err"></span>回收</span></div>
+        <div class="col-span-3 text-xs">城西区域 · 8 辆报废车回收</div>
+        <div class="col-span-2 text-xs" style="color: var(--fg-dim);">未指派</div>
+        <div class="col-span-1"><span class="chip chip-info">P2</span></div>
+        <div class="col-span-1"><span class="chip chip-info">待派</span></div>
+        <div class="col-span-1 mono text-xs" style="color: var(--fg-dim);">—</div>
+        <div class="col-span-1"><button class="text-xs" style="color: var(--primary);">派单</button></div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Quick Actions + Compliance ═══ -->
+    <div class="grid grid-cols-12 gap-4 mb-6">
+
+      <!-- Quick actions -->
+      <div class="bento col-span-12 lg:col-span-7 reveal">
+        <h3 class="display font-bold text-base mb-1">快速工作台</h3>
+        <p class="text-xs mb-4" style="color: var(--fg-muted);">高频操作 · 少点击 · 可批量 · 可追踪</p>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <button class="liquid-glass rounded-xl p-3 text-left transition-all hover:translate-y-[-1px]">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style="background: oklch(62% 0.22 280 / 0.15);"><i data-lucide="bike" class="w-4 h-4" style="color: var(--primary);"></i></div>
+            <div class="text-sm font-semibold">调度任务</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">堆车 → 缺车</div>
+          </button>
+          <button class="liquid-glass rounded-xl p-3 text-left transition-all hover:translate-y-[-1px]">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style="background: oklch(78% 0.19 65 / 0.15);"><i data-lucide="battery-charging" class="w-4 h-4" style="color: var(--warn);"></i></div>
+            <div class="text-sm font-semibold">换电任务</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">低电批量</div>
+          </button>
+          <button class="liquid-glass rounded-xl p-3 text-left transition-all hover:translate-y-[-1px]">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style="background: oklch(70% 0.19 155 / 0.15);"><i data-lucide="wrench" class="w-4 h-4" style="color: var(--ok);"></i></div>
+            <div class="text-sm font-semibold">维修工单</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">故障申报</div>
+          </button>
+          <button class="liquid-glass rounded-xl p-3 text-left transition-all hover:translate-y-[-1px]">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style="background: oklch(70% 0.20 230 / 0.15);"><i data-lucide="shield-alert" class="w-4 h-4" style="color: var(--info);"></i></div>
+            <div class="text-sm font-semibold">违停处置</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">挪车 + 取证</div>
+          </button>
+          <button class="liquid-glass rounded-xl p-3 text-left transition-all hover:translate-y-[-1px]">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style="background: oklch(64% 0.22 25 / 0.15);"><i data-lucide="lock" class="w-4 h-4" style="color: var(--err);"></i></div>
+            <div class="text-sm font-semibold">批量锁车</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">异常车辆</div>
+          </button>
+          <button class="liquid-glass rounded-xl p-3 text-left transition-all hover:translate-y-[-1px]">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style="background: oklch(66% 0.21 305 / 0.15);"><i data-lucide="hexagon" class="w-4 h-4" style="color: var(--primary-2);"></i></div>
+            <div class="text-sm font-semibold">围栏配置</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">服务/禁停</div>
+          </button>
+        </div>
+
+        <!-- My todo -->
+        <div class="mt-5 pt-4" style="border-top: 1px solid var(--border-faint);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">我的待办 · 5</div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 text-xs p-2 rounded-lg" style="background: oklch(64% 0.22 25 / 0.06);">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5" style="color: var(--err);"></i>
+              <span class="flex-1">P0 越界告警 · 西湖景区北门</span>
+              <span class="mono text-[10px]" style="color: var(--err);">超时 2min</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs p-2 rounded-lg" style="background: oklch(100% 0 0 / 0.03);">
+              <i data-lucide="clipboard-check" class="w-3.5 h-3.5" style="color: var(--warn);"></i>
+              <span class="flex-1">WO-2606-0416 待验收 · 滨江南环</span>
+              <span class="mono text-[10px]" style="color: var(--fg-dim);">28min</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs p-2 rounded-lg" style="background: oklch(100% 0 0 / 0.03);">
+              <i data-lucide="file-check" class="w-3.5 h-3.5" style="color: var(--info);"></i>
+              <span class="flex-1">规则发布审批 · 拱墅禁停区 v2.3</span>
+              <span class="mono text-[10px]" style="color: var(--fg-dim);">2h 前</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compliance -->
+      <div class="bento col-span-12 lg:col-span-5 reveal">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="display font-bold text-base">合规与治理</h3>
+            <p class="text-xs mt-1" style="color: var(--fg-muted);">城市级监管 · MDS/GBFS 接口</p>
+          </div>
+          <span class="chip chip-ok"><span class="dot dot-ok"></span>健康</span>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">投放量 vs 许可上限</span>
+              <span class="mono font-semibold" style="color: var(--ok);">28,420 / 30,000</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 94.7%; background: linear-gradient(90deg, var(--ok), var(--warn));"></div></div>
+            <div class="text-[10px] mt-1" style="color: var(--fg-dim);">剩余余量 1,580 辆 · 距上限 5.3%</div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">MDS 接口上报延迟</span>
+              <span class="mono font-semibold" style="color: var(--ok);">P95 2.4s</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 88%; background: var(--ok);"></div></div>
+            <div class="text-[10px] mt-1" style="color: var(--fg-dim);">SLA ≤ 5s · 最近上报 18s 前</div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span style="color: var(--fg-muted);">违规处置时效 P90</span>
+              <span class="mono font-semibold" style="color: var(--warn);">8.2 min</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width: 82%; background: var(--warn);"></div></div>
+            <div class="text-[10px] mt-1" style="color: var(--fg-dim);">SLA ≤ 10min · 今日违规 38 起</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-5 pt-4" style="border-top: 1px solid var(--border-faint);">
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">禁停次数</div>
+            <div class="display text-xl font-bold" style="color: var(--warn);">28</div>
+          </div>
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">越界次数</div>
+            <div class="display text-xl font-bold" style="color: var(--err);">10</div>
+          </div>
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">服务区覆盖</div>
+            <div class="display text-xl font-bold" style="color: var(--ok);">96.8%</div>
+          </div>
+          <div>
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">证据链完整</div>
+            <div class="display text-xl font-bold" style="color: var(--ok);">100%</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Team performance ═══ -->
+    <div class="bento p-0 mb-6 reveal">
+      <div class="flex items-center justify-between p-4" style="border-bottom: 1px solid var(--border-faint);">
+        <div>
+          <h3 class="display font-bold text-base">运维人效 · 今日</h3>
+          <p class="text-xs mt-1" style="color: var(--fg-muted);">在岗 28 人 · 班次 A/B · 区域覆盖 12 个网格</p>
+        </div>
+        <button class="btn-ghost text-xs px-2.5 py-1.5 inline-flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>查看班次</button>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-px" style="background: var(--border-faint);">
+        <div class="p-4" style="background: var(--surface);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">人均完成</div>
+          <div class="display text-2xl font-bold text-gradient">14.6<span class="text-xs ml-1" style="color: var(--fg-muted);">单</span></div>
+        </div>
+        <div class="p-4" style="background: var(--surface);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">准时率</div>
+          <div class="display text-2xl font-bold" style="color: var(--ok);">94.2%</div>
+        </div>
+        <div class="p-4" style="background: var(--surface);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">一次修复</div>
+          <div class="display text-2xl font-bold" style="color: var(--ok);">88.5%</div>
+        </div>
+        <div class="p-4" style="background: var(--surface);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">平均处理</div>
+          <div class="display text-2xl font-bold">18.4<span class="text-xs ml-1" style="color: var(--fg-muted);">min</span></div>
+        </div>
+        <div class="p-4" style="background: var(--surface);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">返工率</div>
+          <div class="display text-2xl font-bold" style="color: var(--warn);">3.8%</div>
+        </div>
+        <div class="p-4" style="background: var(--surface);">
+          <div class="text-[10px] tracking-widest uppercase mb-2" style="color: var(--fg-dim);">超时工单</div>
+          <div class="display text-2xl font-bold" style="color: var(--err);">3</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ════════════ STATUS BAR ════════════ -->
+  <footer class="status-bar flex items-center justify-between px-6 text-xs mono" style="background: var(--surface); border-top: 1px solid var(--border-faint); color: var(--fg-dim);">
+    <div class="flex items-center gap-4">
+      <span class="flex items-center gap-1.5"><span class="live-dot" style="width: 6px; height: 6px;"></span>系统正常</span>
+      <span>IoT 上报 6.2s P95</span>
+      <span>MDS 接口 2.4s P95</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span>v2.4.1 · 杭州城市节点</span>
+      <span>© 2026 星骑运营</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+
+  // Sidebar collapse
+  const app = document.getElementById('app');
+  document.getElementById('toggleSidebar').addEventListener('click', () => {
+    app.classList.toggle('collapsed');
+  });
+
+  // Sidebar nav active switching
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

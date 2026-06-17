@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>闪充 — 电动汽车充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ═══ Step 0 — OKLCH Design Tokens (charging tech palette) ═══ */
+  :root {
+    /* Dark surface with energy blue + charging amber */
+    --bg:           oklch(8% 0.020 250);
+    --bg-2:         oklch(11% 0.025 250);
+    --surface:      oklch(14% 0.025 250);
+    --surface-up:   oklch(19% 0.025 250);
+    --fg:           oklch(97% 0.010 95);
+    --fg-muted:     oklch(70% 0.015 250);
+    --fg-dim:       oklch(48% 0.012 250);
+
+    --primary:      oklch(62% 0.220 250);   /* tech blue */
+    --primary-up:   oklch(68% 0.220 250);
+    --primary-2:    oklch(70% 0.220 200);   /* cyan-energy */
+    --charging:     oklch(78% 0.190 65);    /* amber charging active */
+    --charging-2:   oklch(72% 0.210 35);    /* warm orange */
+    --ok:           oklch(70% 0.190 155);   /* available green */
+    --warn:         oklch(78% 0.190 65);
+    --err:          oklch(64% 0.220 25);
+    --border:       oklch(24% 0.020 250);
+    --border-faint: oklch(17% 0.015 250);
+
+    --font:         'Inter', 'Noto Sans SC', system-ui, sans-serif;
+    --font-display: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --r-xs: 0.25rem; --r-sm: 0.5rem; --r: 0.75rem;
+    --r-lg: 1rem;    --r-xl: 1.5rem; --r-full: 9999px;
+
+    --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-fast: 150ms; --dur-base: 250ms; --dur-slow: 500ms;
+  }
+  :root { color-scheme: dark; }
+
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body { background: oklch(5% 0.015 250); }
+  body {
+    color: var(--fg);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Grain overlay on whole page */
+  body::after {
+    content: ""; position: fixed; inset: 0;
+    z-index: 9999; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* Phone frame */
+  .phone-frame {
+    width: 100%;
+    max-width: 412px;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 480px) {
+    body { padding: 24px 0; }
+    .phone-frame {
+      min-height: 880px;
+      max-height: 880px;
+      border-radius: 44px;
+      border: 10px solid oklch(3% 0 0);
+      box-shadow:
+        0 0 0 1px oklch(20% 0 0),
+        0 40px 80px oklch(0% 0 0 / 0.5),
+        0 0 120px oklch(62% 0.22 250 / 0.12);
+    }
+  }
+
+  /* Liquid Glass */
+  .liquid-glass {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.10) 0%, oklch(100% 0 0 / 0.03) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid oklch(100% 0 0 / 0.14);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.16), 0 8px 32px oklch(0% 0 0 / 0.3);
+    border-radius: var(--r-lg);
+  }
+  .liquid-glass-strong {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.14), oklch(100% 0 0 / 0.04));
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid oklch(100% 0 0 / 0.16);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.22), 0 16px 48px oklch(0% 0 0 / 0.4);
+  }
+
+  /* Native scroll-driven reveals */
+  .reveal {
+    animation: fade-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* @starting-style for modal */
+  .sheet, .modal-card {
+    opacity: 1; transform: translateY(0);
+    transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-spring);
+  }
+  @starting-style { .sheet, .modal-card { opacity: 0; transform: translateY(40px); } }
+
+  @view-transition { navigation: auto; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0ms !important;
+    }
+  }
+
+  /* Status bar (mobile) */
+  .status-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    position: relative;
+    z-index: 50;
+  }
+  .notch {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 28px;
+    background: oklch(3% 0 0);
+    border-radius: var(--r-full);
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 96px;
+  }
+  .screen.active { display: flex; }
+
+  /* Map background (stylized) */
+  .map-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, oklch(20% 0.04 250), transparent 40%),
+      radial-gradient(circle at 70% 60%, oklch(22% 0.04 200), transparent 50%),
+      radial-gradient(circle at 50% 90%, oklch(16% 0.03 250), transparent 60%),
+      linear-gradient(135deg, oklch(11% 0.025 250), oklch(14% 0.025 250));
+    overflow: hidden;
+  }
+  .map-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background-image:
+      linear-gradient(oklch(100% 0 0 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(100% 0 0 / 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    transform: perspective(800px) rotateX(60deg) translateZ(-100px);
+    transform-origin: 50% 100%;
+    opacity: 0.6;
+  }
+  .map-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(115deg, transparent 35%, oklch(20% 0.04 200 / 0.5) 36%, oklch(20% 0.04 200 / 0.5) 38%, transparent 39%),
+      linear-gradient(70deg, transparent 60%, oklch(24% 0.04 250 / 0.4) 61%, oklch(24% 0.04 250 / 0.4) 63%, transparent 64%);
+    opacity: 0.7;
+  }
+
+  /* Map station pins */
+  .pin {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    animation: pin-drop 600ms var(--ease-spring) both;
+  }
+  @keyframes pin-drop {
+    from { opacity: 0; transform: translate(-50%, -120%) scale(0.6); }
+    to   { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+  }
+  .pin-bubble {
+    padding: 6px 10px;
+    border-radius: var(--r-full);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: oklch(98% 0 0);
+    border: 1px solid oklch(100% 0 0 / 0.2);
+    box-shadow: 0 4px 16px oklch(0% 0 0 / 0.4);
+    white-space: nowrap;
+  }
+  .pin-bubble.ok    { background: linear-gradient(135deg, var(--ok), oklch(60% 0.19 155)); }
+  .pin-bubble.warn  { background: linear-gradient(135deg, var(--charging), var(--charging-2)); }
+  .pin-bubble.dim   { background: linear-gradient(135deg, oklch(40% 0.01 265), oklch(30% 0.01 265)); }
+  .pin-dot {
+    width: 6px; height: 6px;
+    background: inherit;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px oklch(100% 0 0 / 0.08);
+  }
+
+  /* Charging ring progress (conic-gradient) */
+  .charge-ring {
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: conic-gradient(from -90deg, var(--charging) 0deg, var(--charging-2) 198deg, oklch(20% 0.02 250) 198deg);
+    padding: 6px;
+    box-shadow: 0 0 60px oklch(78% 0.19 65 / 0.25);
+    animation: ring-breath 3s ease-in-out infinite;
+  }
+  @keyframes ring-breath {
+    0%, 100% { box-shadow: 0 0 60px oklch(78% 0.19 65 / 0.25); }
+    50%      { box-shadow: 0 0 80px oklch(78% 0.19 65 / 0.45); }
+  }
+  .charge-ring-inner {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: oklch(10% 0.025 250);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid oklch(100% 0 0 / 0.06);
+  }
+
+  /* Liquid energy flow animation */
+  @keyframes flow {
+    from { background-position: 0% 50% }
+    to   { background-position: 200% 50% }
+  }
+  .flow-bar {
+    background: linear-gradient(90deg, var(--charging) 0%, var(--charging-2) 25%, var(--charging) 50%, var(--charging-2) 75%, var(--charging) 100%);
+    background-size: 200% 100%;
+    animation: flow 2.5s linear infinite;
+  }
+
+  /* Pulse dot for live indicator */
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 0 oklch(70% 0.19 155 / 0.7);
+    animation: live-pulse 1.6s ease-out infinite;
+  }
+  @keyframes live-pulse {
+    0%   { box-shadow: 0 0 0 0 oklch(70% 0.19 155 / 0.6); }
+    70%  { box-shadow: 0 0 0 8px oklch(70% 0.19 155 / 0); }
+    100% { box-shadow: 0 0 0 0 oklch(70% 0.19 155 / 0); }
+  }
+
+  /* TabBar center scan FAB */
+  .tab-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 40;
+    padding: 8px 12px 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+    color: var(--fg-dim);
+    font-size: 10px;
+    font-weight: 500;
+    transition: color var(--dur-base) var(--ease-out);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+  }
+  .tab-item.active { color: var(--primary); }
+  .tab-item .ti { width: 22px; height: 22px; }
+  .tab-scan {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--fg-dim);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    margin-top: -28px;
+  }
+  .scan-fab {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      0 8px 24px oklch(62% 0.22 250 / 0.5),
+      0 0 0 4px oklch(8% 0.02 250),
+      0 0 0 5px oklch(62% 0.22 250 / 0.3);
+    transition: transform var(--dur-base) var(--ease-spring);
+    color: oklch(98% 0 0);
+  }
+  .tab-scan:hover .scan-fab { transform: scale(1.05) translateY(-2px); }
+  .tab-scan:active .scan-fab { transform: scale(0.96); }
+
+  /* Generic helpers */
+  .display { font-family: var(--font-display); letter-spacing: -0.03em; line-height: 1; }
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .text-gradient-amber {
+    background: linear-gradient(135deg, var(--charging), var(--charging-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-up));
+    color: oklch(98% 0 0);
+    box-shadow: 0 0 24px oklch(62% 0.22 250 / 0.4), inset 0 1px 0 oklch(100% 0 0 / 0.2);
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-charge {
+    background: linear-gradient(135deg, var(--charging), var(--charging-2));
+    color: oklch(15% 0.02 65);
+    box-shadow: 0 0 24px oklch(78% 0.19 65 / 0.4), inset 0 1px 0 oklch(100% 0 0 / 0.2);
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .btn-charge:active { transform: scale(0.98); }
+
+  /* Scrollbar hide */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--r-xs); }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="notch"></div>
+    <div class="flex items-center gap-1.5">
+      <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+      <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+      <i data-lucide="battery-full" class="w-4 h-4"></i>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN: HOME (map + stations) ════════════ -->
+  <section class="screen active" id="screen-home" aria-label="首页 找桩">
+
+    <!-- Top header (liquid glass) -->
+    <div class="relative z-30 px-4 pt-2 pb-3">
+      <div class="liquid-glass-strong rounded-2xl p-3 flex items-center gap-3">
+        <div class="flex items-center gap-2 flex-1">
+          <i data-lucide="map-pin" class="w-4 h-4" style="color: var(--primary);"></i>
+          <div class="leading-tight">
+            <div class="text-[10px]" style="color: var(--fg-dim);">当前位置</div>
+            <div class="text-sm font-semibold">杭州 · 西湖区文三路</div>
+          </div>
+        </div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: oklch(100% 0 0 / 0.06); border: 1px solid var(--border-faint);">
+          <i data-lucide="bell" class="w-4 h-4" style="color: var(--fg-muted);"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map area -->
+    <div class="relative" style="height: 340px;">
+      <div class="map-bg"></div>
+
+      <!-- Pins -->
+      <div class="pin" style="left: 28%; top: 38%;">
+        <div class="pin-bubble ok">5 空闲</div>
+        <div class="pin-dot" style="background: var(--ok);"></div>
+      </div>
+      <div class="pin" style="left: 64%; top: 32%;">
+        <div class="pin-bubble warn">¥1.32</div>
+        <div class="pin-dot" style="background: var(--charging);"></div>
+      </div>
+      <div class="pin" style="left: 50%; top: 64%;">
+        <div class="pin-bubble dim">已满</div>
+        <div class="pin-dot" style="background: oklch(40% 0.01 265);"></div>
+      </div>
+      <div class="pin" style="left: 78%; top: 70%;">
+        <div class="pin-bubble ok">12 空闲</div>
+        <div class="pin-dot" style="background: var(--ok);"></div>
+      </div>
+
+      <!-- Map controls -->
+      <div class="absolute right-3 top-3 flex flex-col gap-2">
+        <button class="liquid-glass w-9 h-9 rounded-full flex items-center justify-center"><i data-lucide="locate" class="w-4 h-4" style="color: var(--primary);"></i></button>
+        <button class="liquid-glass w-9 h-9 rounded-full flex items-center justify-center"><i data-lucide="layers" class="w-4 h-4" style="color: var(--fg-muted);"></i></button>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="absolute left-3 top-3 flex gap-2 overflow-x-auto no-scrollbar max-w-[260px]">
+        <span class="liquid-glass rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap" style="color: var(--primary);">全部</span>
+        <span class="liquid-glass rounded-full px-3 py-1.5 text-xs whitespace-nowrap" style="color: var(--fg-muted);">快充</span>
+        <span class="liquid-glass rounded-full px-3 py-1.5 text-xs whitespace-nowrap" style="color: var(--fg-muted);">免费停车</span>
+        <span class="liquid-glass rounded-full px-3 py-1.5 text-xs whitespace-nowrap" style="color: var(--fg-muted);">PLUS 站</span>
+      </div>
+    </div>
+
+    <!-- Bottom sheet — station list -->
+    <div class="relative -mt-6 z-20 liquid-glass-strong rounded-t-3xl pt-3 pb-6 px-4">
+      <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background: var(--border);"></div>
+
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="display text-lg font-bold">附近充电站</div>
+          <div class="text-xs mt-1" style="color: var(--fg-dim);">5km 内 · 28 个站点 · 实时刷新</div>
+        </div>
+        <div class="flex items-center gap-2 text-xs" style="color: var(--fg-muted);">
+          <span class="live-dot"></span>
+          实时
+        </div>
+      </div>
+
+      <!-- Sort tabs -->
+      <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+        <span class="rounded-full px-3 py-1.5 text-xs font-semibold" style="background: var(--primary); color: oklch(98% 0 0);">距离最近</span>
+        <span class="rounded-full px-3 py-1.5 text-xs" style="color: var(--fg-muted); background: oklch(100% 0 0 / 0.05);">价格最低</span>
+        <span class="rounded-full px-3 py-1.5 text-xs" style="color: var(--fg-muted); background: oklch(100% 0 0 / 0.05);">空闲最多</span>
+        <span class="rounded-full px-3 py-1.5 text-xs" style="color: var(--fg-muted); background: oklch(100% 0 0 / 0.05);">评分最高</span>
+      </div>
+
+      <!-- Station cards -->
+      <div class="space-y-3">
+
+        <!-- Station 1 -->
+        <article class="liquid-glass rounded-2xl p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[10px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded" style="background: oklch(62% 0.22 250 / 0.15); color: var(--primary);">PLUS</span>
+                <span class="text-[10px]" style="color: var(--ok);">● 5 星级站</span>
+              </div>
+              <h3 class="font-semibold text-base mb-1">特来电 · 文三路超充站</h3>
+              <div class="flex items-center gap-1 text-xs mb-2" style="color: var(--fg-muted);">
+                <i data-lucide="map-pin" class="w-3 h-3"></i>
+                西湖区文三路 478 号 · 距您 320m
+              </div>
+              <div class="flex items-center gap-3 text-xs" style="color: var(--fg-dim);">
+                <span class="inline-flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3" style="color: var(--charging);"></i>480kW 超充</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i>免费停车 2h</span>
+              </div>
+            </div>
+            <button class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background: oklch(100% 0 0 / 0.05);">
+              <i data-lucide="bookmark" class="w-4 h-4" style="color: var(--fg-muted);"></i>
+            </button>
+          </div>
+          <div class="flex items-end justify-between pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div class="flex items-end gap-4">
+              <div>
+                <div class="display text-xl font-bold text-gradient">¥1.32<span class="text-[10px] ml-0.5" style="color: var(--fg-muted);">/度</span></div>
+                <div class="text-[10px]" style="color: var(--fg-dim);">含服务费</div>
+              </div>
+              <div>
+                <div class="text-sm font-bold" style="color: var(--ok);">5/12 空闲</div>
+                <div class="text-[10px]" style="color: var(--fg-dim);">2 个超充可用</div>
+              </div>
+            </div>
+            <button class="btn-primary rounded-full px-4 py-2 text-xs font-semibold inline-flex items-center gap-1">
+              导航
+              <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </article>
+
+        <!-- Station 2 -->
+        <article class="liquid-glass rounded-2xl p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[10px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded" style="background: oklch(70% 0.19 155 / 0.15); color: var(--ok);">即插即充</span>
+                <span class="text-[10px]" style="color: var(--fg-muted);">● 4.8 评分</span>
+              </div>
+              <h3 class="font-semibold text-base mb-1">星星充电 · 黄龙时代广场</h3>
+              <div class="flex items-center gap-1 text-xs mb-2" style="color: var(--fg-muted);">
+                <i data-lucide="map-pin" class="w-3 h-3"></i>
+                西湖区杭大路 1 号 · 距您 680m
+              </div>
+              <div class="flex items-center gap-3 text-xs" style="color: var(--fg-dim);">
+                <span class="inline-flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3" style="color: var(--charging);"></i>120kW 快充</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="store" class="w-3 h-3"></i>商场配套</span>
+              </div>
+            </div>
+            <button class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background: oklch(100% 0 0 / 0.05);">
+              <i data-lucide="bookmark" class="w-4 h-4" style="color: var(--fg-muted);"></i>
+            </button>
+          </div>
+          <div class="flex items-end justify-between pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div class="flex items-end gap-4">
+              <div>
+                <div class="display text-xl font-bold" style="color: var(--fg);">¥1.45<span class="text-[10px] ml-0.5" style="color: var(--fg-muted);">/度</span></div>
+                <div class="text-[10px]" style="color: var(--fg-dim);">PLUS 6 折</div>
+              </div>
+              <div>
+                <div class="text-sm font-bold" style="color: var(--ok);">8/20 空闲</div>
+                <div class="text-[10px]" style="color: var(--fg-dim);">5 个快充可用</div>
+              </div>
+            </div>
+            <button class="btn-primary rounded-full px-4 py-2 text-xs font-semibold inline-flex items-center gap-1">
+              导航
+              <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </article>
+
+        <!-- Station 3 (full) -->
+        <article class="liquid-glass rounded-2xl p-4 opacity-70">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[10px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded" style="background: oklch(64% 0.22 25 / 0.15); color: var(--err);">已满</span>
+                <span class="text-[10px]" style="color: var(--fg-muted);">● 4.6 评分</span>
+              </div>
+              <h3 class="font-semibold text-base mb-1">云快充 · 教工路停车场</h3>
+              <div class="flex items-center gap-1 text-xs mb-2" style="color: var(--fg-muted);">
+                <i data-lucide="map-pin" class="w-3 h-3"></i>
+                西湖区教工路 88 号 · 距您 1.2km
+              </div>
+            </div>
+          </div>
+          <div class="flex items-end justify-between pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div>
+              <div class="display text-xl font-bold" style="color: var(--fg-muted);">¥1.28<span class="text-[10px] ml-0.5" style="color: var(--fg-dim);">/度</span></div>
+              <div class="text-[10px]" style="color: var(--fg-dim);">排队约 8 分钟</div>
+            </div>
+            <span class="text-xs" style="color: var(--fg-dim);">0/8 空闲</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SCREEN: DEALS / 优惠活动 ════════════ -->
+  <section class="screen" id="screen-deals" aria-label="省钱 优惠">
+    <div class="px-4 pt-4">
+      <h1 class="display text-2xl font-bold mb-1">省钱中心</h1>
+      <p class="text-xs mb-5" style="color: var(--fg-muted);">PLUS 会员每月省 ¥100+</p>
+
+      <!-- Hero promo card -->
+      <div class="liquid-glass-strong rounded-2xl p-5 mb-5 relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-44 h-44 rounded-full" style="background: radial-gradient(circle, oklch(78% 0.19 65 / 0.25), transparent 70%); filter: blur(40px);"></div>
+        <div class="relative">
+          <div class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 mb-3 text-[10px] font-bold" style="background: oklch(78% 0.19 65 / 0.18); color: var(--charging);">
+            <i data-lucide="flame" class="w-3 h-3"></i>
+            限时 · 仅剩 3 天
+          </div>
+          <h2 class="display text-xl font-bold mb-2">PLUS 金卡 5 折开</h2>
+          <p class="text-xs mb-4" style="color: var(--fg-muted);">月费仅 ¥9.9 · 每月最高省 ¥158</p>
+          <button class="btn-charge rounded-full px-5 py-2.5 text-xs font-bold inline-flex items-center gap-1.5">
+            立即开通
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Coupon grid -->
+      <div class="text-xs tracking-widest uppercase mb-3" style="color: var(--fg-dim);">我的优惠券 · 6 张</div>
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="liquid-glass rounded-2xl p-4">
+          <div class="display text-2xl font-bold text-gradient-amber">¥10</div>
+          <div class="text-[10px] mt-1" style="color: var(--fg-dim);">满 50 可用</div>
+          <div class="text-[10px] mt-2" style="color: var(--fg-muted);">快充专享 · 至 06/30</div>
+        </div>
+        <div class="liquid-glass rounded-2xl p-4">
+          <div class="display text-2xl font-bold text-gradient">6 折</div>
+          <div class="text-[10px] mt-1" style="color: var(--fg-dim);">PLUS 站点</div>
+          <div class="text-[10px] mt-2" style="color: var(--fg-muted);">每日 1 次 · 至 07/15</div>
+        </div>
+        <div class="liquid-glass rounded-2xl p-4">
+          <div class="display text-2xl font-bold" style="color: var(--ok);">免费停</div>
+          <div class="text-[10px] mt-1" style="color: var(--fg-dim);">2 小时停车</div>
+          <div class="text-[10px] mt-2" style="color: var(--fg-muted);">3 张 · 至 06/30</div>
+        </div>
+        <div class="liquid-glass rounded-2xl p-4">
+          <div class="display text-2xl font-bold text-gradient-amber">¥30</div>
+          <div class="text-[10px] mt-1" style="color: var(--fg-dim);">满 100 可用</div>
+          <div class="text-[10px] mt-2" style="color: var(--fg-muted);">超充专享 · 至 07/31</div>
+        </div>
+      </div>
+
+      <!-- Energy pack -->
+      <div class="text-xs tracking-widest uppercase mb-3" style="color: var(--fg-dim);">能量包 · 锁定低价</div>
+      <div class="space-y-3 mb-5">
+        <div class="liquid-glass rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <div class="font-semibold text-sm">100 度电套餐</div>
+            <div class="text-xs mt-1" style="color: var(--fg-muted);">¥118 · 立省 ¥14 · 30 天有效</div>
+          </div>
+          <button class="btn-primary rounded-full px-4 py-1.5 text-xs font-semibold">购买</button>
+        </div>
+        <div class="liquid-glass rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <div class="font-semibold text-sm">200 度电套餐</div>
+            <div class="text-xs mt-1" style="color: var(--fg-muted);">¥228 · 立省 ¥36 · 60 天有效</div>
+          </div>
+          <button class="btn-primary rounded-full px-4 py-1.5 text-xs font-semibold">购买</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SCREEN: CHARGING (active session) ════════════ -->
+  <section class="screen" id="screen-charging" aria-label="充电中">
+    <div class="px-4 pt-4 flex-1 flex flex-col">
+
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-[10px] tracking-widest uppercase" style="color: var(--charging);">CHARGING IN PROGRESS</div>
+          <h1 class="display text-xl font-bold">充电中</h1>
+        </div>
+        <div class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs" style="background: oklch(78% 0.19 65 / 0.12); color: var(--charging);">
+          <span class="live-dot" style="background: var(--charging); box-shadow: 0 0 0 0 oklch(78% 0.19 65 / 0.7);"></span>
+          实时
+        </div>
+      </div>
+
+      <!-- Station info -->
+      <div class="liquid-glass rounded-2xl p-4 mb-6">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-[10px] mb-1" style="color: var(--fg-dim);">充电桩 · A03 号枪</div>
+            <div class="font-semibold text-sm">特来电 · 文三路超充站</div>
+            <div class="text-xs mt-1" style="color: var(--fg-muted);">480kW 超充 · 国标接口</div>
+          </div>
+          <span class="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded" style="background: oklch(62% 0.22 250 / 0.15); color: var(--primary);">PLUS 6折</span>
+        </div>
+      </div>
+
+      <!-- Charging ring -->
+      <div class="flex justify-center mb-6">
+        <div class="charge-ring">
+          <div class="charge-ring-inner">
+            <div class="text-[10px] tracking-widest uppercase mb-1" style="color: var(--fg-dim);">已充电量</div>
+            <div class="display text-4xl font-bold text-gradient-amber">28.4<span class="text-base ml-1" style="color: var(--fg-muted);">kWh</span></div>
+            <div class="text-xs mt-2" style="color: var(--fg-muted);">≈ 55% · 剩余 18 分钟</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Power flow bar -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span style="color: var(--fg-muted);">实时功率</span>
+          <span class="font-mono font-bold" style="color: var(--charging);">142.6 kW</span>
+        </div>
+        <div class="h-1.5 rounded-full overflow-hidden" style="background: oklch(20% 0.02 250);">
+          <div class="h-full flow-bar" style="width: 88%;"></div>
+        </div>
+        <div class="flex items-center justify-between text-[10px] mt-1.5" style="color: var(--fg-dim);">
+          <span>0 kW</span>
+          <span>峰值 168 kW</span>
+        </div>
+      </div>
+
+      <!-- Metrics grid -->
+      <div class="grid grid-cols-3 gap-2 mb-6">
+        <div class="liquid-glass rounded-xl p-3 text-center">
+          <div class="text-[10px] mb-1" style="color: var(--fg-dim);">已用时长</div>
+          <div class="font-mono font-bold text-sm">24:18</div>
+        </div>
+        <div class="liquid-glass rounded-xl p-3 text-center">
+          <div class="text-[10px] mb-1" style="color: var(--fg-dim);">本次费用</div>
+          <div class="font-mono font-bold text-sm text-gradient-amber">¥37.5</div>
+        </div>
+        <div class="liquid-glass rounded-xl p-3 text-center">
+          <div class="text-[10px] mb-1" style="color: var(--fg-dim);">碳减排</div>
+          <div class="font-mono font-bold text-sm" style="color: var(--ok);">17.3kg</div>
+        </div>
+      </div>
+
+      <!-- Auto-complete notice -->
+      <div class="liquid-glass rounded-2xl p-4 mb-5 flex items-start gap-3">
+        <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--primary);"></i>
+        <div class="text-xs leading-5" style="color: var(--fg-muted);">
+          充电完成后将<span style="color: var(--fg);">自动扣费</span>，无需手动操作。本次使用 PLUS 6 折券，预计省 ¥22.5。
+        </div>
+      </div>
+
+      <!-- Stop button (secondary action, requires confirm) -->
+      <button class="w-full rounded-full py-3.5 text-sm font-semibold border" style="border-color: oklch(64% 0.22 25 / 0.3); color: var(--err); background: oklch(64% 0.22 25 / 0.05);">
+        停止充电
+      </button>
+    </div>
+  </section>
+
+  <!-- ════════════ SCREEN: ORDERS ════════════ -->
+  <section class="screen" id="screen-orders" aria-label="订单">
+    <div class="px-4 pt-4">
+      <h1 class="display text-2xl font-bold mb-4">我的订单</h1>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+        <span class="rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap" style="background: var(--primary); color: oklch(98% 0 0);">充电中 · 1</span>
+        <span class="rounded-full px-3 py-1.5 text-xs whitespace-nowrap" style="color: var(--fg-muted); background: oklch(100% 0 0 / 0.05);">已完成</span>
+        <span class="rounded-full px-3 py-1.5 text-xs whitespace-nowrap" style="color: var(--fg-muted); background: oklch(100% 0 0 / 0.05);">异常 · 0</span>
+        <span class="rounded-full px-3 py-1.5 text-xs whitespace-nowrap" style="color: var(--fg-muted); background: oklch(100% 0 0 / 0.05);">发票</span>
+      </div>
+
+      <!-- Active order card -->
+      <div class="liquid-glass-strong rounded-2xl p-4 mb-4 relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-32 h-32 rounded-full" style="background: radial-gradient(circle, oklch(78% 0.19 65 / 0.18), transparent 70%); filter: blur(30px);"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between mb-3">
+            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold" style="background: oklch(78% 0.19 65 / 0.15); color: var(--charging);">
+              <span class="live-dot" style="background: var(--charging); box-shadow: 0 0 0 0 oklch(78% 0.19 65 / 0.7);"></span>
+              充电进行中
+            </span>
+            <span class="text-[10px] font-mono" style="color: var(--fg-dim);">#CS20260617-A03</span>
+          </div>
+          <div class="font-semibold mb-1">特来电 · 文三路超充站</div>
+          <div class="text-xs mb-3" style="color: var(--fg-muted);">A03 号枪 · 480kW 超充</div>
+          <div class="grid grid-cols-3 gap-3 pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div>
+              <div class="text-[10px]" style="color: var(--fg-dim);">电量</div>
+              <div class="font-mono font-bold text-sm">28.4 kWh</div>
+            </div>
+            <div>
+              <div class="text-[10px]" style="color: var(--fg-dim);">功率</div>
+              <div class="font-mono font-bold text-sm" style="color: var(--charging);">142.6 kW</div>
+            </div>
+            <div>
+              <div class="text-[10px]" style="color: var(--fg-dim);">费用</div>
+              <div class="font-mono font-bold text-sm">¥37.5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History list -->
+      <div class="text-xs tracking-widest uppercase mb-3" style="color: var(--fg-dim);">最近 7 天</div>
+      <div class="space-y-3">
+
+        <article class="liquid-glass rounded-2xl p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <div class="font-semibold text-sm">星星充电 · 黄龙时代广场</div>
+              <div class="text-xs mt-1" style="color: var(--fg-muted);">06/16 14:22 · B12 号枪</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded" style="background: oklch(70% 0.19 155 / 0.15); color: var(--ok);">已完成</span>
+          </div>
+          <div class="flex items-end justify-between pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div class="flex gap-4 text-xs">
+              <div><span style="color: var(--fg-dim);">电量 </span><span class="font-mono font-semibold">42.1 kWh</span></div>
+              <div><span style="color: var(--fg-dim);">时长 </span><span class="font-mono font-semibold">38 min</span></div>
+            </div>
+            <div class="font-mono font-bold text-gradient">¥55.30</div>
+          </div>
+        </article>
+
+        <article class="liquid-glass rounded-2xl p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <div class="font-semibold text-sm">特来电 · 滨江宝龙城</div>
+              <div class="text-xs mt-1" style="color: var(--fg-muted);">06/14 09:08 · A07 号枪</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded" style="background: oklch(70% 0.19 155 / 0.15); color: var(--ok);">已完成</span>
+          </div>
+          <div class="flex items-end justify-between pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div class="flex gap-4 text-xs">
+              <div><span style="color: var(--fg-dim);">电量 </span><span class="font-mono font-semibold">35.8 kWh</span></div>
+              <div><span style="color: var(--fg-dim);">时长 </span><span class="font-mono font-semibold">25 min</span></div>
+            </div>
+            <div class="font-mono font-bold text-gradient">¥47.28</div>
+          </div>
+        </article>
+
+        <article class="liquid-glass rounded-2xl p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <div class="font-semibold text-sm">云快充 · 教工路停车场</div>
+              <div class="text-xs mt-1" style="color: var(--fg-muted);">06/12 19:45 · C03 号枪</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded" style="background: oklch(70% 0.19 155 / 0.15); color: var(--ok);">已完成</span>
+          </div>
+          <div class="flex items-end justify-between pt-3" style="border-top: 1px solid var(--border-faint);">
+            <div class="flex gap-4 text-xs">
+              <div><span style="color: var(--fg-dim);">电量 </span><span class="font-mono font-semibold">28.6 kWh</span></div>
+              <div><span style="color: var(--fg-dim);">时长 </span><span class="font-mono font-semibold">22 min</span></div>
+            </div>
+            <div class="font-mono font-bold text-gradient">¥36.66</div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SCREEN: PROFILE ════════════ -->
+  <section class="screen" id="screen-profile" aria-label="我的">
+    <div class="px-4 pt-4">
+      <!-- Profile header -->
+      <div class="liquid-glass-strong rounded-2xl p-5 mb-5 relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-44 h-44 rounded-full" style="background: radial-gradient(circle, oklch(62% 0.22 250 / 0.20), transparent 70%); filter: blur(40px);"></div>
+        <div class="relative flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: oklch(98% 0 0); box-shadow: 0 0 24px oklch(62% 0.22 250 / 0.4);">L</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-bold text-base">林同学</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: linear-gradient(135deg, oklch(78% 0.16 75), oklch(72% 0.21 35)); color: oklch(15% 0.02 65);">PLUS 金卡</span>
+            </div>
+            <div class="text-xs" style="color: var(--fg-muted);">138****8825 · 已注册 287 天</div>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5" style="color: var(--fg-dim);"></i>
+        </div>
+      </div>
+
+      <!-- Wallet row -->
+      <div class="liquid-glass rounded-2xl p-4 mb-5 grid grid-cols-4 gap-2 text-center">
+        <div>
+          <div class="display text-lg font-bold text-gradient">¥128</div>
+          <div class="text-[10px]" style="color: var(--fg-dim);">余额</div>
+        </div>
+        <div>
+          <div class="display text-lg font-bold">6</div>
+          <div class="text-[10px]" style="color: var(--fg-dim);">卡券</div>
+        </div>
+        <div>
+          <div class="display text-lg font-bold">86</div>
+          <div class="text-[10px]" style="color: var(--fg-dim);">能量包</div>
+        </div>
+        <div>
+          <div class="display text-lg font-bold" style="color: var(--ok);">1,420</div>
+          <div class="text-[10px]" style="color: var(--fg-dim);">碳积分</div>
+        </div>
+      </div>
+
+      <!-- Vehicle card -->
+      <div class="liquid-glass rounded-2xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs tracking-widest uppercase" style="color: var(--fg-dim);">我的车辆 · 主车</div>
+          <span class="text-[10px] px-2 py-0.5 rounded" style="background: oklch(70% 0.19 155 / 0.15); color: var(--ok);">电池健康 96%</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: oklch(62% 0.22 250 / 0.12); border: 1px solid oklch(62% 0.22 250 / 0.25);">
+            <i data-lucide="car" class="w-6 h-6" style="color: var(--primary);"></i>
+          </div>
+          <div class="flex-1">
+            <div class="font-semibold">特斯拉 Model Y</div>
+            <div class="text-xs mt-1" style="color: var(--fg-muted);">浙 A·D8K28 · 75kWh · 国标</div>
+          </div>
+          <button class="text-xs px-3 py-1.5 rounded-full" style="background: oklch(100% 0 0 / 0.06); color: var(--fg-muted);">切换</button>
+        </div>
+      </div>
+
+      <!-- Tools list -->
+      <div class="text-xs tracking-widest uppercase mb-3" style="color: var(--fg-dim);">常用工具</div>
+      <div class="liquid-glass rounded-2xl overflow-hidden mb-5">
+        <a href="#" class="flex items-center gap-3 px-4 py-3.5" style="border-bottom: 1px solid var(--border-faint);">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: oklch(62% 0.22 250 / 0.12);"><i data-lucide="receipt" class="w-4 h-4" style="color: var(--primary);"></i></div>
+          <span class="text-sm flex-1">发票管理</span>
+          <span class="text-xs" style="color: var(--fg-dim);">3 张待开</span>
+          <i data-lucide="chevron-right" class="w-4 h-4" style="color: var(--fg-dim);"></i>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3.5" style="border-bottom: 1px solid var(--border-faint);">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: oklch(78% 0.19 65 / 0.12);"><i data-lucide="battery-check" class="w-4 h-4" style="color: var(--charging);"></i></div>
+          <span class="text-sm flex-1">电池管家</span>
+          <span class="text-xs" style="color: var(--fg-dim);">健康报告</span>
+          <i data-lucide="chevron-right" class="w-4 h-4" style="color: var(--fg-dim);"></i>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3.5" style="border-bottom: 1px solid var(--border-faint);">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: oklch(70% 0.19 155 / 0.12);"><i data-lucide="zap-off" class="w-4 h-4" style="color: var(--ok);"></i></div>
+          <span class="text-sm flex-1">无法拔枪</span>
+          <i data-lucide="chevron-right" class="w-4 h-4" style="color: var(--fg-dim);"></i>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3.5" style="border-bottom: 1px solid var(--border-faint);">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: oklch(66% 0.21 305 / 0.12);"><i data-lucide="bookmark" class="w-4 h-4" style="color: var(--primary-2);"></i></div>
+          <span class="text-sm flex-1">收藏电站</span>
+          <span class="text-xs" style="color: var(--fg-dim);">8 个</span>
+          <i data-lucide="chevron-right" class="w-4 h-4" style="color: var(--fg-dim);"></i>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3.5">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: oklch(40% 0.01 265 / 0.18);"><i data-lucide="headset" class="w-4 h-4" style="color: var(--fg-muted);"></i></div>
+          <span class="text-sm flex-1">客服中心</span>
+          <i data-lucide="chevron-right" class="w-4 h-4" style="color: var(--fg-dim);"></i>
+        </a>
+      </div>
+
+      <!-- Carbon card -->
+      <div class="liquid-glass rounded-2xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="text-xs tracking-widest uppercase" style="color: var(--ok);">CARBON SAVING</div>
+            <div class="display text-2xl font-bold mt-1" style="color: var(--ok);">142.6 kg</div>
+            <div class="text-[10px] mt-0.5" style="color: var(--fg-dim);">累计碳减排 · 相当于种 8 棵树</div>
+          </div>
+          <i data-lucide="leaf" class="w-10 h-10" style="color: var(--ok); opacity: 0.5;"></i>
+        </div>
+        <button class="w-full rounded-full py-2.5 text-xs font-semibold" style="background: oklch(70% 0.19 155 / 0.12); color: var(--ok); border: 1px solid oklch(70% 0.19 155 / 0.25);">
+          兑换碳积分礼品 →
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════ TabBar ════════════ -->
+  <nav class="tab-bar liquid-glass-strong" style="border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0;">
+    <button class="tab-item active" data-tab="home">
+      <i data-lucide="map" class="ti"></i>
+      <span>首页</span>
+    </button>
+    <button class="tab-item" data-tab="deals">
+      <i data-lucide="tag" class="ti"></i>
+      <span>省钱</span>
+    </button>
+    <button class="tab-scan" data-tab="charging">
+      <div class="scan-fab">
+        <i data-lucide="scan-line" class="w-7 h-7"></i>
+      </div>
+      <span>扫码</span>
+    </button>
+    <button class="tab-item" data-tab="orders">
+      <i data-lucide="receipt" class="ti"></i>
+      <span>订单</span>
+    </button>
+    <button class="tab-item" data-tab="profile">
+      <i data-lucide="user" class="ti"></i>
+      <span>我的</span>
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+
+  // Tab switching with view transitions
+  const tabs = document.querySelectorAll('[data-tab]');
+  const screens = document.querySelectorAll('.screen');
+
+  function switchTo(tabName) {
+    const screenMap = { home: 'screen-home', deals: 'screen-deals', charging: 'screen-charging', orders: 'screen-orders', profile: 'screen-profile' };
+    const targetId = screenMap[tabName];
+    if (!targetId) return;
+
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        screens.forEach(s => s.classList.remove('active'));
+        document.getElementById(targetId).classList.add('active');
+        document.getElementById(targetId).scrollTop = 0;
+      });
+    } else {
+      screens.forEach(s => s.classList.remove('active'));
+      document.getElementById(targetId).classList.add('active');
+      document.getElementById(targetId).scrollTop = 0;
+    }
+
+    tabs.forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => switchTo(t.dataset.tab)));
+</script>
+</body>
+</html>

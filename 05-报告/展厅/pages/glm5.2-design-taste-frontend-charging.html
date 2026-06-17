@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>闪电聚合 · EV 充电小程序</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Geist', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          sans: ['Geist', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          ink: {
+            50:  '#fafafa',
+            100: '#f4f4f5',
+            200: '#e4e4e7',
+            300: '#d4d4d8',
+            400: '#a1a1aa',
+            500: '#71717a',
+            600: '#52525b',
+            700: '#3f3f46',
+            800: '#27272a',
+            900: '#18181b',
+            950: '#09090b',
+          },
+          volt: {
+            50:  '#eff6ff',
+            100: '#dbeafe',
+            200: '#bfdbfe',
+            300: '#93c5fd',
+            400: '#3b82f6',
+            500: '#0a84ff', // electric blue
+            600: '#0066ed',
+            700: '#0052bd',
+            800: '#003f8f',
+          },
+          idle:  { 500: '#10b981', 600: '#059669' },
+          juice: { 500: '#f59e0b', 600: '#d97706' },
+          fault: { 500: '#e11d48', 600: '#be123c' },
+        },
+        letterSpacing: { tightest: '-0.045em' }
+      }
+    }
+  }
+</script>
+
+<style>
+  :root { --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  html { scroll-behavior: smooth; }
+  body { background: #fafafa; color: #18181b; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #0a84ff; color: #fff; }
+
+  @keyframes riseIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .rise { opacity: 0; animation: riseIn 0.85s var(--ease) forwards; }
+  .rise-1 { animation-delay: 0.05s; } .rise-2 { animation-delay: 0.18s; } .rise-3 { animation-delay: 0.32s; }
+  .rise-4 { animation-delay: 0.46s; } .rise-5 { animation-delay: 0.60s; }
+
+  @keyframes breathe { 0%,100% { opacity: 0.45; transform: scale(0.9) } 50% { opacity: 1; transform: scale(1.25) } }
+  .breathe { animation: breathe 2.2s ease-in-out infinite; }
+
+  @keyframes pulseRing { 0% { transform: scale(0.7); opacity: 0.7 } 100% { transform: scale(2.4); opacity: 0 } }
+  .pulse-ring { animation: pulseRing 2.4s ease-out infinite; }
+
+  @keyframes chargeFlow { 0% { stroke-dashoffset: 240 } 100% { stroke-dashoffset: 0 } }
+  .charge-flow { stroke-dasharray: 8 8; animation: chargeFlow 1.2s linear infinite; }
+
+  @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+  .floaty { animation: floaty 5s ease-in-out infinite; }
+
+  button:active, a[data-tactile]:active { transform: translateY(1px) scale(0.985); }
+
+  /* Phone frame */
+  .phone {
+    position: relative;
+    width: 320px; height: 660px;
+    background: #09090b;
+    border-radius: 44px;
+    padding: 12px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.08),
+      0 30px 60px -20px rgba(9,9,11,0.35),
+      0 8px 24px -8px rgba(9,9,11,0.18);
+  }
+  .phone::before {
+    content: ''; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 26px; background: #09090b; border-radius: 999px; z-index: 10;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    border-radius: 34px; overflow: hidden;
+    background: #fafafa;
+    position: relative;
+  }
+  .phone-statusbar {
+    height: 44px; padding: 16px 22px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Geist', sans-serif; font-size: 12px; font-weight: 600; color: #18181b;
+  }
+
+  /* Grain */
+  .grain::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.04;
+    background-image: radial-gradient(rgba(9,9,11,0.6) 0.5px, transparent 0.5px);
+    background-size: 4px 4px;
+  }
+
+  /* Horizontal scroller */
+  .no-bar::-webkit-scrollbar { display: none; }
+  .no-bar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Inner refraction */
+  .glass { box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 20px 40px -15px rgba(9,9,11,0.18); }
+
+  /* Tiny tick animation for progress */
+  @keyframes progressFill { from { width: 0 } to { width: var(--p, 64%) } }
+  .progress-fill { animation: progressFill 1.4s var(--ease) forwards; }
+
+  /* Shimmer for skeleton */
+  @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+  .shimmer { background: linear-gradient(90deg, #e4e4e7 25%, #f4f4f5 50%, #e4e4e7 75%); background-size: 200% 100%; animation: shimmer 2s linear infinite; }
+</style>
+</head>
+<body class="font-sans grain">
+<div id="root" class="relative z-10"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* Magnetic button (direct DOM) */
+function Magnetic({ children, className = '', s = 0.22, ...props }) {
+  const ref = useRef(null);
+  const onMove = (e) => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = e.clientX - r.left - r.width / 2;
+    const y = e.clientY - r.top - r.height / 2;
+    el.style.transform = `translate(${x * s}px, ${y * s}px)`;
+  };
+  const onLeave = () => { if (ref.current) ref.current.style.transform = 'translate(0,0)'; };
+  return <button ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} className={`transition-transform duration-300 will-change-transform ${className}`} {...props}>{children}</button>;
+}
+
+/* ---------- Page Top Nav ---------- */
+function TopNav() {
+  return (
+    <header className="sticky top-0 z-40 bg-ink-50/85 backdrop-blur-xl border-b border-ink-200/60">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-16 md:h-20 flex items-center justify-between">
+        <a href="#" className="flex items-center gap-2.5 group">
+          <span className="w-9 h-9 rounded-2xl bg-ink-950 text-volt-400 grid place-items-center transition-transform group-hover:-rotate-6">
+            <i className="ph-fill ph-lightning-slash text-lg" style={{ transform: 'rotate(-15deg)' }}></i>
+          </span>
+          <div className="leading-none">
+            <div className="font-display font-semibold text-lg tracking-tightest text-ink-950">闪电聚合</div>
+            <div className="font-mono text-[10px] text-ink-500 tracking-widest uppercase">EV Charge · Aggregator</div>
+          </div>
+        </a>
+        <nav className="hidden lg:flex items-center gap-1">
+          {['找桩', 'PLUS 会员', '企业方案', '电池管家', '帮助中心'].map(i => (
+            <a key={i} href="#" className="px-4 py-2 text-sm text-ink-700 hover:text-ink-950 transition-colors">{i}</a>
+          ))}
+        </nav>
+        <div className="flex items-center gap-2">
+          <a href="#" className="hidden md:inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-ink-300 text-ink-800 hover:border-ink-950 hover:bg-ink-950 hover:text-ink-50 transition-all text-sm" data-tactile>
+            <i className="ph ph-download-simple"></i> 下载小程序
+          </a>
+          <Magnetic className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink-950 text-ink-50 text-sm hover:bg-ink-800">
+            <i className="ph ph-user-circle"></i> 登录
+          </Magnetic>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ---------- Hero — asymmetric split: left text, right phone ---------- */
+function Hero() {
+  return (
+    <section className="relative pt-16 md:pt-24 pb-20 md:pb-32 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-16 items-center">
+        {/* Left */}
+        <div className="rise rise-1 order-2 lg:order-1">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inset-0 rounded-full bg-idle-500 breathe"></span>
+              <span className="relative w-2 h-2 rounded-full bg-idle-600"></span>
+            </span>
+            <span className="font-mono text-xs tracking-[0.2em] uppercase text-ink-500">live · 28,402 桩 在线</span>
+          </div>
+          <h1 className="font-display font-semibold text-5xl md:text-7xl lg:text-[5.5rem] leading-[0.94] tracking-tightest text-ink-950">
+            找桩 · 充电 · 支付<br/>
+            <span className="text-volt-500">一图搞定</span>
+          </h1>
+          <p className="mt-7 max-w-[55ch] text-base md:text-lg text-ink-600 leading-relaxed">
+            聚合特来电、星星充电、云快充等主流运营商，地图实时显示空闲桩态。扫码即启，免密支付，跨站享 PLUS 优惠。从下班补能到长途出行，全链路顺畅。
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-center gap-4">
+            <Magnetic className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-volt-500 text-white font-medium hover:bg-volt-600">
+              <i className="ph-bold ph-qr-code"></i> 立即扫码充电
+            </Magnetic>
+            <a href="#screens" className="inline-flex items-center gap-2 h-12 px-6 rounded-full border border-ink-300 text-ink-800 hover:border-ink-950 hover:bg-ink-950 hover:text-ink-50 transition-all" data-tactile>
+              查看小程序界面 <i className="ph ph-arrow-right"></i>
+            </a>
+          </div>
+
+          {/* Stats — divide-x */}
+          <dl className="mt-12 grid grid-cols-3 max-w-xl divide-x divide-ink-200">
+            {[
+              { k: '≤30s', v: '桩态刷新' },
+              { k: '95%+',  v: '充电成功率' },
+              { k: '5km',   v: '默认半径' },
+            ].map(s => (
+              <div key={s.v} className="px-4 first:pl-0">
+                <dt className="font-mono text-xs uppercase tracking-widest text-ink-500">{s.v}</dt>
+                <dd className="mt-1 font-display text-2xl font-semibold text-ink-950">{s.k}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        {/* Right phone mockup */}
+        <div className="rise rise-3 order-1 lg:order-2 flex justify-center lg:justify-end relative">
+          {/* Floating badge — top right */}
+          <div className="floaty absolute -top-4 right-4 md:right-10 z-10 bg-ink-50 border border-ink-200 rounded-2xl px-4 py-3 shadow-[0_20px_40px_-15px_rgba(9,9,11,0.18)]">
+            <div className="flex items-center gap-2">
+              <i className="ph-fill ph-lightning text-volt-500 text-xl"></i>
+              <div className="leading-tight">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">charging</div>
+                <div className="font-mono text-sm font-semibold text-ink-950 tabular-nums">62.4 kW</div>
+              </div>
+            </div>
+          </div>
+
+          <PhoneMapScreen />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Phone: Map Screen ---------- */
+function PhoneMapScreen() {
+  return (
+    <div className="phone">
+      <div className="phone-screen">
+        <div className="phone-statusbar">
+          <span>9:41</span>
+          <div className="flex items-center gap-1">
+            <i className="ph-fill ph-cell-signal-full text-xs"></i>
+            <i className="ph-fill ph-wifi-high text-xs"></i>
+            <i className="ph-fill ph-battery-full text-xs"></i>
+          </div>
+        </div>
+
+        {/* Map area */}
+        <div className="relative h-[460px] overflow-hidden bg-ink-100">
+          {/* Stylized SVG map */}
+          <svg viewBox="0 0 320 460" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#e4e4e7" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="460" fill="url(#grid)"/>
+            {/* Roads */}
+            <path d="M -20 120 Q 100 100 200 160 T 360 220" stroke="#d4d4d8" strokeWidth="14" fill="none" strokeLinecap="round"/>
+            <path d="M 60 -20 Q 90 160 50 320 T 80 480" stroke="#d4d4d8" strokeWidth="10" fill="none" strokeLinecap="round"/>
+            <path d="M -20 300 Q 160 280 340 340" stroke="#e4e4e7" strokeWidth="8" fill="none" strokeLinecap="round"/>
+            {/* River */}
+            <path d="M -20 380 Q 100 360 200 400 T 360 420" stroke="#bfdbfe" strokeWidth="22" fill="none" strokeLinecap="round" opacity="0.7"/>
+            {/* Park */}
+            <circle cx="240" cy="80" r="34" fill="#d1fae5" opacity="0.6"/>
+          </svg>
+
+          {/* Station pins */}
+          <Pin x="22%" y="28%" status="idle"  count={4} />
+          <Pin x="58%" y="22%" status="idle"  count={2} />
+          <Pin x="46%" y="52%" status="juice" count={3} />
+          <Pin x="74%" y="64%" status="idle"  count={6} />
+          <Pin x="32%" y="74%" status="fault" count={1} />
+          <Pin x="82%" y="38%" status="idle"  count={2} />
+
+          {/* Self location */}
+          <div className="absolute" style={{ left: '48%', top: '46%' }}>
+            <span className="absolute inset-0 rounded-full bg-volt-500 pulse-ring"></span>
+            <span className="relative block w-3 h-3 rounded-full bg-volt-500 border-2 border-white shadow"></span>
+          </div>
+
+          {/* Search overlay */}
+          <div className="absolute top-3 left-3 right-3">
+            <div className="bg-white/95 backdrop-blur rounded-2xl shadow-[0_8px_24px_-8px_rgba(9,9,11,0.18)] px-3.5 py-2.5 flex items-center gap-2">
+              <i className="ph ph-magnifying-glass text-ink-500"></i>
+              <span className="text-xs text-ink-500 flex-1">搜索充电站 / 桩编号</span>
+              <span className="w-7 h-7 rounded-full bg-ink-100 grid place-items-center"><i className="ph ph-funnel text-xs text-ink-700"></i></span>
+            </div>
+          </div>
+
+          {/* Floating filters */}
+          <div className="absolute top-14 left-3 flex gap-1.5">
+            {['快充', '慢充', '免费停车', 'PLUS 站'].map((t, i) => (
+              <span key={t} className={`text-[10px] px-2.5 py-1 rounded-full backdrop-blur ${i === 0 ? 'bg-ink-950 text-white' : 'bg-white/90 text-ink-700'}`}>{t}</span>
+            ))}
+          </div>
+
+          {/* Locate button */}
+          <button className="absolute right-3 bottom-3 w-10 h-10 rounded-full bg-white shadow grid place-items-center text-volt-600">
+            <i className="ph-bold ph-crosshair"></i>
+          </button>
+        </div>
+
+        {/* Bottom sheet — station list */}
+        <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-[0_-12px_30px_-12px_rgba(9,9,11,0.18)] p-4 pt-3">
+          <div className="mx-auto w-10 h-1 rounded-full bg-ink-200 mb-3"></div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-display text-sm font-semibold text-ink-950">附近 24 个站点</div>
+            <div className="flex items-center gap-1 text-[10px] text-ink-500 font-mono uppercase tracking-widest">
+              距离优先 <i className="ph ph-caret-down"></i>
+            </div>
+          </div>
+
+          {/* Station list (3 entries visible) */}
+          <StationRow name="国网 · 滨江物联网产业园充电站" dist="0.4 km" idle={4} total={8} price="¥1.28" rate={4.8} tags={['快充', '免费停车']} />
+          <StationRow name="特来电 · 网商路商务区充电站" dist="0.7 km" idle={2} total={12} price="¥1.42" rate={4.6} tags={['快充', 'PLUS 8 折']} />
+          <StationRow name="星星充电 · 江陵路地铁充电站" dist="1.1 km" idle={0} total={6} price="¥1.18" rate={4.4} tags={['慢充', '24h']} dim />
+        </div>
+      </div>
+    </div>
+  );
+}
+function Pin({ x, y, status, count }) {
+  const color = status === 'idle' ? 'bg-idle-500' : status === 'juice' ? 'bg-juice-500' : 'bg-fault-500';
+  return (
+    <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: x, top: y }}>
+      <div className={`relative flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${color} text-white text-[10px] font-mono font-semibold shadow`}>
+        <i className="ph-fill ph-lightning text-[9px]"></i>
+        <span>{count}</span>
+        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rotate-45 bg-inherit"></span>
+      </div>
+    </div>
+  );
+}
+function StationRow({ name, dist, idle, total, price, rate, tags, dim }) {
+  return (
+    <div className={`py-2.5 border-t border-ink-100 flex items-center gap-2 ${dim ? 'opacity-60' : ''}`}>
+      <div className={`w-8 h-8 rounded-xl grid place-items-center ${idle > 0 ? 'bg-idle-500/10 text-idle-600' : 'bg-ink-100 text-ink-500'}`}>
+        <i className="ph-bold ph-lightning"></i>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] font-medium text-ink-950 truncate">{name}</div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="font-mono text-[9px] text-ink-500">{dist}</span>
+          <span className={`font-mono text-[9px] ${idle > 0 ? 'text-idle-600' : 'text-ink-400'}`}>{idle}/{total} 空闲</span>
+          <span className="font-mono text-[9px] text-ink-500 flex items-center gap-0.5"><i className="ph-fill ph-star text-amber-400"></i>{rate}</span>
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="font-mono text-[11px] font-semibold text-ink-950">{price}</div>
+        <div className="font-mono text-[9px] text-ink-400">/度</div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Screen Gallery — horizontal scroller (NOT 3 equal cards) ---------- */
+function ScreenGallery() {
+  return (
+    <section id="screens" className="py-20 md:py-32 bg-ink-100/60">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6 md:gap-16 items-end mb-12 md:mb-16">
+          <div>
+            <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Mini Program</div>
+            <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950">
+              五个 Tab，<br/>覆盖全部充电场景
+            </h2>
+          </div>
+          <p className="text-ink-600 leading-relaxed max-w-[55ch]">
+            首页找桩、活动省钱、扫码启动、订单管理、我的中心。底部 Tab 中央扫码键突出设计，单手可达；中部凸起按钮采用蓝绿渐变质感。
+          </p>
+        </div>
+
+        {/* Horizontal scroller — small phone screens */}
+        <div className="overflow-x-auto no-bar -mx-6 md:-mx-10 px-6 md:px-10">
+          <div className="flex gap-6 pb-4" style={{ width: 'max-content' }}>
+            <MiniScreen tag="01 / 首页" title="地图找桩 + 附近列表" desc="默认地图视图，底部上滑展开完整列表，支持多维筛选与排序。" feature="实时聚合桩态，30 秒自动刷新" />
+            <MiniScreen tag="02 / 扫码" title="扫码即启 · 桩号输入" desc="扫描桩面二维码自动识别枪号，弱光环境支持手电筒，扫码失败可手动输入。" feature="从扫码到启动 ≤ 5 秒" featured />
+            <MiniScreen tag="03 / 充电中" title="环形进度 · 实时功率" desc="充电中页面常驻显示，支持通知栏一键回到该页。停止充电需二次确认。" feature="预计完成时间精确到分钟" />
+            <MiniScreen tag="04 / 订单" title="账单 · 发票 · 评价" desc="充电完成后自动扣费，账单明细含电费 + 服务费；电子发票按月汇总开具。" feature="免密支付 3 秒回调" />
+            <MiniScreen tag="05 / 我的" title="钱包 · 会员 · 车辆" desc="用户信息、会员等级徽章、能量包、卡券、车辆电池健康检测一览。" feature="电池管家生成健康报告" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+function MiniScreen({ tag, title, desc, feature, featured }) {
+  return (
+    <article className={`relative w-[280px] flex-shrink-0 ${featured ? 'md:-mt-4' : ''}`}>
+      <div className="relative bg-ink-950 rounded-[2.2rem] p-2.5 shadow-[0_30px_60px_-20px_rgba(9,9,11,0.22)]">
+        <div className="relative h-[460px] rounded-[1.8rem] overflow-hidden bg-ink-50">
+          {/* Mock screen content */}
+          <div className="absolute top-0 inset-x-0 h-7 bg-ink-50 grid place-items-center">
+            <span className="w-12 h-1 rounded-full bg-ink-200"></span>
+          </div>
+          <div className="pt-10 px-4 h-full flex flex-col">
+            <div className={`font-mono text-[9px] uppercase tracking-widest mb-2 ${featured ? 'text-volt-600' : 'text-ink-500'}`}>{tag}</div>
+            {featured ? (
+              /* Charging screen mock */
+              <ChargingMock />
+            ) : (
+              /* Generic mock with skeleton */
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="h-20 rounded-xl bg-ink-100 relative overflow-hidden">
+                  <div className="absolute bottom-2 left-2 right-2 flex gap-1">
+                    <div className="h-1.5 flex-1 bg-ink-300 rounded-full"></div>
+                    <div className="h-1.5 flex-1 bg-ink-300 rounded-full"></div>
+                  </div>
+                </div>
+                <div className="h-2 bg-ink-200 rounded-full w-3/4"></div>
+                <div className="h-2 bg-ink-200 rounded-full w-1/2"></div>
+                <div className="mt-2 space-y-1.5">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-9 rounded-lg bg-ink-100 flex items-center px-2 gap-1.5">
+                      <div className="w-5 h-5 rounded bg-ink-200"></div>
+                      <div className="flex-1">
+                        <div className="h-1.5 bg-ink-200 rounded w-3/4 mb-1"></div>
+                        <div className="h-1.5 bg-ink-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="mt-5 px-1">
+        <div className="font-display font-semibold text-lg text-ink-950 tracking-tight">{title}</div>
+        <p className="mt-2 text-xs text-ink-600 leading-relaxed">{desc}</p>
+        <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-volt-700">
+          <i className="ph-bold ph-check-circle"></i> {feature}
+        </div>
+      </div>
+    </article>
+  );
+}
+function ChargingMock() {
+  const [pct, setPct] = useState(62);
+  useEffect(() => {
+    const id = setInterval(() => setPct(p => p >= 100 ? 12 : p + 0.4), 200);
+    return () => clearInterval(id);
+  }, []);
+  const R = 64, C = 2 * Math.PI * R, off = C * (1 - pct / 100);
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="relative w-40 h-40">
+        <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
+          <circle cx="80" cy="80" r={R} fill="none" stroke="#e4e4e7" strokeWidth="8"/>
+          <circle cx="80" cy="80" r={R} fill="none" stroke="#0a84ff" strokeWidth="8" strokeLinecap="round"
+                  strokeDasharray={C} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 0.2s linear' }}/>
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <i className="ph-fill ph-lightning text-volt-500 text-2xl"></i>
+          <div className="font-mono text-2xl font-semibold tabular-nums text-ink-950 mt-1">{Math.round(pct)}<span className="text-sm">%</span></div>
+          <div className="font-mono text-[9px] text-ink-500 uppercase tracking-widest">charging</div>
+        </div>
+      </div>
+      <div className="mt-4 w-full grid grid-cols-3 gap-1 text-center">
+        {[
+          { k: '62.4', v: 'kW', l: '功率' },
+          { k: '18.7', v: 'kWh', l: '已充' },
+          { k: '00:24', v: 'min', l: '剩余' },
+        ].map(s => (
+          <div key={s.l} className="bg-ink-100 rounded-lg py-1.5">
+            <div className="font-mono text-xs font-semibold tabular-nums text-ink-950">{s.k}</div>
+            <div className="font-mono text-[8px] text-ink-500 uppercase">{s.v}</div>
+            <div className="font-mono text-[8px] text-ink-400">{s.l}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 w-full h-9 rounded-xl bg-fault-500/10 text-fault-600 grid place-items-center text-[11px] font-medium">
+        <i className="ph ph-stop-circle mr-1"></i> 停止充电
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Charging Flow — Zig-zag ---------- */
+function Flow() {
+  const steps = [
+    { n: '01', icon: 'ph-qr-code',          title: '扫码 / 输入桩号', desc: '扫描充电桩面板二维码，自动识别桩号与枪号。扫码失败时支持手动输入 8 位桩编号，弱光环境自动开启手电筒。', stat: '≤ 5s', statLabel: '扫码到启动' },
+    { n: '02', icon: 'ph-list-checks',       title: '确认充电模式', desc: '选择按金额充（5/10/20/自定义元）、按电量充、或充满为止。确认支付方式：微信支付 / 余额 / 卡券叠加。', stat: '3 种', statLabel: '充电模式' },
+    { n: '03', icon: 'ph-lightning',         title: '实时充电监控', desc: '展示当前功率(kW)、已充电量(kWh)、已用时长、实时费用、预计完成时间。完成或异常时推送微信服务通知。', stat: '62.4 kW', statLabel: '峰值功率' },
+    { n: '04', icon: 'ph-receipt',           title: '完成结算与开票', desc: '免密自动扣费，账单含电费 + 服务费明细。一键开具电子发票，支持个人 / 单位抬头，PDF 推送邮箱。', stat: '≤ 3s', statLabel: '支付回调' },
+  ];
+  return (
+    <section className="py-20 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="mb-12 md:mb-16">
+          <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Charging Flow</div>
+          <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950 max-w-[20ch]">
+            四步完成一次<br/>无痛补能
+          </h2>
+        </div>
+        <div className="space-y-16 md:space-y-24">
+          {steps.map((s, i) => {
+            const reverse = i % 2 === 1;
+            return (
+              <article key={s.n} className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-6 md:gap-16 items-center">
+                <div className={reverse ? 'md:order-2' : ''}>
+                  <div className="font-display font-semibold text-[7rem] md:text-[10rem] leading-none tracking-tightest text-ink-100">{s.n}</div>
+                </div>
+                <div className={reverse ? 'md:order-1' : ''}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="w-10 h-10 rounded-full bg-ink-950 text-volt-400 grid place-items-center">
+                      <i className={`ph-bold ${s.icon} text-lg`}></i>
+                    </span>
+                    <span className="font-mono text-xs uppercase tracking-widest text-ink-500">step {s.n}</span>
+                  </div>
+                  <h3 className="font-display font-semibold text-3xl md:text-4xl tracking-tight text-ink-950 leading-tight">{s.title}</h3>
+                  <p className="mt-4 text-ink-600 leading-relaxed max-w-[52ch]">{s.desc}</p>
+                  <div className="mt-6 inline-flex items-baseline gap-2 border-t border-ink-200 pt-4">
+                    <span className="font-mono text-2xl font-semibold text-ink-950 tabular-nums">{s.stat}</span>
+                    <span className="font-mono text-xs uppercase tracking-widest text-ink-500">{s.statLabel}</span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Membership — Bento with table ---------- */
+function Membership() {
+  const tiers = [
+    { tier: '普通用户', price: '免费',     sub: '注册即得', perks: ['基础充电功能', '历史订单', '收藏电站'],                                          color: 'ink-300' },
+    { tier: 'PLUS 银',  price: '¥2.9-9.9', sub: '/ 月订阅',  perks: ['充电折扣 6 折起', '月满减券 ×5', '停车减免资格'],                                 color: 'volt-400', featured: true },
+    { tier: 'PLUS 金',  price: '¥19.9',    sub: '/ 月 或 季卡', perks: ['8 折专属单价', '月赠能量包', '优先客服通道'],                                  color: 'idle-500' },
+    { tier: '超级会员',  price: '¥99-198',  sub: '/ 年卡',     perks: ['最低折扣', '全年满减礼包', '电池管家深度检测', '一号多充'],                       color: 'ink-700' },
+  ];
+  return (
+    <section className="py-20 md:py-32 bg-ink-100/60">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-10 md:gap-16 items-start">
+          <div className="md:sticky md:top-28">
+            <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— PLUS Membership</div>
+            <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950">
+              会员等级<br/><span className="text-volt-500">越充越省</span>
+            </h2>
+            <p className="mt-6 text-ink-600 leading-relaxed max-w-[42ch]">
+              能量包机制：预购固定度数套餐，锁定当前低价，后续充电自动抵扣。适合高频用户对冲电价波动。
+            </p>
+            <Magnetic className="mt-7 inline-flex items-center gap-2 h-12 px-7 rounded-full bg-ink-950 text-ink-50 hover:bg-ink-800">
+              开通 PLUS 会员 <i className="ph-bold ph-arrow-up-right"></i>
+            </Magnetic>
+          </div>
+          <div className="border-t border-ink-200">
+            {tiers.map(t => (
+              <div key={t.tier} className={`grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.6fr] gap-4 md:gap-8 py-7 border-b border-ink-200 px-2 -mx-2 rounded-lg transition-colors ${t.featured ? 'bg-volt-50/60' : 'hover:bg-ink-50/60'}`}>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-2.5 h-2.5 rounded-full bg-${t.color}`}></span>
+                    <span className="font-display text-xl font-semibold tracking-tight text-ink-950">{t.tier}</span>
+                  </div>
+                  {t.featured && <div className="mt-1 ml-5 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-volt-700"><i className="ph-fill ph-star"></i> popular</div>}
+                </div>
+                <div className="md:border-l md:border-ink-200 md:pl-6">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-mono text-xl font-semibold text-ink-950 tabular-nums">{t.price}</span>
+                    <span className="font-mono text-[10px] text-ink-500">{t.sub}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 md:justify-end md:items-center">
+                  {t.perks.map(p => (
+                    <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-ink-50 border border-ink-200 text-[11px] text-ink-700">
+                      <i className="ph ph-check text-volt-600"></i> {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- V2G / Carbon — asymmetric split ---------- */
+function GreenSection() {
+  return (
+    <section className="py-20 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-10 md:gap-16 items-start">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Green Energy</div>
+          <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950">
+            碳积分 · V2G<br/>
+            <span className="text-idle-600">绿色身份认同</span>
+          </h2>
+          <p className="mt-6 text-ink-600 leading-relaxed max-w-[60ch]">
+            每次充电自动记录碳减排量（kWh × 碳排放因子），订单页展示本次碳贡献。累计碳积分可兑换充电券、周边商品或捐赠公益树苗。
+          </p>
+          <p className="mt-3 text-ink-600 leading-relaxed max-w-[60ch]">
+            V2G（车辆向电网放电）：支持具备 V2G 功能的车辆在用电低谷时段放电，获得补贴收益。让车成为移动储能单元。
+          </p>
+        </div>
+        <aside className="bg-ink-950 text-ink-50 rounded-[2rem] p-7 md:p-9 relative overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-idle-500/20 blur-2xl"></div>
+          <div className="flex items-center gap-2 mb-5 relative">
+            <i className="ph-bold ph-leaf text-idle-500 text-xl"></i>
+            <span className="font-mono text-xs uppercase tracking-widest text-idle-500">Your Carbon Impact</span>
+          </div>
+          <div className="relative">
+            <div className="font-mono text-[10px] uppercase tracking-widest text-ink-400">本月累计减排</div>
+            <div className="font-display text-5xl font-semibold tracking-tightest mt-1 tabular-nums">142.8<span className="text-xl text-ink-400 font-normal ml-1">kg CO₂e</span></div>
+            <div className="font-mono text-[11px] text-ink-400 mt-1">≈ 种植 0.7 棵树苗</div>
+          </div>
+          <div className="mt-7 space-y-3 relative">
+            {[
+              { l: '已兑换充电券', v: '3 张',     pct: '32%' },
+              { l: '公益树苗',     v: '0.7 棵',   pct: '14%' },
+              { l: '待解锁',       v: '+ 86 积分', pct: '54%' },
+            ].map(s => (
+              <div key={s.l}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-ink-300">{s.l}</span>
+                  <span className="font-mono text-ink-50">{s.v}</span>
+                </div>
+                <div className="mt-1.5 h-1 rounded-full bg-ink-800 overflow-hidden">
+                  <div className="h-full rounded-full bg-idle-500 progress-fill" style={{ '--p': s.pct }}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Footer ---------- */
+function Footer() {
+  return (
+    <footer className="bg-ink-950 text-ink-300 pt-16 md:pt-20 pb-10">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="w-9 h-9 rounded-2xl bg-ink-50 text-volt-500 grid place-items-center">
+                <i className="ph-fill ph-lightning-slash text-lg" style={{ transform: 'rotate(-15deg)' }}></i>
+              </span>
+              <div className="leading-none">
+                <div className="font-display font-semibold text-lg text-ink-50">闪电聚合</div>
+                <div className="font-mono text-[10px] text-ink-500 tracking-widest uppercase">EV Charge Aggregator</div>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-ink-400 max-w-[40ch]">
+              聚合特来电 · 星星充电 · 云快充 · e 充电等主流运营商<br />
+              客服热线 <span className="font-mono text-ink-200">400-820-1888</span>
+            </p>
+            <div className="mt-6 flex items-center gap-3">
+              {['wechat-logo', 'alipay-logo', 'sina-weibo-logo'].map(ic => (
+                <a key={ic} href="#" className="w-9 h-9 rounded-full border border-ink-800 grid place-items-center hover:border-volt-400 hover:text-volt-400 transition-colors" aria-label={ic}>
+                  <i className={`ph ${ic}`}></i>
+                </a>
+              ))}
+            </div>
+          </div>
+          <FCol title="找桩" items={['地图找桩', '高速路模式', '预约充电', '收藏电站']} />
+          <FCol title="会员" items={['PLUS 银卡', 'PLUS 金卡', '超级会员', '能量包']} />
+          <FCol title="帮助" items={['充电指南', '电池管家', '发票开具', '退款政策']} />
+        </div>
+        <div className="mt-14 pt-7 border-t border-ink-800 flex flex-col md:flex-row gap-3 md:items-center justify-between text-xs text-ink-500">
+          <div className="font-mono">支持微信 / 支付宝小程序 · iOS 15+ · Android 9+ · 4G/5G/Wi-Fi</div>
+          <div className="font-mono">© 2026 闪电聚合 EV Charge · 沪 ICP 备 XXXXXXXX 号</div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+function FCol({ title, items }) {
+  return (
+    <div>
+      <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500 mb-4">{title}</div>
+      <ul className="space-y-2.5">
+        {items.map(i => <li key={i}><a href="#" className="text-sm text-ink-300 hover:text-ink-50 transition-colors" data-tactile>{i}</a></li>)}
+      </ul>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <TopNav />
+      <main>
+        <Hero />
+        <ScreenGallery />
+        <Flow />
+        <Membership />
+        <GreenSection />
+      </main>
+      <Footer />
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

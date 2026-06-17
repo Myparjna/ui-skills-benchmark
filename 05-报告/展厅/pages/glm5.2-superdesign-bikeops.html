@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>双轮城市运营后台 · BiWheels Ops — 看得见 · 管得住 · 调得动 · 算得清</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@400;500;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          night: '#0B1426',
+          midnight: '#141E36',
+          dusk: '#1F2D4D',
+          steel: '#2A3A5E',
+          star: '#E8B86D',
+          aurora: '#7BC8D6',
+          rose: '#E07A8C',
+          moss: '#8FBC6E',
+          amber: '#F2A65A',
+          cloud: '#F5F1E8',
+          ink: '#0B1426',
+        },
+        fontFamily: {
+          serif: ['"Noto Serif SC"', 'Cormorant Garamond', 'serif'],
+          sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          display: ['Cormorant Garamond', '"Noto Serif SC"', 'serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root {
+    --night: #0B1426;
+    --midnight: #141E36;
+    --dusk: #1F2D4D;
+    --steel: #2A3A5E;
+    --star: #E8B86D;
+    --aurora: #7BC8D6;
+    --rose: #E07A8C;
+    --moss: #8FBC6E;
+    --amber: #F2A65A;
+    --cloud: #F5F1E8;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--night);
+    color: var(--cloud);
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .num { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+
+  /* 玻璃卡 — 与 airline 兄弟页一致 */
+  .glass {
+    background: rgba(20, 30, 54, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(232, 184, 109, 0.18);
+  }
+  .glass-light {
+    background: rgba(245, 241, 232, 0.04);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-tight {
+    background: rgba(31, 45, 77, 0.45);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(123, 200, 214, 0.12);
+  }
+
+  /* 流光线条 */
+  .aurora-line {
+    background: linear-gradient(90deg, transparent, var(--aurora), var(--star), transparent);
+    height: 1px;
+  }
+
+  /* 噪点纹理 */
+  .noise { position: relative; }
+  .noise::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.85 0 0 0 0 0.75 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    opacity: 0.4;
+  }
+
+  /* 滚动渐显 */
+  .reveal { opacity: 0; transform: translateY(24px); transition: all .9s cubic-bezier(.2,.8,.2,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--night); }
+  ::-webkit-scrollbar-thumb { background: var(--dusk); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--star); }
+
+  /* 侧栏导航 item */
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    color: rgba(245, 241, 232, 0.6);
+    font-size: 13px; cursor: pointer;
+    transition: all .2s;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { color: var(--cloud); background: rgba(232, 184, 109, 0.06); }
+  .nav-item.active {
+    color: var(--star);
+    background: linear-gradient(90deg, rgba(232,184,109,0.14), rgba(232,184,109,0.02));
+    border-color: rgba(232, 184, 109, 0.25);
+  }
+  .nav-item .badge {
+    margin-left: auto; font-size: 10px;
+    padding: 1px 6px; border-radius: 8px;
+    background: rgba(224, 122, 140, 0.18); color: var(--rose);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* KPI 卡 — 不对称构图，每张尺寸不同 */
+  .kpi-card { transition: transform .4s cubic-bezier(.2,.8,.2,1), border-color .4s; }
+  .kpi-card:hover { transform: translateY(-3px); border-color: rgba(232,184,109,0.4); }
+
+  /* 地图样式 */
+  .ops-map {
+    position: relative;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(123, 200, 214, 0.10), transparent 45%),
+      radial-gradient(circle at 70% 60%, rgba(232, 184, 109, 0.10), transparent 45%),
+      linear-gradient(135deg, #0B1426 0%, #141E36 50%, #1F2D4D 100%);
+    overflow: hidden;
+  }
+  .ops-map::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(123, 200, 214, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(123, 200, 214, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+  /* 道路 */
+  .map-road { position: absolute; background: rgba(245, 241, 232, 0.05); box-shadow: 0 0 0 1px rgba(123, 200, 214, 0.08); }
+  /* 围栏 */
+  .fence {
+    position: absolute; border: 1px dashed rgba(232, 184, 109, 0.4);
+    background: rgba(232, 184, 109, 0.05);
+  }
+  .fence.no-park {
+    border-color: rgba(224, 122, 140, 0.45);
+    background: rgba(224, 122, 140, 0.06);
+  }
+  /* 车辆点 */
+  .vehicle {
+    position: absolute; width: 10px; height: 10px;
+    border-radius: 50%; border: 2px solid #fff;
+    transform: translate(-50%, -50%);
+    cursor: pointer; transition: transform .2s;
+  }
+  .vehicle:hover { transform: translate(-50%, -50%) scale(1.4); }
+  .vehicle.available { background: var(--moss); }
+  .vehicle.in-use { background: var(--aurora); }
+  .vehicle.low-bat { background: var(--amber); }
+  .vehicle.fault { background: var(--rose); }
+  .vehicle.offline { background: #6B7A99; }
+  .vehicle.cluster {
+    width: 28px; height: 28px;
+    background: rgba(232, 184, 109, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; color: var(--night);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+  }
+  /* 热力栅格 */
+  .heat-cell {
+    position: absolute;
+    border-radius: 4px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  /* 选中圈 */
+  .select-ring {
+    position: absolute;
+    border: 2px solid var(--star);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+  @keyframes ringPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(232,184,109,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(232,184,109,0); }
+  }
+
+  /* 状态点 */
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-pulse {
+    position: relative;
+  }
+  .dot-pulse::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: inherit; animation: pulse 1.8s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+
+  /* 进度条 */
+  .bar-track {
+    height: 6px; background: rgba(245, 241, 232, 0.08);
+    border-radius: 3px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 1.2s cubic-bezier(.2,.8,.2,1);
+  }
+
+  /* Tab 切换 */
+  .seg-tab {
+    padding: 6px 14px; font-size: 12px; border-radius: 8px;
+    cursor: pointer; transition: all .2s; color: rgba(245,241,232,0.5);
+  }
+  .seg-tab.active { background: var(--star); color: var(--night); font-weight: 600; }
+
+  /* 工单优先级条 */
+  .prio-bar { width: 3px; border-radius: 2px; align-self: stretch; }
+  .prio-p0 { background: var(--rose); }
+  .prio-p1 { background: var(--amber); }
+  .prio-p2 { background: var(--aurora); }
+
+  /* 表格行 */
+  .data-row { transition: background .2s; }
+  .data-row:hover { background: rgba(232, 184, 109, 0.05); }
+
+  /* 流动数字 */
+  .flow-num {
+    background: linear-gradient(135deg, var(--star) 0%, var(--amber) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* 滑入动画 */
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim-slide { animation: slideUp .8s cubic-bezier(.2,.8,.2,1) both; }
+
+  /* 信号格 */
+  .signal-bar { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+  .signal-bar i { width: 2px; background: var(--moss); border-radius: 1px; }
+  .signal-bar i:nth-child(1) { height: 4px; }
+  .signal-bar i:nth-child(2) { height: 7px; }
+  .signal-bar i:nth-child(3) { height: 10px; }
+  .signal-bar.warn i { background: var(--amber); }
+  .signal-bar.bad i { background: var(--rose); }
+
+  /* 滚动告警条 */
+  .alert-stream { max-height: 320px; overflow-y: auto; }
+  .alert-stream::-webkit-scrollbar { width: 4px; }
+
+  /* 侧栏折叠（响应式） */
+  .sidebar-collapsed { width: 72px !important; }
+  .sidebar-collapsed .nav-label,
+  .sidebar-collapsed .nav-section-title,
+  .sidebar-collapsed .nav-item .badge,
+  .sidebar-collapsed .sidebar-footer { display: none !important; }
+  .sidebar-collapsed .nav-item { justify-content: center; padding: 12px 0; }
+
+  @media (max-width: 1024px) {
+    .ops-layout { grid-template-columns: 1fr !important; }
+    .sidebar-wrap { display: none; }
+  }
+</style>
+</head>
+<body class="font-sans">
+
+<!-- ========== 顶部全局导航栏 ========== -->
+<header class="fixed top-0 left-0 right-0 z-50 glass-tight border-b border-cloud/10">
+  <div class="flex items-center justify-between px-6 py-3">
+    <!-- 左侧：Logo + 城市切换 -->
+    <div class="flex items-center gap-6">
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="relative w-9 h-9 flex items-center justify-center">
+          <svg viewBox="0 0 40 40" class="w-9 h-9">
+            <circle cx="20" cy="20" r="18" fill="none" stroke="#E8B86D" stroke-width="1" opacity="0.5"/>
+            <circle cx="14" cy="20" r="6" fill="none" stroke="#7BC8D6" stroke-width="1.6"/>
+            <circle cx="26" cy="20" r="6" fill="none" stroke="#E8B86D" stroke-width="1.6"/>
+            <path d="M14 14 L 14 26 M 26 14 L 26 26" stroke="#F5F1E8" stroke-width="1" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="leading-tight">
+          <div class="font-serif font-bold text-base tracking-wide">双轮城市运营</div>
+          <div class="font-display text-[10px] text-star/70 tracking-[0.3em] uppercase">BiWheels Ops</div>
+        </div>
+      </a>
+
+      <!-- 城市切换 -->
+      <div class="hidden md:flex items-center gap-2 pl-6 border-l border-cloud/10">
+        <iconify-icon icon="ph:map-pin-fill" class="text-star text-sm"></iconify-icon>
+        <select class="bg-transparent text-sm font-medium outline-none cursor-pointer">
+          <option>杭州市</option>
+          <option>上海市</option>
+          <option>成都市</option>
+          <option>深圳市</option>
+        </select>
+        <span class="text-cloud/40">/</span>
+        <select class="bg-transparent text-xs text-cloud/70 outline-none cursor-pointer">
+          <option>全城</option>
+          <option>西湖区</option>
+          <option>拱墅区</option>
+          <option>滨江区</option>
+          <option>余杭区</option>
+        </select>
+        <span class="text-cloud/40">/</span>
+        <select class="bg-transparent text-xs text-cloud/70 outline-none cursor-pointer">
+          <option>混合车队</option>
+          <option>仅自行车</option>
+          <option>仅电单车</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 中间：时间范围 -->
+    <div class="hidden lg:flex items-center gap-1 bg-night/40 rounded-lg p-1 border border-cloud/5">
+      <button class="seg-tab active">今日</button>
+      <button class="seg-tab">昨日</button>
+      <button class="seg-tab">本周</button>
+      <button class="seg-tab">本月</button>
+      <button class="seg-tab">自定义</button>
+    </div>
+
+    <!-- 右侧：搜索 + 通知 + 用户 -->
+    <div class="flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-2 bg-night/40 rounded-full px-3 py-1.5 border border-cloud/5 w-64">
+        <iconify-icon icon="ph:magnifying-glass-thin" class="text-cloud/40"></iconify-icon>
+        <input class="bg-transparent text-xs flex-1 outline-none placeholder-cloud/40" placeholder="车架号 / 设备号 / 订单号"/>
+        <kbd class="text-[10px] text-cloud/30 font-mono">⌘K</kbd>
+      </div>
+      <button class="relative w-9 h-9 rounded-full bg-cloud/5 hover:bg-star/15 flex items-center justify-center transition">
+        <iconify-icon icon="ph:bell-thin" class="text-base"></iconify-icon>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose rounded-full dot-pulse"></span>
+      </button>
+      <button class="hidden md:flex w-9 h-9 rounded-full bg-cloud/5 hover:bg-star/15 items-center justify-center transition">
+        <iconify-icon icon="ph:question-thin" class="text-base"></iconify-icon>
+      </button>
+      <div class="flex items-center gap-2 pl-3 border-l border-cloud/10">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-star to-amber flex items-center justify-center text-night font-bold text-sm">陈</div>
+        <div class="hidden md:block leading-tight">
+          <div class="text-xs font-medium">陈思远 · 城市运营经理</div>
+          <div class="text-[10px] text-cloud/50">杭州站 · 在岗</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 主体布局：侧栏 + 主内容 ========== -->
+<div class="ops-layout grid grid-cols-[260px_1fr] pt-[64px] min-h-screen">
+
+  <!-- ========== 左侧栏 ========== -->
+  <aside class="sidebar-wrap sticky top-[64px] self-start h-[calc(100vh-64px)] glass-tight border-r border-cloud/10 flex flex-col" id="sidebar">
+    <div class="flex-1 overflow-y-auto py-5 px-3">
+      <!-- 主导航 -->
+      <div class="nav-section-title px-3 mb-2 text-[10px] text-cloud/40 tracking-[0.2em] uppercase font-display">Core Ops · 核心运营</div>
+      <div class="space-y-1 mb-6">
+        <div class="nav-item active">
+          <iconify-icon icon="ph:gauge-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">运营总览</span>
+          <span class="badge">12</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:map-trifold-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">地图调度中心</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:bicycle-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">车队资产</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:battery-charging-vertical-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">电池与能源</span>
+          <span class="badge">38</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:clipboard-text-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">运维工单</span>
+          <span class="badge">7</span>
+        </div>
+      </div>
+
+      <div class="nav-section-title px-3 mb-2 text-[10px] text-cloud/40 tracking-[0.2em] uppercase font-display">Governance · 治理合规</div>
+      <div class="space-y-1 mb-6">
+        <div class="nav-item">
+          <iconify-icon icon="ph:map-pinline-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">规则与区域</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:shield-check-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">合规监管</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:chart-bar-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">数据报表</span>
+        </div>
+      </div>
+
+      <div class="nav-section-title px-3 mb-2 text-[10px] text-cloud/40 tracking-[0.2em] uppercase font-display">System · 系统配置</div>
+      <div class="space-y-1">
+        <div class="nav-item">
+          <iconify-icon icon="ph:users-three-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">组织与权限</span>
+        </div>
+        <div class="nav-item">
+          <iconify-icon icon="ph:gear-six-thin" class="text-lg"></iconify-icon>
+          <span class="nav-label">系统配置与对接</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 侧栏底部：实时状态 -->
+    <div class="sidebar-footer px-4 py-3 border-t border-cloud/10">
+      <div class="flex items-center justify-between text-[10px] text-cloud/50 mb-2">
+        <span>系统状态</span>
+        <span class="flex items-center gap-1">
+          <span class="dot bg-moss dot-pulse"></span>
+          全链路正常
+        </span>
+      </div>
+      <div class="flex items-center justify-between text-[10px] text-cloud/50">
+        <span>IoT 设备在线率</span>
+        <span class="num text-moss">99.2%</span>
+      </div>
+      <div class="flex items-center justify-between text-[10px] text-cloud/50 mt-1">
+        <span>数据延迟 P95</span>
+        <span class="num text-aurora">7.4s</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========== 主内容区 ========== -->
+  <main class="px-8 py-7 space-y-7">
+
+    <!-- ========== Section 1: Hero KPI 概览 — 非对称无限画布 ========== -->
+    <section class="reveal">
+      <div class="flex items-end justify-between mb-6">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-px bg-star"></div>
+            <span class="font-display text-xs text-star tracking-[0.4em]">DASHBOARD · 2026.06.17 周三</span>
+          </div>
+          <h1 class="font-serif text-4xl font-bold leading-tight">
+            看得见 · <span class="text-star">管得住</span> · 调得动 · 算得清
+          </h1>
+          <p class="text-cloud/60 text-sm mt-2 font-light">杭州 · 27,462 辆在线 · 自然日 00:00 至 14:32 · 数据延迟 7.4s</p>
+        </div>
+        <div class="hidden md:flex items-center gap-2">
+          <button class="px-4 py-2 text-xs font-medium bg-cloud/5 hover:bg-cloud/10 border border-cloud/10 rounded-lg flex items-center gap-1.5 transition">
+            <iconify-icon icon="ph:download-simple-thin"></iconify-icon>
+            导出晨报
+          </button>
+          <button class="px-4 py-2 text-xs font-bold bg-star text-night rounded-lg flex items-center gap-1.5 hover:bg-cloud transition">
+            <iconify-icon icon="ph:play-thin"></iconify-icon>
+            进入调度中心
+          </button>
+        </div>
+      </div>
+
+      <!-- 非对称 KPI 网格：5+4+3 列混合 -->
+      <div class="grid grid-cols-12 gap-4">
+        <!-- 主 KPI：今日订单（占 4 列，高度大） -->
+        <div class="kpi-card col-span-12 md:col-span-4 glass rounded-2xl p-6 relative overflow-hidden row-span-2">
+          <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full opacity-20" style="background: radial-gradient(circle, #E8B86D, transparent 70%);"></div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-display text-xs text-star tracking-[0.3em]">ORDERS · TODAY</span>
+            <iconify-icon icon="ph:trend-up-thin" class="text-moss text-lg"></iconify-icon>
+          </div>
+          <div class="num text-6xl font-bold flow-num leading-none">48,217</div>
+          <div class="text-sm text-cloud/60 mt-2">今日订单总量</div>
+          <div class="flex items-center gap-4 mt-5 text-xs">
+            <span class="flex items-center gap-1 text-moss">
+              <iconify-icon icon="ph:caret-up-fill"></iconify-icon>
+              <span class="num font-bold">+12.4%</span> vs 昨日
+            </span>
+            <span class="text-cloud/40">|</span>
+            <span class="text-cloud/50">周同比 <span class="num text-moss">+8.6%</span></span>
+          </div>
+          <!-- 迷你趋势线 -->
+          <svg viewBox="0 0 280 60" class="w-full mt-5 opacity-80">
+            <defs>
+              <linearGradient id="kpiG1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E8B86D" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#E8B86D" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0 50 Q 30 45, 50 35 T 100 25 T 150 30 T 200 18 T 250 12 L 280 8 L 280 60 L 0 60 Z" fill="url(#kpiG1)"/>
+            <path d="M0 50 Q 30 45, 50 35 T 100 25 T 150 30 T 200 18 T 250 12 L 280 8" stroke="#E8B86D" stroke-width="1.6" fill="none"/>
+            <circle cx="280" cy="8" r="3" fill="#E8B86D"/>
+          </svg>
+        </div>
+
+        <!-- GMV -->
+        <div class="kpi-card col-span-6 md:col-span-4 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-display text-xs text-aurora tracking-[0.3em]">GMV · 今日营收</span>
+            <iconify-icon icon="ph:currency-cny-thin" class="text-aurora"></iconify-icon>
+          </div>
+          <div class="num text-3xl font-bold">¥186,420</div>
+          <div class="text-xs text-cloud/50 mt-1">含退款 ¥2,140 · 优惠券补贴 ¥8,920</div>
+          <div class="flex items-center gap-3 mt-3 text-xs">
+            <span class="text-moss num">+9.2%</span>
+            <div class="flex-1 bar-track">
+              <div class="bar-fill bg-aurora" style="width: 68%;"></div>
+            </div>
+            <span class="text-cloud/40 num">68%</span>
+          </div>
+        </div>
+
+        <!-- 单车日均骑行 -->
+        <div class="kpi-card col-span-6 md:col-span-4 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-display text-xs text-aurora tracking-[0.3em]">RIDES/VEH/DAY</span>
+            <iconify-icon icon="ph:bicycle-thin" class="text-aurora"></iconify-icon>
+          </div>
+          <div class="num text-3xl font-bold">4.32<span class="text-sm text-cloud/50 ml-1">次/车/日</span></div>
+          <div class="text-xs text-cloud/50 mt-1">行业基准 3.8 · 目标 4.5</div>
+          <div class="flex items-center gap-3 mt-3 text-xs">
+            <span class="text-moss num">+0.3</span>
+            <div class="flex-1 bar-track">
+              <div class="bar-fill bg-moss" style="width: 86%;"></div>
+            </div>
+            <span class="text-cloud/40 num">86%</span>
+          </div>
+        </div>
+
+        <!-- 可用率 -->
+        <div class="kpi-card col-span-6 md:col-span-2 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-wider">可用率</span>
+            <span class="dot bg-moss"></span>
+          </div>
+          <div class="num text-2xl font-bold text-moss">92.4<span class="text-xs">%</span></div>
+          <div class="text-[10px] text-cloud/50 mt-1">目标 ≥ 90%</div>
+        </div>
+
+        <!-- 活跃用户 -->
+        <div class="kpi-card col-span-6 md:col-span-2 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-wider">活跃用户</span>
+            <iconify-icon icon="ph:user-thin" class="text-cloud/50"></iconify-icon>
+          </div>
+          <div class="num text-2xl font-bold">19,805</div>
+          <div class="text-[10px] text-cloud/50 mt-1">新客 1,247 · +6.3%</div>
+        </div>
+
+        <!-- 低电车辆 -->
+        <div class="kpi-card col-span-6 md:col-span-2 glass rounded-2xl p-5 border-amber/30">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-wider">低电车辆</span>
+            <span class="dot bg-amber"></span>
+          </div>
+          <div class="num text-2xl font-bold text-amber">1,083</div>
+          <div class="text-[10px] text-cloud/50 mt-1">SOC &lt; 20% · 待换电</div>
+        </div>
+
+        <!-- P0 告警 -->
+        <div class="kpi-card col-span-6 md:col-span-2 glass rounded-2xl p-5 border-rose/30">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-wider">P0 告警</span>
+            <span class="dot bg-rose dot-pulse"></span>
+          </div>
+          <div class="num text-2xl font-bold text-rose">7</div>
+          <div class="text-[10px] text-cloud/50 mt-1">3 起超时 · 立即处理</div>
+        </div>
+
+        <!-- 工单积压 -->
+        <div class="kpi-card col-span-6 md:col-span-2 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-wider">工单积压</span>
+            <iconify-icon icon="ph:clipboard-text-thin" class="text-cloud/50"></iconify-icon>
+          </div>
+          <div class="num text-2xl font-bold">42</div>
+          <div class="text-[10px] text-cloud/50 mt-1">超时 5 · 临近 11</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Section 2: 地图调度中心 + 告警面板 — Hero 工作区 ========== -->
+    <section class="reveal">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <div class="font-display text-aurora text-xs tracking-[0.4em] mb-1">MAP OPS CENTER</div>
+          <h2 class="font-serif text-2xl font-bold">地图调度中心 <span class="text-cloud/40 text-sm font-sans font-normal ml-2">— 一屏完成看车 · 看电 · 派任务</span></h2>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <!-- 图层切换 -->
+          <div class="flex items-center gap-1 bg-night/40 rounded-lg p-1 border border-cloud/5">
+            <button class="seg-tab active">车辆状态</button>
+            <button class="seg-tab">电量分层</button>
+            <button class="seg-tab">供需热力</button>
+            <button class="seg-tab">围栏</button>
+          </div>
+          <!-- 工具按钮 -->
+          <button class="w-8 h-8 rounded-lg bg-cloud/5 hover:bg-star/15 flex items-center justify-center transition" title="框选">
+            <iconify-icon icon="ph:bounding-box-thin"></iconify-icon>
+          </button>
+          <button class="w-8 h-8 rounded-lg bg-cloud/5 hover:bg-star/15 flex items-center justify-center transition" title="批量指令">
+            <iconify-icon icon="ph:lightning-thin"></iconify-icon>
+          </button>
+          <button class="w-8 h-8 rounded-lg bg-cloud/5 hover:bg-star/15 flex items-center justify-center transition" title="创建任务">
+            <iconify-icon icon="ph:plus-thin"></iconify-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-4">
+        <!-- 左侧筛选 -->
+        <div class="col-span-12 lg:col-span-2 glass rounded-2xl p-4">
+          <div class="text-[10px] text-cloud/50 tracking-widest mb-3">FILTERS · 筛选</div>
+          <div class="space-y-4">
+            <div>
+              <div class="text-xs text-cloud/70 mb-2">车型</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span class="px-2 py-1 text-[10px] bg-star/15 text-star rounded">自行车</span>
+                <span class="px-2 py-1 text-[10px] bg-star/15 text-star rounded">电单车</span>
+                <span class="px-2 py-1 text-[10px] bg-cloud/5 text-cloud/60 rounded">可换电</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-cloud/70 mb-2">状态</div>
+              <div class="space-y-1.5 text-[11px]">
+                <label class="flex items-center gap-2 cursor-pointer text-cloud/70">
+                  <input type="checkbox" checked class="accent-star"/> <span class="dot bg-moss"></span> 可用 <span class="num ml-auto">21,247</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-cloud/70">
+                  <input type="checkbox" checked class="accent-star"/> <span class="dot bg-aurora"></span> 使用中 <span class="num ml-auto">4,103</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-cloud/70">
+                  <input type="checkbox" checked class="accent-star"/> <span class="dot bg-amber"></span> 低电 <span class="num ml-auto">1,083</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-cloud/70">
+                  <input type="checkbox" class="accent-star"/> <span class="dot bg-rose"></span> 故障 <span class="num ml-auto">426</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-cloud/70">
+                  <input type="checkbox" class="accent-star"/> <span class="dot" style="background:#6B7A99"></span> 离线 <span class="num ml-auto">603</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-cloud/70 mb-2">电量区间</div>
+              <div class="text-[10px] text-cloud/50 mb-1">0% ────── 100%</div>
+              <div class="relative h-1.5 bg-cloud/10 rounded-full">
+                <div class="absolute h-full bg-gradient-to-r from-rose via-amber to-moss rounded-full" style="left: 20%; right: 5%;"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-cloud/50 mt-1">
+                <span class="num">20%</span><span class="num">95%</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-cloud/70 mb-2">子车队</div>
+              <select class="w-full bg-night/40 text-xs px-2 py-1.5 rounded border border-cloud/5 outline-none">
+                <option>全部子车队</option>
+                <option>西湖 · 自营</option>
+                <option>滨江 · 加盟 A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 地图主区 -->
+        <div class="col-span-12 lg:col-span-7 ops-map noise rounded-2xl relative" style="height: 540px;">
+          <!-- 道路 -->
+          <div class="map-road" style="top: 22%; left: 0; right: 0; height: 8px;"></div>
+          <div class="map-road" style="top: 56%; left: 0; right: 0; height: 5px;"></div>
+          <div class="map-road" style="top: 78%; left: 0; right: 0; height: 6px;"></div>
+          <div class="map-road" style="left: 28%; top: 0; bottom: 0; width: 6px;"></div>
+          <div class="map-road" style="left: 64%; top: 0; bottom: 0; width: 8px;"></div>
+
+          <!-- 围栏区 -->
+          <div class="fence" style="top: 8%; left: 6%; width: 22%; height: 26%;"></div>
+          <div class="absolute top-[10%] left-[8%] text-[10px] text-star font-display tracking-widest">西湖服务区</div>
+          <div class="fence no-park" style="top: 62%; left: 38%; width: 18%; height: 14%;"></div>
+          <div class="absolute top-[64%] left-[40%] text-[10px] text-rose font-display tracking-widest">禁停 · 武林广场</div>
+          <div class="fence" style="top: 38%; left: 70%; width: 22%; height: 28%; border-color: rgba(123,200,214,0.4); background: rgba(123,200,214,0.05);"></div>
+          <div class="absolute top-[40%] left-[72%] text-[10px] text-aurora font-display tracking-widest">滨江重点区</div>
+
+          <!-- 热力栅格（供需缺口） -->
+          <div class="heat-cell" style="top: 30%; left: 38%; width: 80px; height: 80px; background: radial-gradient(circle, rgba(224,122,140,0.5), transparent 70%);"></div>
+          <div class="heat-cell" style="top: 70%; left: 75%; width: 70px; height: 70px; background: radial-gradient(circle, rgba(232,184,109,0.5), transparent 70%);"></div>
+          <div class="heat-cell" style="top: 18%; left: 80%; width: 60px; height: 60px; background: radial-gradient(circle, rgba(143,188,110,0.4), transparent 70%);"></div>
+
+          <!-- 车辆聚合点 -->
+          <div class="vehicle cluster" style="top: 35%; left: 22%;">248</div>
+          <div class="vehicle cluster" style="top: 65%; left: 48%;">156</div>
+          <div class="vehicle cluster" style="top: 45%; left: 78%;">89</div>
+
+          <!-- 散点车辆 -->
+          <div class="vehicle available" style="top: 14%; left: 12%;"></div>
+          <div class="vehicle in-use" style="top: 18%; left: 18%;"></div>
+          <div class="vehicle available" style="top: 25%; left: 32%;"></div>
+          <div class="vehicle low-bat" style="top: 42%; left: 14%;"></div>
+          <div class="vehicle available" style="top: 48%; left: 22%;"></div>
+          <div class="vehicle in-use" style="top: 52%; left: 38%;"></div>
+          <div class="vehicle fault" style="top: 58%; left: 28%;"></div>
+          <div class="vehicle available" style="top: 68%; left: 16%;"></div>
+          <div class="vehicle low-bat" style="top: 72%; left: 30%;"></div>
+          <div class="vehicle available" style="top: 30%; left: 52%;"></div>
+          <div class="vehicle in-use" style="top: 38%; left: 58%;"></div>
+          <div class="vehicle offline" style="top: 44%; left: 50%;"></div>
+          <div class="vehicle available" style="top: 62%; left: 70%;"></div>
+          <div class="vehicle in-use" style="top: 70%; left: 82%;"></div>
+          <div class="vehicle low-bat" style="top: 84%; left: 72%;"></div>
+          <div class="vehicle available" style="top: 88%; left: 84%;"></div>
+          <div class="vehicle available" style="top: 22%; left: 70%;"></div>
+          <div class="vehicle in-use" style="top: 16%; left: 88%;"></div>
+
+          <!-- 选中圈（圈选示例） -->
+          <div class="select-ring" style="top: 38%; left: 22%; width: 90px; height: 90px;"></div>
+          <div class="absolute" style="top: 22%; left: 22%;">
+            <div class="bg-star text-night text-[10px] font-bold px-2 py-0.5 rounded">已圈选 38 辆</div>
+          </div>
+
+          <!-- 地图右上角工具 -->
+          <div class="absolute right-3 top-3 flex flex-col gap-2">
+            <button class="w-9 h-9 bg-midnight/80 rounded-lg shadow flex items-center justify-center hover:bg-star hover:text-night transition">
+              <iconify-icon icon="ph:plus-thin"></iconify-icon>
+            </button>
+            <button class="w-9 h-9 bg-midnight/80 rounded-lg shadow flex items-center justify-center hover:bg-star hover:text-night transition">
+              <iconify-icon icon="ph:minus-thin"></iconify-icon>
+            </button>
+            <button class="w-9 h-9 bg-midnight/80 rounded-lg shadow flex items-center justify-center hover:bg-star hover:text-night transition">
+              <iconify-icon icon="ph:crosshair-thin"></iconify-icon>
+            </button>
+            <button class="w-9 h-9 bg-midnight/80 rounded-lg shadow flex items-center justify-center hover:bg-star hover:text-night transition">
+              <iconify-icon icon="ph:fullscreen-thin"></iconify-icon>
+            </button>
+          </div>
+
+          <!-- 地图左下角图例 -->
+          <div class="absolute left-3 bottom-3 glass rounded-xl p-3 text-[10px] space-y-1">
+            <div class="font-display text-cloud/60 tracking-widest mb-1">LEGEND</div>
+            <div class="flex items-center gap-2"><span class="dot bg-moss"></span> 可用</div>
+            <div class="flex items-center gap-2"><span class="dot bg-aurora"></span> 使用中</div>
+            <div class="flex items-center gap-2"><span class="dot bg-amber"></span> 低电</div>
+            <div class="flex items-center gap-2"><span class="dot bg-rose"></span> 故障</div>
+          </div>
+
+          <!-- 地图右下角统计 -->
+          <div class="absolute right-3 bottom-3 glass rounded-xl p-3 text-[10px]">
+            <div class="font-display text-cloud/60 tracking-widest mb-1">VIEWPORT</div>
+            <div class="num text-cloud/80">可视车辆 4,820 / 27,462</div>
+            <div class="num text-cloud/60 mt-0.5">聚合后点数 312</div>
+          </div>
+        </div>
+
+        <!-- 右侧：告警流 + 任务池 -->
+        <div class="col-span-12 lg:col-span-3 space-y-4">
+          <!-- 告警流 -->
+          <div class="glass rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span class="dot bg-rose dot-pulse"></span>
+                <span class="font-display text-xs text-rose tracking-[0.2em]">ALERT STREAM</span>
+              </div>
+              <span class="text-[10px] text-cloud/50">实时</span>
+            </div>
+            <div class="alert-stream space-y-2.5">
+              <div class="bg-rose/8 border-l-2 border-rose rounded-r p-2.5">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-[10px] font-bold text-rose">P0 · 越界</span>
+                  <span class="num text-[10px] text-cloud/40">14:28</span>
+                </div>
+                <div class="text-xs text-cloud/80">浙 A·8F246 偏离服务区 1.2km</div>
+                <div class="flex gap-2 mt-1.5">
+                  <button class="text-[10px] text-star">定位</button>
+                  <button class="text-[10px] text-star">派单</button>
+                  <button class="text-[10px] text-star">轨迹</button>
+                </div>
+              </div>
+              <div class="bg-amber/8 border-l-2 border-amber rounded-r p-2.5">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-[10px] font-bold text-amber">P1 · 禁停堆积</span>
+                  <span class="num text-[10px] text-cloud/40">14:25</span>
+                </div>
+                <div class="text-xs text-cloud/80">武林广场禁停区堆积 18 辆</div>
+              </div>
+              <div class="bg-amber/8 border-l-2 border-amber rounded-r p-2.5">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-[10px] font-bold text-amber">P1 · 倒地</span>
+                  <span class="num text-[10px] text-cloud/40">14:21</span>
+                </div>
+                <div class="text-xs text-cloud/80">浙 A·6M118 疑似倒地 4 分钟</div>
+              </div>
+              <div class="bg-aurora/8 border-l-2 border-aurora rounded-r p-2.5">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-[10px] font-bold text-aurora">P2 · 低电</span>
+                  <span class="num text-[10px] text-cloud/40">14:18</span>
+                </div>
+                <div class="text-xs text-cloud/80">滨江重点区 12 辆 SOC &lt; 15%</div>
+              </div>
+              <div class="bg-aurora/8 border-l-2 border-aurora rounded-r p-2.5">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-[10px] font-bold text-aurora">P2 · 离线</span>
+                  <span class="num text-[10px] text-cloud/40">14:12</span>
+                </div>
+                <div class="text-xs text-cloud/80">西湖区 7 辆超 10min 未上报</div>
+              </div>
+              <div class="bg-rose/8 border-l-2 border-rose rounded-r p-2.5">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-[10px] font-bold text-rose">P0 · 疑似盗损</span>
+                  <span class="num text-[10px] text-cloud/40">14:02</span>
+                </div>
+                <div class="text-xs text-cloud/80">浙 A·3K882 异常轨迹 · 速度异常</div>
+              </div>
+            </div>
+            <button class="w-full mt-3 text-xs text-star py-1.5 border border-star/30 rounded-lg hover:bg-star/10 transition">查看告警中心 →</button>
+          </div>
+
+          <!-- 任务池 -->
+          <div class="glass rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="ph:clipboard-queue-thin" class="text-aurora"></iconify-icon>
+                <span class="font-display text-xs text-aurora tracking-[0.2em]">TASK POOL</span>
+              </div>
+              <span class="text-[10px] text-cloud/50">待派 7 / 执行 23</span>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs">
+                <div class="prio-bar prio-p0"></div>
+                <div class="flex-1">
+                  <div class="text-cloud/80">武林堆积 · 挪车</div>
+                  <div class="text-[10px] text-cloud/40">建议张师傅 · 距 380m</div>
+                </div>
+                <button class="text-[10px] text-star">指派</button>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <div class="prio-bar prio-p1"></div>
+                <div class="flex-1">
+                  <div class="text-cloud/80">滨江重点区 · 换电 ×12</div>
+                  <div class="text-[10px] text-cloud/40">建议王师傅 · 携 8 块</div>
+                </div>
+                <button class="text-[10px] text-star">指派</button>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <div class="prio-bar prio-p1"></div>
+                <div class="flex-1">
+                  <div class="text-cloud/80">西湖服务区 · 巡检</div>
+                  <div class="text-[10px] text-cloud/40">建议李师傅 · 在岗</div>
+                </div>
+                <button class="text-[10px] text-star">指派</button>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <div class="prio-bar prio-p2"></div>
+                <div class="flex-1">
+                  <div class="text-cloud/80">余杭闲林 · 早高峰补车</div>
+                  <div class="text-[10px] text-cloud/40">建议陈师傅组 · 调度 60 辆</div>
+                </div>
+                <button class="text-[10px] text-star">指派</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Section 3: 车队健康 + 电池能源 — 非对称双栏 ========== -->
+    <section class="reveal grid grid-cols-12 gap-4">
+
+      <!-- 车队健康（占 7 列） -->
+      <div class="col-span-12 lg:col-span-7 glass rounded-2xl p-6">
+        <div class="flex items-end justify-between mb-5">
+          <div>
+            <div class="font-display text-xs text-star tracking-[0.3em] mb-1">FLEET HEALTH</div>
+            <h3 class="font-serif text-xl font-bold">车队健康与可用性</h3>
+            <p class="text-xs text-cloud/50 mt-1">27,462 辆 · 含 8,920 辆可换电电单车</p>
+          </div>
+          <div class="text-right">
+            <div class="num text-3xl font-bold text-moss">92.4%</div>
+            <div class="text-[10px] text-cloud/50">综合可用率</div>
+          </div>
+        </div>
+
+        <!-- 状态分布条 -->
+        <div class="mb-5">
+          <div class="text-[10px] text-cloud/50 mb-2 tracking-widest">STATUS · 状态分布</div>
+          <div class="flex h-8 rounded-lg overflow-hidden">
+            <div class="bg-moss flex items-center justify-center text-night text-[10px] font-bold num" style="width: 77.4%;">21,247</div>
+            <div class="bg-aurora flex items-center justify-center text-night text-[10px] font-bold num" style="width: 14.9%;">4,103</div>
+            <div class="bg-amber flex items-center justify-center text-night text-[10px] font-bold num" style="width: 3.9%;">1,083</div>
+            <div class="bg-rose flex items-center justify-center text-night text-[10px] font-bold num" style="width: 1.6%;">426</div>
+            <div class="flex items-center justify-center text-cloud text-[10px] font-bold num" style="width: 2.2%; background:#6B7A99;">603</div>
+          </div>
+          <div class="flex justify-between text-[10px] text-cloud/50 mt-1.5">
+            <span class="flex items-center gap-1"><span class="dot bg-moss"></span> 可用 77.4%</span>
+            <span class="flex items-center gap-1"><span class="dot bg-aurora"></span> 使用中 14.9%</span>
+            <span class="flex items-center gap-1"><span class="dot bg-amber"></span> 低电 3.9%</span>
+            <span class="flex items-center gap-1"><span class="dot bg-rose"></span> 故障 1.6%</span>
+            <span class="flex items-center gap-1"><span class="dot" style="background:#6B7A99"></span> 离线 2.2%</span>
+          </div>
+        </div>
+
+        <!-- 双列：可用率 vs 离线 -->
+        <div class="grid grid-cols-2 gap-4 mb-5">
+          <div class="bg-night/40 rounded-xl p-4">
+            <div class="text-[10px] text-cloud/50 mb-1">重点区域可用率</div>
+            <div class="space-y-2 mt-3">
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span>西湖服务区</span><span class="num text-moss">94.2%</span></div>
+                <div class="bar-track"><div class="bar-fill bg-moss" style="width: 94%;"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span>滨江重点区</span><span class="num text-amber">86.8%</span></div>
+                <div class="bar-track"><div class="bar-fill bg-amber" style="width: 87%;"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span>武林商圈</span><span class="num text-moss">91.5%</span></div>
+                <div class="bar-track"><div class="bar-fill bg-moss" style="width: 91%;"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span>余杭闲林</span><span class="num text-rose">78.3%</span></div>
+                <div class="bar-track"><div class="bar-fill bg-rose" style="width: 78%;"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-4">
+            <div class="text-[10px] text-cloud/50 mb-1">Top 故障类型</div>
+            <div class="space-y-2 mt-3">
+              <div class="flex items-center gap-2 text-xs">
+                <iconify-icon icon="ph:lock-thin" class="text-rose"></iconify-icon>
+                <span class="flex-1">智能锁故障</span>
+                <span class="num text-cloud/70">187</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <iconify-icon icon="ph:map-pin-thin" class="text-amber"></iconify-icon>
+                <span class="flex-1">定位漂移</span>
+                <span class="num text-cloud/70">98</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <iconify-icon icon="ph:brake-thin" class="text-rose"></iconify-icon>
+                <span class="flex-1">刹车异常</span>
+                <span class="num text-cloud/70">76</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <iconify-icon icon="ph:battery-warning-thin" class="text-amber"></iconify-icon>
+                <span class="flex-1">电池通信异常</span>
+                <span class="num text-cloud/70">42</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <iconify-icon icon="ph:motor-thin" class="text-rose"></iconify-icon>
+                <span class="flex-1">电机异响</span>
+                <span class="num text-cloud/70">23</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 离线时延分布 -->
+        <div class="bg-night/40 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-widest">OFFLINE · 离线上报时延分布</span>
+            <span class="text-[10px] text-cloud/40 num">603 辆 · 占 2.2%</span>
+          </div>
+          <div class="flex items-end gap-2 h-16">
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="w-full bg-aurora/60 rounded-t" style="height: 30%;"></div>
+              <span class="text-[9px] text-cloud/50 num">&lt;10min</span>
+              <span class="text-[9px] text-cloud/70 num">182</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="w-full bg-aurora/70 rounded-t" style="height: 55%;"></div>
+              <span class="text-[9px] text-cloud/50 num">10-60min</span>
+              <span class="text-[9px] text-cloud/70 num">254</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="w-full bg-amber/70 rounded-t" style="height: 35%;"></div>
+              <span class="text-[9px] text-cloud/50 num">1-6h</span>
+              <span class="text-[9px] text-cloud/70 num">118</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="w-full bg-rose/70 rounded-t" style="height: 15%;"></div>
+              <span class="text-[9px] text-cloud/50 num">&gt;6h</span>
+              <span class="text-[9px] text-cloud/70 num">49</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 电池与能源（占 5 列） -->
+      <div class="col-span-12 lg:col-span-5 glass rounded-2xl p-6">
+        <div class="flex items-end justify-between mb-5">
+          <div>
+            <div class="font-display text-xs text-aurora tracking-[0.3em] mb-1">BATTERY · ENERGY</div>
+            <h3 class="font-serif text-xl font-bold">电池与能源态势</h3>
+            <p class="text-xs text-cloud/50 mt-1">电单车 8,920 辆 · 在车电池 8,920 块</p>
+          </div>
+          <span class="px-2 py-1 bg-amber/15 text-amber text-[10px] rounded font-bold">需关注</span>
+        </div>
+
+        <!-- SOC 分段 -->
+        <div class="mb-5">
+          <div class="text-[10px] text-cloud/50 mb-2 tracking-widest">SOC · 电量分布</div>
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="flex items-center gap-2"><span class="dot bg-rose"></span> 0–10% · 不可骑</span>
+                <span class="num text-rose">312 <span class="text-cloud/40">3.5%</span></span>
+              </div>
+              <div class="bar-track"><div class="bar-fill bg-rose" style="width: 3.5%;"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="flex items-center gap-2"><span class="dot bg-amber"></span> 10–30% · 低电</span>
+                <span class="num text-amber">771 <span class="text-cloud/40">8.6%</span></span>
+              </div>
+              <div class="bar-track"><div class="bar-fill bg-amber" style="width: 8.6%;"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="flex items-center gap-2"><span class="dot bg-aurora"></span> 30–60% · 中电</span>
+                <span class="num text-aurora">2,418 <span class="text-cloud/40">27.1%</span></span>
+              </div>
+              <div class="bar-track"><div class="bar-fill bg-aurora" style="width: 27.1%;"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="flex items-center gap-2"><span class="dot bg-moss"></span> 60–100% · 高电</span>
+                <span class="num text-moss">5,419 <span class="text-cloud/40">60.8%</span></span>
+              </div>
+              <div class="bar-track"><div class="bar-fill bg-moss" style="width: 60.8%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 换电作业 KPI -->
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">今日已换电</div>
+            <div class="num text-2xl font-bold text-moss">1,082</div>
+            <div class="text-[10px] text-cloud/50 mt-1">成功 99.4% · 失败 6 起</div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">在途换电任务</div>
+            <div class="num text-2xl font-bold text-amber">38</div>
+            <div class="text-[10px] text-cloud/50 mt-1">单人日均 18.7 次</div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">单次换电耗时</div>
+            <div class="num text-2xl font-bold text-aurora">4.2<span class="text-xs text-cloud/50">min</span></div>
+            <div class="text-[10px] text-cloud/50 mt-1">P90 6.8min · 目标 ≤ 8min</div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">异常电池</div>
+            <div class="num text-2xl font-bold text-rose">12</div>
+            <div class="text-[10px] text-cloud/50 mt-1">高温 4 · SOH 低 8</div>
+          </div>
+        </div>
+
+        <!-- 电池资产 -->
+        <div class="bg-night/40 rounded-xl p-4">
+          <div class="text-[10px] text-cloud/50 mb-3 tracking-widest">ASSET · 电池资产</div>
+          <div class="grid grid-cols-4 gap-3 text-center">
+            <div>
+              <div class="num text-lg font-bold text-moss">8,920</div>
+              <div class="text-[10px] text-cloud/50">在车</div>
+            </div>
+            <div>
+              <div class="num text-lg font-bold text-aurora">486</div>
+              <div class="text-[10px] text-cloud/50">在库</div>
+            </div>
+            <div>
+              <div class="num text-lg font-bold text-amber">128</div>
+              <div class="text-[10px] text-cloud/50">充电中</div>
+            </div>
+            <div>
+              <div class="num text-lg font-bold text-star">214</div>
+              <div class="text-[10px] text-cloud/50">在柜</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Section 4: 供需调度 + 工单看板 — 非对称 ========== -->
+    <section class="reveal grid grid-cols-12 gap-4">
+
+      <!-- 供需与调度（占 5 列） -->
+      <div class="col-span-12 lg:col-span-5 glass rounded-2xl p-6">
+        <div class="flex items-end justify-between mb-5">
+          <div>
+            <div class="font-display text-xs text-star tracking-[0.3em] mb-1">SUPPLY · DEMAND</div>
+            <h3 class="font-serif text-xl font-bold">供需与调度态势</h3>
+            <p class="text-xs text-cloud/50 mt-1">早高峰前 60min · 7:00–9:00</p>
+          </div>
+          <span class="px-2 py-1 bg-rose/15 text-rose text-[10px] rounded font-bold">高峰预警</span>
+        </div>
+
+        <!-- 缺口摘要 -->
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="bg-rose/8 border border-rose/20 rounded-xl p-3 text-center">
+            <div class="num text-2xl font-bold text-rose">14</div>
+            <div class="text-[10px] text-cloud/60 mt-0.5">缺车区域</div>
+          </div>
+          <div class="bg-amber/8 border border-amber/20 rounded-xl p-3 text-center">
+            <div class="num text-2xl font-bold text-amber">9</div>
+            <div class="text-[10px] text-cloud/60 mt-0.5">堆车区域</div>
+          </div>
+          <div class="bg-star/8 border border-star/20 rounded-xl p-3 text-center">
+            <div class="num text-2xl font-bold text-star">320</div>
+            <div class="text-[10px] text-cloud/60 mt-0.5">建议调入</div>
+          </div>
+        </div>
+
+        <!-- Top 缺车热点 -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-widest">HOTSPOT · 缺车 Top 5</span>
+            <button class="text-[10px] text-star">一键生成调度清单</button>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">01</span>
+              <span class="flex-1 text-cloud/80">余杭 · 闲林商圈</span>
+              <span class="num text-rose font-bold w-12 text-right">-86</span>
+              <button class="text-[10px] text-star px-2 py-0.5 border border-star/30 rounded">定位</button>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">02</span>
+              <span class="flex-1 text-cloud/80">拱墅 · 万达广场</span>
+              <span class="num text-rose font-bold w-12 text-right">-72</span>
+              <button class="text-[10px] text-star px-2 py-0.5 border border-star/30 rounded">定位</button>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">03</span>
+              <span class="flex-1 text-cloud/80">滨江 · 网商路地铁站</span>
+              <span class="num text-rose font-bold w-12 text-right">-54</span>
+              <button class="text-[10px] text-star px-2 py-0.5 border border-star/30 rounded">定位</button>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">04</span>
+              <span class="flex-1 text-cloud/80">西湖 · 文三路地铁站</span>
+              <span class="num text-rose font-bold w-12 text-right">-42</span>
+              <button class="text-[10px] text-star px-2 py-0.5 border border-star/30 rounded">定位</button>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">05</span>
+              <span class="flex-1 text-cloud/80">江干 · 钱江新城</span>
+              <span class="num text-rose font-bold w-12 text-right">-36</span>
+              <button class="text-[10px] text-star px-2 py-0.5 border border-star/30 rounded">定位</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 调度执行 -->
+        <div class="bg-night/40 rounded-xl p-4">
+          <div class="text-[10px] text-cloud/50 mb-3 tracking-widest">EXECUTION · 今日调度执行</div>
+          <div class="grid grid-cols-3 gap-3 text-center mb-3">
+            <div>
+              <div class="num text-lg font-bold text-moss">142</div>
+              <div class="text-[10px] text-cloud/50">已完成</div>
+            </div>
+            <div>
+              <div class="num text-lg font-bold text-amber">23</div>
+              <div class="text-[10px] text-cloud/50">执行中</div>
+            </div>
+            <div>
+              <div class="num text-lg font-bold text-rose">5</div>
+              <div class="text-[10px] text-cloud/50">超时</div>
+            </div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bg-gradient-to-r from-moss via-aurora to-amber" style="width: 83.5%;"></div></div>
+          <div class="text-[10px] text-cloud/40 mt-1 text-right num">完成率 83.5%</div>
+        </div>
+      </div>
+
+      <!-- 工单看板（占 7 列） -->
+      <div class="col-span-12 lg:col-span-7 glass rounded-2xl p-6">
+        <div class="flex items-end justify-between mb-5">
+          <div>
+            <div class="font-display text-xs text-aurora tracking-[0.3em] mb-1">WORK ORDERS</div>
+            <h3 class="font-serif text-xl font-bold">运维工单看板</h3>
+            <p class="text-xs text-cloud/50 mt-1">闭环 · 创建 → 派单 → 接单 → 执行 → 验收 → 关闭</p>
+          </div>
+          <div class="flex items-center gap-1 bg-night/40 rounded-lg p-1 border border-cloud/5">
+            <button class="seg-tab active">看板</button>
+            <button class="seg-tab">列表</button>
+            <button class="seg-tab">路线图</button>
+          </div>
+        </div>
+
+        <!-- 看板列 -->
+        <div class="grid grid-cols-5 gap-3">
+          <!-- 待派 -->
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] text-cloud/60 tracking-widest">待派</span>
+              <span class="num text-xs text-rose font-bold">7</span>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-rose/8 border-l-2 border-rose rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">武林堆积挪车</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">P0 · 14:28</div>
+              </div>
+              <div class="bg-amber/8 border-l-2 border-amber rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">滨江换电 ×12</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">P1 · 14:18</div>
+              </div>
+              <div class="bg-amber/8 border-l-2 border-amber rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">西湖巡检</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">P1 · 14:05</div>
+              </div>
+            </div>
+          </div>
+          <!-- 待接 -->
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] text-cloud/60 tracking-widest">待接</span>
+              <span class="num text-xs text-amber font-bold">5</span>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-amber/8 border-l-2 border-amber rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">钱江回收 ×3</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">P1 · 张师傅</div>
+              </div>
+              <div class="bg-aurora/8 border-l-2 border-aurora rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">余杭补车 60</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">P2 · 陈师傅组</div>
+              </div>
+              <div class="bg-aurora/8 border-l-2 border-aurora rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">闲林换电 ×8</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">P2 · 李师傅</div>
+              </div>
+            </div>
+          </div>
+          <!-- 执行中 -->
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] text-cloud/60 tracking-widest">执行</span>
+              <span class="num text-xs text-aurora font-bold">23</span>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-aurora/8 border-l-2 border-aurora rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">滨江换电 ×18</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">王师傅 · 12/18</div>
+              </div>
+              <div class="bg-aurora/8 border-l-2 border-aurora rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">西湖修锁 ×5</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">李师傅 · 3/5</div>
+              </div>
+              <div class="bg-amber/8 border-l-2 border-amber rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">武林挪车 ×18</div>
+                <div class="text-[9px] text-amber mt-0.5">⚠ 临近超时</div>
+              </div>
+            </div>
+          </div>
+          <!-- 待验收 -->
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] text-cloud/60 tracking-widest">待验</span>
+              <span class="num text-xs text-star font-bold">4</span>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-star/8 border-l-2 border-star rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">余杭换电 ×6</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">陈师傅 · 待复核</div>
+              </div>
+              <div class="bg-star/8 border-l-2 border-star rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">拱墅巡检</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">王师傅 · 待复核</div>
+              </div>
+            </div>
+          </div>
+          <!-- 已完成 -->
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] text-cloud/60 tracking-widest">完成</span>
+              <span class="num text-xs text-moss font-bold">142</span>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-moss/8 border-l-2 border-moss rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">西湖换电 ×24</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">一次修复率 96%</div>
+              </div>
+              <div class="bg-moss/8 border-l-2 border-moss rounded-r p-2">
+                <div class="text-[10px] text-cloud/80">滨江巡检 ×18</div>
+                <div class="text-[9px] text-cloud/40 mt-0.5">准时率 94%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 人效统计 -->
+        <div class="grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-cloud/10">
+          <div class="text-center">
+            <div class="num text-xl font-bold text-star">18.7</div>
+            <div class="text-[10px] text-cloud/50 mt-0.5">人均完成量 / 日</div>
+          </div>
+          <div class="text-center">
+            <div class="num text-xl font-bold text-moss">94.2<span class="text-xs">%</span></div>
+            <div class="text-[10px] text-cloud/50 mt-0.5">准时率</div>
+          </div>
+          <div class="text-center">
+            <div class="num text-xl font-bold text-aurora">96.4<span class="text-xs">%</span></div>
+            <div class="text-[10px] text-cloud/50 mt-0.5">一次修复率</div>
+          </div>
+          <div class="text-center">
+            <div class="num text-xl font-bold text-cloud">23<span class="text-xs">min</span></div>
+            <div class="text-[10px] text-cloud/50 mt-0.5">平均处理时长</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Section 5: 快速工作台 — 模块化组件 ========== -->
+    <section class="reveal">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <div class="font-display text-aurora text-xs tracking-[0.4em] mb-1">QUICK WORKBENCH</div>
+          <h2 class="font-serif text-2xl font-bold">快速工作台 <span class="text-cloud/40 text-sm font-sans font-normal ml-2">— 少点击 · 可批量 · 可追踪</span></h2>
+        </div>
+        <button class="px-4 py-2 text-xs font-medium bg-cloud/5 hover:bg-cloud/10 border border-cloud/10 rounded-lg flex items-center gap-1.5 transition">
+          <iconify-icon icon="ph:sliders-thin"></iconify-icon>
+          个性化配置
+        </button>
+      </div>
+
+      <div class="grid grid-cols-12 gap-4">
+        <!-- 快捷创建 -->
+        <div class="col-span-12 md:col-span-3 glass rounded-2xl p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <iconify-icon icon="ph:plus-circle-thin" class="text-star text-lg"></iconify-icon>
+            <span class="font-display text-xs text-star tracking-[0.2em]">CREATE</span>
+          </div>
+          <div class="space-y-2">
+            <button class="w-full flex items-center justify-between p-2.5 bg-night/40 hover:bg-star/10 rounded-lg transition text-xs">
+              <span class="flex items-center gap-2"><iconify-icon icon="ph:truck-thin" class="text-aurora"></iconify-icon> 调度任务</span>
+              <iconify-icon icon="ph:caret-right-thin" class="text-cloud/40"></iconify-icon>
+            </button>
+            <button class="w-full flex items-center justify-between p-2.5 bg-night/40 hover:bg-star/10 rounded-lg transition text-xs">
+              <span class="flex items-center gap-2"><iconify-icon icon="ph:battery-charging-thin" class="text-aurora"></iconify-icon> 换电任务</span>
+              <iconify-icon icon="ph:caret-right-thin" class="text-cloud/40"></iconify-icon>
+            </button>
+            <button class="w-full flex items-center justify-between p-2.5 bg-night/40 hover:bg-star/10 rounded-lg transition text-xs">
+              <span class="flex items-center gap-2"><iconify-icon icon="ph:clipboard-check-thin" class="text-aurora"></iconify-icon> 巡检任务</span>
+              <iconify-icon icon="ph:caret-right-thin" class="text-cloud/40"></iconify-icon>
+            </button>
+            <button class="w-full flex items-center justify-between p-2.5 bg-night/40 hover:bg-star/10 rounded-lg transition text-xs">
+              <span class="flex items-center gap-2"><iconify-icon icon="ph:wrench-thin" class="text-aurora"></iconify-icon> 维修工单</span>
+              <iconify-icon icon="ph:caret-right-thin" class="text-cloud/40"></iconify-icon>
+            </button>
+            <button class="w-full flex items-center justify-between p-2.5 bg-night/40 hover:bg-star/10 rounded-lg transition text-xs">
+              <span class="flex items-center gap-2"><iconify-icon icon="ph:warning-octagon-thin" class="text-aurora"></iconify-icon> 违停处置</span>
+              <iconify-icon icon="ph:caret-right-thin" class="text-cloud/40"></iconify-icon>
+            </button>
+          </div>
+          <div class="mt-4 pt-3 border-t border-cloud/10">
+            <div class="text-[10px] text-cloud/50 mb-2">常用模板</div>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="px-2 py-1 bg-cloud/5 text-[10px] rounded cursor-pointer hover:bg-star/15 hover:text-star transition">早高峰补车</span>
+              <span class="px-2 py-1 bg-cloud/5 text-[10px] rounded cursor-pointer hover:bg-star/15 hover:text-star transition">夜间回收</span>
+              <span class="px-2 py-1 bg-cloud/5 text-[10px] rounded cursor-pointer hover:bg-star/15 hover:text-star transition">重点区换电</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 批量指令 -->
+        <div class="col-span-12 md:col-span-5 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="ph:lightning-thin" class="text-aurora text-lg"></iconify-icon>
+              <span class="font-display text-xs text-aurora tracking-[0.2em]">BULK COMMANDS</span>
+            </div>
+            <span class="text-[10px] text-cloud/50">已圈选 38 辆 · 滨江重点区</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <button class="p-3 bg-night/40 hover:bg-aurora/10 rounded-lg text-center transition group">
+              <iconify-icon icon="ph:lock-thin" class="text-xl text-cloud/70 group-hover:text-aurora"></iconify-icon>
+              <div class="text-[10px] text-cloud/70 mt-1">锁车</div>
+            </button>
+            <button class="p-3 bg-night/40 hover:bg-aurora/10 rounded-lg text-center transition group">
+              <iconify-icon icon="ph:lock-open-thin" class="text-xl text-cloud/70 group-hover:text-aurora"></iconify-icon>
+              <div class="text-[10px] text-cloud/70 mt-1">解锁</div>
+            </button>
+            <button class="p-3 bg-night/40 hover:bg-aurora/10 rounded-lg text-center transition group">
+              <iconify-icon icon="ph:speaker-high-thin" class="text-xl text-cloud/70 group-hover:text-aurora"></iconify-icon>
+              <div class="text-[10px] text-cloud/70 mt-1">鸣笛闪灯</div>
+            </button>
+            <button class="p-3 bg-night/40 hover:bg-aurora/10 rounded-lg text-center transition group">
+              <iconify-icon icon="ph:gage-thin" class="text-xl text-cloud/70 group-hover:text-aurora"></iconify-icon>
+              <div class="text-[10px] text-cloud/70 mt-1">降速禁用</div>
+            </button>
+            <button class="p-3 bg-night/40 hover:bg-aurora/10 rounded-lg text-center transition group">
+              <iconify-icon icon="ph:power-thin" class="text-xl text-cloud/70 group-hover:text-aurora"></iconify-icon>
+              <div class="text-[10px] text-cloud/70 mt-1">重启设备</div>
+            </button>
+            <button class="p-3 bg-night/40 hover:bg-aurora/10 rounded-lg text-center transition group">
+              <iconify-icon icon="ph:eye-slash-thin" class="text-xl text-cloud/70 group-hover:text-aurora"></iconify-icon>
+              <div class="text-[10px] text-cloud/70 mt-1">下线</div>
+            </button>
+          </div>
+
+          <!-- 执行回执 -->
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] text-cloud/50 tracking-widest">LAST · 上次执行</span>
+              <span class="text-[10px] text-cloud/40 num">14:08</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <iconify-icon icon="ph:check-circle-fill" class="text-moss"></iconify-icon>
+              <span class="text-cloud/70">鸣笛闪灯 · 38 辆</span>
+              <span class="num text-moss ml-auto">成功 36 / 失败 2</span>
+            </div>
+            <button class="text-[10px] text-star mt-2">查看失败原因 →</button>
+          </div>
+        </div>
+
+        <!-- 我的待办 -->
+        <div class="col-span-12 md:col-span-4 glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="ph:bell-ringing-thin" class="text-rose text-lg"></iconify-icon>
+              <span class="font-display text-xs text-rose tracking-[0.2em]">MY TODO</span>
+            </div>
+            <span class="px-2 py-0.5 bg-rose/15 text-rose text-[10px] rounded num">5 紧急</span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-start gap-2 text-xs p-2 bg-rose/8 rounded-lg border-l-2 border-rose">
+              <iconify-icon icon="ph:warning-fill" class="text-rose mt-0.5"></iconify-icon>
+              <div class="flex-1">
+                <div class="text-cloud/80">P0 告警 3 起超时未处理</div>
+                <div class="text-[10px] text-cloud/40 mt-0.5">越界 2 · 疑似盗损 1</div>
+              </div>
+              <button class="text-[10px] text-star">立即</button>
+            </div>
+            <div class="flex items-start gap-2 text-xs p-2 bg-amber/8 rounded-lg border-l-2 border-amber">
+              <iconify-icon icon="ph:clock-fill" class="text-amber mt-0.5"></iconify-icon>
+              <div class="flex-1">
+                <div class="text-cloud/80">5 单临近超时（&lt;15min）</div>
+                <div class="text-[10px] text-cloud/40 mt-0.5">建议立即指派或加派人手</div>
+              </div>
+              <button class="text-[10px] text-star">查看</button>
+            </div>
+            <div class="flex items-start gap-2 text-xs p-2 bg-star/8 rounded-lg border-l-2 border-star">
+              <iconify-icon icon="ph:file-sign-thin" class="text-star mt-0.5"></iconify-icon>
+              <div class="flex-1">
+                <div class="text-cloud/80">2 项规则发布待审批</div>
+                <div class="text-[10px] text-cloud/40 mt-0.5">武林禁停区扩围 · 滨江限速</div>
+              </div>
+              <button class="text-[10px] text-star">审批</button>
+            </div>
+            <div class="flex items-start gap-2 text-xs p-2 bg-aurora/8 rounded-lg border-l-2 border-aurora">
+              <iconify-icon icon="ph:export-thin" class="text-aurora mt-0.5"></iconify-icon>
+              <div class="flex-1">
+                <div class="text-cloud/80">月度合规报表导出申请</div>
+                <div class="text-[10px] text-cloud/40 mt-0.5">监管对接人员 · 待你授权</div>
+              </div>
+              <button class="text-[10px] text-star">授权</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Section 6: 合规监管 + 统计报表 ========== -->
+    <section class="reveal grid grid-cols-12 gap-4">
+
+      <!-- 合规监管 -->
+      <div class="col-span-12 lg:col-span-7 glass rounded-2xl p-6">
+        <div class="flex items-end justify-between mb-5">
+          <div>
+            <div class="font-display text-xs text-rose tracking-[0.3em] mb-1">COMPLIANCE · GOVERNANCE</div>
+            <h3 class="font-serif text-xl font-bold">合规监管概览</h3>
+            <p class="text-xs text-cloud/50 mt-1">城市级能力 · MDS/GBFS 对接 · 多主体对比</p>
+          </div>
+          <span class="signal-bar"><i></i><i></i><i></i></span>
+        </div>
+
+        <!-- 违规概览 -->
+        <div class="grid grid-cols-4 gap-3 mb-5">
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">禁停次数</div>
+            <div class="num text-xl font-bold text-rose">312</div>
+            <div class="text-[10px] text-moss mt-0.5 num">↓ 18 vs 昨日</div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">越界次数</div>
+            <div class="num text-xl font-bold text-amber">87</div>
+            <div class="text-[10px] text-rose mt-0.5 num">↑ 12 vs 昨日</div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">处置时效 P90</div>
+            <div class="num text-xl font-bold text-moss">8.4<span class="text-xs">min</span></div>
+            <div class="text-[10px] text-cloud/50 mt-0.5">目标 ≤ 10min</div>
+          </div>
+          <div class="bg-night/40 rounded-xl p-3">
+            <div class="text-[10px] text-cloud/50 mb-1">超投风险</div>
+            <div class="num text-xl font-bold text-moss">无</div>
+            <div class="text-[10px] text-cloud/50 mt-0.5">27,462 / 30,000</div>
+          </div>
+        </div>
+
+        <!-- 数据共享健康度 -->
+        <div class="bg-night/40 rounded-xl p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] text-cloud/50 tracking-widest">DATA SHARING · 数据共享接口</span>
+            <span class="signal-bar"><i></i><i></i><i></i></span>
+          </div>
+          <div class="grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <div class="text-cloud/50 mb-1">MDS · 政务接口</div>
+              <div class="flex items-center gap-2">
+                <span class="dot bg-moss dot-pulse"></span>
+                <span class="text-cloud/80">正常</span>
+                <span class="num text-cloud/50 ml-auto">延迟 2.1s</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-cloud/50 mb-1">GBFS · 开放标准</div>
+              <div class="flex items-center gap-2">
+                <span class="dot bg-moss"></span>
+                <span class="text-cloud/80">正常</span>
+                <span class="num text-cloud/50 ml-auto">延迟 1.8s</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-cloud/50 mb-1">城管视频识别</div>
+              <div class="flex items-center gap-2">
+                <span class="dot bg-amber"></span>
+                <span class="text-amber">延迟告警</span>
+                <span class="num text-cloud/50 ml-auto">延迟 14s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 违规热区 Top -->
+        <div>
+          <div class="text-[10px] text-cloud/50 mb-2 tracking-widest">VIOLATION · 违规热区 Top 3</div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">01</span>
+              <span class="flex-1 text-cloud/80">武林广场禁停区</span>
+              <div class="flex-1 bar-track"><div class="bar-fill bg-rose" style="width: 88%;"></div></div>
+              <span class="num text-rose font-bold w-12 text-right">98 次</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">02</span>
+              <span class="flex-1 text-cloud/80">西湖断桥保护区</span>
+              <div class="flex-1 bar-track"><div class="bar-fill bg-amber" style="width: 62%;"></div></div>
+              <span class="num text-amber font-bold w-12 text-right">68 次</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="num text-cloud/40 w-4">03</span>
+              <span class="flex-1 text-cloud/80">钱江新城核心区</span>
+              <div class="flex-1 bar-track"><div class="bar-fill bg-amber" style="width: 48%;"></div></div>
+              <span class="num text-amber font-bold w-12 text-right">52 次</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 统计报表 + 趋势 -->
+      <div class="col-span-12 lg:col-span-5 space-y-4">
+        <!-- 24h 订单趋势 -->
+        <div class="glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="font-display text-xs text-star tracking-[0.3em]">24H · 订单趋势</div>
+              <div class="text-xs text-cloud/50 mt-1">早高峰 7-9 · 晚高峰 17-19</div>
+            </div>
+            <div class="text-right">
+              <div class="num text-2xl font-bold text-star">48,217</div>
+              <div class="text-[10px] text-cloud/50">累计订单</div>
+            </div>
+          </div>
+          <svg viewBox="0 0 320 100" class="w-full h-24">
+            <defs>
+              <linearGradient id="ordG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E8B86D" stop-opacity="0.45"/>
+                <stop offset="100%" stop-color="#E8B86D" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- 高峰背景 -->
+            <rect x="50" y="0" width="50" height="100" fill="rgba(232,184,109,0.05)"/>
+            <rect x="220" y="0" width="50" height="100" fill="rgba(232,184,109,0.05)"/>
+            <path d="M0 80 L 30 75 L 50 50 L 80 25 L 100 35 L 130 60 L 160 65 L 190 55 L 220 28 L 250 20 L 280 40 L 320 70 L 320 100 L 0 100 Z" fill="url(#ordG)"/>
+            <path d="M0 80 L 30 75 L 50 50 L 80 25 L 100 35 L 130 60 L 160 65 L 190 55 L 220 28 L 250 20 L 280 40 L 320 70" stroke="#E8B86D" stroke-width="1.6" fill="none"/>
+            <circle cx="80" cy="25" r="3" fill="#E8B86D"/>
+            <circle cx="250" cy="20" r="3" fill="#E8B86D"/>
+          </svg>
+          <div class="flex justify-between text-[9px] text-cloud/40 mt-1">
+            <span>00</span><span>04</span><span>08</span><span>12</span><span>16</span><span>20</span><span>24</span>
+          </div>
+        </div>
+
+        <!-- 报表导出 -->
+        <div class="glass rounded-2xl p-5">
+          <div class="font-display text-xs text-aurora tracking-[0.3em] mb-3">REPORTS · 报表导出</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="flex items-center gap-2 p-2.5 bg-night/40 hover:bg-aurora/10 rounded-lg transition text-xs text-left">
+              <iconify-icon icon="ph:chart-line-up-thin" class="text-aurora"></iconify-icon>
+              <span>运营月报</span>
+            </button>
+            <button class="flex items-center gap-2 p-2.5 bg-night/40 hover:bg-aurora/10 rounded-lg transition text-xs text-left">
+              <iconify-icon icon="ph:chart-pie-slice-thin" class="text-aurora"></iconify-icon>
+              <span>运维成本</span>
+            </button>
+            <button class="flex items-center gap-2 p-2.5 bg-night/40 hover:bg-aurora/10 rounded-lg transition text-xs text-left">
+              <iconify-icon icon="ph:shield-star-thin" class="text-aurora"></iconify-icon>
+              <span>合规报表</span>
+            </button>
+            <button class="flex items-center gap-2 p-2.5 bg-night/40 hover:bg-aurora/10 rounded-lg transition text-xs text-left">
+              <iconify-icon icon="ph:currency-cny-thin" class="text-aurora"></iconify-icon>
+              <span>财务对账</span>
+            </button>
+          </div>
+          <button class="w-full mt-3 py-2 text-xs font-bold bg-star/15 text-star border border-star/30 rounded-lg hover:bg-star/25 transition">+ 自定义报表模板</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Section 7: 车辆资产 + 工单明细表 ========== -->
+    <section class="reveal glass rounded-2xl p-6">
+      <div class="flex items-end justify-between mb-5">
+        <div>
+          <div class="font-display text-xs text-star tracking-[0.3em] mb-1">VEHICLE ASSETS · LIVE</div>
+          <h3 class="font-serif text-xl font-bold">车辆资产实时清单</h3>
+          <p class="text-xs text-cloud/50 mt-1">27,462 辆 · 最近上报 7s 前 · 已按风险聚合排序</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 bg-night/40 rounded-full px-3 py-1.5 border border-cloud/5">
+            <iconify-icon icon="ph:magnifying-glass-thin" class="text-cloud/40 text-sm"></iconify-icon>
+            <input class="bg-transparent text-xs flex-1 outline-none placeholder-cloud/40 w-40" placeholder="车架号 / 设备号 / 二维码"/>
+          </div>
+          <button class="px-3 py-1.5 text-xs bg-cloud/5 hover:bg-cloud/10 border border-cloud/10 rounded-lg flex items-center gap-1 transition">
+            <iconify-icon icon="ph:funnel-thin"></iconify-icon> 筛选
+          </button>
+          <button class="px-3 py-1.5 text-xs bg-cloud/5 hover:bg-cloud/10 border border-cloud/10 rounded-lg flex items-center gap-1 transition">
+            <iconify-icon icon="ph:export-thin"></iconify-icon> 导出
+          </button>
+        </div>
+      </div>
+
+      <!-- 表头 -->
+      <div class="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] text-cloud/50 tracking-widest border-b border-cloud/10">
+        <div class="col-span-1">车牌 / ID</div>
+        <div class="col-span-2">车型 · 投放</div>
+        <div class="col-span-2">位置 · 区域</div>
+        <div class="col-span-1">状态</div>
+        <div class="col-span-1">电量</div>
+        <div class="col-span-1">最后上报</div>
+        <div class="col-span-2">最近订单 / 异常</div>
+        <div class="col-span-2 text-right">操作</div>
+      </div>
+
+      <!-- 数据行 -->
+      <div class="divide-y divide-cloud/5">
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·8F246</div><div class="text-[10px] text-cloud/40">DEV-24601</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">电单车 · 可换电</div><div class="text-[10px] text-cloud/40">投放 2024.03</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">西湖区 · 文三路</div><div class="text-[10px] text-cloud/40">围栏外 1.2km</div></div>
+          <div class="col-span-1"><span class="dot bg-rose"></span> <span class="text-rose">越界</span></div>
+          <div class="col-span-1 num text-amber">62%</div>
+          <div class="col-span-1 num text-cloud/60">3s 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">14:28 越界告警</div><div class="text-[10px] text-cloud/40">异常轨迹 · 待派单</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-star border border-star/30 rounded hover:bg-star/10">定位</button>
+            <button class="px-2 py-1 text-[10px] text-star border border-star/30 rounded hover:bg-star/10">派单</button>
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">轨迹</button>
+          </div>
+        </div>
+
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·3K882</div><div class="text-[10px] text-cloud/40">DEV-30882</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">电单车 · 可换电</div><div class="text-[10px] text-cloud/40">投放 2024.05</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">拱墅区 · 万达广场</div><div class="text-[10px] text-cloud/40">禁停区</div></div>
+          <div class="col-span-1"><span class="dot bg-rose dot-pulse"></span> <span class="text-rose">疑似盗损</span></div>
+          <div class="col-span-1 num text-moss">88%</div>
+          <div class="col-span-1 num text-cloud/60">12s 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">14:02 异常轨迹</div><div class="text-[10px] text-cloud/40">速度 38km/h · 持续 6min</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-rose border border-rose/40 rounded hover:bg-rose/10">锁车</button>
+            <button class="px-2 py-1 text-[10px] text-star border border-star/30 rounded hover:bg-star/10">取证</button>
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">报警</button>
+          </div>
+        </div>
+
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·6M118</div><div class="text-[10px] text-cloud/40">DEV-16118</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">自行车</div><div class="text-[10px] text-cloud/40">投放 2023.11</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">滨江区 · 网商路</div><div class="text-[10px] text-cloud/40">围栏内</div></div>
+          <div class="col-span-1"><span class="dot bg-amber"></span> <span class="text-amber">倒地</span></div>
+          <div class="col-span-1 text-cloud/40">—</div>
+          <div class="col-span-1 num text-cloud/60">5s 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">14:21 倒地告警</div><div class="text-[10px] text-cloud/40">陀螺仪 · 持续 4min</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-star border border-star/30 rounded hover:bg-star/10">定位</button>
+            <button class="px-2 py-1 text-[10px] text-star border border-star/30 rounded hover:bg-star/10">派单</button>
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">证据</button>
+          </div>
+        </div>
+
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·9P401</div><div class="text-[10px] text-cloud/40">DEV-20401</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">电单车 · 可换电</div><div class="text-[10px] text-cloud/40">投放 2024.07</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">滨江区 · 重点区</div><div class="text-[10px] text-cloud/40">围栏内</div></div>
+          <div class="col-span-1"><span class="dot bg-amber"></span> <span class="text-amber">低电</span></div>
+          <div class="col-span-1 num text-rose">12%</div>
+          <div class="col-span-1 num text-cloud/60">8s 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">13:54 低电告警</div><div class="text-[10px] text-cloud/40">待换电 · 已生成任务</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-star border border-star/30 rounded hover:bg-star/10">定位</button>
+            <button class="px-2 py-1 text-[10px] text-amber border border-amber/40 rounded hover:bg-amber/10">换电</button>
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">轨迹</button>
+          </div>
+        </div>
+
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·2R058</div><div class="text-[10px] text-cloud/40">DEV-12058</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">电单车 · 可换电</div><div class="text-[10px] text-cloud/40">投放 2024.02</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">西湖区 · 文三路</div><div class="text-[10px] text-cloud/40">围栏内</div></div>
+          <div class="col-span-1"><span class="dot bg-aurora"></span> <span class="text-aurora">使用中</span></div>
+          <div class="col-span-1 num text-moss">78%</div>
+          <div class="col-span-1 num text-cloud/60">2s 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">14:30 开锁骑行</div><div class="text-[10px] text-cloud/40">用户 138****8856</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">定位</button>
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">详情</button>
+          </div>
+        </div>
+
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·7T334</div><div class="text-[10px] text-cloud/40">DEV-17334</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">自行车</div><div class="text-[10px] text-cloud/40">投放 2023.09</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">江干区 · 钱江新城</div><div class="text-[10px] text-cloud/40">围栏内</div></div>
+          <div class="col-span-1"><span class="dot bg-moss"></span> <span class="text-moss">可用</span></div>
+          <div class="col-span-1 text-cloud/40">—</div>
+          <div class="col-span-1 num text-cloud/60">1s 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">14:18 上次还车</div><div class="text-[10px] text-cloud/40">骑行 1.8km · 7min</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">定位</button>
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">详情</button>
+          </div>
+        </div>
+
+        <div class="data-row grid grid-cols-12 gap-2 px-3 py-3 items-center text-xs">
+          <div class="col-span-1"><div class="font-mono text-cloud/80">浙A·5N220</div><div class="text-[10px] text-cloud/40">DEV-15220</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">电单车 · 不可换电</div><div class="text-[10px] text-cloud/40">投放 2023.12</div></div>
+          <div class="col-span-2"><div class="text-cloud/80">余杭区 · 闲林</div><div class="text-[10px] text-cloud/40">围栏内</div></div>
+          <div class="col-span-1"><span class="dot" style="background:#6B7A99"></span> <span class="text-cloud/60">离线</span></div>
+          <div class="col-span-1 num text-cloud/40">—</div>
+          <div class="col-span-1 num text-rose">14min 前</div>
+          <div class="col-span-2"><div class="text-cloud/80">14:18 最后上报</div><div class="text-[10px] text-cloud/40">疑似通信模组故障</div></div>
+          <div class="col-span-2 text-right space-x-1">
+            <button class="px-2 py-1 text-[10px] text-cloud/60 border border-cloud/15 rounded hover:bg-cloud/10">定位</button>
+            <button class="px-2 py-1 text-[10px] text-amber border border-amber/40 rounded hover:bg-amber/10">检修</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div class="flex items-center justify-between mt-4 pt-4 border-t border-cloud/10 text-xs text-cloud/50">
+        <div>显示 1–7 / 共 27,462 辆 · 风险排序</div>
+        <div class="flex items-center gap-2">
+          <button class="px-2.5 py-1 bg-cloud/5 hover:bg-cloud/10 rounded">上一页</button>
+          <span class="num">1</span>
+          <span class="text-cloud/30">/</span>
+          <span class="num text-cloud/40">3,923</span>
+          <button class="px-2.5 py-1 bg-cloud/5 hover:bg-cloud/10 rounded">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Footer ========== -->
+    <footer class="reveal pt-6 pb-4 border-t border-cloud/10">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-3 text-[11px] text-cloud/40">
+        <div class="flex items-center gap-3">
+          <span class="font-display tracking-[0.3em]">BiWheels Ops · v2.4.1</span>
+          <span class="w-px h-3 bg-cloud/15"></span>
+          <span>双轮城市运营管理后台 · 杭州站</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1"><span class="dot bg-moss dot-pulse"></span> 全链路正常</span>
+          <span class="num">数据延迟 7.4s</span>
+          <span class="num">设备在线率 99.2%</span>
+          <span>© 2026 BiWheels Tech</span>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // 滚动渐显
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // 顶部时间范围 Tab 切换
+  document.querySelectorAll('header .seg-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.seg-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // 侧栏导航点击
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // 各分段 Tab 切换
+  document.querySelectorAll('.seg-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parent = btn.parentElement;
+      if (parent.querySelectorAll('.seg-tab').length > 0) {
+        parent.querySelectorAll('.seg-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    });
+  });
+
+  // 进度条加载动画
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill').forEach(bar => {
+        const w = bar.style.width;
+        bar.style.width = '0';
+        setTimeout(() => bar.style.width = w, 50);
+      });
+    }, 200);
+  });
+
+  // 模拟告警流自动滚动（每 6 秒新增一条到顶部）
+  const alertStream = document.querySelector('.alert-stream');
+  if (alertStream) {
+    const newAlerts = [
+      { prio: 'P2', type: '低电', color: 'aurora', desc: '拱墅万达 8 辆 SOC < 18%', time: '14:35' },
+      { prio: 'P1', type: '禁停', color: 'amber', desc: '钱江新城禁停区堆积 12 辆', time: '14:38' },
+    ];
+    let idx = 0;
+    setInterval(() => {
+      const a = newAlerts[idx % newAlerts.length];
+      idx++;
+      const colorMap = { aurora: '#7BC8D6', amber: '#F2A65A', rose: '#E07A8C' };
+      const div = document.createElement('div');
+      div.className = `bg-${a.color}/8 border-l-2 border-${a.color} rounded-r p-2.5`;
+      div.style.borderColor = colorMap[a.color];
+      div.style.background = colorMap[a.color] + '14';
+      div.innerHTML = `
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-[10px] font-bold" style="color:${colorMap[a.color]}">${a.prio} · ${a.type}</span>
+          <span class="num text-[10px] text-cloud/40">${a.time}</span>
+        </div>
+        <div class="text-xs text-cloud/80">${a.desc}</div>
+      `;
+      div.style.opacity = '0';
+      div.style.transform = 'translateY(-8px)';
+      div.style.transition = 'all .4s';
+      alertStream.insertBefore(div, alertStream.firstChild);
+      setTimeout(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; }, 50);
+      // 限制最多 8 条
+      while (alertStream.children.length > 8) {
+        alertStream.removeChild(alertStream.lastChild);
+      }
+    }, 8000);
+  }
+</script>
+
+</body>
+</html>

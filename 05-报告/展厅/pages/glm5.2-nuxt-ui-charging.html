@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>充充充电 · 电动汽车充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ===== Nuxt UI v4 语义色 token（充电场景：primary=green，符合生态主题） ===== */
+  @theme {
+    --font-sans: 'Noto Sans SC', system-ui, sans-serif;
+    --color-primary-50: #f0fdf4;
+    --color-primary-100: #dcfce7;
+    --color-primary-200: #bbf7d0;
+    --color-primary-300: #86efac;
+    --color-primary-400: #4ade80;
+    --color-primary-500: #22c55e;
+    --color-primary-600: #16a34a;
+    --color-primary-700: #15803d;
+    --color-primary-800: #166534;
+    --color-primary-900: #14532d;
+    --color-primary-950: #052e16;
+    --color-info-500: #3b82f6;
+    --color-warning-500: #f59e0b;
+    --color-error-500: #ef4444;
+    --color-neutral-50: #fafafa;
+    --color-neutral-100: #f4f4f5;
+    --color-neutral-200: #e4e4e7;
+    --color-neutral-300: #d4d4d8;
+    --color-neutral-400: #a1a1aa;
+    --color-neutral-500: #71717a;
+    --color-neutral-600: #52525b;
+    --color-neutral-700: #3f3f46;
+    --color-neutral-800: #27272a;
+    --color-neutral-900: #18181b;
+  }
+  :root {
+    --ui-radius: 0.5rem;
+    --ui-bg: #ffffff;
+    --ui-bg-muted: #f4f4f5;
+    --ui-bg-elevated: #ffffff;
+    --ui-bg-accented: #e4e4e7;
+    --ui-bg-inverted: #18181b;
+    --ui-text: #18181b;
+    --ui-text-muted: #71717a;
+    --ui-text-toned: #52525b;
+    --ui-text-dimmed: #a1a1aa;
+    --ui-text-highlighted: #09090b;
+    --ui-text-inverted: #ffffff;
+    --ui-border: #e4e4e7;
+    --ui-border-muted: #f4f4f5;
+    --ui-border-accented: #d4d4d8;
+    --ui-primary: var(--color-primary-500);
+  }
+  html, body { background: #e4e4e7; color: var(--ui-text); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  /* Nuxt UI 语义工具类 */
+  .text-default { color: var(--ui-text); }
+  .text-muted { color: var(--ui-text-muted); }
+  .text-toned { color: var(--ui-text-toned); }
+  .text-dimmed { color: var(--ui-text-dimmed); }
+  .text-highlighted { color: var(--ui-text-highlighted); }
+  .text-inverted { color: var(--ui-text-inverted); }
+  .text-primary { color: var(--ui-primary); }
+  .bg-default { background-color: var(--ui-bg); }
+  .bg-muted { background-color: var(--ui-bg-muted); }
+  .bg-elevated { background-color: var(--ui-bg-elevated); }
+  .bg-accented { background-color: var(--ui-bg-accented); }
+  .bg-inverted { background-color: var(--ui-bg-inverted); }
+  .bg-primary { background-color: var(--ui-primary); }
+  .border-default { border-color: var(--ui-border); }
+  .border-muted { border-color: var(--ui-border-muted); }
+  .border-accented { border-color: var(--ui-border-accented); }
+  /* Nuxt UI variant 按钮 */
+  .nui-btn { @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-colors select-none whitespace-nowrap; }
+  .nui-btn-solid-primary { background-color: var(--ui-primary); color: #fff; }
+  .nui-btn-solid-primary:active { background-color: var(--color-primary-600); }
+  .nui-btn-solid-neutral { background-color: var(--ui-bg-inverted); color: #fff; }
+  .nui-btn-outline { border: 1px solid var(--ui-border); background: transparent; color: var(--ui-text); }
+  .nui-btn-soft-primary { background-color: var(--color-primary-100); color: var(--color-primary-700); }
+  .nui-btn-soft-neutral { background-color: var(--ui-bg-muted); color: var(--ui-text); }
+  .nui-btn-subtle { background-color: var(--ui-bg-muted); color: var(--ui-text); }
+  .nui-btn-ghost { background: transparent; color: var(--ui-text); }
+  .nui-card { @apply rounded-xl bg-elevated border border-muted; }
+  .nui-input { @apply rounded-lg border border-default bg-default px-3 py-2 text-default text-sm w-full outline-none transition-colors; }
+  [v-cloak] { display: none; }
+  /* 小程序框架 */
+  .phone-frame {
+    width: 390px; height: 844px; border-radius: 44px; background: #000;
+    padding: 12px; box-shadow: 0 30px 60px -15px rgba(0,0,0,.3), 0 0 0 2px #1f2937;
+    position: relative;
+  }
+  .phone-screen { width: 100%; height: 100%; border-radius: 32px; overflow: hidden; background: var(--ui-bg); position: relative; }
+  .phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; background: #000; border-radius: 14px; z-index: 50; }
+  /* 地图模拟 */
+  .map-bg {
+    background:
+      radial-gradient(circle at 20% 30%, #bbf7d0 0, transparent 8%),
+      radial-gradient(circle at 70% 60%, #bbf7d0 0, transparent 6%),
+      radial-gradient(circle at 40% 80%, #fef3c7 0, transparent 6%),
+      radial-gradient(circle at 85% 25%, #dbeafe 0, transparent 7%),
+      linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
+  }
+  .map-grid {
+    background-image:
+      linear-gradient(rgba(22,163,74,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22,163,74,.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .scan-glow {
+    background: radial-gradient(circle, rgba(34,197,94,.6) 0%, rgba(34,197,94,0) 70%);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: .6; }
+  }
+  .ring-progress { transform: rotate(-90deg); }
+  .ring-progress circle { transition: stroke-dashoffset 1s ease; }
+  .marker-pulse::before {
+    content:''; position: absolute; inset: 0; border-radius: 50%;
+    background: currentColor; opacity: .3; animation: pulse 2s infinite;
+  }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body class="flex items-center justify-center min-h-screen py-6">
+<div id="app" v-cloak></div>
+
+<script>
+const { createApp, computed, ref, reactive, onMounted, h, watch } = Vue;
+
+/* ========== Nuxt UI 等效组件 ========== */
+const UButton = {
+  name:'UButton', props:{ label:String, icon:String, trailingIcon:String, size:{default:'md'}, color:{default:'primary'}, variant:{default:'solid'}, block:Boolean, disabled:Boolean },
+  setup(p,{ slots }){
+    const size = computed(()=>({ xs:'text-xs px-2 py-1', sm:'text-xs px-2.5 py-1.5', md:'text-sm px-3 py-2', lg:'text-base px-4 py-2.5' }[p.size]));
+    const v = computed(()=>{
+      const m = {
+        primary:{ solid:'nui-btn-solid-primary', soft:'nui-btn-soft-primary', outline:'nui-btn-outline', ghost:'nui-btn-ghost', subtle:'nui-btn-subtle' },
+        neutral:{ solid:'nui-btn-solid-neutral', soft:'nui-btn-soft-neutral', outline:'nui-btn-outline', ghost:'nui-btn-ghost', subtle:'nui-btn-subtle' }
+      };
+      return (m[p.color==='neutral'?'neutral':'primary'])[p.variant] || 'nui-btn-solid-primary';
+    });
+    return () => h('button', { disabled:p.disabled, class:['nui-btn', size.value, v.value, p.block?'w-full':''] }, [
+      p.icon?h('i',{'data-lucide':p.icon,class:'size-4 shrink-0'}):null,
+      slots.default?slots.default():p.label,
+      p.trailingIcon?h('i',{'data-lucide':p.trailingIcon,class:'size-4 shrink-0'}):null,
+    ]);
+  }
+};
+const UBadge = { name:'UBadge', props:{ color:{default:'primary'}, variant:{default:'subtle'}, label:String, icon:String }, setup(p){
+  const c = { primary:'bg-primary-100 text-primary-700', neutral:'bg-neutral-100 text-neutral-700', success:'bg-emerald-100 text-emerald-700', warning:'bg-amber-100 text-amber-700', error:'bg-red-100 text-red-700', info:'bg-blue-100 text-blue-700' };
+  return () => h('span', { class:['inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium', c[p.color]||c.primary] }, [ p.icon?h('i',{'data-lucide':p.icon,class:'size-3'}):null, p.label ]);
+}};
+const UCard = { name:'UCard', props:{ ui:Object }, setup(p,{ slots }){ return () => h('div',{class:['nui-card overflow-hidden', p.ui?.root]},[ slots.default?.() ]); }};
+
+/* ========== 应用 ========== */
+const App = {
+  components: { UButton, UBadge, UCard },
+  setup() {
+    const activeTab = ref('home');
+    const tabs = [
+      { key:'home', label:'首页', icon:'map-pin' },
+      { key:'save', label:'省钱', icon:'ticket-percent' },
+      { key:'scan', label:'扫码', icon:'scan-line', special:true },
+      { key:'orders', label:'订单', icon:'receipt-text' },
+      { key:'me', label:'我的', icon:'user-round' },
+    ];
+
+    // 模拟地图站点
+    const stations = [
+      { id:'CD-001', name:'万达广场超充站', brand:'特来电', distance:'0.8 km', free:6, total:12, price:'1.2', rate:4.8, tags:['超充','停车免费','24h'], x:18, y:32, status:'free' },
+      { id:'CD-002', name:'星河中心快充站', brand:'星星充电', distance:'1.3 km', free:2, total:8, price:'1.5', rate:4.5, tags:['快充','PLUS 折扣'], x:55, y:22, status:'busy' },
+      { id:'CD-003', name:'市政府地下车库', brand:'e充电', distance:'1.8 km', free:0, total:20, price:'1.0', rate:4.6, tags:['慢充','停车 5 元/h'], x:78, y:55, status:'full' },
+      { id:'CD-004', name:'高铁站 P3 充电区', brand:'云快充', distance:'2.5 km', free:9, total:30, price:'1.3', rate:4.9, tags:['超充','24h','高速路'], x:38, y:72, status:'free' },
+      { id:'CD-005', name:'世纪公园南门站', brand:'特来电', distance:'3.1 km', free:4, total:10, price:'1.4', rate:4.3, tags:['快充'], x:68, y:78, status:'free' },
+    ];
+
+    const selectedStation = ref(null);
+    const selectStation = (s) => { selectedStation.value = s; sheetExpanded.value = true; };
+    const sheetExpanded = ref(false);
+
+    const filters = ['综合', '距离最近', '价格最低', '空闲最多'];
+    const activeFilter = ref('综合');
+    const showFilterPanel = ref(false);
+    const filterOpts = reactive({ speed:['快充','慢充','超充'], operators:['特来电','星星充电','e充电','云快充'], perks:['停车免费','PLUS 站','24h','即插即充'] });
+    const selectedSpeed = ref(['快充','超充']);
+    const selectedOps = ref(['特来电','星星充电']);
+    const selectedPerks = ref(['停车免费']);
+
+    // 扫码充电流程
+    const chargingActive = ref(false);
+    const chargingProgress = ref(68);
+    const chargingData = reactive({ power: 60, kwh: 28.4, duration: '00:28:15', cost: 34.08, eta: '14:23', mode: '充满为止' });
+
+    // 省钱页
+    const coupons = [
+      { title:'新人专享满减', desc:'充电满 30 减 8 元', tag:'新用户', color:'primary', price:'¥8' },
+      { title:'PLUS 会员 6 折券', desc:'单次充电最高减 15 元', tag:'会员专享', color:'amber', price:'6 折' },
+      { title:'夜间充电优惠', desc:'22:00-06:00 时段 8 折', tag:'限时', color:'blue', price:'8 折' },
+      { title:'满 50 减 10', desc:'每周三限时抢', tag:'活动', color:'rose', price:'¥10' },
+    ];
+
+    const energyPacks = [
+      { name:'100 度电包', price:'¥158', original:'¥180', save:'省 ¥22', desc:'3 个月有效期，自动抵扣' },
+      { name:'200 度电包', price:'¥299', original:'¥360', save:'省 ¥61', desc:'6 个月有效期，赠送 5 元券' },
+    ];
+
+    // 订单
+    const orders = [
+      { id:'20260617A01', station:'万达广场超充站', date:'06-17 14:23', kwh:32.5, cost:39.0, status:'已完成', co2:18.4 },
+      { id:'20260615B08', station:'高铁站 P3 充电区', date:'06-15 09:11', kwh:45.0, cost:58.5, status:'已完成', co2:25.6 },
+      { id:'20260612A22', station:'星河中心快充站', date:'06-12 21:30', kwh:18.2, cost:27.3, status:'已完成', co2:10.3 },
+    ];
+
+    // 我的
+    const userInfo = reactive({ name:'张明', phone:'138****8588', member:'PLUS 金卡', avatar:'Z', balance: 128.50, coupons: 8, points: 1280 });
+    const vehicles = [
+      { plate:'沪 A·12345', model:'特斯拉 Model Y', battery:'75 kWh', default:true },
+      { plate:'沪 B·67890', model:'比亚迪汉 EV', battery:'85 kWh', default:false },
+    ];
+
+    onMounted(() => { window.lucide && window.lucide.createIcons(); });
+    watch([activeTab, chargingActive, showFilterPanel, sheetExpanded], () => { setTimeout(() => window.lucide && window.lucide.createIcons(), 50); });
+
+    const startCharge = () => { chargingActive.value = true; activeTab.value = 'scan'; };
+
+    return {
+      activeTab, tabs, stations, selectedStation, selectStation, sheetExpanded,
+      filters, activeFilter, showFilterPanel, filterOpts, selectedSpeed, selectedOps, selectedPerks,
+      chargingActive, chargingProgress, chargingData,
+      coupons, energyPacks, orders, userInfo, vehicles,
+      startCharge,
+    };
+  },
+  template: `
+  <UApp>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen flex flex-col">
+
+        <!-- 状态栏（模拟） -->
+        <div class="bg-default px-6 pt-3 pb-1 flex items-center justify-between text-xs text-highlighted font-medium z-30 relative">
+          <span>9:41</span>
+          <div class="flex items-center gap-1">
+            <i data-lucide="signal" class="size-3"></i>
+            <i data-lucide="wifi" class="size-3"></i>
+            <i data-lucide="battery-full" class="size-4"></i>
+          </div>
+        </div>
+
+        <!-- 顶部位置条 -->
+        <div v-if="activeTab==='home'" class="bg-default px-4 py-2 flex items-center justify-between border-b border-muted z-20 relative">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <i data-lucide="map-pin" class="size-4 text-primary shrink-0"></i>
+            <span class="text-sm font-medium text-highlighted truncate">上海市 · 浦东新区世纪大道</span>
+            <i data-lucide="chevron-down" class="size-3 text-muted"></i>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="size-7 rounded-full bg-muted flex items-center justify-center"><i data-lucide="bell" class="size-3.5 text-toned"></i></button>
+          </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-hidden relative">
+
+          <!-- ========== 首页 - 地图找桩 ========== -->
+          <div v-if="activeTab==='home'" class="absolute inset-0 flex flex-col">
+            <!-- 地图区 -->
+            <div class="relative flex-1 map-bg map-grid overflow-hidden">
+              <!-- 道路模拟 -->
+              <svg class="absolute inset-0 w-full h-full" viewBox="0 0 390 400" preserveAspectRatio="none">
+                <path d="M0,180 Q100,160 200,200 T390,180" stroke="#fff" stroke-width="14" fill="none" opacity=".8"/>
+                <path d="M180,0 Q200,100 240,200 T220,400" stroke="#fff" stroke-width="12" fill="none" opacity=".8"/>
+                <path d="M0,320 L390,340" stroke="#fff" stroke-width="10" fill="none" opacity=".7"/>
+              </svg>
+
+              <!-- 站点标注 -->
+              <button v-for="s in stations" :key="s.id" @click="selectStation(s)"
+                :class="['absolute -translate-x-1/2 -translate-y-1/2 transition', selectedStation?.id===s.id?'z-20':'z-10']"
+                :style="{ left: s.x + '%', top: s.y + '%' }">
+                <div :class="['flex flex-col items-center', s.status==='free'?'text-primary':s.status==='busy'?'text-amber-500':'text-neutral-400']">
+                  <div :class="['relative px-2 py-1 rounded-full text-[10px] font-bold border-2 shadow-sm',
+                    s.status==='free'?'bg-white border-primary text-primary':
+                    s.status==='busy'?'bg-white border-amber-500 text-amber-600':
+                    'bg-white border-neutral-300 text-neutral-400']">
+                    {{ s.free }}/{{ s.total }}
+                  </div>
+                  <div :class="['size-2 rounded-full marker-pulse', s.status==='free'?'bg-primary':s.status==='busy'?'bg-amber-500':'bg-neutral-400']"></div>
+                </div>
+              </button>
+
+              <!-- 定位按钮 -->
+              <button class="absolute right-3 bottom-3 size-10 rounded-full bg-white shadow-md border border-muted flex items-center justify-center text-primary">
+                <i data-lucide="locate" class="size-5"></i>
+              </button>
+
+              <!-- 图例 -->
+              <div class="absolute left-3 top-3 bg-white/95 backdrop-blur rounded-lg shadow-sm border border-muted px-2.5 py-2 text-[10px] space-y-1">
+                <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-primary"></span>空闲</div>
+                <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-amber-500"></span>较少</div>
+                <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-neutral-400"></span>已满</div>
+              </div>
+            </div>
+
+            <!-- 附近站点底部面板 -->
+            <div class="bg-default border-t border-muted rounded-t-2xl shadow-2xl transition-transform" :style="{ transform: sheetExpanded ? 'translateY(0)' : 'translateY(0)' }">
+              <!-- 抓手 -->
+              <div class="pt-2 pb-1 flex justify-center">
+                <button @click="sheetExpanded = !sheetExpanded" class="w-10 h-1 rounded-full bg-neutral-300"></button>
+              </div>
+              <!-- 筛选条 -->
+              <div class="px-4 pb-2 flex items-center gap-2 overflow-x-auto">
+                <button @click="showFilterPanel = true" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-medium">
+                  <i data-lucide="sliders-horizontal" class="size-3"></i>筛选
+                </button>
+                <button v-for="f in filters" :key="f" @click="activeFilter=f"
+                  :class="['shrink-0 px-2.5 py-1 rounded-full text-xs font-medium', activeFilter===f?'bg-neutral-900 text-white':'bg-muted text-toned']">
+                  {{ f }}
+                </button>
+              </div>
+
+              <!-- 站点列表 -->
+              <div class="px-4 pb-3 space-y-2 max-h-72 overflow-y-auto">
+                <div v-for="s in stations" :key="s.id" @click="selectStation(s)"
+                  :class="['rounded-xl border p-3 cursor-pointer transition', selectedStation?.id===s.id?'border-primary bg-primary-50':'border-muted bg-default hover:bg-muted']">
+                  <div class="flex items-start justify-between">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5">
+                        <p class="font-semibold text-sm text-highlighted truncate">{{ s.name }}</p>
+                        <UBadge :label="s.brand" color="neutral" variant="subtle" />
+                      </div>
+                      <p class="text-xs text-muted mt-0.5">{{ s.distance }} · 评分 {{ s.rate }}</p>
+                      <div class="flex flex-wrap gap-1 mt-1.5">
+                        <span v-for="t in s.tags" :key="t" class="text-[10px] px-1.5 py-0.5 rounded bg-muted text-toned">{{ t }}</span>
+                      </div>
+                    </div>
+                    <div class="text-right ml-2 shrink-0">
+                      <p :class="['text-2xl font-bold leading-none', s.free>0?'text-primary':'text-neutral-400']">{{ s.free }}</p>
+                      <p class="text-[10px] text-muted">/ {{ s.total }} 空闲</p>
+                    </div>
+                  </div>
+                  <div class="mt-2 pt-2 border-t border-muted flex items-center justify-between">
+                    <span class="text-xs text-muted">¥{{ s.price }}/度</span>
+                    <div class="flex gap-1">
+                      <UButton label="导航" size="xs" color="neutral" variant="subtle" icon="navigation" />
+                      <UButton label="去充电" size="xs" color="primary" variant="solid" :disabled="s.free===0" @click.stop="selectStation(s); startCharge()" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== 省钱页 ========== -->
+          <div v-else-if="activeTab==='save'" class="absolute inset-0 overflow-y-auto bg-muted">
+            <div class="bg-gradient-to-br from-primary-500 to-emerald-600 text-white px-4 pt-4 pb-6 rounded-b-3xl">
+              <p class="text-xs opacity-90">PLUS 会员本月已为你省下</p>
+              <p class="text-3xl font-bold mt-1">¥126.50</p>
+              <div class="mt-3 inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full">
+                <i data-lucide="crown" class="size-3"></i>{{ userInfo.member }} · 6 折券包月发放
+              </div>
+            </div>
+
+            <div class="px-4 -mt-4 space-y-3 pb-4">
+              <p class="text-sm font-semibold text-highlighted pt-2">优惠券</p>
+              <div v-for="c in coupons" :key="c.title" class="rounded-xl bg-default border border-muted p-3 flex items-center gap-3">
+                <div :class="['size-12 rounded-lg flex flex-col items-center justify-center text-xs font-bold shrink-0',
+                  c.color==='primary'?'bg-primary-100 text-primary-700':
+                  c.color==='amber'?'bg-amber-100 text-amber-700':
+                  c.color==='blue'?'bg-blue-100 text-blue-700':'bg-rose-100 text-rose-700']">
+                  <span class="text-base">{{ c.price }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-highlighted">{{ c.title }}</p>
+                  <p class="text-xs text-muted mt-0.5">{{ c.desc }}</p>
+                </div>
+                <UButton label="领取" size="xs" color="primary" variant="soft" />
+              </div>
+
+              <p class="text-sm font-semibold text-highlighted pt-2">能量包预购</p>
+              <div v-for="p in energyPacks" :key="p.name" class="rounded-xl bg-gradient-to-r from-emerald-50 to-default border border-primary-200 p-3">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <p class="font-semibold text-highlighted text-sm">{{ p.name }}</p>
+                    <p class="text-xs text-muted mt-0.5">{{ p.desc }}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-primary-700">{{ p.price }}</p>
+                    <p class="text-[10px] text-muted line-through">{{ p.original }}</p>
+                  </div>
+                </div>
+                <UButton label="立即购买" size="xs" color="primary" variant="solid" block class="mt-2" />
+              </div>
+
+              <p class="text-sm font-semibold text-highlighted pt-2">邀请有礼</p>
+              <div class="rounded-xl bg-default border border-muted p-3 flex items-center gap-3">
+                <i data-lucide="gift" class="size-10 text-primary"></i>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-highlighted">邀请好友，各得 10 元充电金</p>
+                  <p class="text-xs text-muted mt-0.5">已邀请 3 位好友</p>
+                </div>
+                <UButton label="分享" size="xs" color="primary" variant="subtle" icon="share-2" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== 扫码充电 ========== -->
+          <div v-else-if="activeTab==='scan'" class="absolute inset-0 flex flex-col bg-neutral-900">
+            <div v-if="!chargingActive" class="flex-1 relative overflow-hidden">
+              <!-- 扫码取景框 -->
+              <div class="absolute inset-0 bg-neutral-900 flex items-center justify-center">
+                <div class="relative size-56">
+                  <div class="absolute inset-0 scan-glow rounded-full"></div>
+                  <div class="absolute inset-4 rounded-2xl border-2 border-primary/60"></div>
+                  <div class="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-primary rounded-tl-xl"></div>
+                  <div class="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-primary rounded-tr-xl"></div>
+                  <div class="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-primary rounded-bl-xl"></div>
+                  <div class="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-primary rounded-br-xl"></div>
+                  <div class="absolute left-4 right-4 top-1/2 h-0.5 bg-primary shadow-[0_0_10px_rgba(34,197,94,0.8)]" style="animation: scan 2s infinite ease-in-out;"></div>
+                </div>
+              </div>
+              <style>@keyframes scan { 0%,100%{ transform: translateY(-90px);} 50%{ transform: translateY(90px);} }</style>
+
+              <div class="absolute top-4 left-0 right-0 text-center text-white/90 text-sm">将二维码对准框内即可扫码</div>
+
+              <div class="absolute bottom-0 left-0 right-0 bg-default rounded-t-2xl p-4">
+                <p class="text-center text-sm text-muted mb-3">或选择以下方式</p>
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                  <button class="rounded-xl border border-muted py-3 flex flex-col items-center gap-1 hover:bg-muted">
+                    <i data-lucide="keyboard" class="size-5 text-primary"></i>
+                    <span class="text-[10px] text-toned">手动输入桩号</span>
+                  </button>
+                  <button class="rounded-xl border border-muted py-3 flex flex-col items-center gap-1 hover:bg-muted">
+                    <i data-lucide="nfc" class="size-5 text-primary"></i>
+                    <span class="text-[10px] text-toned">NFC 感应</span>
+                  </button>
+                  <button class="rounded-xl border border-muted py-3 flex flex-col items-center gap-1 hover:bg-muted">
+                    <i data-lucide="bookmark" class="size-5 text-primary"></i>
+                    <span class="text-[10px] text-toned">收藏电站</span>
+                  </button>
+                </div>
+                <UButton label="模拟扫码启动充电" color="primary" block size="lg" icon="zap" @click="chargingActive=true" />
+              </div>
+            </div>
+
+            <!-- 充电中 -->
+            <div v-else class="flex-1 overflow-y-auto bg-default">
+              <div class="bg-gradient-to-b from-primary-500 to-emerald-600 text-white px-4 pt-4 pb-6 text-center">
+                <p class="text-xs opacity-90">正在充电中 · {{ chargingData.mode }}</p>
+                <p class="text-xs opacity-80 mt-0.5">万达广场超充站 · A03 号桩</p>
+              </div>
+
+              <!-- 环形进度 -->
+              <div class="px-4 -mt-2">
+                <div class="relative mx-auto size-48">
+                  <svg class="ring-progress w-full h-full" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="#e4e4e7" stroke-width="8"/>
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="#22c55e" stroke-width="8" stroke-linecap="round"
+                      :stroke-dasharray="276.46" :stroke-dashoffset="276.46 * (1 - chargingProgress/100)"/>
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <p class="text-xs text-muted">已充电量</p>
+                    <p class="text-3xl font-bold text-highlighted">{{ chargingData.kwh }}<span class="text-base text-muted ml-1">kWh</span></p>
+                    <p class="text-xs text-primary font-semibold mt-1">{{ chargingProgress }}%</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 实时参数 -->
+              <div class="px-4 mt-4 grid grid-cols-2 gap-2">
+                <div class="rounded-xl border border-muted p-3">
+                  <p class="text-xs text-muted flex items-center gap-1"><i data-lucide="zap" class="size-3"></i>实时功率</p>
+                  <p class="text-xl font-bold text-highlighted mt-1">{{ chargingData.power }} <span class="text-xs text-muted">kW</span></p>
+                </div>
+                <div class="rounded-xl border border-muted p-3">
+                  <p class="text-xs text-muted flex items-center gap-1"><i data-lucide="timer" class="size-3"></i>已用时长</p>
+                  <p class="text-xl font-bold text-highlighted mt-1">{{ chargingData.duration }}</p>
+                </div>
+                <div class="rounded-xl border border-muted p-3">
+                  <p class="text-xs text-muted flex items-center gap-1"><i data-lucide="wallet" class="size-3"></i>实时费用</p>
+                  <p class="text-xl font-bold text-primary-700 mt-1">¥{{ chargingData.cost }}</p>
+                </div>
+                <div class="rounded-xl border border-muted p-3">
+                  <p class="text-xs text-muted flex items-center gap-1"><i data-lucide="alarm-clock" class="size-3"></i>预计完成</p>
+                  <p class="text-xl font-bold text-highlighted mt-1">{{ chargingData.eta }}</p>
+                </div>
+              </div>
+
+              <!-- 绿色提示 -->
+              <div class="mx-4 mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2">
+                <i data-lucide="leaf" class="size-4 text-emerald-600 shrink-0"></i>
+                <p class="text-xs text-emerald-800">本次充电将减少碳排放 <span class="font-bold">16.1 kg</span>，累计已减碳 312.5 kg</p>
+              </div>
+
+              <!-- 控制按钮 -->
+              <div class="p-4 mt-2 space-y-2">
+                <UButton label="停止充电" color="error" variant="soft" block size="lg" icon="square" />
+                <UButton label="查看桩位详情" color="neutral" variant="ghost" block icon="info" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== 订单页 ========== -->
+          <div v-else-if="activeTab==='orders'" class="absolute inset-0 overflow-y-auto bg-muted">
+            <div class="bg-default px-4 py-3 border-b border-muted">
+              <p class="text-lg font-bold text-highlighted">我的订单</p>
+              <div class="flex gap-4 mt-2 text-xs">
+                <button class="text-primary font-medium border-b-2 border-primary pb-1">全部</button>
+                <button class="text-muted pb-1">充电中</button>
+                <button class="text-muted pb-1">已完成</button>
+                <button class="text-muted pb-1">已退款</button>
+              </div>
+            </div>
+
+            <!-- 月度统计 -->
+            <div class="px-4 pt-3">
+              <div class="rounded-xl bg-gradient-to-r from-primary-500 to-emerald-600 text-white p-4">
+                <p class="text-xs opacity-90">2026 年 6 月充电汇总</p>
+                <div class="flex items-end justify-between mt-2">
+                  <div><p class="text-2xl font-bold">12 次</p><p class="text-[10px] opacity-80">累计订单</p></div>
+                  <div><p class="text-2xl font-bold">386.5 度</p><p class="text-[10px] opacity-80">累计电量</p></div>
+                  <div><p class="text-2xl font-bold">¥458</p><p class="text-[10px] opacity-80">累计电费</p></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 space-y-3">
+              <div v-for="o in orders" :key="o.id" class="rounded-xl bg-default border border-muted p-3">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm text-highlighted truncate">{{ o.station }}</p>
+                    <p class="text-xs text-muted mt-0.5">{{ o.date }} · 订单号 {{ o.id }}</p>
+                  </div>
+                  <UBadge label="已完成" color="success" variant="subtle" icon="check" />
+                </div>
+                <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                  <div><p class="text-muted">电量</p><p class="font-semibold text-highlighted mt-0.5">{{ o.kwh }} 度</p></div>
+                  <div><p class="text-muted">金额</p><p class="font-semibold text-highlighted mt-0.5">¥{{ o.cost }}</p></div>
+                  <div><p class="text-muted">减碳</p><p class="font-semibold text-emerald-600 mt-0.5">{{ o.co2 }} kg</p></div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-muted flex gap-2">
+                  <UButton label="开发票" size="xs" color="neutral" variant="subtle" icon="file-text" class="flex-1" />
+                  <UButton label="评价" size="xs" color="neutral" variant="subtle" icon="star" class="flex-1" />
+                  <UButton label="再次充电" size="xs" color="primary" variant="solid" class="flex-1" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== 我的页 ========== -->
+          <div v-else-if="activeTab==='me'" class="absolute inset-0 overflow-y-auto bg-muted">
+            <!-- 用户信息卡 -->
+            <div class="bg-gradient-to-br from-primary-500 to-emerald-600 text-white px-4 pt-6 pb-8 rounded-b-3xl">
+              <div class="flex items-center gap-3">
+                <div class="size-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold">{{ userInfo.avatar }}</div>
+                <div class="flex-1">
+                  <p class="font-semibold text-lg">{{ userInfo.name }}</p>
+                  <p class="text-xs opacity-90 mt-0.5">{{ userInfo.phone }}</p>
+                </div>
+                <button class="size-8 rounded-full bg-white/20 flex items-center justify-center"><i data-lucide="settings" class="size-4"></i></button>
+              </div>
+              <div class="mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur px-3 py-1.5 rounded-full text-xs">
+                <i data-lucide="crown" class="size-3.5"></i>{{ userInfo.member }}
+                <span class="opacity-80">·</span>
+                <span class="opacity-90">续费 5 折</span>
+                <i data-lucide="chevron-right" class="size-3.5"></i>
+              </div>
+            </div>
+
+            <!-- 钱包 -->
+            <div class="px-4 -mt-5">
+              <div class="rounded-xl bg-default border border-muted p-3 grid grid-cols-3 divide-x divide-muted">
+                <div class="text-center">
+                  <p class="text-lg font-bold text-highlighted">¥{{ userInfo.balance }}</p>
+                  <p class="text-[10px] text-muted mt-0.5">余额</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-lg font-bold text-highlighted">{{ userInfo.coupons }}</p>
+                  <p class="text-[10px] text-muted mt-0.5">优惠券</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-lg font-bold text-highlighted">{{ userInfo.points }}</p>
+                  <p class="text-[10px] text-muted mt-0.5">积分</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 车辆管理 -->
+            <div class="px-4 pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold text-highlighted">我的车辆</p>
+                <button class="text-xs text-primary">添加车辆</button>
+              </div>
+              <div v-for="v in vehicles" :key="v.plate" class="rounded-xl bg-default border border-muted p-3 flex items-center gap-3 mb-2">
+                <div class="size-10 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center"><i data-lucide="car" class="size-5"></i></div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-highlighted">{{ v.model }}</p>
+                  <p class="text-xs text-muted mt-0.5">{{ v.plate }} · 电池 {{ v.battery }}</p>
+                </div>
+                <UBadge v-if="v.default" label="默认" color="primary" variant="subtle" />
+              </div>
+            </div>
+
+            <!-- 常用工具 -->
+            <div class="px-4 py-4">
+              <p class="text-sm font-semibold text-highlighted mb-2">常用工具</p>
+              <div class="rounded-xl bg-default border border-muted p-2 grid grid-cols-4 gap-1">
+                <button v-for="t in [{i:'file-text',l:'发票管理'},{i:'battery-charging',l:'电池卫士'},{i:'heart',l:'收藏电站'},{i:'headset',l:'客服中心'},{i:'nfc',l:'即插即充'},{i:'download',l:'无法拔枪'},{i:'shield',l:'账户安全'},{i:'message-square',l:'意见反馈'}]" :key="t.l"
+                  class="flex flex-col items-center gap-1 py-2.5 hover:bg-muted rounded-lg">
+                  <i :data-lucide="t.i" class="size-5 text-primary"></i>
+                  <span class="text-[10px] text-toned">{{ t.l }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 筛选面板（slideover） -->
+        <div v-if="showFilterPanel" class="absolute inset-0 z-40">
+          <div class="absolute inset-0 bg-black/40" @click="showFilterPanel=false"></div>
+          <div class="absolute bottom-0 left-0 right-0 bg-default rounded-t-2xl p-4 max-h-[80%] overflow-y-auto">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-base font-semibold">筛选条件</p>
+              <button @click="showFilterPanel=false" class="size-7 rounded-full bg-muted flex items-center justify-center"><i data-lucide="x" class="size-4"></i></button>
+            </div>
+            <p class="text-xs text-muted mb-2">充电速度</p>
+            <div class="flex flex-wrap gap-1.5 mb-3">
+              <button v-for="s in filterOpts.speed" :key="s" @click="selectedSpeed.includes(s) ? selectedSpeed.splice(selectedSpeed.indexOf(s),1) : selectedSpeed.push(s)"
+                :class="['px-2.5 py-1 rounded-full text-xs', selectedSpeed.includes(s)?'bg-primary text-white':'bg-muted text-toned']">{{ s }}</button>
+            </div>
+            <p class="text-xs text-muted mb-2">运营商</p>
+            <div class="flex flex-wrap gap-1.5 mb-3">
+              <button v-for="o in filterOpts.operators" :key="o" @click="selectedOps.includes(o) ? selectedOps.splice(selectedOps.indexOf(o),1) : selectedOps.push(o)"
+                :class="['px-2.5 py-1 rounded-full text-xs', selectedOps.includes(o)?'bg-primary text-white':'bg-muted text-toned']">{{ o }}</button>
+            </div>
+            <p class="text-xs text-muted mb-2">附加权益</p>
+            <div class="flex flex-wrap gap-1.5 mb-4">
+              <button v-for="p in filterOpts.perks" :key="p" @click="selectedPerks.includes(p) ? selectedPerks.splice(selectedPerks.indexOf(p),1) : selectedPerks.push(p)"
+                :class="['px-2.5 py-1 rounded-full text-xs', selectedPerks.includes(p)?'bg-primary text-white':'bg-muted text-toned']">{{ p }}</button>
+            </div>
+            <div class="flex gap-2 pt-3 border-t border-muted">
+              <UButton label="重置" color="neutral" variant="subtle" block />
+              <UButton label="确认筛选" color="primary" variant="solid" block @click="showFilterPanel=false" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== 底部 TabBar ========== -->
+        <div class="bg-default border-t border-muted px-2 pt-1 pb-5 flex items-end justify-around relative z-30">
+          <button v-for="t in tabs" :key="t.key" @click="activeTab=t.key"
+            :class="['flex flex-col items-center gap-0.5 py-1.5 px-3 transition-colors flex-1', t.special ? '-mt-5' : '']">
+            <template v-if="t.special">
+              <div class="size-12 rounded-full bg-gradient-to-br from-primary-500 to-emerald-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/40 ring-4 ring-default">
+                <i :data-lucide="t.icon" class="size-6"></i>
+              </div>
+              <span class="text-[10px] font-medium text-primary">{{ t.label }}</span>
+            </template>
+            <template v-else>
+              <i :data-lucide="t.icon" :class="['size-5', activeTab===t.key?'text-primary':'text-muted']"></i>
+              <span :class="['text-[10px]', activeTab===t.key?'text-primary font-medium':'text-muted']">{{ t.label }}</span>
+            </template>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </UApp>
+  `
+};
+
+const app = createApp(App);
+app.component('UApp', { name:'UApp', setup(p,{ slots }){ return () => h('div', { class: 'min-h-screen' }, slots.default?.()); }});
+app.mount('#app');
+
+const initIcons = () => { if (window.lucide) window.lucide.createIcons(); setTimeout(initIcons, 500); };
+setTimeout(initIcons, 100);
+</script>
+</body>
+</html>

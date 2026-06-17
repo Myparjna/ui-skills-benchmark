@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聚合充电 · 电动汽车充电小程序</title>
+<meta name="description" content="聚合主流充电运营商，附近充电站一图看全、实时桩态透明、扫码即充无感支付。">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===== Design Tokens (modern-web-design: OKLCH + fluid) ===== */
+:root{
+  --color-bg: oklch(11% 0.02 250);
+  --color-bg-2: oklch(16% 0.03 250);
+  --color-surface: oklch(20% 0.04 250);
+  --color-text: oklch(98% 0.01 250);
+  --color-text-mute: oklch(72% 0.02 250);
+  --color-primary: oklch(68% 0.18 250);  /* tech blue */
+  --color-primary-2: oklch(60% 0.20 165); /* green for idle */
+  --color-accent: oklch(72% 0.20 35);    /* orange charging */
+  --color-warn: oklch(70% 0.20 25);
+  --color-line: oklch(100% 0 0 / 10%);
+
+  --fs-xs: clamp(0.7rem,0.66rem + 0.2vw,0.78rem);
+  --fs-sm: clamp(0.8rem,0.75rem + 0.25vw,0.9rem);
+  --fs-base: clamp(0.92rem,0.85rem + 0.35vw,1rem);
+  --fs-lg: clamp(1.1rem,1rem + 0.5vw,1.3rem);
+  --fs-xl: clamp(1.4rem,1.2rem + 1vw,1.8rem);
+  --fs-2xl: clamp(1.8rem,1.5rem + 1.5vw,2.6rem);
+
+  --sp-xs: .5rem; --sp-sm: .8rem; --sp-md: 1.2rem; --sp-lg: 1.8rem; --sp-xl: 2.6rem;
+  --dur-fast: 140ms; --dur: 240ms; --dur-slow: 480ms;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --sh-1: 0 2px 8px oklch(0% 0 0 / 0.2);
+  --sh-2: 0 12px 28px oklch(0% 0 0 / 0.3);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Noto Sans SC','Space Grotesk',system-ui,sans-serif;
+  font-size:var(--fs-base);line-height:1.55;color:var(--color-text);
+  background:
+    radial-gradient(at 80% 0%, oklch(30% 0.10 250 / 0.6), transparent 60%),
+    radial-gradient(at 10% 100%, oklch(28% 0.10 165 / 0.4), transparent 60%),
+    var(--color-bg);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:1rem;
+  -webkit-font-smoothing:antialiased;
+}
+ul{list-style:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+
+/* ===== Phone shell (mobile-first simulation, but fully responsive) ===== */
+.phone{
+  position:relative;
+  width:min(420px,100vw);
+  height:min(880px,94vh);
+  background:var(--color-bg-2);
+  border-radius:44px;
+  border:1px solid oklch(100% 0 0 / 0.08);
+  box-shadow:0 40px 80px oklch(0% 0 0 / 0.6), 0 0 0 8px oklch(20% 0.02 250), 0 0 0 9px oklch(40% 0.02 250);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.phone__notch{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:120px;height:24px;background:#000;border-radius:14px;z-index:100;
+  display:flex;align-items:center;justify-content:flex-end;padding-right:18px;
+}
+.phone__notch::after{content:"";width:8px;height:8px;border-radius:50%;background:#1a1a1a;box-shadow:inset 0 0 4px #000}
+.phone__statusbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 28px 6px;font-size:var(--fs-xs);font-weight:600;
+  color:var(--color-text);flex-shrink:0;
+}
+.phone__statusbar .icons{display:flex;gap:4px;align-items:center;font-size:var(--fs-xs)}
+.phone__statusbar .icons span{font-size:.8em}
+
+/* ===== Page system — show/hide via tab ===== */
+.screen{
+  position:absolute;inset:36px 0 84px 0;
+  display:none;flex-direction:column;
+  overflow:hidden;
+}
+.screen.active{display:flex;animation:fadeIn var(--dur) var(--ease)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.screen__scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 var(--sp-md) var(--sp-md)}
+
+/* ===== Header (sticky top of screen) ===== */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px var(--sp-md) 12px;
+  background:oklch(16% 0.03 250 / 0.7);
+  backdrop-filter:blur(16px) saturate(160%);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  border-bottom:1px solid var(--color-line);
+  flex-shrink:0;
+}
+.topbar__loc{display:flex;align-items:center;gap:6px;font-weight:700;font-size:var(--fs-base)}
+.topbar__loc small{color:var(--color-text-mute);font-weight:400;font-size:var(--fs-xs)}
+.topbar__icons{display:flex;gap:14px}
+.topbar__icons button{
+  width:34px;height:34px;border-radius:50%;
+  background:oklch(100% 0 0 / 0.06);display:grid;place-items:center;
+  position:relative;transition:transform var(--dur) var(--ease),background var(--dur);
+}
+.topbar__icons button:hover{transform:translateY(-2px);background:oklch(100% 0 0 / 0.12)}
+.topbar__icons button .badge{
+  position:absolute;top:-2px;right:-2px;
+  background:var(--color-accent);color:#fff;
+  font-size:.6rem;width:16px;height:16px;border-radius:50%;
+  display:grid;place-items:center;font-weight:700;
+}
+
+/* ===== Map (home) ===== */
+.map{
+  position:relative;flex:1;
+  background:
+    radial-gradient(circle at 30% 40%, oklch(30% 0.10 165 / 0.3), transparent 50%),
+    radial-gradient(circle at 70% 60%, oklch(28% 0.10 250 / 0.3), transparent 50%),
+    linear-gradient(135deg,#1a2a3a,#0f1a2a);
+  overflow:hidden;
+}
+/* SVG road grid overlay */
+.map svg{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
+.map__pins{position:absolute;inset:0}
+.pin{
+  position:absolute;
+  width:34px;height:34px;border-radius:50% 50% 50% 0;
+  background:linear-gradient(135deg,var(--color-primary-2),var(--color-primary));
+  transform:rotate(-45deg);
+  display:grid;place-items:center;
+  box-shadow:0 6px 14px oklch(0% 0 0 / 0.5);
+  transition:transform var(--dur) var(--ease-spring);
+  cursor:pointer;
+}
+.pin:hover{transform:rotate(-45deg) scale(1.15)}
+.pin span{transform:rotate(45deg);font-weight:700;font-size:.7rem;color:#fff}
+.pin.busy{background:linear-gradient(135deg,var(--color-accent),var(--color-warn))}
+.pin.fault{background:linear-gradient(135deg,#ef4444,#7f1d1d)}
+.pin__pulse{
+  position:absolute;width:34px;height:34px;border-radius:50%;
+  background:var(--color-primary-2);opacity:.4;
+  animation:pulse 2s ease-out infinite;pointer-events:none;
+}
+@keyframes pulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(3);opacity:0}}
+
+.map__controls{
+  position:absolute;right:12px;bottom:140px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.map__controls button{
+  width:38px;height:38px;border-radius:12px;
+  background:oklch(20% 0.03 250 / 0.85);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--color-line);
+  display:grid;place-items:center;font-size:1.1rem;
+  transition:transform var(--dur) var(--ease);
+}
+.map__controls button:hover{transform:scale(1.08)}
+
+.map__filter{
+  position:absolute;top:12px;left:12px;right:12px;
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+}
+.map__filter::-webkit-scrollbar{display:none}
+.map__filter button{
+  padding:6px 14px;border-radius:var(--radius-pill);
+  background:oklch(20% 0.03 250 / 0.85);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--color-line);
+  font-size:var(--fs-xs);font-weight:500;
+  white-space:nowrap;transition:all var(--dur);
+}
+.map__filter button.active{background:var(--color-primary);color:#fff;border-color:transparent}
+
+/* Bottom sheet — list of stations */
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;
+  background:oklch(14% 0.02 250 / 0.92);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border-top:1px solid var(--color-line);
+  border-radius:24px 24px 0 0;
+  padding:8px var(--sp-md) calc(var(--sp-md) + 76px);
+  max-height:60%;
+  display:flex;flex-direction:column;
+}
+.sheet__handle{
+  width:40px;height:4px;border-radius:2px;
+  background:var(--color-text-mute);opacity:.5;
+  margin:4px auto 12px;
+}
+.sheet__title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sheet__title h3{font-size:var(--fs-lg);font-weight:700}
+.sheet__sort{display:flex;gap:6px;font-size:var(--fs-xs);color:var(--color-text-mute)}
+.sheet__sort button.active{color:var(--color-primary);font-weight:700}
+.sheet__list{overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+
+.station{
+  display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;
+  padding:12px;border-radius:14px;
+  background:oklch(100% 0 0 / 0.04);
+  border:1px solid var(--color-line);
+  transition:all var(--dur) var(--ease);
+}
+.station:hover{background:oklch(100% 0 0 / 0.08);transform:translateY(-2px)}
+.station__icon{
+  width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));
+  display:grid;place-items:center;font-size:1.4rem;
+}
+.station__name{font-weight:700;font-size:var(--fs-base);margin-bottom:2px}
+.station__meta{display:flex;gap:8px;font-size:var(--fs-xs);color:var(--color-text-mute)}
+.station__status{display:flex;align-items:center;gap:4px;font-size:var(--fs-xs)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot.idle{background:var(--color-primary-2)}
+.dot.busy{background:var(--color-accent)}
+.station__price{text-align:right;font-weight:700;color:var(--color-primary)}
+.station__price small{display:block;color:var(--color-text-mute);font-weight:400;font-size:var(--fs-xs)}
+
+/* ===== Tab Bar ===== */
+.tabbar{
+  position:absolute;left:0;right:0;bottom:0;height:84px;
+  background:oklch(14% 0.02 250 / 0.85);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border-top:1px solid var(--color-line);
+  display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
+  padding:0 12px 20px;z-index:50;
+}
+.tab{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:var(--fs-xs);color:var(--color-text-mute);
+  transition:color var(--dur) var(--ease);
+  position:relative;padding:6px 0;
+}
+.tab .icon{font-size:1.3rem;transition:transform var(--dur) var(--ease-spring)}
+.tab:hover .icon{transform:translateY(-3px)}
+.tab.active{color:var(--color-primary)}
+.tab.active .icon{transform:translateY(-3px) scale(1.1)}
+.tab--scan{
+  position:relative;
+  margin-top:-32px;
+}
+.tab--scan .scan-btn{
+  width:60px;height:60px;border-radius:50%;
+  background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));
+  display:grid;place-items:center;
+  box-shadow:0 12px 24px oklch(68% 0.18 250 / 0.5);
+  border:4px solid var(--color-bg-2);
+  transition:transform var(--dur) var(--ease-spring);
+  position:relative;
+}
+.tab--scan .scan-btn::before{
+  content:"";position:absolute;inset:-6px;border-radius:50%;
+  background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));
+  opacity:.3;animation:pulse 2s ease-out infinite;z-index:-1;
+}
+.tab--scan:hover .scan-btn{transform:scale(1.1) rotate(10deg)}
+.tab--scan .scan-btn svg{width:28px;height:28px;color:#fff}
+.tab--scan .label{margin-top:4px;font-weight:700;color:var(--color-primary)}
+
+/* ===== Page:省钱/活动 ===== */
+.screen--deals .screen__scroll{padding-top:var(--sp-md)}
+.hero-card{
+  border-radius:20px;padding:var(--sp-md);
+  background:
+    radial-gradient(at 100% 0%, oklch(72% 0.20 35 / 0.5), transparent 60%),
+    linear-gradient(135deg,oklch(35% 0.10 250),oklch(25% 0.05 250));
+  border:1px solid var(--color-line);
+  margin-bottom:var(--sp-md);
+  position:relative;overflow:hidden;
+}
+.hero-card::after{
+  content:"";position:absolute;right:-30px;bottom:-30px;
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,oklch(72% 0.20 35 / 0.4),transparent 70%);
+}
+.hero-card .tag{display:inline-block;padding:3px 10px;border-radius:var(--radius-pill);background:oklch(72% 0.20 35 / 0.2);color:var(--color-accent);font-size:var(--fs-xs);font-weight:700;margin-bottom:8px}
+.hero-card h2{font-size:var(--fs-xl);font-weight:900;letter-spacing:-0.02em;margin-bottom:6px}
+.hero-card p{color:var(--color-text-mute);font-size:var(--fs-sm)}
+.hero-card .price{font-size:var(--fs-2xl);font-weight:900;color:var(--color-accent);margin-top:8px;font-family:'Space Grotesk',sans-serif}
+
+.section-label{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:var(--sp-md) 0 var(--sp-sm);
+}
+.section-label h3{font-size:var(--fs-lg);font-weight:700}
+.section-label a{color:var(--color-primary);font-size:var(--fs-xs)}
+
+.deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.deal{
+  padding:12px;border-radius:14px;
+  background:oklch(100% 0 0 / 0.04);
+  border:1px solid var(--color-line);
+  transition:all var(--dur);
+}
+.deal:hover{background:oklch(100% 0 0 / 0.08);transform:translateY(-3px)}
+.deal__name{font-size:var(--fs-sm);font-weight:700;margin-bottom:6px}
+.deal__desc{font-size:var(--fs-xs);color:var(--color-text-mute);line-height:1.4;margin-bottom:8px}
+.deal__btn{
+  width:100%;padding:6px;border-radius:8px;
+  background:var(--color-primary);color:#fff;
+  font-size:var(--fs-xs);font-weight:700;
+  transition:transform var(--dur) var(--ease);
+}
+.deal__btn:hover{transform:scale(0.97)}
+.deal__btn:active{transform:scale(0.93)}
+
+/* ===== Page:扫码 ===== */
+.screen--scan{background:radial-gradient(at 50% 30%,oklch(20% 0.04 250),var(--color-bg))}
+.scan-frame{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:var(--sp-md);position:relative;
+}
+.scan-frame__title{font-size:var(--fs-lg);font-weight:700;margin-bottom:8px}
+.scan-frame__desc{color:var(--color-text-mute);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);text-align:center}
+.scan-frame__view{
+  width:260px;height:260px;border-radius:24px;
+  background:oklch(10% 0.02 250);
+  position:relative;overflow:hidden;
+  border:2px solid var(--color-primary);
+  box-shadow:0 0 40px oklch(68% 0.18 250 / 0.4);
+}
+.scan-frame__view::before,
+.scan-frame__view::after{
+  content:"";position:absolute;width:40px;height:40px;
+  border:4px solid var(--color-primary);
+}
+.scan-frame__view::before{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:12px 0 0 0}
+.scan-frame__view::after{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 12px 0}
+.scan-frame__line{
+  position:absolute;left:10%;right:10%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--color-primary),transparent);
+  box-shadow:0 0 12px var(--color-primary);
+  animation:scanLine 2.5s ease-in-out infinite;
+}
+@keyframes scanLine{0%,100%{top:15%}50%{top:85%}}
+.scan-frame__hint{
+  margin-top:var(--sp-md);font-size:var(--fs-sm);color:var(--color-text-mute);
+}
+.scan-frame__input{
+  margin-top:var(--sp-md);display:flex;gap:8px;width:100%;max-width:300px;
+}
+.scan-frame__input input{
+  flex:1;padding:10px 14px;border-radius:10px;
+  background:oklch(100% 0 0 / 0.06);border:1px solid var(--color-line);
+  color:var(--color-text);font-family:inherit;font-size:var(--fs-sm);outline:none;
+}
+.scan-frame__input input:focus{border-color:var(--color-primary)}
+.scan-frame__input button{
+  padding:10px 18px;border-radius:10px;
+  background:var(--color-primary);color:#fff;font-weight:700;font-size:var(--fs-sm);
+}
+
+/* ===== Page:订单 ===== */
+.screen--orders .screen__scroll{padding-top:var(--sp-md)}
+.order-tabs{display:flex;gap:6px;margin-bottom:var(--sp-md);overflow-x:auto;scrollbar-width:none}
+.order-tabs::-webkit-scrollbar{display:none}
+.order-tabs button{
+  padding:6px 14px;border-radius:var(--radius-pill);
+  background:oklch(100% 0 0 / 0.05);font-size:var(--fs-sm);
+  white-space:nowrap;transition:all var(--dur);
+}
+.order-tabs button.active{background:var(--color-primary);color:#fff;font-weight:700}
+
+.order-card{
+  padding:14px;border-radius:14px;
+  background:oklch(100% 0 0 / 0.04);
+  border:1px solid var(--color-line);
+  margin-bottom:10px;
+  transition:all var(--dur);
+}
+.order-card:hover{background:oklch(100% 0 0 / 0.08)}
+.order-card.active{
+  background:linear-gradient(160deg,oklch(72% 0.20 35 / 0.12),oklch(20% 0.04 250));
+  border-color:oklch(72% 0.20 35 / 0.4);
+}
+.order-card__head{display:flex;justify-content:space-between;align-items:start;margin-bottom:8px}
+.order-card__name{font-weight:700;font-size:var(--fs-base)}
+.order-card__status{font-size:var(--fs-xs);padding:3px 8px;border-radius:var(--radius-pill)}
+.order-card__status.charging{background:oklch(72% 0.20 35 / 0.2);color:var(--color-accent)}
+.order-card__status.done{background:oklch(70% 0.18 165 / 0.2);color:var(--color-primary-2)}
+.order-card__status.paid{background:oklch(68% 0.18 250 / 0.2);color:var(--color-primary)}
+.order-card__info{display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--color-text-mute);margin-bottom:6px}
+.order-card__price{font-size:var(--fs-lg);font-weight:700;color:var(--color-text);font-family:'Space Grotesk',sans-serif}
+
+/* Charging progress mini */
+.progress-mini{
+  margin-top:8px;display:flex;align-items:center;gap:8px;
+  font-size:var(--fs-xs);color:var(--color-text-mute);
+}
+.progress-mini__bar{flex:1;height:6px;background:oklch(100% 0 0 / 0.1);border-radius:3px;overflow:hidden}
+.progress-mini__fill{height:100%;background:linear-gradient(90deg,var(--color-accent),var(--color-warn));border-radius:3px;transition:width var(--dur-slow)}
+
+/* ===== Page:我的 ===== */
+.screen--me .screen__scroll{padding-top:var(--sp-md)}
+.profile{
+  display:flex;align-items:center;gap:14px;padding:var(--sp-md);
+  border-radius:20px;
+  background:
+    radial-gradient(at 100% 0%, oklch(72% 0.20 35 / 0.25), transparent 60%),
+    linear-gradient(135deg,oklch(35% 0.10 250),oklch(25% 0.05 250));
+  border:1px solid var(--color-line);
+  margin-bottom:var(--sp-md);
+}
+.profile__avatar{
+  width:60px;height:60px;border-radius:50%;
+  background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));
+  display:grid;place-items:center;font-size:1.6rem;font-weight:700;color:#fff;
+  border:2px solid var(--color-bg-2);
+}
+.profile__name{font-weight:700;font-size:var(--fs-lg);display:flex;align-items:center;gap:6px}
+.profile__badge{
+  padding:2px 8px;border-radius:var(--radius-pill);font-size:.65rem;font-weight:700;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03;
+}
+.profile__phone{color:var(--color-text-mute);font-size:var(--fs-sm);margin-top:2px}
+
+.wallet{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  margin-bottom:var(--sp-md);
+  padding:var(--sp-md);border-radius:16px;
+  background:oklch(100% 0 0 / 0.04);
+  border:1px solid var(--color-line);
+}
+.wallet__item{text-align:center;transition:transform var(--dur)}
+.wallet__item:hover{transform:translateY(-3px)}
+.wallet__num{font-weight:700;font-size:var(--fs-lg);color:var(--color-primary);font-family:'Space Grotesk',sans-serif}
+.wallet__label{font-size:var(--fs-xs);color:var(--color-text-mute);margin-top:2px}
+
+.menu-group{
+  border-radius:16px;overflow:hidden;
+  background:oklch(100% 0 0 / 0.04);
+  border:1px solid var(--color-line);
+  margin-bottom:var(--sp-md);
+}
+.menu-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px var(--sp-md);
+  border-bottom:1px solid var(--color-line);
+  transition:background var(--dur);
+  cursor:pointer;
+}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:oklch(100% 0 0 / 0.06)}
+.menu-item__icon{
+  width:32px;height:32px;border-radius:10px;
+  background:oklch(100% 0 0 / 0.06);
+  display:grid;place-items:center;font-size:1rem;
+}
+.menu-item__label{flex:1;font-size:var(--fs-base)}
+.menu-item__arrow{color:var(--color-text-mute);font-size:.8rem}
+
+/* ===== Charging detail (full-screen overlay) ===== */
+.overlay{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(at 50% 0%, oklch(30% 0.10 35), transparent 50%),
+    var(--color-bg);
+  z-index:200;display:none;flex-direction:column;
+  padding:36px var(--sp-md) var(--sp-md);
+}
+.overlay.active{display:flex;animation:fadeIn var(--dur) var(--ease)}
+.overlay__close{
+  align-self:flex-start;margin-bottom:var(--sp-md);
+  width:38px;height:38px;border-radius:50%;
+  background:oklch(100% 0 0 / 0.06);display:grid;place-items:center;
+  transition:transform var(--dur) var(--ease);
+}
+.overlay__close:hover{transform:rotate(90deg) scale(1.05)}
+.overlay__title{text-align:center;font-size:var(--fs-lg);font-weight:700;margin-bottom:var(--sp-md)}
+
+.ring{
+  width:240px;height:240px;margin:var(--sp-md) auto;position:relative;
+}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring__bg{fill:none;stroke:oklch(100% 0 0 / 0.08);stroke-width:14}
+.ring__fg{
+  fill:none;stroke:url(#chargeGrad);stroke-width:14;stroke-linecap:round;
+  stroke-dasharray:628;stroke-dashoffset:628;
+  transition:stroke-dashoffset var(--dur-slow) var(--ease);
+  filter:drop-shadow(0 0 8px oklch(72% 0.20 35 / 0.6));
+}
+.ring__center{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.ring__pct{font-size:var(--fs-2xl);font-weight:900;font-family:'Space Grotesk',sans-serif;color:var(--color-accent)}
+.ring__kwh{font-size:var(--fs-sm);color:var(--color-text-mute);margin-top:2px}
+
+.charge-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:var(--sp-md) 0;
+}
+.charge-stat{
+  padding:12px;border-radius:14px;
+  background:oklch(100% 0 0 / 0.04);
+  border:1px solid var(--color-line);
+  text-align:center;
+}
+.charge-stat__label{font-size:var(--fs-xs);color:var(--color-text-mute);letter-spacing:.06em}
+.charge-stat__val{font-size:var(--fs-lg);font-weight:700;margin-top:4px;font-family:'Space Grotesk',sans-serif}
+
+.charge-actions{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.btn-stop{
+  padding:14px;border-radius:14px;
+  background:linear-gradient(135deg,var(--color-accent),var(--color-warn));
+  color:#fff;font-weight:700;font-size:var(--fs-base);
+  box-shadow:0 8px 20px oklch(72% 0.20 35 / 0.3);
+  transition:transform var(--dur) var(--ease);
+}
+.btn-stop:hover{transform:translateY(-2px)}
+.btn-stop:active{transform:scale(0.97)}
+.btn-ghost{
+  padding:12px;border-radius:14px;
+  background:oklch(100% 0 0 / 0.05);border:1px solid var(--color-line);
+  color:var(--color-text);font-weight:500;
+}
+
+/* ===== Toast ===== */
+.toast{
+  position:absolute;left:50%;bottom:120px;transform:translateX(-50%) translateY(20px);
+  padding:10px 18px;border-radius:var(--radius-pill);
+  background:oklch(14% 0.02 250 / 0.95);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--color-line);
+  font-size:var(--fs-sm);opacity:0;
+  transition:all var(--dur) var(--ease-spring);
+  z-index:300;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== Skeleton (loading state example) ===== */
+.skeleton{
+  background:linear-gradient(90deg,oklch(100% 0 0 / 0.04) 25%,oklch(100% 0 0 / 0.1) 50%,oklch(100% 0 0 / 0.04) 75%);
+  background-size:200% 100%;animation:sk 1.4s infinite;border-radius:6px;
+}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ===== Accessibility ===== */
+:focus-visible{outline:3px solid var(--color-primary);outline-offset:2px;border-radius:4px}
+:focus:not(:focus-visible){outline:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.01ms !important}
+}
+
+/* Responsive — fill viewport on small screens */
+@media (max-width:480px){
+  body{padding:0;align-items:stretch;justify-content:stretch}
+  .phone{
+    width:100vw;height:100vh;height:100svh;
+    border-radius:0;border:none;box-shadow:none;
+  }
+  .phone__notch{display:none}
+  .phone__statusbar{padding-top:8px}
+  .screen{inset:0 0 0 0;padding-top:36px}
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="phone__notch" aria-hidden="true"></div>
+  <div class="phone__statusbar">
+    <span>9:41</span>
+    <span class="icons"><span>●●●●</span> <span>📶</span> <span>🔋 86%</span></span>
+  </div>
+
+  <!-- ========== Screen: 首页 ========== -->
+  <section class="screen screen--home active" id="screen-home">
+    <div class="topbar">
+      <div class="topbar__loc">
+        📍 杭州·西湖区 <small>▼</small>
+      </div>
+      <div class="topbar__icons">
+        <button aria-label="消息"><span>🔔</span><span class="badge">3</span></button>
+        <button aria-label="扫码" onclick="switchScreen('scan')">⊢</button>
+      </div>
+    </div>
+
+    <div class="map">
+      <!-- Map road grid (SVG) -->
+      <svg viewBox="0 0 400 400" preserveAspectRatio="none">
+        <defs>
+          <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="oklch(100% 0 0 / 0.06)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)"/>
+        <path d="M0 200 Q 100 150 200 200 T 400 200" fill="none" stroke="oklch(68% 0.18 250 / 0.4)" stroke-width="3"/>
+        <path d="M200 0 Q 220 100 200 200 T 200 400" fill="none" stroke="oklch(68% 0.18 250 / 0.4)" stroke-width="3"/>
+        <path d="M50 50 L 350 350" fill="none" stroke="oklch(100% 0 0 / 0.08)" stroke-width="2"/>
+      </svg>
+
+      <div class="map__filter">
+        <button class="active">全部</button>
+        <button>快充</button>
+        <button>慢充</button>
+        <button>超充</button>
+        <button>免费停车</button>
+        <button>PLUS 站</button>
+      </div>
+
+      <div class="map__pins">
+        <div class="pin" style="top:25%;left:18%" onclick="openStation('特来电·西湖文化广场站','0.6km',12,8,4,'¥1.20')">
+          <span>12</span><div class="pin__pulse"></div>
+        </div>
+        <div class="pin busy" style="top:48%;left:42%" onclick="openStation('星星充电·黄龙体育中心','0.9km',8,2,6,'¥1.35')">
+          <span>8</span>
+        </div>
+        <div class="pin" style="top:32%;left:68%" onclick="openStation('云快充·文三路智能站','1.2km',16,14,2,'¥1.18')">
+          <span>16</span><div class="pin__pulse"></div>
+        </div>
+        <div class="pin fault" style="top:65%;left:25%" onclick="openStation('e充电·城西银泰','1.8km',6,0,0,'¥1.45')">
+          <span>!</span>
+        </div>
+        <div class="pin" style="top:72%;left:60%" onclick="openStation('特来电·西溪天堂','2.3km',10,7,3,'¥1.28')">
+          <span>10</span>
+        </div>
+      </div>
+
+      <div class="map__controls">
+        <button aria-label="定位">⊕</button>
+        <button aria-label="图层">☰</button>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="sheet__handle"></div>
+      <div class="sheet__title">
+        <h3>附近充电站</h3>
+        <div class="sheet__sort">
+          <button class="active">距离</button>·<button>综合</button>·<button>价格</button>
+        </div>
+      </div>
+      <div class="sheet__list">
+        <div class="station" onclick="openStation('特来电·西湖文化广场站','0.6km',12,8,4,'¥1.20')">
+          <div class="station__icon">⚡</div>
+          <div>
+            <div class="station__name">特来电·西湖文化广场站</div>
+            <div class="station__meta"><span>0.6km</span><span>·</span><span>快充 12 枪</span></div>
+            <div class="station__status"><span class="dot idle"></span> 空闲 8</div>
+          </div>
+          <div class="station__price">¥1.20<small>起 /度</small></div>
+        </div>
+        <div class="station" onclick="openStation('星星充电·黄龙体育中心','0.9km',8,2,6,'¥1.35')">
+          <div class="station__icon" style="background:linear-gradient(135deg,var(--color-accent),var(--color-warn))">🔌</div>
+          <div>
+            <div class="station__name">星星充电·黄龙体育中心</div>
+            <div class="station__meta"><span>0.9km</span><span>·</span><span>快充 8 枪</span></div>
+            <div class="station__status"><span class="dot busy"></span> 空闲 2</div>
+          </div>
+          <div class="station__price">¥1.35<small>起 /度</small></div>
+        </div>
+        <div class="station" onclick="openStation('云快充·文三路智能站','1.2km',16,14,2,'¥1.18')">
+          <div class="station__icon">⚡</div>
+          <div>
+            <div class="station__name">云快充·文三路智能站</div>
+            <div class="station__meta"><span>1.2km</span><span>·</span><span>超充 16 枪</span></div>
+            <div class="station__status"><span class="dot idle"></span> 空闲 14</div>
+          </div>
+          <div class="station__price">¥1.18<small>起 /度</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Screen: 省钱/活动 ========== -->
+  <section class="screen screen--deals" id="screen-deals">
+    <div class="topbar">
+      <div class="topbar__loc">省钱 · 活动中心</div>
+      <div class="topbar__icons"><button>⊕</button></div>
+    </div>
+    <div class="screen__scroll">
+      <div class="hero-card">
+        <span class="tag">PLUS 会员日</span>
+        <h2>开通 PLUS 金卡<br>低至 6 折充电</h2>
+        <p>月省约 ¥100 · 8 折专属单价 · 月赠能量包</p>
+        <div class="price">¥19.9<span style="font-size:.5em;color:var(--color-text-mute);text-decoration:line-through;font-weight:400">¥29.9</span></div>
+      </div>
+
+      <div class="section-label"><h3>限时优惠</h3><a>查看全部 →</a></div>
+      <div class="deal-grid">
+        <div class="deal">
+          <div class="deal__name">满 50 减 8</div>
+          <div class="deal__desc">单笔充电满 50 元立减 8 元</div>
+          <button class="deal__btn">立即领取</button>
+        </div>
+        <div class="deal">
+          <div class="deal__name">200 度能量包</div>
+          <div class="deal__desc">锁定低价 · 跨月有效</div>
+          <button class="deal__btn">¥218 抢购</button>
+        </div>
+        <div class="deal">
+          <div class="deal__name">夜间充电券</div>
+          <div class="deal__desc">22:00-06:00 时段专用</div>
+          <button class="deal__btn">立即领取</button>
+        </div>
+        <div class="deal">
+          <div class="deal__name">邀请有礼</div>
+          <div class="deal__desc">邀好友各得 10 元电费</div>
+          <button class="deal__btn">分享邀请</button>
+        </div>
+      </div>
+
+      <div class="section-label"><h3>会员等级</h3></div>
+      <div class="menu-group">
+        <div class="menu-item">
+          <div class="menu-item__icon" style="background:linear-gradient(135deg,#9ca3af,#6b7280)">🥈</div>
+          <div class="menu-item__label">PLUS 银卡 · ¥2.9-9.9/月<br><small style="color:var(--color-text-mute);font-size:var(--fs-xs)">6 折起 · 月省 ¥50</small></div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">🥇</div>
+          <div class="menu-item__label">PLUS 金卡 · ¥19.9/月<br><small style="color:var(--color-text-mute);font-size:var(--fs-xs)">8 折专属 · 月省 ¥100</small></div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">💎</div>
+          <div class="menu-item__label">V1 超级会员 · ¥99-198/年<br><small style="color:var(--color-text-mute);font-size:var(--fs-xs)">最低折扣 · 电池管家</small></div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Screen: 扫码 ========== -->
+  <section class="screen screen--scan" id="screen-scan">
+    <div class="topbar">
+      <div class="topbar__loc">扫码充电</div>
+      <div class="topbar__icons"><button>⚡</button></div>
+    </div>
+    <div class="scan-frame">
+      <h2 class="scan-frame__title">对准充电桩二维码</h2>
+      <p class="scan-frame__desc">支持特来电 / 星星充电 / 云快充 / e充电<br>多运营商统一扫码启动</p>
+      <div class="scan-frame__view">
+        <div class="scan-frame__line"></div>
+      </div>
+      <div class="scan-frame__hint">或手动输入桩编号</div>
+      <div class="scan-frame__input">
+        <input type="text" placeholder="例如：TLD-20256-A03" aria-label="桩编号">
+        <button onclick="showToast('已识别桩号 TLD-20256-A03');startCharging()">启动</button>
+      </div>
+      <div style="margin-top:var(--sp-md);display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <button class="btn-ghost" style="padding:8px 14px">📞 即插即充 NFC</button>
+        <button class="btn-ghost" style="padding:8px 14px">📍 附近可用桩</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Screen: 订单 ========== -->
+  <section class="screen screen--orders" id="screen-orders">
+    <div class="topbar">
+      <div class="topbar__loc">我的订单</div>
+      <div class="topbar__icons"><button>⌕</button></div>
+    </div>
+    <div class="screen__scroll">
+      <div class="order-tabs">
+        <button class="active">全部</button>
+        <button>充电中</button>
+        <button>已完成</button>
+        <button>已支付</button>
+        <button>异常</button>
+      </div>
+
+      <div class="order-card active" onclick="openChargeDetail()">
+        <div class="order-card__head">
+          <div class="order-card__name">⚡ 特来电·西湖文化广场站</div>
+          <div class="order-card__status charging">充电中</div>
+        </div>
+        <div class="order-card__info">
+          <span>A03 · 国标快充</span>
+          <span>今日 14:32 开始</span>
+        </div>
+        <div class="progress-mini">
+          <span>已充 23.6 / 50 kWh</span>
+          <div class="progress-mini__bar"><div class="progress-mini__fill" style="width:47%"></div></div>
+          <span>47%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <span style="font-size:var(--fs-xs);color:var(--color-text-mute)">预计 16:08 完成</span>
+          <span class="order-card__price">¥28.32</span>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <div class="order-card__head">
+          <div class="order-card__name">⚡ 云快充·文三路智能站</div>
+          <div class="order-card__status done">已完成</div>
+        </div>
+        <div class="order-card__info">
+          <span>B07 · 超充 240kW</span>
+          <span>昨日 19:24</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="font-size:var(--fs-xs);color:var(--color-text-mute)">42.8 kWh · 32 分钟</span>
+          <span class="order-card__price">¥50.50</span>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <div class="order-card__head">
+          <div class="order-card__name">🔌 星星充电·黄龙体育中心</div>
+          <div class="order-card__status paid">已支付</div>
+        </div>
+        <div class="order-card__info">
+          <span>C02 · 快充 120kW</span>
+          <span>06-15 11:02</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="font-size:var(--fs-xs);color:var(--color-text-mute)">28.5 kWh · 已开票</span>
+          <span class="order-card__price">¥38.48</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Screen: 我的 ========== -->
+  <section class="screen screen--me" id="screen-me">
+    <div class="topbar">
+      <div class="topbar__loc">我的</div>
+      <div class="topbar__icons"><button>⚙</button></div>
+    </div>
+    <div class="screen__scroll">
+      <div class="profile">
+        <div class="profile__avatar">李</div>
+        <div>
+          <div class="profile__name">李先生 <span class="profile__badge">PLUS 金</span></div>
+          <div class="profile__phone">138****6688</div>
+        </div>
+      </div>
+
+      <div class="wallet">
+        <div class="wallet__item">
+          <div class="wallet__num">¥86.50</div>
+          <div class="wallet__label">余额</div>
+        </div>
+        <div class="wallet__item">
+          <div class="wallet__num">5</div>
+          <div class="wallet__label">卡券</div>
+        </div>
+        <div class="wallet__item">
+          <div class="wallet__num">120</div>
+          <div class="wallet__label">能量包</div>
+        </div>
+        <div class="wallet__item">
+          <div class="wallet__num">2,860</div>
+          <div class="wallet__label">碳积分</div>
+        </div>
+      </div>
+
+      <div class="section-label"><h3>车辆管理</h3><a>添加 ›</a></div>
+      <div class="menu-group">
+        <div class="menu-item">
+          <div class="menu-item__icon">🚗</div>
+          <div class="menu-item__label">浙 A·D8X66 · 比亚迪海豚<small style="display:block;color:var(--color-text-mute);font-size:var(--fs-xs)">当前电量 47% · 国标接口</small></div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon">🚙</div>
+          <div class="menu-item__label">浙 A·5N2Y9 · 特斯拉 Model Y<small style="display:block;color:var(--color-text-mute);font-size:var(--fs-xs)">国标转接头 · 电池健康 98%</small></div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+      </div>
+
+      <div class="section-label"><h3>常用工具</h3></div>
+      <div class="menu-group">
+        <div class="menu-item">
+          <div class="menu-item__icon">🧾</div>
+          <div class="menu-item__label">发票管理</div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon">⚡</div>
+          <div class="menu-item__label">即插即充设置</div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon">📍</div>
+          <div class="menu-item__label">收藏电站</div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon">🔋</div>
+          <div class="menu-item__label">电池卫士检测报告</div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon">🌿</div>
+          <div class="menu-item__label">碳积分 · V2G 收益</div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item__icon">🎧</div>
+          <div class="menu-item__label">客服中心</div>
+          <div class="menu-item__arrow">›</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Charging detail overlay ========== -->
+  <div class="overlay" id="chargeDetail">
+    <button class="overlay__close" onclick="closeChargeDetail()" aria-label="关闭">✕</button>
+    <h2 class="overlay__title">⚡ 充电进行中</h2>
+    <p style="text-align:center;color:var(--color-text-mute);font-size:var(--fs-sm)">特来电·西湖文化广场站 · A03</p>
+
+    <div class="ring">
+      <svg viewBox="0 0 240 240">
+        <defs>
+          <linearGradient id="chargeGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="oklch(72% 0.20 35)"/>
+            <stop offset="100%" stop-color="oklch(72% 0.22 60)"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring__bg" cx="120" cy="120" r="100"/>
+        <circle class="ring__fg" id="ringFg" cx="120" cy="120" r="100"/>
+      </svg>
+      <div class="ring__center">
+        <div class="ring__pct" id="ringPct">47%</div>
+        <div class="ring__kwh">已充 <b id="ringKwh">23.6</b> / 50 kWh</div>
+      </div>
+    </div>
+
+    <div class="charge-stats">
+      <div class="charge-stat">
+        <div class="charge-stat__label">实时功率</div>
+        <div class="charge-stat__val" style="color:var(--color-accent)">82.4 kW</div>
+      </div>
+      <div class="charge-stat">
+        <div class="charge-stat__label">已用时长</div>
+        <div class="charge-stat__val">32:18</div>
+      </div>
+      <div class="charge-stat">
+        <div class="charge-stat__label">已产生费用</div>
+        <div class="charge-stat__val">¥28.32</div>
+      </div>
+      <div class="charge-stat">
+        <div class="charge-stat__label">预计完成</div>
+        <div class="charge-stat__val">16:08</div>
+      </div>
+    </div>
+
+    <div style="padding:12px;background:oklch(70% 0.18 165 / 0.08);border-radius:12px;border:1px solid oklch(70% 0.18 165 / 0.2);font-size:var(--fs-xs);color:var(--color-primary-2);display:flex;align-items:center;gap:8px">
+      <span>🌱</span><span>本次充电预计减少碳排放 12.8 kg · 累计碳积分 2,860</span>
+    </div>
+
+    <div class="charge-actions">
+      <button class="btn-stop" onclick="stopCharging()">停止充电</button>
+      <button class="btn-ghost">查看站点详情</button>
+    </div>
+  </div>
+
+  <!-- ========== TabBar ========== -->
+  <nav class="tabbar">
+    <button class="tab active" data-tab="home" onclick="switchScreen('home')">
+      <span class="icon">📍</span><span>首页</span>
+    </button>
+    <button class="tab" data-tab="deals" onclick="switchScreen('deals')">
+      <span class="icon">🏷</span><span>省钱</span>
+    </button>
+    <button class="tab tab--scan" data-tab="scan" onclick="switchScreen('scan')">
+      <div class="scan-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+          <line x1="7" y1="12" x2="17" y2="12"/>
+        </svg>
+      </div>
+      <span class="label">扫码</span>
+    </button>
+    <button class="tab" data-tab="orders" onclick="switchScreen('orders')">
+      <span class="icon">📋</span><span>订单</span>
+    </button>
+    <button class="tab" data-tab="me" onclick="switchScreen('me')">
+      <span class="icon">👤</span><span>我的</span>
+    </button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ===== Tab switching ===== */
+function switchScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${name}"]`)?.classList.add('active');
+}
+
+/* ===== Filter buttons ===== */
+document.querySelectorAll('.map__filter button').forEach(b=>{
+  b.addEventListener('click',e=>{
+    document.querySelectorAll('.map__filter button').forEach(x=>x.classList.remove('active'));
+    e.target.classList.add('active');
+  });
+});
+document.querySelectorAll('.order-tabs button').forEach(b=>{
+  b.addEventListener('click',e=>{
+    document.querySelectorAll('.order-tabs button').forEach(x=>x.classList.remove('active'));
+    e.target.classList.add('active');
+  });
+});
+document.querySelectorAll('.sheet__sort button').forEach(b=>{
+  b.addEventListener('click',e=>{
+    document.querySelectorAll('.sheet__sort button').forEach(x=>x.classList.remove('active'));
+    e.target.classList.add('active');
+  });
+});
+
+/* ===== Toast ===== */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ===== Open station from map ===== */
+function openStation(name,dist,total,idle,busy,price){
+  showToast(`${name} · 空闲 ${idle}/${total}`);
+}
+
+/* ===== Charging flow ===== */
+function startCharging(){
+  showToast('正在连接充电桩...');
+  setTimeout(()=>{
+    showToast('充电已启动 · 当前功率 82.4kW');
+    openChargeDetail();
+  },1200);
+}
+function openChargeDetail(){
+  document.getElementById('chargeDetail').classList.add('active');
+  // animate ring to 47%
+  setTimeout(()=>{
+    const ring=document.getElementById('ringFg');
+    const circumference=2*Math.PI*100;
+    const pct=0.47;
+    ring.style.strokeDashoffset=circumference*(1-pct);
+  },80);
+}
+function closeChargeDetail(){
+  document.getElementById('chargeDetail').classList.remove('active');
+}
+function stopCharging(){
+  if(confirm('确定要停止充电吗？')){showToast('充电已停止 · 正在结算...');setTimeout(closeChargeDetail,800)}
+}
+
+/* ===== Sheet drag handle (simple swipe up) ===== */
+(function(){
+  const sheet=document.querySelector('.sheet');
+  let startY=0,curY=0,dragging=false;
+  sheet.querySelector('.sheet__handle').addEventListener('touchstart',e=>{startY=e.touches[0].clientY;dragging=true});
+  sheet.addEventListener('touchmove',e=>{
+    if(!dragging)return;
+    curY=e.touches[0].clientY;
+    const dy=Math.min(0,curY-startY);
+    sheet.style.transform=`translateY(${dy}px)`;
+  });
+  sheet.addEventListener('touchend',()=>{
+    dragging=false;
+    sheet.style.transform='';
+  });
+})();
+</script>
+</body>
+</html>

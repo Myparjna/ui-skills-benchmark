@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>城市运营管理后台 · 共享两轮</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
+        secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
+        destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
+        muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+        accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
+        card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
+      },
+      fontFamily: { sans: ['Inter', '"Noto Sans SC"', 'system-ui', 'sans-serif'] },
+      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
+    },
+  },
+}
+</script>
+<style>
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+  body { font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: hsl(240 5% 96%); }
+  .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; font-weight: 500; border-radius: calc(var(--radius) - 1px); transition: all .15s; cursor: pointer; white-space: nowrap; font-size: .8125rem; }
+  .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); height: 2.25rem; padding: 0 .75rem; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-outline { border: 1px solid hsl(var(--border)); background: hsl(var(--background)); color: hsl(var(--foreground)); height: 2.25rem; padding: 0 .75rem; }
+  .btn-outline:hover { background: hsl(var(--accent)); }
+  .btn-ghost { color: hsl(var(--foreground)); height: 2.25rem; padding: 0 .75rem; }
+  .btn-ghost:hover { background: hsl(var(--accent)); }
+  .btn-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); height: 2.25rem; padding: 0 .75rem; }
+  .input { height: 2.25rem; width: 100%; border-radius: calc(var(--radius) - 1px); border: 1px solid hsl(var(--input)); background: hsl(var(--background)); padding: 0 .625rem; font-size: .8125rem; outline: none; }
+  .input:focus { border-color: hsl(var(--ring)); box-shadow: 0 0 0 2px hsl(var(--ring) / .12); }
+  .input::placeholder { color: hsl(var(--muted-foreground)); }
+  .badge { display: inline-flex; align-items: center; gap: .25rem; border-radius: calc(var(--radius) - 2px); padding: .125rem .5rem; font-size: .7rem; font-weight: 500; line-height: 1.2; border: 1px solid transparent; }
+  .badge-default { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .badge-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+  .badge-outline { color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+  .badge-success { background: hsl(142 71% 45% / .12); color: hsl(142 71% 35%); border-color: hsl(142 71% 45% / .2); }
+  .badge-warning { background: hsl(38 92% 50% / .14); color: hsl(32 95% 44%); border-color: hsl(38 92% 50% / .25); }
+  .badge-danger { background: hsl(0 84% 60% / .12); color: hsl(0 84% 50%); border-color: hsl(0 84% 60% / .2); }
+  .separator { height: 1px; background: hsl(var(--border)); width: 100%; }
+  .icon { stroke-width: 1.75; }
+  /* sidebar nav */
+  .nav-item { display: flex; align-items: center; gap: .625rem; padding: .5rem .625rem; border-radius: calc(var(--radius) - 1px); font-size: .8125rem; color: hsl(var(--muted-foreground)); cursor: pointer; transition: all .12s; }
+  .nav-item:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+  .nav-item.active { background: hsl(var(--secondary)); color: hsl(var(--foreground)); font-weight: 500; }
+  .nav-section-title { font-size: .6875rem; color: hsl(var(--muted-foreground)); padding: .75rem .625rem .25rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  /* table */
+  .table-cell { padding: .625rem .75rem; font-size: .8125rem; }
+  .table-head { padding: .5rem .75rem; font-size: .75rem; font-weight: 500; color: hsl(var(--muted-foreground)); text-align: left; }
+  /* map */
+  .map-canvas {
+    background:
+      radial-gradient(circle at 30% 30%, hsl(199 89% 48% / .08) 0, transparent 40%),
+      radial-gradient(circle at 70% 70%, hsl(142 71% 45% / .08) 0, transparent 40%),
+      linear-gradient(180deg, hsl(140 14% 90%) 0%, hsl(140 14% 88%) 100%);
+    position: relative; overflow: hidden;
+  }
+  .map-canvas::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(0deg, transparent 49%, hsl(220 10% 80% / .35) 49.5%, hsl(220 10% 80% / .35) 50.5%, transparent 51%),
+      linear-gradient(90deg, transparent 49%, hsl(220 10% 80% / .35) 49.5%, hsl(220 10% 80% / .35) 50.5%, transparent 51%);
+    background-size: 80px 80px; opacity: .55;
+  }
+  .map-canvas::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(45deg, hsl(140 14% 88%) 0%, transparent 25%),
+      linear-gradient(-135deg, hsl(140 14% 88%) 0%, transparent 25%);
+    opacity: .6;
+  }
+  .map-road { position: absolute; background: hsl(0 0% 100%); box-shadow: 0 0 0 1px hsl(220 10% 85%); z-index: 1; }
+  .map-heatmap { position: absolute; border-radius: 50%; filter: blur(28px); opacity: .55; z-index: 2; }
+  .map-pin { position: absolute; z-index: 5; transform: translate(-50%, -100%); }
+  .map-pin .pin-dot {
+    width: 18px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    border: 2px solid hsl(var(--card)); box-shadow: 0 4px 8px -2px rgba(0,0,0,.25);
+  }
+  /* mini bar chart */
+  .bar { background: hsl(var(--primary)); border-radius: 2px 2px 0 0; transition: height .3s; }
+  .bar-muted { background: hsl(var(--muted-foreground) / .3); }
+  /* scroll area */
+  .scroll-y { overflow-y: auto; }
+  .scroll-y::-webkit-scrollbar { width: 6px; }
+  .scroll-y::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+</style>
+</head>
+<body class="text-foreground">
+
+<div class="flex h-screen w-full overflow-hidden">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="w-60 shrink-0 bg-card border-r border-border flex flex-col">
+    <!-- Logo -->
+    <div class="h-14 px-4 flex items-center gap-2 border-b border-border">
+      <span class="inline-flex items-center justify-center size-8 rounded-lg bg-primary text-primary-foreground">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/></svg>
+      </span>
+      <div class="leading-tight">
+        <div class="text-sm font-bold">城市运营后台</div>
+        <div class="text-[10px] text-muted-foreground -mt-0.5">CITY OPS · BIKE & E-BIKE</div>
+      </div>
+    </div>
+
+    <!-- City switcher -->
+    <div class="px-3 py-2 border-b border-border">
+      <button class="w-full flex items-center justify-between btn btn-outline !h-9">
+        <span class="flex items-center gap-2">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 10c0 4-8 12-8 12s-8-8-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          杭州 · 全城
+        </span>
+        <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 scroll-y px-3 py-2">
+      <div class="nav-section-title">运营</div>
+      <div class="nav-item active">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        运营总览
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 10c0 4-8 12-8 12s-8-8-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        地图调度中心
+        <span class="badge badge-danger ml-auto">12</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/></svg>
+        车队资产
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M6 11h4"/></svg>
+        电池与能源
+      </div>
+
+      <div class="nav-section-title">运维</div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h3"/></svg>
+        运维工单
+        <span class="badge badge-warning ml-auto">38</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18v14H3zM3 10h18M8 14h8"/></svg>
+        规则与区域
+      </div>
+
+      <div class="nav-section-title">合规 & 分析</div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        合规监管
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18M7 16l4-4 4 2 5-6"/></svg>
+        数据报表
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        组织与权限
+      </div>
+      <div class="nav-item">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        系统配置与对接
+      </div>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-border p-3 flex items-center gap-2">
+      <div class="size-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold">陈</div>
+      <div class="leading-tight flex-1 min-w-0">
+        <div class="text-xs font-semibold truncate">陈运营</div>
+        <div class="text-[10px] text-muted-foreground">城市运营经理</div>
+      </div>
+      <button class="btn btn-ghost !h-8 !px-2">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Top bar -->
+    <header class="h-14 bg-card border-b border-border px-5 flex items-center gap-3 shrink-0">
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <a href="#" class="hover:text-foreground">运营</a>
+        <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 18 6-6-6-6"/></svg>
+        <span class="text-foreground font-medium">运营总览</span>
+      </div>
+
+      <!-- Time range -->
+      <div class="ml-6 flex items-center gap-1 bg-secondary rounded-md p-0.5">
+        <button class="px-2.5 py-1 text-xs rounded bg-card shadow-sm font-medium">今日</button>
+        <button class="px-2.5 py-1 text-xs rounded text-muted-foreground">昨日</button>
+        <button class="px-2.5 py-1 text-xs rounded text-muted-foreground">本周</button>
+        <button class="px-2.5 py-1 text-xs rounded text-muted-foreground">本月</button>
+        <button class="px-2.5 py-1 text-xs rounded text-muted-foreground">自定义</button>
+      </div>
+
+      <div class="ml-auto flex items-center gap-2">
+        <div class="relative">
+          <input class="input pl-8 w-64" placeholder="搜索车辆 / 订单 / 用户" />
+          <svg class="icon absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <button class="btn btn-outline relative">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="badge badge-danger absolute -top-1 -right-1 !px-1 !py-0">9</span>
+        </button>
+        <button class="btn btn-primary">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+          快速创建
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="flex-1 scroll-y p-5">
+      <!-- Header row -->
+      <div class="flex items-end justify-between flex-wrap gap-3 mb-5">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">运营总览</h1>
+          <p class="text-xs text-muted-foreground mt-0.5">2026-06-17 周三 · 数据更新于 30 秒前 · 时区 UTC+8</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-outline">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            导出报表
+          </button>
+          <button class="btn btn-outline">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            订阅配置
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-muted-foreground">订单数（今日）</div>
+            <span class="badge badge-success">+12.4%</span>
+          </div>
+          <div class="mt-2 flex items-end gap-2">
+            <div class="text-2xl font-bold">28,614</div>
+            <div class="text-[11px] text-muted-foreground mb-1">vs 昨日 25,458</div>
+          </div>
+          <div class="separator my-3"></div>
+          <div class="flex items-end gap-1 h-8">
+            <div class="bar bar-muted flex-1" style="height: 50%"></div>
+            <div class="bar bar-muted flex-1" style="height: 70%"></div>
+            <div class="bar bar-muted flex-1" style="height: 45%"></div>
+            <div class="bar bar-muted flex-1" style="height: 80%"></div>
+            <div class="bar bar-muted flex-1" style="height: 60%"></div>
+            <div class="bar bar-muted flex-1" style="height: 75%"></div>
+            <div class="bar flex-1" style="height: 95%"></div>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-muted-foreground">GMV（今日）</div>
+            <span class="badge badge-success">+8.2%</span>
+          </div>
+          <div class="mt-2 flex items-end gap-2">
+            <div class="text-2xl font-bold">¥142,860</div>
+            <div class="text-[11px] text-muted-foreground mb-1">vs 昨日 ¥132K</div>
+          </div>
+          <div class="separator my-3"></div>
+          <div class="text-[11px] text-muted-foreground flex items-center justify-between">
+            <span>起步价 ¥1.5 · 时长 ¥0.5/min</span>
+            <span class="text-foreground font-medium">客单 ¥4.99</span>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-muted-foreground">单车日均骑行</div>
+            <span class="badge badge-success">+3.1%</span>
+          </div>
+          <div class="mt-2 flex items-end gap-2">
+            <div class="text-2xl font-bold">5.82<span class="text-sm font-normal text-muted-foreground"> 次/车</span></div>
+          </div>
+          <div class="separator my-3"></div>
+          <div class="flex items-center gap-1.5">
+            <span class="badge badge-outline">自行车 6.4</span>
+            <span class="badge badge-outline">电单车 4.9</span>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-muted-foreground">开锁成功率</div>
+            <span class="badge badge-success">99.4%</span>
+          </div>
+          <div class="mt-2 flex items-end gap-2">
+            <div class="text-2xl font-bold">99.42%</div>
+          </div>
+          <div class="separator my-3"></div>
+          <div class="text-[11px] text-muted-foreground flex items-center justify-between">
+            <span>失败 166 次</span>
+            <span class="text-destructive">P0 告警 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map + alerts -->
+      <div class="grid grid-cols-12 gap-4 mt-4">
+        <!-- Map -->
+        <div class="col-span-12 xl:col-span-8 card p-0 overflow-hidden">
+          <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-semibold">地图调度中心</div>
+              <span class="badge badge-secondary">实时</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="btn btn-ghost !h-8 text-xs">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18v14H3zM3 10h18M8 14h8"/></svg>
+                围栏
+              </button>
+              <button class="btn btn-ghost !h-8 text-xs">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18M7 16l4-4 4 2 5-6"/></svg>
+                热力
+              </button>
+              <button class="btn btn-ghost !h-8 text-xs">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                派单
+              </button>
+            </div>
+          </div>
+
+          <div class="map-canvas relative" style="height: 380px;">
+            <!-- Roads -->
+            <div class="map-road" style="top: 28%; left: 0; right: 0; height: 16px; transform: rotate(-4deg);"></div>
+            <div class="map-road" style="top: 0; bottom: 0; left: 48%; width: 16px; transform: rotate(6deg);"></div>
+            <div class="map-road" style="top: 65%; left: 8%; width: 55%; height: 12px; transform: rotate(15deg);"></div>
+            <div class="map-road" style="top: 10%; left: 15%; width: 30%; height: 10px; transform: rotate(-25deg);"></div>
+
+            <!-- Heatmap blobs -->
+            <div class="map-heatmap" style="top: 18%; left: 32%; width: 120px; height: 120px; background: hsl(0 84% 60% / .45);"></div>
+            <div class="map-heatmap" style="top: 60%; left: 60%; width: 100px; height: 100px; background: hsl(38 92% 50% / .45);"></div>
+            <div class="map-heatmap" style="top: 50%; left: 20%; width: 90px; height: 90px; background: hsl(142 71% 45% / .4);"></div>
+
+            <!-- Pins -->
+            <div class="map-pin" style="top: 22%; left: 35%;">
+              <div class="pin-dot bg-red-500"></div>
+            </div>
+            <div class="map-pin" style="top: 25%; left: 38%;">
+              <div class="pin-dot bg-emerald-500"></div>
+            </div>
+            <div class="map-pin" style="top: 38%; left: 55%;">
+              <div class="pin-dot bg-emerald-500"></div>
+            </div>
+            <div class="map-pin" style="top: 48%; left: 30%;">
+              <div class="pin-dot bg-orange-500"></div>
+            </div>
+            <div class="map-pin" style="top: 62%; left: 65%;">
+              <div class="pin-dot bg-emerald-500"></div>
+            </div>
+            <div class="map-pin" style="top: 70%; left: 45%;">
+              <div class="pin-dot bg-red-500"></div>
+            </div>
+            <div class="map-pin" style="top: 35%; left: 70%;">
+              <div class="pin-dot bg-emerald-500"></div>
+            </div>
+
+            <!-- Legend -->
+            <div class="absolute bottom-3 left-3 card !border-border p-2.5 text-[11px] z-10">
+              <div class="font-medium mb-1.5">车辆状态</div>
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-1.5"><div class="size-2 rounded-full bg-emerald-500"></div>可用 <span class="text-muted-foreground ml-auto">18,420</span></div>
+                <div class="flex items-center gap-1.5"><div class="size-2 rounded-full bg-orange-500"></div>低电 <span class="text-muted-foreground ml-auto">1,256</span></div>
+                <div class="flex items-center gap-1.5"><div class="size-2 rounded-full bg-red-500"></div>故障 <span class="text-muted-foreground ml-auto">128</span></div>
+                <div class="flex items-center gap-1.5"><div class="size-2 rounded-full bg-slate-400"></div>离线 <span class="text-muted-foreground ml-auto">316</span></div>
+              </div>
+            </div>
+
+            <!-- Status badge -->
+            <div class="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+              <span class="badge badge-success bg-card">
+                <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                实时刷新 · 10s
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts panel -->
+        <div class="col-span-12 xl:col-span-4 card flex flex-col">
+          <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-semibold">告警与异常</div>
+              <span class="badge badge-danger">P0 · 3</span>
+              <span class="badge badge-warning">P1 · 8</span>
+            </div>
+            <button class="btn btn-ghost !h-8 text-xs">全部 →</button>
+          </div>
+          <div class="flex-1 scroll-y divide-y divide-border">
+            <!-- alert 1 -->
+            <div class="p-3 hover:bg-accent/50 cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-danger">P0</span>
+                <span class="text-xs font-semibold">越界 · 西湖区</span>
+                <span class="text-[10px] text-muted-foreground ml-auto">2 分钟前</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground mt-1">3 辆电单车驶出服务区，建议立即处置</div>
+              <div class="mt-1.5 flex items-center gap-1">
+                <button class="btn btn-outline !h-6 !px-2 text-[10px]">定位</button>
+                <button class="btn btn-outline !h-6 !px-2 text-[10px]">派单</button>
+                <button class="btn btn-outline !h-6 !px-2 text-[10px]">轨迹</button>
+              </div>
+            </div>
+            <div class="p-3 hover:bg-accent/50 cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-danger">P0</span>
+                <span class="text-xs font-semibold">禁停区堆积</span>
+                <span class="text-[10px] text-muted-foreground ml-auto">6 分钟前</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground mt-1">滨江区江南大道地铁口堆积 12 辆</div>
+            </div>
+            <div class="p-3 hover:bg-accent/50 cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-warning">P1</span>
+                <span class="text-xs font-semibold">低电预警</span>
+                <span class="text-[10px] text-muted-foreground ml-auto">12 分钟前</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground mt-1">下沙高教园区 28 辆电单车 SOC < 15%</div>
+            </div>
+            <div class="p-3 hover:bg-accent/50 cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-warning">P1</span>
+                <span class="text-xs font-semibold">疑似倒地</span>
+                <span class="text-[10px] text-muted-foreground ml-auto">18 分钟前</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground mt-1">萧山区市心北路 1 辆车姿态异常</div>
+            </div>
+            <div class="p-3 hover:bg-accent/50 cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-warning">P1</span>
+                <span class="text-xs font-semibold">离线聚集</span>
+                <span class="text-[10px] text-muted-foreground ml-auto">25 分钟前</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground mt-1">余杭区 4 辆车连续离线 > 1 小时</div>
+            </div>
+            <div class="p-3 hover:bg-accent/50 cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-secondary">P2</span>
+                <span class="text-xs font-semibold">疑似盗损</span>
+                <span class="text-[10px] text-muted-foreground ml-auto">32 分钟前</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground mt-1">车辆 #EB-29384 异常轨迹，建议人工审核</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lower row: vehicles + workorders + supply-demand -->
+      <div class="grid grid-cols-12 gap-4 mt-4">
+        <!-- Vehicle health -->
+        <div class="col-span-12 lg:col-span-4 card p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-semibold">车队健康与可用性</div>
+            <button class="btn btn-ghost !h-7 text-xs">详情 →</button>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <div class="text-[11px] text-muted-foreground">总车辆数</div>
+              <div class="text-lg font-bold mt-0.5">20,120</div>
+            </div>
+            <div>
+              <div class="text-[11px] text-muted-foreground">全城可用率</div>
+              <div class="text-lg font-bold mt-0.5 text-emerald-600">91.5%</div>
+            </div>
+          </div>
+          <div class="separator my-3"></div>
+          <!-- Stacked bar -->
+          <div class="text-[11px] text-muted-foreground mb-1.5">状态分布</div>
+          <div class="h-3 w-full rounded-full overflow-hidden flex">
+            <div class="bg-emerald-500" style="width: 71%"></div>
+            <div class="bg-orange-400" style="width: 8%"></div>
+            <div class="bg-red-500" style="width: 4%"></div>
+            <div class="bg-slate-300" style="width: 10%"></div>
+            <div class="bg-slate-400" style="width: 7%"></div>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-y-2 gap-x-3 text-[11px]">
+            <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-emerald-500"></span>可用 <span class="ml-auto font-medium">14,285</span></div>
+            <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-orange-400"></span>低电 <span class="ml-auto font-medium">1,610</span></div>
+            <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-red-500"></span>故障 <span class="ml-auto font-medium">805</span></div>
+            <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-slate-300"></span>离线 <span class="ml-auto font-medium">2,012</span></div>
+            <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-slate-400"></span>回收中 <span class="ml-auto font-medium">1,408</span></div>
+          </div>
+          <div class="separator my-3"></div>
+          <div class="text-[11px] text-muted-foreground mb-2">Top 故障类型</div>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2 text-[11px]"><span class="w-16 text-muted-foreground">刹车</span><div class="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden"><div class="h-full bg-primary" style="width: 32%"></div></div><span class="w-8 text-right">32%</span></div>
+            <div class="flex items-center gap-2 text-[11px]"><span class="w-16 text-muted-foreground">车锁</span><div class="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden"><div class="h-full bg-primary" style="width: 24%"></div></div><span class="w-8 text-right">24%</span></div>
+            <div class="flex items-center gap-2 text-[11px]"><span class="w-16 text-muted-foreground">定位</span><div class="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden"><div class="h-full bg-primary" style="width: 18%"></div></div><span class="w-8 text-right">18%</span></div>
+            <div class="flex items-center gap-2 text-[11px]"><span class="w-16 text-muted-foreground">电机</span><div class="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden"><div class="h-full bg-primary" style="width: 14%"></div></div><span class="w-8 text-right">14%</span></div>
+          </div>
+        </div>
+
+        <!-- Work orders -->
+        <div class="col-span-12 lg:col-span-5 card flex flex-col">
+          <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-semibold">运维工单池</div>
+              <span class="badge badge-warning">积压 7</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="btn btn-ghost !h-7 text-xs">待派 22</button>
+              <button class="btn btn-ghost !h-7 text-xs">执行 16</button>
+              <button class="btn btn-ghost !h-7 text-xs">超时 3</button>
+            </div>
+          </div>
+          <table class="w-full">
+            <thead class="bg-muted/50">
+              <tr>
+                <th class="table-head">工单</th>
+                <th class="table-head">类型</th>
+                <th class="table-head">区域</th>
+                <th class="table-head">SLA</th>
+                <th class="table-head">状态</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              <tr class="hover:bg-accent/40">
+                <td class="table-cell font-medium">#WO-260617-08</td>
+                <td class="table-cell"><span class="badge badge-secondary">换电</span></td>
+                <td class="table-cell text-muted-foreground">下沙</td>
+                <td class="table-cell"><span class="badge badge-danger">超时 12m</span></td>
+                <td class="table-cell">待派</td>
+              </tr>
+              <tr class="hover:bg-accent/40">
+                <td class="table-cell font-medium">#WO-260617-07</td>
+                <td class="table-cell"><span class="badge badge-secondary">调度</span></td>
+                <td class="table-cell text-muted-foreground">滨江</td>
+                <td class="table-cell"><span class="text-muted-foreground">38m</span></td>
+                <td class="table-cell">执行中</td>
+              </tr>
+              <tr class="hover:bg-accent/40">
+                <td class="table-cell font-medium">#WO-260617-06</td>
+                <td class="table-cell"><span class="badge badge-outline">维修</span></td>
+                <td class="table-cell text-muted-foreground">西湖</td>
+                <td class="table-cell"><span class="text-muted-foreground">1h12m</span></td>
+                <td class="table-cell">执行中</td>
+              </tr>
+              <tr class="hover:bg-accent/40">
+                <td class="table-cell font-medium">#WO-260617-05</td>
+                <td class="table-cell"><span class="badge badge-secondary">违停</span></td>
+                <td class="table-cell text-muted-foreground">萧山</td>
+                <td class="table-cell"><span class="badge badge-warning">临近 8m</span></td>
+                <td class="table-cell">待派</td>
+              </tr>
+              <tr class="hover:bg-accent/40">
+                <td class="table-cell font-medium">#WO-260617-04</td>
+                <td class="table-cell"><span class="badge badge-outline">巡检</span></td>
+                <td class="table-cell text-muted-foreground">余杭</td>
+                <td class="table-cell"><span class="text-muted-foreground">2h30m</span></td>
+                <td class="table-cell">待验收</td>
+              </tr>
+              <tr class="hover:bg-accent/40">
+                <td class="table-cell font-medium">#WO-260617-03</td>
+                <td class="table-cell"><span class="badge badge-secondary">换电</span></td>
+                <td class="table-cell text-muted-foreground">拱墅</td>
+                <td class="table-cell"><span class="text-muted-foreground">45m</span></td>
+                <td class="table-cell">已完成</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Battery + Supply -->
+        <div class="col-span-12 lg:col-span-3 flex flex-col gap-4">
+          <!-- Battery -->
+          <div class="card p-4">
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-semibold">电池态势</div>
+              <span class="badge badge-warning">低电 1,610</span>
+            </div>
+            <div class="mt-3 space-y-2">
+              <div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-muted-foreground">60–100% SOC</span><span class="font-medium">9,820</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-secondary overflow-hidden mt-1"><div class="h-full bg-emerald-500" style="width: 78%"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-muted-foreground">30–60% SOC</span><span class="font-medium">1,840</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-secondary overflow-hidden mt-1"><div class="h-full bg-yellow-400" style="width: 15%"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-muted-foreground">10–30% SOC</span><span class="font-medium">920</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-secondary overflow-hidden mt-1"><div class="h-full bg-orange-500" style="width: 7%"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-muted-foreground">0–10% SOC</span><span class="font-medium">690</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-secondary overflow-hidden mt-1"><div class="h-full bg-red-500" style="width: 5%"></div></div>
+              </div>
+            </div>
+            <div class="separator my-3"></div>
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+              <div><div class="text-muted-foreground">今日换电</div><div class="text-sm font-bold mt-0.5">628</div></div>
+              <div><div class="text-muted-foreground">成功率</div><div class="text-sm font-bold mt-0.5 text-emerald-600">98.2%</div></div>
+            </div>
+          </div>
+
+          <!-- Supply demand -->
+          <div class="card p-4">
+            <div class="text-sm font-semibold">供需缺口</div>
+            <div class="mt-2 flex items-center gap-2">
+              <div class="flex-1">
+                <div class="text-[11px] text-muted-foreground">缺车区域</div>
+                <div class="text-lg font-bold text-red-600">9</div>
+              </div>
+              <div class="separator-vertical w-px h-8 bg-border"></div>
+              <div class="flex-1">
+                <div class="text-[11px] text-muted-foreground">堆车区域</div>
+                <div class="text-lg font-bold text-orange-600">5</div>
+              </div>
+            </div>
+            <div class="separator my-3"></div>
+            <div class="text-[11px] text-muted-foreground mb-2">Top 缺车热点</div>
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="truncate">下沙 · 高教园</span>
+                <span class="badge badge-danger ml-auto">-42</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="truncate">滨江 · 网商路</span>
+                <span class="badge badge-danger ml-auto">-28</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="truncate">萧山 · 市心北</span>
+                <span class="badge badge-warning ml-auto">-19</span>
+              </div>
+            </div>
+            <button class="btn btn-primary w-full mt-3 !h-8 text-xs">一键生成调度</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: trend + compliance -->
+      <div class="grid grid-cols-12 gap-4 mt-4 mb-4">
+        <!-- 24h trend chart -->
+        <div class="col-span-12 lg:col-span-8 card p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold">24 小时订单与可用率趋势</div>
+              <div class="text-[11px] text-muted-foreground mt-0.5">2026-06-17 · 杭州全城</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-outline"><span class="size-2 rounded-full bg-primary"></span>订单</span>
+              <span class="badge badge-outline"><span class="size-2 rounded-full bg-emerald-500"></span>可用率</span>
+            </div>
+          </div>
+          <!-- SVG chart -->
+          <div class="mt-4 relative" style="height: 220px;">
+            <svg viewBox="0 0 680 200" class="w-full h-full" preserveAspectRatio="none">
+              <!-- grid -->
+              <g stroke="hsl(240 6% 92%)" stroke-width="1">
+                <line x1="0" y1="40" x2="680" y2="40"/>
+                <line x1="0" y1="80" x2="680" y2="80"/>
+                <line x1="0" y1="120" x2="680" y2="120"/>
+                <line x1="0" y1="160" x2="680" y2="160"/>
+              </g>
+              <!-- area for orders -->
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="hsl(240 6% 10%)" stop-opacity=".18"/>
+                  <stop offset="100%" stop-color="hsl(240 6% 10%)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,160 L28,150 L56,158 L84,140 L112,130 L140,120 L168,90 L196,55 L224,40 L252,38 L280,55 L308,80 L336,95 L364,105 L392,118 L420,110 L448,90 L476,68 L504,50 L532,55 L560,80 L588,110 L616,135 L644,150 L680,148 L680,200 L0,200 Z" fill="url(#g1)"/>
+              <!-- orders line -->
+              <path d="M0,160 L28,150 L56,158 L84,140 L112,130 L140,120 L168,90 L196,55 L224,40 L252,38 L280,55 L308,80 L336,95 L364,105 L392,118 L420,110 L448,90 L476,68 L504,50 L532,55 L560,80 L588,110 L616,135 L644,150 L680,148" fill="none" stroke="hsl(240 6% 10%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- availability line -->
+              <path d="M0,60 L28,62 L56,65 L84,70 L112,72 L140,80 L168,95 L196,115 L224,135 L252,148 L280,140 L308,125 L336,110 L364,95 L392,80 L420,68 L448,55 L476,48 L504,42 L532,50 L560,65 L588,80 L616,90 L644,75 L680,68" fill="none" stroke="hsl(142 71% 45%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3"/>
+              <!-- peak marker -->
+              <circle cx="252" cy="38" r="4" fill="hsl(240 6% 10%)"/>
+              <circle cx="504" cy="42" r="4" fill="hsl(240 6% 10%)"/>
+            </svg>
+            <!-- X axis labels -->
+            <div class="absolute -bottom-1 left-0 right-0 flex justify-between text-[10px] text-muted-foreground px-1">
+              <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
+            </div>
+            <!-- Annotation -->
+            <div class="absolute" style="left: 36%; top: 8%;">
+              <div class="badge badge-secondary text-[10px]">早高峰 7-9</div>
+            </div>
+            <div class="absolute" style="left: 72%; top: 12%;">
+              <div class="badge badge-secondary text-[10px]">晚高峰 17-19</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compliance -->
+        <div class="col-span-12 lg:col-span-4 card p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-semibold">合规与治理</div>
+            <span class="badge badge-outline">城市级</span>
+          </div>
+          <div class="mt-3 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-[11px] text-muted-foreground">禁停违规</div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold">142</span>
+                <span class="badge badge-success">-18%</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="text-[11px] text-muted-foreground">越界次数</div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold">36</span>
+                <span class="badge badge-danger">+5%</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="text-[11px] text-muted-foreground">处置时效 P90</div>
+              <span class="text-sm font-bold">8.4 min</span>
+            </div>
+            <div class="separator"></div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <div class="text-[11px] text-muted-foreground">投放量 vs 许可</div>
+                <span class="text-[11px] font-medium">20,120 / 22,000</span>
+              </div>
+              <div class="h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div class="h-full bg-emerald-500" style="width: 91.5%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <div class="text-[11px] text-muted-foreground">MDS 接口上报延迟</div>
+                <span class="text-[11px] font-medium text-emerald-600">健康</span>
+              </div>
+              <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                最近上报 12s 前 · 失败 0
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <div class="text-[11px] text-muted-foreground">GBFS 字段合规率</div>
+                <span class="text-[11px] font-medium">99.7%</span>
+              </div>
+              <div class="h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div class="h-full bg-emerald-500" style="width: 99.7%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

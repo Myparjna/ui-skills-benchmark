@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星空航空 — 每一次起飞，都是一次全新的抵达</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ========== Design Tokens (ui-ux-pro-max §6 color-semantic / typography) ========== */
+  :root{
+    /* Semantic color tokens */
+    --color-primary: #1E40AF;        /* 深邃信任蓝 */
+    --color-primary-hover: #1D3FA0;
+    --color-primary-soft: #DBEAFE;
+    --color-accent: #C8A24B;         /* 会员金 */
+    --color-accent-soft: #FCEFC9;
+    --color-success: #15803D;
+    --color-surface: #FFFFFF;
+    --color-surface-2: #F8FAFC;
+    --color-surface-3: #F1F5F9;
+    --color-on-surface: #0F172A;     /* slate-900 */
+    --color-on-surface-2: #334155;   /* slate-700 */
+    --color-on-surface-3: #64748B;   /* slate-500 */
+    --color-border: #E2E8F0;
+    --color-border-strong: #CBD5E1;
+    --color-sky: #38BDF8;
+    --color-sky-deep: #0284C7;
+    --color-overlay: rgba(15,23,42,0.45);
+
+    /* Type scale (§6 font-scale: 12 14 16 18 24 32) */
+    --fs-12:12px; --fs-14:14px; --fs-16:16px; --fs-18:18px;
+    --fs-20:20px; --fs-24:24px; --fs-32:32px; --fs-44:44px; --fs-56:56px;
+
+    /* 4/8dp spacing system (§5 spacing-scale) */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+    --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+    --sp-20:80px; --sp-24:96px;
+
+    /* Radius / Elevation (§4 elevation-consistent) */
+    --r-sm:6px; --r-md:10px; --r-lg:16px; --r-xl:24px; --r-pill:999px;
+    --sh-1:0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+    --sh-2:0 4px 12px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.04);
+    --sh-3:0 12px 32px rgba(15,23,42,.12), 0 4px 8px rgba(15,23,42,.06);
+    --sh-glass:0 8px 32px rgba(15,23,42,.18);
+
+    /* Motion (§7 duration-timing / easing) */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+    --dur-fast:180ms; --dur-mid:240ms; --dur-slow:320ms;
+
+    --container-w: 1200px;
+  }
+
+  /* ========== Reset & Base ========== */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:var(--fs-16);
+    line-height:1.6;            /* §6 line-height 1.5-1.75 */
+    color:var(--color-on-surface);
+    background:var(--color-surface);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{font-family:"Noto Serif SC","PingFang SC",serif;line-height:1.25;color:var(--color-on-surface)}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  img{max-width:100%;display:block}
+  :focus-visible{outline:3px solid var(--color-sky);outline-offset:2px;border-radius:var(--r-sm)}  /* §1 focus-states */
+  .skip-link{position:absolute;left:-9999px;top:0;background:var(--color-primary);color:#fff;padding:12px 18px;z-index:2000;border-radius:0 0 var(--r-md) 0}
+  .skip-link:focus{left:0}
+
+  /* ========== Layout helpers ========== */
+  .container{max-width:var(--container-w);margin:0 auto;padding:0 var(--sp-6)}
+  .section{padding:var(--sp-20) 0}
+  .section--tight{padding:var(--sp-12) 0}
+  .section__head{margin-bottom:var(--sp-10);max-width:680px}
+  .section__eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-14);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--color-primary);font-family:"Noto Sans SC",sans-serif;margin-bottom:var(--sp-3)}
+  .section__eyebrow::before{content:"";width:24px;height:2px;background:var(--color-primary)}
+  .section__title{font-size:var(--fs-32);font-weight:700;letter-spacing:-.01em}
+  .section__subtitle{margin-top:var(--sp-3);font-size:var(--fs-16);color:var(--color-on-surface-3);line-height:1.7}
+
+  /* ========== Buttons (§2 touch-target-size ≥44px; §4 primary-action) ========== */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 var(--sp-6);font-size:var(--fs-16);font-weight:600;border-radius:var(--r-md);transition:transform var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out);white-space:nowrap;font-family:inherit}
+  .btn--primary{background:var(--color-primary);color:#fff;box-shadow:var(--sh-1)}
+  .btn--primary:hover{background:var(--color-primary-hover);transform:translateY(-1px);box-shadow:var(--sh-2)}
+  .btn--primary:active{transform:translateY(0)}
+  .btn--ghost{background:rgba(255,255,255,.12);color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.32)}
+  .btn--ghost:hover{background:rgba(255,255,255,.2)}
+  .btn--accent{background:var(--color-accent);color:#1F2937}
+  .btn--accent:hover{background:#B68F3D;transform:translateY(-1px)}
+  .btn--outline{background:transparent;border:1.5px solid var(--color-border-strong);color:var(--color-on-surface)}
+  .btn--outline:hover{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+  .btn--lg{min-height:56px;padding:0 var(--sp-8);font-size:var(--fs-18)}
+
+  /* ========== Top Navigation ========== */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--color-border);transition:background var(--dur-mid) var(--ease-out),box-shadow var(--dur-mid) var(--ease-out)}
+  .nav__inner{max-width:var(--container-w);margin:0 auto;padding:0 var(--sp-6);height:72px;display:flex;align-items:center;gap:var(--sp-8)}
+  .brand{display:flex;align-items:center;gap:10px;font-family:"Noto Serif SC",serif;font-weight:700;font-size:var(--fs-18);color:var(--color-primary)}
+  .brand__mark{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1E40AF,#38BDF8);display:grid;place-items:center;color:#fff;flex-shrink:0;box-shadow:var(--sh-1)}
+  .brand__mark svg{width:20px;height:20px}
+  .brand small{display:block;font-size:11px;font-weight:400;color:var(--color-on-surface-3);letter-spacing:.18em;font-family:"Noto Sans SC",sans-serif}
+  .nav__links{display:flex;gap:var(--sp-1);margin-left:auto;align-items:center}
+  .nav__link{padding:10px 14px;font-size:var(--fs-14);font-weight:500;color:var(--color-on-surface-2);border-radius:var(--r-sm);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out)}
+  .nav__link:hover{color:var(--color-primary);background:var(--color-primary-soft)}
+  .nav__link.is-active{color:var(--color-primary);font-weight:600}
+  .nav__cta{margin-left:var(--sp-3)}
+  .nav__toggle{display:none;width:44px;height:44px;border-radius:var(--r-sm);align-items:center;justify-content:center;color:var(--color-on-surface)}
+  .nav__toggle:hover{background:var(--color-surface-3)}
+
+  /* ========== Hero ========== */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;padding:120px 0 var(--sp-16);overflow:hidden;background:linear-gradient(180deg,#0B1E3F 0%, #143467 45%, #1E40AF 100%);color:#fff}
+  .hero__bg{position:absolute;inset:0;overflow:hidden;z-index:0}
+  .hero__stars{position:absolute;inset:0;opacity:.6;background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 50%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 50% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 70% 40%, #fff, transparent),
+    radial-gradient(1px 1px at 85% 25%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 15% 70%, #fff, transparent),
+    radial-gradient(1px 1px at 60% 75%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 65%, #fff, transparent),
+    radial-gradient(1px 1px at 40% 85%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 25% 35%, #fff, transparent);
+    animation:twinkle 8s ease-in-out infinite alternate}
+  @keyframes twinkle{0%{opacity:.4}100%{opacity:.85}}
+  .hero__plane{position:absolute;right:-100px;top:18%;width:280px;height:auto;opacity:.22;filter:drop-shadow(0 12px 32px rgba(56,189,248,.4));animation:cruise 22s linear infinite}
+  @keyframes cruise{0%{transform:translate(0,0) rotate(-4deg)}50%{transform:translate(-40px,18px) rotate(-2deg)}100%{transform:translate(0,0) rotate(-4deg)}}
+  .hero__curve{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(180deg,transparent,#fff);z-index:1}
+  .hero__inner{position:relative;z-index:2;max-width:var(--container-w);margin:0 auto;padding:0 var(--sp-6);width:100%}
+  .hero__eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:var(--fs-14);font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#A7C6FF;margin-bottom:var(--sp-5)}
+  .hero__eyebrow::before{content:"";width:36px;height:1px;background:#A7C6FF}
+  .hero__title{font-size:clamp(36px,5.5vw,var(--fs-56));font-weight:900;line-height:1.1;letter-spacing:-.02em;color:#fff;max-width:920px}
+  .hero__title em{font-style:normal;color:#FCD34D;font-family:"Noto Serif SC",serif}
+  .hero__sub{margin-top:var(--sp-5);font-size:clamp(15px,1.4vw,18px);color:#DCE7FF;max-width:680px;line-height:1.75}
+  .hero__cta{display:flex;gap:var(--sp-3);margin-top:var(--sp-8);flex-wrap:wrap}
+
+  /* ========== Flight Search Card (glassmorphism) ========== */
+  .search{position:relative;z-index:3;margin-top:var(--sp-12);background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:var(--r-xl);box-shadow:var(--sh-3);padding:var(--sp-6);max-width:980px}
+  .search__tabs{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-5);border-bottom:1px solid var(--color-border)}
+  .search__tab{padding:12px 18px;font-size:var(--fs-14);font-weight:600;color:var(--color-on-surface-3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out)}
+  .search__tab.is-active{color:var(--color-primary);border-bottom-color:var(--color-primary)}
+  .search__tab:hover:not(.is-active){color:var(--color-on-surface)}
+  .search__grid{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1fr 1fr;gap:var(--sp-3);align-items:end}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field__label{font-size:var(--fs-12);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-on-surface-3)}
+  .field__control{height:56px;padding:0 var(--sp-4);border:1.5px solid var(--color-border);border-radius:var(--r-md);background:var(--color-surface);display:flex;flex-direction:column;justify-content:center;transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out);min-width:0}
+  .field__control:hover{border-color:var(--color-border-strong)}
+  .field__control:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-primary-soft)}
+  .field__value{font-size:var(--fs-16);font-weight:600;color:var(--color-on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .field__hint{font-size:var(--fs-12);color:var(--color-on-surface-3);margin-top:2px}
+  .search__submit{height:56px;padding:0 var(--sp-6);background:var(--color-primary);color:#fff;border-radius:var(--r-md);font-size:var(--fs-16);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+  .search__submit:hover{background:var(--color-primary-hover);transform:translateY(-1px)}
+  .search__swap{position:absolute;background:var(--color-surface);border:1.5px solid var(--color-border);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--color-on-surface-2);left:calc(50% - 18px);top:50%;transform:translateY(-50%);z-index:2;transition:transform var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out)}
+  .search__swap:hover{transform:translateY(-50%) rotate(180deg);border-color:var(--color-primary);color:var(--color-primary)}
+
+  /* ========== Trust strip ========== */
+  .trust{padding:var(--sp-10) 0;border-bottom:1px solid var(--color-border)}
+  .trust__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-6)}
+  .trust__item{display:flex;align-items:center;gap:var(--sp-3)}
+  .trust__num{font-family:"Noto Serif SC",serif;font-size:var(--fs-32);font-weight:900;color:var(--color-primary);line-height:1;font-variant-numeric:tabular-nums}
+  .trust__label{font-size:var(--fs-14);color:var(--color-on-surface-3);line-height:1.4}
+
+  /* ========== Why Choose Us — bento feature grid ========== */
+  .why__grid{display:grid;grid-template-columns:repeat(6,1fr);gap:var(--sp-4)}
+  .feat{padding:var(--sp-6);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--r-lg);transition:transform var(--dur-mid) var(--ease-out),box-shadow var(--dur-mid) var(--ease-out),border-color var(--dur-mid) var(--ease-out);display:flex;flex-direction:column;gap:var(--sp-3)}
+  .feat:hover{transform:translateY(-4px);box-shadow:var(--sh-2);border-color:var(--color-primary)}
+  .feat--lg{grid-column:span 3;grid-row:span 2;background:linear-gradient(135deg,#1E40AF,#0284C7);color:#fff;border:none}
+  .feat--lg:hover{transform:translateY(-4px);box-shadow:var(--sh-3)}
+  .feat--md{grid-column:span 3}
+  .feat--sm{grid-column:span 2}
+  .feat__icon{width:44px;height:44px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--color-primary-soft);color:var(--color-primary);flex-shrink:0}
+  .feat--lg .feat__icon{background:rgba(255,255,255,.18);color:#fff}
+  .feat__title{font-size:var(--fs-18);font-weight:700;font-family:"Noto Sans SC",sans-serif;color:var(--color-on-surface)}
+  .feat--lg .feat__title{color:#fff;font-size:var(--fs-24)}
+  .feat__desc{font-size:var(--fs-14);color:var(--color-on-surface-3);line-height:1.65}
+  .feat--lg .feat__desc{color:rgba(255,255,255,.85);font-size:var(--fs-16)}
+  .feat__list{margin-top:auto;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-14);color:rgba(255,255,255,.9)}
+  .feat__list li{display:flex;align-items:center;gap:8px;list-style:none}
+
+  /* ========== Promo Banner ========== */
+  .promo{background:linear-gradient(120deg,#F59E0B,#EA580C);color:#1F2937;border-radius:var(--r-xl);padding:var(--sp-10) var(--sp-8);display:grid;grid-template-columns:1.5fr 1fr;gap:var(--sp-8);align-items:center;position:relative;overflow:hidden}
+  .promo::before{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.18)}
+  .promo::after{content:"";position:absolute;right:80px;bottom:-100px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .promo__content{position:relative;z-index:1}
+  .promo__tag{display:inline-block;background:rgba(255,255,255,.6);color:#92400E;font-size:var(--fs-12);font-weight:700;padding:4px 10px;border-radius:var(--r-pill);letter-spacing:.1em;margin-bottom:var(--sp-3)}
+  .promo__title{font-size:var(--fs-32);font-weight:900;font-family:"Noto Serif SC",serif;color:#1F2937;line-height:1.2}
+  .promo__routes{margin-top:var(--sp-4);display:flex;gap:var(--sp-5);flex-wrap:wrap}
+  .promo__route{display:flex;flex-direction:column}
+  .promo__route strong{font-size:var(--fs-20);font-family:"Noto Sans SC",sans-serif;color:#1F2937;font-variant-numeric:tabular-nums}
+  .promo__route span{font-size:var(--fs-12);color:#7C2D12}
+  .promo__cta{position:relative;z-index:1;justify-self:end}
+
+  /* ========== Destinations ========== */
+  .dest__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4)}
+  .dest{position:relative;border-radius:var(--r-lg);overflow:hidden;aspect-ratio:3/4;cursor:pointer;transition:transform var(--dur-mid) var(--ease-out),box-shadow var(--dur-mid) var(--ease-out)}
+  .dest:hover{transform:translateY(-4px);box-shadow:var(--sh-3)}
+  .dest--tall{grid-row:span 2;aspect-ratio:3/5}
+  .dest__img{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform var(--dur-slow) var(--ease-out)}
+  .dest:hover .dest__img{transform:scale(1.06)}
+  .dest::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,0) 35%,rgba(15,23,42,.85) 100%)}
+  .dest__content{position:absolute;left:0;right:0;bottom:0;padding:var(--sp-5);color:#fff;z-index:1}
+  .dest__name{font-size:var(--fs-24);font-weight:700;font-family:"Noto Serif SC",serif;margin-bottom:6px}
+  .dest__desc{font-size:var(--fs-14);color:rgba(255,255,255,.85);line-height:1.5;margin-bottom:var(--sp-2)}
+  .dest__meta{display:flex;gap:var(--sp-3);font-size:var(--fs-12);color:rgba(255,255,255,.75);align-items:center}
+  .dest__meta span{display:inline-flex;align-items:center;gap:4px}
+
+  /* ========== Membership ========== */
+  .member{background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;border-radius:var(--r-xl);padding:var(--sp-12);position:relative;overflow:hidden}
+  .member::before{content:"";position:absolute;top:-40%;right:-20%;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(200,162,75,.22),transparent 70%)}
+  .member__inner{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1.4fr;gap:var(--sp-10);align-items:center}
+  .member__eyebrow{color:var(--color-accent);font-size:var(--fs-14);font-weight:600;letter-spacing:.18em;text-transform:uppercase;display:inline-flex;align-items:center;gap:10px}
+  .member__eyebrow::before{content:"";width:32px;height:1px;background:var(--color-accent)}
+  .member__title{font-size:var(--fs-32);font-weight:900;margin-top:var(--sp-3);color:#fff}
+  .member__desc{margin-top:var(--sp-3);color:rgba(255,255,255,.75);line-height:1.7}
+  .member__perks{margin-top:var(--sp-5);display:flex;flex-direction:column;gap:10px;font-size:var(--fs-14);color:rgba(255,255,255,.9)}
+  .member__perks li{display:flex;align-items:center;gap:10px;list-style:none}
+  .member__perks svg{color:var(--color-accent);flex-shrink:0}
+  .member__table{display:flex;flex-direction:column;gap:var(--sp-3)}
+  .tier{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);display:grid;grid-template-columns:80px 1fr 1.2fr auto;align-items:center;gap:var(--sp-4);transition:background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+  .tier:hover{background:rgba(255,255,255,.07);border-color:rgba(200,162,75,.4);transform:translateX(4px)}
+  .tier__badge{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:#fff;font-size:var(--fs-14);font-family:"Noto Serif SC",serif}
+  .tier--silver .tier__badge{background:linear-gradient(135deg,#CBD5E1,#94A3B8)}
+  .tier--gold .tier__badge{background:linear-gradient(135deg,#FCD34D,#C8A24B);color:#1F2937}
+  .tier--platinum .tier__badge{background:linear-gradient(135deg,#E5E7EB,#9CA3AF)}
+  .tier--diamond .tier__badge{background:linear-gradient(135deg,#67E8F9,#0EA5E9)}
+  .tier__name{font-size:var(--fs-18);font-weight:700;color:#fff}
+  .tier__name small{display:block;font-size:var(--fs-12);color:rgba(255,255,255,.55);font-weight:400;margin-top:2px}
+  .tier__perks{font-size:var(--fs-14);color:rgba(255,255,255,.78)}
+  .tier__cta{font-size:var(--fs-14);font-weight:600;color:var(--color-accent);display:inline-flex;align-items:center;gap:4px;transition:gap var(--dur-fast) var(--ease-out)}
+  .tier:hover .tier__cta{gap:8px}
+
+  /* ========== Services ========== */
+  .svc__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-5)}
+  .svc{padding:var(--sp-6);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--r-lg);transition:all var(--dur-mid) var(--ease-out)}
+  .svc:hover{border-color:var(--color-primary);box-shadow:var(--sh-2);transform:translateY(-2px)}
+  .svc__icon{width:48px;height:48px;border-radius:var(--r-md);background:var(--color-primary-soft);color:var(--color-primary);display:grid;place-items:center;margin-bottom:var(--sp-4)}
+  .svc__title{font-size:var(--fs-18);font-weight:700;margin-bottom:var(--sp-2);font-family:"Noto Sans SC",sans-serif}
+  .svc__desc{font-size:var(--fs-14);color:var(--color-on-surface-3);line-height:1.7;margin-bottom:var(--sp-4)}
+  .svc__link{font-size:var(--fs-14);font-weight:600;color:var(--color-primary);display:inline-flex;align-items:center;gap:4px;transition:gap var(--dur-fast) var(--ease-out)}
+  .svc__link:hover{gap:8px}
+
+  /* ========== Footer ========== */
+  .footer{background:#0B1E3F;color:#fff;padding:var(--sp-16) 0 var(--sp-8)}
+  .footer__grid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:var(--sp-8);padding-bottom:var(--sp-10);border-bottom:1px solid rgba(255,255,255,.12)}
+  .footer__brand{display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-4)}
+  .footer__desc{font-size:var(--fs-14);color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:var(--sp-4);max-width:380px}
+  .footer__social{display:flex;gap:var(--sp-2)}
+  .footer__social a{width:40px;height:40px;border-radius:var(--r-sm);background:rgba(255,255,255,.08);display:grid;place-items:center;color:#fff;transition:background var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+  .footer__social a:hover{background:var(--color-primary);transform:translateY(-2px)}
+  .footer__col h4{font-size:var(--fs-14);font-weight:700;color:#fff;margin-bottom:var(--sp-4);letter-spacing:.06em}
+  .footer__col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .footer__col a{font-size:var(--fs-14);color:rgba(255,255,255,.7);transition:color var(--dur-fast) var(--ease-out)}
+  .footer__col a:hover{color:#fff}
+  .footer__bottom{padding-top:var(--sp-6);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-4);font-size:var(--fs-12);color:rgba(255,255,255,.55)}
+
+  /* ========== Responsive (§5 mobile-first breakpoints) ========== */
+  @media (max-width:1024px){
+    .search__grid{grid-template-columns:1fr 1fr;}
+    .search__submit{grid-column:span 2}
+    .why__grid{grid-template-columns:repeat(4,1fr)}
+    .feat--lg{grid-column:span 4}
+    .feat--md{grid-column:span 4}
+    .feat--sm{grid-column:span 2}
+    .dest__grid{grid-template-columns:repeat(2,1fr)}
+    .member__inner{grid-template-columns:1fr;gap:var(--sp-6)}
+    .svc__grid{grid-template-columns:1fr 1fr}
+    .footer__grid{grid-template-columns:1fr 1fr;gap:var(--sp-6)}
+  }
+  @media (max-width:768px){
+    .section{padding:var(--sp-12) 0}
+    .nav__links{display:none;position:absolute;top:72px;left:0;right:0;background:#fff;flex-direction:column;padding:var(--sp-4);border-bottom:1px solid var(--color-border);box-shadow:var(--sh-2);gap:0}
+    .nav__links.is-open{display:flex}
+    .nav__link{padding:14px;border-radius:var(--r-md);width:100%}
+    .nav__toggle{display:flex}
+    .nav__cta{display:none}
+    .hero{padding:100px 0 var(--sp-10)}
+    .hero__title{font-size:32px}
+    .search{padding:var(--sp-4)}
+    .search__grid{grid-template-columns:1fr;gap:var(--sp-3)}
+    .search__submit{grid-column:auto}
+    .search__swap{display:none}
+    .trust__grid{grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+    .why__grid{grid-template-columns:1fr}
+    .feat--lg,.feat--md,.feat--sm{grid-column:span 1}
+    .promo{grid-template-columns:1fr;padding:var(--sp-6)}
+    .promo__cta{justify-self:start}
+    .dest__grid{grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+    .dest--tall{grid-row:auto;aspect-ratio:3/4}
+    .tier{grid-template-columns:48px 1fr;gap:var(--sp-3);padding:var(--sp-4)}
+    .tier__perks,.tier__cta{grid-column:1/-1}
+    .svc__grid{grid-template-columns:1fr}
+    .footer__grid{grid-template-columns:1fr;gap:var(--sp-6)}
+  }
+  @media (prefers-reduced-motion: reduce){  /* §1 reduced-motion */
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">跳到主要内容</a>
+
+<!-- ============ NAV ============ -->
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a href="#" class="brand" aria-label="星空航空首页">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 5-9 9-9 9s-9-4-9-9a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+      </span>
+      <span>星空航空<small>SKYSTAR AIRLINES</small></span>
+    </a>
+    <nav class="nav__links" id="navLinks" aria-label="主导航">
+      <a class="nav__link is-active" href="#">首页</a>
+      <a class="nav__link" href="#">航班查询</a>
+      <a class="nav__link" href="#">目的地</a>
+      <a class="nav__link" href="#">服务与礼遇</a>
+      <a class="nav__link" href="#">常旅客计划</a>
+      <a class="nav__link" href="#">关于我们</a>
+    </nav>
+    <button class="btn btn--primary nav__cta">登录 / 注册</button>
+    <button class="nav__toggle" id="navToggle" aria-label="打开菜单" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="heroTitle">
+    <div class="hero__bg" aria-hidden="true">
+      <div class="hero__stars"></div>
+      <svg class="hero__plane" viewBox="0 0 200 80" fill="#A7C6FF"><path d="M20 40 L160 30 L195 40 L160 50 L20 40 Z M80 30 L100 10 L130 35 L100 40 Z M80 50 L100 70 L130 45 L100 40 Z"/></svg>
+    </div>
+    <div class="hero__inner">
+      <span class="hero__eyebrow">SKYSTAR AIRLINES · 飞向更远的地方</span>
+      <h1 class="hero__title" id="heroTitle">每一次起飞，<br/>都是一次<em>全新的抵达</em></h1>
+      <p class="hero__sub">连接世界，触达梦想。覆盖国内 82 座城市与 47 个国际目的地，每日执飞超 600 个航班，以「安全、舒适、准时」为核心承诺，累计安全飞行突破 1200 万小时。</p>
+      <div class="hero__cta">
+        <button class="btn btn--ghost btn--lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          查询航班
+        </button>
+        <button class="btn btn--accent btn--lg">加入星辰会员 · 立赠 2000 里程</button>
+      </div>
+
+      <!-- Flight Search (glassmorphism) -->
+      <form class="search" aria-label="机票搜索" onsubmit="return false;">
+        <div class="search__tabs" role="tablist" aria-label="行程类型">
+          <button type="button" class="search__tab is-active" role="tab" aria-selected="true">往返</button>
+          <button type="button" class="search__tab" role="tab" aria-selected="false">单程</button>
+          <button type="button" class="search__tab" role="tab" aria-selected="false">多程</button>
+        </div>
+        <div class="search__grid">
+          <div class="field">
+            <label class="field__label" for="from">出发城市</label>
+            <div class="field__control" id="from" tabindex="0">
+              <span class="field__value">杭州 HGH</span>
+              <span class="field__hint">萧山国际机场</span>
+            </div>
+          </div>
+          <div class="field" style="position:relative">
+            <label class="field__label" for="to">到达城市</label>
+            <button type="button" class="search__swap" aria-label="交换出发与到达城市">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l4 4-4 4"/><path d="M20 7H4"/><path d="M8 21l-4-4 4-4"/><path d="M4 17h16"/></svg>
+            </button>
+            <div class="field__control" id="to" tabindex="0">
+              <span class="field__value">三亚 SYX</span>
+              <span class="field__hint">凤凰国际机场</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="dep">出发日期</label>
+            <div class="field__control" id="dep" tabindex="0">
+              <span class="field__value">06月22日 周一</span>
+              <span class="field__hint">¥399 起</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="ret">返程日期</label>
+            <div class="field__control" id="ret" tabindex="0">
+              <span class="field__value">06月28日 周日</span>
+              <span class="field__hint">¥449 起</span>
+            </div>
+          </div>
+          <button type="submit" class="search__submit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            搜索航班
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="hero__curve" aria-hidden="true"></div>
+  </section>
+
+  <!-- ============ TRUST STRIP ============ -->
+  <section class="trust" aria-label="运营数据">
+    <div class="container">
+      <div class="trust__grid">
+        <div class="trust__item">
+          <span class="trust__num">186</span>
+          <span class="trust__label">架机队规模<br/>平均机龄 5.2 年</span>
+        </div>
+        <div class="trust__item">
+          <span class="trust__num">82+</span>
+          <span class="trust__label">座国内城市<br/>覆盖主要枢纽</span>
+        </div>
+        <div class="trust__item">
+          <span class="trust__num">600+</span>
+          <span class="trust__label">个每日航班<br/>累计 1200 万小时</span>
+        </div>
+        <div class="trust__item">
+          <span class="trust__num">16</span>
+          <span class="trust__label">年零重大事故<br/>安全运营优秀单位</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY CHOOSE US ============ -->
+  <section class="section" aria-labelledby="whyTitle">
+    <div class="container">
+      <div class="section__head">
+        <span class="section__eyebrow">WHY SKYSTAR</span>
+        <h2 class="section__title" id="whyTitle">为什么选择星空航空</h2>
+        <p class="section__subtitle">从安全飞行到客舱细节，从全球航网到数字体验，每一次飞行背后都是我们对品质的反复打磨。</p>
+      </div>
+      <div class="why__grid">
+        <article class="feat feat--lg">
+          <span class="feat__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+          </span>
+          <h3 class="feat__title">安全第一，永不妥协</h3>
+          <p class="feat__desc">机长团队平均飞行经验超 9800 小时，全机队配备波音 787 梦想客机与 A320neo 系列，严格执行 IOSA 国际安全运营标准审计。</p>
+          <ul class="feat__list">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>连续 16 年零重大事故</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>8 届中国民航局安全优秀单位</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>IOSA 国际安全审计认证</li>
+          </ul>
+        </article>
+        <article class="feat feat--md">
+          <span class="feat__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <h3 class="feat__title">广泛航线，覆盖全球</h3>
+          <p class="feat__desc">与 28 家航司建立代码共享，与星空联盟共建覆盖 190 个目的地的出行网络，让每段旅程无缝衔接。</p>
+        </article>
+        <article class="feat feat--md">
+          <span class="feat__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+          </span>
+          <h3 class="feat__title">精心设计的客舱体验</h3>
+          <p class="feat__desc">宽体机商务舱 1-2-1 全通道平躺座椅、17 英寸 4K 触控屏、降噪耳机；经济舱座椅间距行业领先，全程免费 Wi-Fi 与 USB-C 快充。</p>
+        </article>
+        <article class="feat feat--sm">
+          <span class="feat__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          </span>
+          <h3 class="feat__title">云端餐饮，匠心呈现</h3>
+          <p class="feat__desc">联合知名主厨融合东方饮食哲学，节假日特别航班提供限定节令料理。</p>
+        </article>
+        <article class="feat feat--sm">
+          <span class="feat__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </span>
+          <h3 class="feat__title">数字化服务，便捷出行</h3>
+          <p class="feat__desc">App 全流程无纸化、智能客服「星星」7×24 在线、人脸识别通道平均流程 18 分钟。</p>
+        </article>
+        <article class="feat feat--sm">
+          <span class="feat__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6m10-10h-6m-8 0H2"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <h3 class="feat__title">可持续承诺</h3>
+          <p class="feat__desc">2035 年单位客公里碳排放较 2019 年下降 40%，加入 CORSIA 国际碳抵消机制。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROMO BANNER ============ -->
+  <section class="section--tight" aria-labelledby="promoTitle">
+    <div class="container">
+      <div class="promo">
+        <div class="promo__content">
+          <span class="promo__tag">夏季出行季 · 限时特惠</span>
+          <h2 class="promo__title" id="promoTitle">特惠机票开抢<br/>跨越山海，触手可及</h2>
+          <div class="promo__routes">
+            <div class="promo__route"><strong>¥399</strong><span>杭州 → 三亚 起</span></div>
+            <div class="promo__route"><strong>¥1,299</strong><span>杭州 → 大阪 起</span></div>
+            <div class="promo__route"><strong>¥3,899</strong><span>杭州 → 伦敦 起</span></div>
+          </div>
+          <p style="margin-top:16px;font-size:13px;color:#7C2D12">* 优惠有效期至 2026 年 6 月 30 日，数量有限，先订先得</p>
+        </div>
+        <button class="btn btn--lg promo__cta" style="background:#1F2937;color:#fff">
+          立即查看全部特惠
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DESTINATIONS ============ -->
+  <section class="section" aria-labelledby="destTitle">
+    <div class="container">
+      <div class="section__head" style="display:flex;justify-content:space-between;align-items:flex-end;max-width:none">
+        <div>
+          <span class="section__eyebrow">FEATURED DESTINATIONS</span>
+          <h2 class="section__title" id="destTitle">精选目的地</h2>
+          <p class="section__subtitle">无论阳光海岸、文化古都，还是异国都市，星空航空都能带你抵达。</p>
+        </div>
+        <button class="btn btn--outline" style="flex-shrink:0">查看全部目的地
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+      <div class="dest__grid">
+        <article class="dest dest--tall" tabindex="0" aria-label="三亚，阳光与海浪的完美邂逅">
+          <div class="dest__img" style="background-image:linear-gradient(135deg,#0EA5E9,#FCD34D,#FB923C)"></div>
+          <div class="dest__content">
+            <h3 class="dest__name">三亚</h3>
+            <p class="dest__desc">阳光与海浪的完美邂逅</p>
+            <div class="dest__meta">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>最快 1h45m</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>每日 4 班</span>
+            </div>
+          </div>
+        </article>
+        <article class="dest" tabindex="0" aria-label="成都，慢下来遇见巴蜀">
+          <div class="dest__img" style="background-image:linear-gradient(135deg,#84CC16,#10B981,#0D9488)"></div>
+          <div class="dest__content">
+            <h3 class="dest__name">成都</h3>
+            <p class="dest__desc">慢下来，才能遇见真正的巴蜀</p>
+            <div class="dest__meta">
+              <span>每日 8 班</span><span>支持中转西藏</span>
+            </div>
+          </div>
+        </article>
+        <article class="dest" tabindex="0" aria-label="东京，赏樱季专属航班">
+          <div class="dest__img" style="background-image:linear-gradient(135deg,#F472B6,#A78BFA,#60A5FA)"></div>
+          <div class="dest__content">
+            <h3 class="dest__name">东京</h3>
+            <p class="dest__desc">赏樱季专属航班，限量发售</p>
+            <div class="dest__meta"><span>每日 2 班</span><span>双机场</span></div>
+          </div>
+        </article>
+        <article class="dest" tabindex="0" aria-label="迪拜，沙漠奢旅的起点">
+          <div class="dest__img" style="background-image:linear-gradient(135deg,#F59E0B,#D97706,#92400E)"></div>
+          <div class="dest__content">
+            <h3 class="dest__name">迪拜</h3>
+            <p class="dest__desc">沙漠奢旅的起点</p>
+            <div class="dest__meta"><span>每日 1 班</span><span>商务舱平躺</span></div>
+          </div>
+        </article>
+        <article class="dest" tabindex="0" aria-label="巴黎，艺术与浪漫">
+          <div class="dest__img" style="background-image:linear-gradient(135deg,#818CF8,#C084FC,#F472B6)"></div>
+          <div class="dest__content">
+            <h3 class="dest__name">巴黎</h3>
+            <p class="dest__desc">艺术与浪漫在等你</p>
+            <div class="dest__meta"><span>每周 5 班</span><span>CDG 直航</span></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MEMBERSHIP ============ -->
+  <section class="section" aria-labelledby="memberTitle">
+    <div class="container">
+      <div class="member">
+        <div class="member__inner">
+          <div>
+            <span class="member__eyebrow">SKYSTAR FREQUENT FLYER</span>
+            <h2 class="member__title" id="memberTitle">星辰会员计划</h2>
+            <p class="member__desc">加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿、租车及超过 300 个合作品牌的礼遇权益。</p>
+            <ul class="member__perks">
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>立即注册即送 2,000 里程开户礼</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>里程跨品牌兑换，覆盖酒店 / 租车 / 餐饮</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>专属顾问与私人定制服务（钻石卡）</li>
+            </ul>
+            <button class="btn btn--accent btn--lg" style="margin-top:24px">立即加入星辰会员</button>
+          </div>
+          <div class="member__table">
+            <div class="tier tier--silver">
+              <div class="tier__badge">银</div>
+              <div class="tier__name">银卡<small>年飞 25,000 里程</small></div>
+              <div class="tier__perks">优先值机 · 额外行李额</div>
+              <a href="#" class="tier__cta">了解权益 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+            </div>
+            <div class="tier tier--gold">
+              <div class="tier__badge">金</div>
+              <div class="tier__name">金卡<small>年飞 50,000 里程</small></div>
+              <div class="tier__perks">贵宾休息室 · 优先登机</div>
+              <a href="#" class="tier__cta">了解权益 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+            </div>
+            <div class="tier tier--platinum">
+              <div class="tier__badge">白</div>
+              <div class="tier__name">白金卡<small>年飞 100,000 里程</small></div>
+              <div class="tier__perks">专属顾问 · 头等舱升级券</div>
+              <a href="#" class="tier__cta">了解权益 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+            </div>
+            <div class="tier tier--diamond">
+              <div class="tier__badge">钻</div>
+              <div class="tier__name">钻石卡<small>邀请制</small></div>
+              <div class="tier__perks">全部权益 · 私人定制服务</div>
+              <a href="#" class="tier__cta">了解权益 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES ============ -->
+  <section class="section" aria-labelledby="svcTitle">
+    <div class="container">
+      <div class="section__head">
+        <span class="section__eyebrow">SERVICE & PRIVILEGE</span>
+        <h2 class="section__title" id="svcTitle">服务与礼遇</h2>
+        <p class="section__subtitle">为不同需求的旅客提供全程无缝协助，让每一次出行都更从容。</p>
+      </div>
+      <div class="svc__grid">
+        <article class="svc">
+          <div class="svc__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <h3 class="svc__title">特殊旅客关怀</h3>
+          <p class="svc__desc">婴幼儿推车寄存、轮椅全程陪同、无障碍座位优先安排、孕妇及行动不便旅客优先登机。杭州、北京、上海枢纽设「星空关爱」服务柜台。</p>
+          <a href="#" class="svc__link">了解服务详情 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+        </article>
+        <article class="svc">
+          <div class="svc__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/><circle cx="18" cy="16" r="2"/><circle cx="4" cy="16" r="2"/><path d="M9 10c0 4 2 4 2 8M15 10c0 4-2 4-2 8"/></svg>
+          </div>
+          <h3 class="svc__title">宠物随行计划</h3>
+          <p class="svc__desc">符合条件的小型宠物可进入客舱同乘，大型犬猫提供恒温专属货舱运输，全程由专业动物运输团队监护。</p>
+          <a href="#" class="svc__link">查看运输指引 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+        </article>
+        <article class="svc">
+          <div class="svc__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <h3 class="svc__title">企业商务服务</h3>
+          <p class="svc__desc">为 12,000+ 企业客户提供统一账期结算、差旅数据报告、专属客户经理、团体协议价格。覆盖互联网、制造、金融等行业。</p>
+          <a href="#" class="svc__link">联系商务团队 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <div class="footer__brand">
+          <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 5-9 9-9 9s-9-4-9-9a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg></span>
+          <span style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:18px">星空航空<small style="display:block;font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.18em;font-weight:400">SKYSTAR AIRLINES</small></span>
+        </div>
+        <p class="footer__desc">杭州萧山国际机场运营基地<br/>客服热线：400-800-9988（7×24 小时）<br/>CATA 中国航空运输协会会员 · IATA 国际航空运输协会认证</p>
+        <div class="footer__social" aria-label="社交媒体">
+          <a href="#" aria-label="微信公众号"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 11.5a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2zM12 2C6.48 2 2 5.58 2 10c0 2.55 1.49 4.82 3.79 6.28L5 19l3.05-1.55C9.27 17.81 10.6 18 12 18c5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg></a>
+          <a href="#" aria-label="微博"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 21H6c-2.2 0-4-1.8-4-4v-3c0-2.2 1.8-4 4-4h3.5c2.2 0 4 1.8 4 4v3c0 2.2-1.8 4-4 4zM6 12c-1.1 0-2 .9-2 2v3c0 1.1.9 2 2 2h3.5c1.1 0 2-.9 2-2v-3c0-1.1-.9-2-2-2H6zm12.5-3c-.4 0-.8-.3-.9-.7-.2-.9-1-1.6-1.9-1.8-.5-.1-.8-.6-.7-1.1.1-.5.6-.8 1.1-.7 1.7.4 3 1.7 3.4 3.4.1.5-.2 1-.7 1.1h-.3z"/></svg></a>
+          <a href="#" aria-label="抖音"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 8c-1.8 0-3.5-.7-4.7-1.9V15c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c.3 0 .7 0 1 .1v3.1c-.3-.1-.7-.2-1-.2-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3c0 2.8 2.2 5 5 5V8z"/></svg></a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h4>快速链接</h4>
+        <ul>
+          <li><a href="#">航班状态查询</a></li>
+          <li><a href="#">行李规定</a></li>
+          <li><a href="#">退改签政策</a></li>
+          <li><a href="#">旅行保险</a></li>
+          <li><a href="#">常见问题</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>关于我们</h4>
+        <ul>
+          <li><a href="#">公司简介</a></li>
+          <li><a href="#">新闻中心</a></li>
+          <li><a href="#">投资者关系</a></li>
+          <li><a href="#">人才招聘</a></li>
+          <li><a href="#">可持续承诺</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>客服与帮助</h4>
+        <ul>
+          <li><a href="#">7×24 客服热线</a></li>
+          <li><a href="#">在线客服</a></li>
+          <li><a href="#">意见反馈</a></li>
+          <li><a href="#">投诉与建议</a></li>
+          <li><a href="#">无障碍服务</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号 · 保留所有权利</span>
+      <span>本网站遵循 WCAG 2.1 AA 无障碍标准</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile nav toggle (§9 nav-state-active)
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('is-open');
+    navToggle.setAttribute('aria-expanded', open);
+  });
+  // Tab switching (§7 state-transition)
+  document.querySelectorAll('.search__tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.search__tab').forEach(t => {
+        t.classList.remove('is-active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('is-active');
+      tab.setAttribute('aria-selected', 'true');
+    });
+  });
+  // Swap cities (§2 tap-feedback-speed)
+  document.querySelector('.search__swap')?.addEventListener('click', () => {
+    const from = document.querySelector('#from .field__value');
+    const to = document.querySelector('#to .field__value');
+    if (from && to) {
+      const tmp = from.textContent;
+      from.textContent = to.textContent;
+      to.textContent = tmp;
+    }
+  });
+</script>
+</body>
+</html>

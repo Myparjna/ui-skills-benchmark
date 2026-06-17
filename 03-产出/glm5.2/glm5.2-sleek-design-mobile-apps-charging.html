@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>聚能充 · 电动车充电小程序</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<!-- Iconify: Sleek 默认使用 Iconify (Material Symbols / Solar / MDI) -->
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+
+<style>
+  :root {
+    /* Sleek 项目主题：科技蓝 + 充电橙 + 状态色系 */
+    --sk-bg: #f3f5f9;
+    --sk-surface: #ffffff;
+    --sk-surface-2: #f7f9fc;
+    --sk-primary: #1677ff;
+    --sk-primary-soft: #4096ff;
+    --sk-primary-bg: #e8f1ff;
+    --sk-accent: #00d4a3;
+    --sk-charging: #fa8c16;
+    --sk-charging-bg: #fff3e0;
+    --sk-success: #52c41a;
+    --sk-success-bg: #ecfde4;
+    --sk-warning: #fa8c16;
+    --sk-danger: #ff4d4f;
+    --sk-danger-bg: #ffecec;
+    --sk-text: #0f1c2e;
+    --sk-text-2: #5a6b85;
+    --sk-text-3: #97a3b6;
+    --sk-line: #eef1f6;
+    --sk-shadow-sm: 0 1px 3px rgba(15, 28, 46, 0.06);
+    --sk-shadow-md: 0 6px 20px rgba(22, 119, 255, 0.10);
+    --sk-shadow-lg: 0 18px 50px rgba(15, 28, 46, 0.18);
+    --sk-radius-sm: 10px;
+    --sk-radius: 14px;
+    --sk-radius-lg: 20px;
+    --sk-radius-xl: 28px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+    color: var(--sk-text);
+    background:
+      radial-gradient(900px 500px at 100% 0%, #1677ff22 0%, transparent 60%),
+      radial-gradient(700px 400px at 0% 100%, #00d4a322 0%, transparent 60%),
+      linear-gradient(180deg, #0a1428 0%, #15243f 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .phone {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    height: 880px;
+    max-height: calc(100vh - 64px);
+    background: var(--sk-bg);
+    border-radius: 44px;
+    box-shadow:
+      0 0 0 11px #0a0f1c,
+      0 0 0 13px #1a2236,
+      var(--sk-shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 0; background: var(--sk-bg); }
+    .phone {
+      max-width: 100%;
+      height: 100vh;
+      max-height: 100vh;
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+
+  /* 状态栏 */
+  .statusbar {
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: var(--sk-surface);
+    color: var(--sk-text);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .statusbar .icons { display: flex; align-items: center; gap: 6px; }
+  .statusbar iconify-icon { font-size: 15px; }
+
+  /* 顶部位置 + 搜索 */
+  .topbar {
+    flex-shrink: 0;
+    background: var(--sk-surface);
+    padding: 6px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--sk-line);
+  }
+  .loc-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--sk-primary-bg);
+    color: var(--sk-primary);
+    padding: 6px 10px 6px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .loc-chip iconify-icon { font-size: 14px; }
+  .search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--sk-surface-2);
+    border-radius: 999px;
+    padding: 7px 14px;
+  }
+  .search-box iconify-icon { color: var(--sk-text-3); font-size: 16px; }
+  .search-box input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--sk-text);
+    width: 100%;
+  }
+  .search-box input::placeholder { color: var(--sk-text-3); }
+
+  /* 主滚动区 */
+  .scroller {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--sk-bg);
+    padding-bottom: 90px;
+  }
+  .scroller::-webkit-scrollbar { width: 0; }
+
+  /* 地图区域 */
+  .map-area {
+    position: relative;
+    height: 280px;
+    background:
+      radial-gradient(circle at 30% 40%, #1677ff15 0%, transparent 50%),
+      radial-gradient(circle at 70% 60%, #00d4a315 0%, transparent 50%),
+      linear-gradient(135deg, #e8eef7 0%, #dde6f3 100%);
+    overflow: hidden;
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(22, 119, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 119, 255, 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .map-roads {
+    position: absolute; inset: 0;
+    opacity: 0.5;
+  }
+  .map-roads svg { width: 100%; height: 100%; }
+
+  /* 地图站点标注 */
+  .pin {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .pin:hover { transform: translate(-50%, -100%) scale(1.1); }
+  .pin .p-body {
+    background: var(--sk-surface);
+    border-radius: 999px;
+    padding: 4px 8px 4px 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(15, 28, 46, 0.18);
+    border: 2px solid var(--sk-primary);
+  }
+  .pin .p-num {
+    background: var(--sk-primary);
+    color: #fff;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pin .p-price { font-size: 11px; font-weight: 700; color: var(--sk-text); }
+  .pin.idle .p-body { border-color: var(--sk-success); }
+  .pin.idle .p-num { background: var(--sk-success); }
+  .pin.charging .p-body { border-color: var(--sk-charging); }
+  .pin.charging .p-num { background: var(--sk-charging); }
+  .pin.cluster .p-body {
+    background: var(--sk-primary);
+    border-color: #fff;
+    padding: 4px 10px;
+  }
+  .pin.cluster .p-num { background: transparent; color: #fff; }
+  .pin.cluster .p-price { color: #fff; }
+
+  .map-controls {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .map-btn {
+    width: 36px; height: 36px;
+    background: var(--sk-surface);
+    border: none;
+    border-radius: 12px;
+    color: var(--sk-primary);
+    display: grid; place-items: center;
+    cursor: pointer;
+    box-shadow: var(--sk-shadow-md);
+    font-family: inherit;
+  }
+  .map-btn iconify-icon { font-size: 20px; }
+
+  .map-legend {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--sk-text-2);
+    box-shadow: var(--sk-shadow-sm);
+  }
+  .legend-row { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* 浮动充电进度卡（充电中常驻） */
+  .charging-now {
+    position: absolute;
+    left: 12px; right: 12px;
+    bottom: 12px;
+    background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+    border-radius: var(--sk-radius-lg);
+    padding: 14px;
+    color: #fff;
+    box-shadow: 0 12px 30px #1677ff44;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .charging-now .ring {
+    width: 56px; height: 56px;
+    flex-shrink: 0;
+    position: relative;
+    display: grid; place-items: center;
+  }
+  .charging-now .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .charging-now .ring .pct { position: absolute; font-size: 13px; font-weight: 700; }
+  .charging-now .info { flex: 1; min-width: 0; }
+  .charging-now .info .lbl { font-size: 10px; opacity: 0.85; letter-spacing: 1px; }
+  .charging-now .info .station { font-size: 13px; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .charging-now .info .meta { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+  .charging-now .info .meta strong { color: #fff; }
+  .charging-now .stop {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* 底部滑动面板 */
+  .sheet {
+    background: var(--sk-surface);
+    border-radius: var(--sk-radius-xl) var(--sk-radius-xl) 0 0;
+    margin-top: -22px;
+    position: relative;
+    padding: 8px 0 16px;
+    box-shadow: 0 -8px 24px rgba(15, 28, 46, 0.08);
+    z-index: 2;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--sk-line);
+    border-radius: 999px;
+    margin: 0 auto 12px;
+  }
+  .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px 12px;
+  }
+  .sheet-head h2 { font-size: 16px; font-weight: 700; }
+  .sheet-head .count { font-size: 11px; color: var(--sk-text-3); margin-top: 2px; }
+
+  .filter-pills {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 0 16px 12px;
+    margin: 0 -0px;
+    scrollbar-width: none;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0;
+    background: var(--sk-surface-2);
+    color: var(--sk-text-2);
+    border: 1px solid var(--sk-line);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+  }
+  .pill.active {
+    background: var(--sk-primary);
+    color: #fff;
+    border-color: var(--sk-primary);
+  }
+  .pill iconify-icon { font-size: 13px; }
+
+  .sort-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 16px 10px;
+    font-size: 11px;
+    color: var(--sk-text-3);
+  }
+  .sort-row .sort-btn {
+    background: transparent;
+    border: none;
+    color: var(--sk-text-2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 2px 4px;
+  }
+  .sort-row .sort-btn.active { color: var(--sk-primary); }
+  .sort-row .sep { color: var(--sk-text-3); }
+
+  /* 站点列表 */
+  .station-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+  .station {
+    background: var(--sk-surface);
+    border: 1px solid var(--sk-line);
+    border-radius: var(--sk-radius);
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+  }
+  .station:hover { box-shadow: var(--sk-shadow-md); }
+  .station:active { transform: scale(0.99); }
+  .station .logo {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--sk-primary-bg);
+    color: var(--sk-primary);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .station .logo iconify-icon { font-size: 24px; }
+  .station .info { flex: 1; min-width: 0; }
+  .station .row1 { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .station .name { font-size: 13px; font-weight: 700; color: var(--sk-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .station .rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: var(--sk-charging);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .station .rating iconify-icon { font-size: 12px; }
+  .station .addr { font-size: 11px; color: var(--sk-text-3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .station .meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .station .idle { color: var(--sk-success); font-weight: 700; }
+  .station .busy { color: var(--sk-charging); font-weight: 700; }
+  .station .sep { color: var(--sk-text-3); }
+  .station .dist { color: var(--sk-text-3); }
+  .station .price {
+    text-align: right;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .station .price .v { font-size: 16px; font-weight: 800; color: var(--sk-primary); font-family: 'Inter', sans-serif; }
+  .station .price .u { font-size: 10px; color: var(--sk-text-3); }
+  .station .badge {
+    display: inline-block;
+    background: var(--sk-success-bg);
+    color: var(--sk-success);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+  .station .badge.plus { background: #fff3e0; color: var(--sk-charging); }
+
+  /* 区块标题 */
+  .section { padding: 16px 16px 0; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .section-head h2 { font-size: 15px; font-weight: 700; }
+  .section-head h2 small { display: block; font-size: 9px; font-weight: 600; color: var(--sk-primary); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px; }
+  .section-head a { font-size: 11px; color: var(--sk-primary); text-decoration: none; font-weight: 600; }
+
+  /* Banner */
+  .banner {
+    margin: 12px 16px 0;
+    background: linear-gradient(120deg, #1677ff 0%, #00d4a3 100%);
+    border-radius: var(--sk-radius-lg);
+    padding: 14px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .banner::after {
+    content: '';
+    position: absolute;
+    right: -20px; top: -20px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+  }
+  .banner .ico {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .banner .ico iconify-icon { font-size: 22px; }
+  .banner .text { flex: 1; min-width: 0; }
+  .banner .text h4 { font-size: 13px; font-weight: 700; }
+  .banner .text p { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+  .banner .arrow { color: #fff; opacity: 0.85; }
+
+  /* 快捷入口 */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 12px 16px 0;
+  }
+  .quick {
+    background: var(--sk-surface);
+    border-radius: var(--sk-radius);
+    padding: 12px 4px;
+    text-align: center;
+    border: 1px solid var(--sk-line);
+    cursor: pointer;
+  }
+  .quick .ico {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    margin: 0 auto 6px;
+    background: var(--sk-primary-bg);
+    color: var(--sk-primary);
+  }
+  .quick:nth-child(2) .ico { background: var(--sk-charging-bg); color: var(--sk-charging); }
+  .quick:nth-child(3) .ico { background: var(--sk-success-bg); color: var(--sk-success); }
+  .quick:nth-child(4) .ico { background: #f0e8ff; color: #722ed1; }
+  .quick .ico iconify-icon { font-size: 20px; }
+  .quick .name { font-size: 11px; font-weight: 600; color: var(--sk-text); }
+
+  /* 会员卡 */
+  .member-card {
+    margin: 16px 16px 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #1677ff 130%);
+    border-radius: var(--sk-radius-lg);
+    padding: 14px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 24px #1677ff33;
+  }
+  .member-card::before {
+    content: '';
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #00d4a355 0%, transparent 70%);
+  }
+  .member-card .head { display: flex; align-items: center; justify-content: space-between; position: relative; }
+  .member-card .title { font-size: 14px; font-weight: 700; }
+  .member-card .sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+  .member-card .tag { background: #00d4a3; color: #0a1428; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+  .member-card .benefits { display: flex; gap: 6px; margin-top: 12px; position: relative; flex-wrap: wrap; }
+  .member-card .benefit {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 10px;
+    backdrop-filter: blur(6px);
+  }
+  .member-card .benefit strong { display: block; font-size: 12px; color: #00d4a3; }
+  .member-card .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #00d4a3;
+    color: #0a1428;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: none;
+    margin-top: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Tab Bar */
+  .tabbar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 72px;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--sk-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px 12px;
+    z-index: 10;
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--sk-text-3);
+    font-family: inherit;
+    padding: 4px 8px;
+    flex: 1;
+  }
+  .tab iconify-icon { font-size: 22px; }
+  .tab span { font-size: 10px; font-weight: 600; }
+  .tab.active { color: var(--sk-primary); }
+  .tab.center {
+    flex: 0 0 auto;
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, #1677ff 0%, #00d4a3 100%);
+    color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 8px 20px #1677ff66;
+    margin-top: -28px;
+    padding: 0;
+    border: 4px solid #fff;
+  }
+  .tab.center iconify-icon { font-size: 24px; }
+  .tab.center span { display: none; }
+</style>
+</head>
+<body>
+  <div class="phone" role="application" aria-label="聚能充充电小程序">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="icons">
+        <iconify-icon icon="material-symbols:signal-cellular-alt"></iconify-icon>
+        <iconify-icon icon="material-symbols:wifi"></iconify-icon>
+        <iconify-icon icon="material-symbols:battery-full"></iconify-icon>
+      </div>
+    </div>
+
+    <!-- 顶部位置 + 搜索 -->
+    <div class="topbar">
+      <button class="loc-chip">
+        <iconify-icon icon="solar:map-point-bold"></iconify-icon>
+        杭州·西湖区
+        <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+      </button>
+      <div class="search-box">
+        <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+        <input placeholder="搜索充电站 / 桩编号" />
+      </div>
+    </div>
+
+    <!-- 主滚动区 -->
+    <main class="scroller">
+      <!-- 地图 -->
+      <section class="map-area" aria-label="附近充电站地图">
+        <div class="map-grid"></div>
+        <div class="map-roads">
+          <svg viewBox="0 0 400 280" preserveAspectRatio="none">
+            <path d="M0,80 Q100,60 200,90 T400,70" stroke="#cbd5e5" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <path d="M0,180 Q120,200 240,170 T400,200" stroke="#cbd5e5" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M80,0 Q90,100 100,200 T120,280" stroke="#cbd5e5" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M260,0 Q270,100 280,180 T290,280" stroke="#cbd5e5" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M0,140 L400,140" stroke="#dbe4f0" stroke-width="2" fill="none" stroke-dasharray="4 6"/>
+          </svg>
+        </div>
+
+        <div class="map-legend">
+          <div class="legend-row"><span class="legend-dot" style="background: var(--sk-success)"></span>空闲</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--sk-charging)"></span>充电中</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--sk-primary)"></span>聚合点</div>
+        </div>
+
+        <div class="map-controls">
+          <button class="map-btn" aria-label="定位"><iconify-icon icon="solar:my-location-bold-duotone"></iconify-icon></button>
+          <button class="map-btn" aria-label="筛选"><iconify-icon icon="solar:tuning-4-bold-duotone"></iconify-icon></button>
+          <button class="map-btn" aria-label="图层"><iconify-icon icon="solar:layers-bold-duotone"></iconify-icon></button>
+        </div>
+
+        <!-- 站点标注 -->
+        <div class="pin idle" style="left: 20%; top: 40%;">
+          <div class="p-body">
+            <div class="p-num">6</div>
+            <div class="p-price">¥1.2</div>
+          </div>
+        </div>
+        <div class="pin cluster" style="left: 55%; top: 30%;">
+          <div class="p-body">
+            <div class="p-num">12</div>
+          </div>
+        </div>
+        <div class="pin charging" style="left: 70%; top: 55%;">
+          <div class="p-body">
+            <div class="p-num">2</div>
+            <div class="p-price">¥1.5</div>
+          </div>
+        </div>
+        <div class="pin idle" style="left: 35%; top: 70%;">
+          <div class="p-body">
+            <div class="p-num">4</div>
+            <div class="p-price">¥1.3</div>
+          </div>
+        </div>
+        <div class="pin cluster" style="left: 82%; top: 75%;">
+          <div class="p-body">
+            <div class="p-num">8</div>
+          </div>
+        </div>
+
+        <!-- 充电中浮动卡片 -->
+        <div class="charging-now" role="status">
+          <div class="ring">
+            <svg viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="24" stroke="rgba(255,255,255,0.25)" stroke-width="5" fill="none"/>
+              <circle cx="28" cy="28" r="24" stroke="#fff" stroke-width="5" fill="none"
+                stroke-dasharray="150.8" stroke-dashoffset="49.7" stroke-linecap="round"/>
+            </svg>
+            <div class="pct">67%</div>
+          </div>
+          <div class="info">
+            <div class="lbl">充电中</div>
+            <div class="station">特来电·西湖文化中心站 A03</div>
+            <div class="meta">功率 <strong>62 kW</strong> · 已充 <strong>23.4 kWh</strong> · 剩余 <strong>14 分钟</strong></div>
+          </div>
+          <button class="stop">停止</button>
+        </div>
+      </section>
+
+      <!-- 底部滑动面板 -->
+      <section class="sheet" aria-label="附近充电站">
+        <div class="sheet-handle"></div>
+        <div class="sheet-head">
+          <div>
+            <h2>附近充电站</h2>
+            <div class="count">5km 内 · 共 28 个站点</div>
+          </div>
+          <button class="pill" style="background: var(--sk-primary-bg); color: var(--sk-primary); border-color: transparent;">
+            <iconify-icon icon="solar:list-bold-duotone"></iconify-icon>列表
+          </button>
+        </div>
+
+        <div class="filter-pills">
+          <button class="pill active"><iconify-icon icon="solar:bolt-bold"></iconify-icon>全部</button>
+          <button class="pill"><iconify-icon icon="solar:flash-bold"></iconify-icon>快充</button>
+          <button class="pill"><iconify-icon icon="solar:water-drop-bold"></iconify-icon>慢充</button>
+          <button class="pill"><iconify-icon icon="solar:car-bold"></iconify-icon>免费停车</button>
+          <button class="pill"><iconify-icon icon="solar:rocket-bold"></iconify-icon>超充</button>
+          <button class="pill"><iconify-icon icon="solar:highway-bold"></iconify-icon>高速路站</button>
+        </div>
+
+        <div class="sort-row">
+          <span>排序：</span>
+          <button class="sort-btn active">综合</button>
+          <span class="sep">·</span>
+          <button class="sort-btn">距离</button>
+          <span class="sep">·</span>
+          <button class="sort-btn">价格</button>
+          <span class="sep">·</span>
+          <button class="sort-btn">空闲数</button>
+        </div>
+
+        <div class="station-list">
+          <div class="station">
+            <div class="logo"><iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon></div>
+            <div class="info">
+              <div class="row1">
+                <div class="name">特来电·西湖文化中心站<span class="badge plus">PLUS</span></div>
+                <div class="rating"><iconify-icon icon="solar:star-bold"></iconify-icon>4.9</div>
+              </div>
+              <div class="addr">西湖区文三路 199 号地下停车场</div>
+              <div class="meta">
+                <span class="idle">空闲 6 / 12</span>
+                <span class="sep">|</span>
+                <span class="dist">380m</span>
+                <span class="sep">|</span>
+                <span>快充 60kW</span>
+              </div>
+            </div>
+            <div class="price">
+              <div class="v">¥1.2</div>
+              <div class="u">/度</div>
+            </div>
+          </div>
+
+          <div class="station">
+            <div class="logo"><iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon></div>
+            <div class="info">
+              <div class="row1">
+                <div class="name">星星充电·黄龙体育中心<span class="badge">免停车费</span></div>
+                <div class="rating"><iconify-icon icon="solar:star-bold"></iconify-icon>4.8</div>
+              </div>
+              <div class="addr">西湖区黄龙路 1 号停车场 B 区</div>
+              <div class="meta">
+                <span class="idle">空闲 4 / 16</span>
+                <span class="sep">|</span>
+                <span class="dist">620m</span>
+                <span class="sep">|</span>
+                <span>快充 120kW</span>
+              </div>
+            </div>
+            <div class="price">
+              <div class="v">¥1.3</div>
+              <div class="u">/度</div>
+            </div>
+          </div>
+
+          <div class="station">
+            <div class="logo"><iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon></div>
+            <div class="info">
+              <div class="row1">
+                <div class="name">云快充·西溪银泰城站</div>
+                <div class="rating"><iconify-icon icon="solar:star-bold"></iconify-icon>4.7</div>
+              </div>
+              <div class="addr">西湖区余杭塘路 718 号</div>
+              <div class="meta">
+                <span class="busy">空闲 2 / 8</span>
+                <span class="sep">|</span>
+                <span class="dist">1.2km</span>
+                <span class="sep">|</span>
+                <span>超充 250kW</span>
+              </div>
+            </div>
+            <div class="price">
+              <div class="v">¥1.5</div>
+              <div class="u">/度</div>
+            </div>
+          </div>
+
+          <div class="station">
+            <div class="logo"><iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon></div>
+            <div class="info">
+              <div class="row1">
+                <div class="name">e充电·城西银泰站<span class="badge">即插即充</span></div>
+                <div class="rating"><iconify-icon icon="solar:star-bold"></iconify-icon>4.6</div>
+              </div>
+              <div class="addr">拱墅区莫干山路 969 号</div>
+              <div class="meta">
+                <span class="idle">空闲 10 / 20</span>
+                <span class="sep">|</span>
+                <span class="dist">2.1km</span>
+                <span class="sep">|</span>
+                <span>快充 90kW</span>
+              </div>
+            </div>
+            <div class="price">
+              <div class="v">¥1.18</div>
+              <div class="u">/度</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner -->
+      <div class="banner">
+        <div class="ico"><iconify-icon icon="solar:gift-bold-duotone"></iconify-icon></div>
+        <div class="text">
+          <h4>夏季限时 · PLUS 会员 5 折开抢</h4>
+          <p>充电折扣 6 折起 · 月省 ¥50 · 停车减免</p>
+        </div>
+        <iconify-icon icon="solar:alt-arrow-right-linear" class="arrow"></iconify-icon>
+      </div>
+
+      <!-- 快捷功能 -->
+      <div class="quick-grid">
+        <div class="quick">
+          <div class="ico"><iconify-icon icon="solar:dialog-2-bold-duotone"></iconify-icon></div>
+          <div class="name">我的订单</div>
+        </div>
+        <div class="quick">
+          <div class="ico"><iconify-icon icon="solar:bill-list-bold-duotone"></iconify-icon></div>
+          <div class="name">发票管理</div>
+        </div>
+        <div class="quick">
+          <div class="ico"><iconify-icon icon="solar:wallet-2-bold-duotone"></iconify-icon></div>
+          <div class="name">余额充值</div>
+        </div>
+        <div class="quick">
+          <div class="ico"><iconify-icon icon="solar:archive-bold-duotone"></iconify-icon></div>
+          <div class="name">收藏电站</div>
+        </div>
+      </div>
+
+      <!-- 会员卡 -->
+      <section class="section" aria-label="PLUS 会员">
+        <div class="section-head">
+          <h2><small>PLUS Membership</small>会员权益</h2>
+          <a href="#">详情 ›</a>
+        </div>
+      </section>
+      <div class="member-card">
+        <div class="head">
+          <div>
+            <div class="title">PLUS 金卡会员</div>
+            <div class="sub">¥19.9 / 月 · 月省约 ¥100</div>
+          </div>
+          <span class="tag">8 折</span>
+        </div>
+        <div class="benefits">
+          <div class="benefit">充电折扣<strong>8 折</strong></div>
+          <div class="benefit">月赠能量包<strong>100 度</strong></div>
+          <div class="benefit">优先客服<strong>专享通道</strong></div>
+          <div class="benefit">停车减免<strong>每月 5 次</strong></div>
+        </div>
+        <button class="cta">立即开通 <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon></button>
+      </div>
+
+      <div style="height: 16px;"></div>
+    </main>
+
+    <!-- Tab Bar -->
+    <nav class="tabbar" aria-label="主导航">
+      <button class="tab active">
+        <iconify-icon icon="solar:map-point-bold-duotone"></iconify-icon>
+        <span>首页</span>
+      </button>
+      <button class="tab">
+        <iconify-icon icon="solar:gift-bold-duotone"></iconify-icon>
+        <span>省钱</span>
+      </button>
+      <button class="tab center" aria-label="扫码充电">
+        <iconify-icon icon="solar:qr-code-bold"></iconify-icon>
+      </button>
+      <button class="tab">
+        <iconify-icon icon="solar:clipboard-list-bold-duotone"></iconify-icon>
+        <span>订单</span>
+      </button>
+      <button class="tab">
+        <iconify-icon icon="solar:user-circle-bold-duotone"></iconify-icon>
+        <span>我的</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    document.querySelectorAll('.pill').forEach(p => {
+      p.addEventListener('click', () => {
+        p.parentElement.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+      });
+    });
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.sort-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+      });
+    });
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

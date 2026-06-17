@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>聚合充电 · EV Charge Mini — 找桩 · 充电 · 支付 · 我的</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Geist', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          mono: ['Geist Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          zinc: {
+            990: '#0a0a0b',
+          },
+          volt: {
+            50: '#eef6ff',
+            100: '#d9eaff',
+            400: '#3b82f6',
+            500: '#1677FF',
+            600: '#0e5fd4',
+            700: '#0b4aa8',
+          },
+          juice: {
+            400: '#34d399',
+            500: '#10b981',
+            600: '#059669',
+          },
+          amber2: {
+            400: '#fbbf24',
+            500: '#f59e0b',
+            600: '#d97706',
+          },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  body { font-family: 'Geist', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* Phone frame (desktop view) */
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    border-radius: 52px;
+    background: #0a0a0b;
+    padding: 12px;
+    box-shadow: 0 50px 100px -30px rgba(0,0,0,0.45), 0 0 0 2px #1f1f23, inset 0 0 0 1px #2a2a30;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 42px;
+    overflow: hidden;
+    background: #f5f7fa;
+    position: relative;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 28px;
+    background: #0a0a0b;
+    border-radius: 999px;
+    z-index: 60;
+  }
+
+  /* Map backdrop */
+  .map-bg {
+    background-color: #e6ebf2;
+    background-image:
+      linear-gradient(rgba(22,119,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22,119,255,0.06) 1px, transparent 1px),
+      radial-gradient(circle at 30% 40%, #d4e4f7 0, transparent 28%),
+      radial-gradient(circle at 75% 65%, #d8efe1 0, transparent 24%),
+      radial-gradient(circle at 50% 80%, #e8e0f0 0, transparent 20%);
+    background-size: 28px 28px, 28px 28px, 100% 100%, 100% 100%, 100% 100%;
+  }
+  .map-road {
+    position: absolute;
+    background: rgba(255,255,255,0.85);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04);
+  }
+
+  /* Pulse ring for user location */
+  @keyframes pulse-ring {
+    0% { transform: scale(0.6); opacity: 0.9; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .pulse-ring::before, .pulse-ring::after {
+    content: ''; position: absolute; inset: 0;
+    border-radius: 999px;
+    border: 2px solid #1677FF;
+    animation: pulse-ring 2.4s var(--ease-out-expo) infinite;
+  }
+  .pulse-ring::after { animation-delay: 1.2s; }
+
+  /* Charging ring progress */
+  .ring-track { stroke: rgba(245,158,11,0.15); }
+  .ring-fill { stroke: #f59e0b; stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; transition: stroke-dashoffset 1s var(--ease-out-expo); }
+
+  /* Breathing dot */
+  @keyframes breathe {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.78); }
+  }
+  .breathe { animation: breathe 2s ease-in-out infinite; }
+
+  /* Tactile */
+  .btn-tactile { transition: transform 0.18s var(--ease-out-expo), background-color 0.2s ease, color 0.2s ease; }
+  .btn-tactile:active { transform: scale(0.97); }
+
+  /* Bottom sheet drag handle */
+  .sheet-grab { width: 36px; height: 4px; border-radius: 999px; background: #d1d5db; margin: 8px auto 0; }
+
+  /* Shimmer for skeleton/scan line */
+  @keyframes shimmer {
+    0% { background-position: -150% 0; }
+    100% { background-position: 150% 0; }
+  }
+  .shimmer-bar {
+    background: linear-gradient(90deg, transparent, rgba(22,119,255,0.18), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.2s linear infinite;
+  }
+
+  /* Floating phone-frame double */
+  .stage-shadow { box-shadow: 0 60px 120px -30px rgba(15,23,42,0.35); }
+
+  /* Sliding panel for tab content */
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; animation: fadeIn 0.4s var(--ease-out-expo); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Scan frame corner */
+  .scan-corner { position: absolute; width: 28px; height: 28px; border-color: #1677FF; border-style: solid; border-width: 0; }
+  .scan-corner.tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 8px; }
+  .scan-corner.tr { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 8px; }
+  .scan-corner.bl { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 8px; }
+  .scan-corner.br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 8px; }
+
+  /* Sparkline */
+  .spark path { fill: none; stroke: #1677FF; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-ring::before, .pulse-ring::after, .breathe, .shimmer-bar, .tab-pane.active { animation: none !important; }
+  }
+</style>
+</head>
+<body class="bg-zinc-990 text-zinc-100 min-h-screen">
+
+<!-- ============== DESKTOP STAGE ============== -->
+<div class="min-h-screen flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 p-6 lg:p-12">
+
+  <!-- Left side: brand & description (desktop) -->
+  <div class="hidden lg:block max-w-[420px] text-left">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-xl bg-volt-500 flex items-center justify-center text-white">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97L11 14l-1 8 8.91-10.97L13 10l1-8z"/></svg>
+      </div>
+      <div>
+        <div class="font-semibold text-[18px] tracking-tight text-white">聚合充电</div>
+        <div class="text-[11px] tracking-[0.18em] uppercase text-zinc-500">EV Charge Mini</div>
+      </div>
+    </div>
+    <div class="text-[12px] tracking-[0.25em] uppercase text-volt-400 mb-5">Aggregator · Charging · Payment</div>
+    <h1 class="font-sans text-[44px] leading-[1.05] tracking-tight text-white mb-6">
+      附近充电站<br/><span class="text-volt-400">一图看全</span>，扫码即充
+    </h1>
+    <p class="text-zinc-400 text-[15px] leading-relaxed mb-10 max-w-[36ch]">
+      整合特来电、星星充电、云快充等主流运营商，实时桩态透明、免密支付无感结算，PLUS 会员跨站优惠。
+    </p>
+    <div class="space-y-5">
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 rounded-full bg-volt-500/15 text-volt-400 flex items-center justify-center flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 8v6m10-10h-6M8 12H2m15.5-7.5L13 9m-2 6l-4.5 4.5M19.5 19.5L15 15M9 9L4.5 4.5"/></svg>
+        </div>
+        <div>
+          <div class="text-white text-[14px] font-medium mb-0.5">聚合 12 家运营商</div>
+          <div class="text-zinc-500 text-[12px]">同站多平台桩态合并展示，刷新 ≤ 30 秒</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 rounded-full bg-juice-500/15 text-juice-400 flex items-center justify-center flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4.09 12.97L11 14l-1 8 8.91-10.97L13 10l1-8z"/></svg>
+        </div>
+        <div>
+          <div class="text-white text-[14px] font-medium mb-0.5">扫码到启动 ≤ 5 秒</div>
+          <div class="text-zinc-500 text-[12px]">支持按金额 / 按电量 / 充满为止三种模式</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 rounded-full bg-amber2-500/15 text-amber2-400 flex items-center justify-center flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+        </div>
+        <div>
+          <div class="text-white text-[14px] font-medium mb-0.5">PLUS 会员 6 折起</div>
+          <div class="text-zinc-500 text-[12px]">每月满减券包 + 停车减免资格</div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-12 pt-8 border-t border-zinc-800 grid grid-cols-3 gap-4 text-center">
+      <div>
+        <div class="font-mono text-[22px] font-semibold text-white">47.2<span class="text-[12px] text-zinc-500">%</span></div>
+        <div class="text-[10px] tracking-wider uppercase text-zinc-600 mt-1">会员转化</div>
+      </div>
+      <div>
+        <div class="font-mono text-[22px] font-semibold text-white">96.4<span class="text-[12px] text-zinc-500">%</span></div>
+        <div class="text-[10px] tracking-wider uppercase text-zinc-600 mt-1">充电成功率</div>
+      </div>
+      <div>
+        <div class="font-mono text-[22px] font-semibold text-white">1.4<span class="text-[12px] text-zinc-500">s</span></div>
+        <div class="text-[10px] tracking-wider uppercase text-zinc-600 mt-1">首屏加载</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone frame -->
+  <div class="phone-frame stage-shadow flex-shrink-0">
+    <div class="phone-screen">
+      <div class="phone-notch"></div>
+
+      <!-- Status bar -->
+      <div class="absolute top-0 left-0 right-0 h-12 z-50 flex items-end justify-between px-7 pb-1 text-[13px] font-semibold text-zinc-900">
+        <span class="font-mono">9:41</span>
+        <div class="flex items-center gap-1.5">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 1h2v10h-2z"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4a8 8 0 0112 0M4 7a5 5 0 018 0M6 10a2 2 0 014 0"/></svg>
+          <div class="w-6 h-3 border border-zinc-900 rounded-sm relative"><div class="absolute inset-0.5 bg-zinc-900 rounded-[1px]" style="width:78%"></div><div class="absolute -right-1 top-1/2 -translate-y-1/2 w-0.5 h-1.5 bg-zinc-900 rounded-r"></div></div>
+        </div>
+      </div>
+
+      <!-- ============ PANE: 首页地图 ============ -->
+      <div class="tab-pane active absolute inset-0" id="pane-home">
+        <!-- Map background -->
+        <div class="map-bg absolute inset-0 pt-12">
+          <!-- decorative roads -->
+          <div class="map-road" style="top:35%; left:0; right:0; height:6px; transform:rotate(-3deg);"></div>
+          <div class="map-road" style="top:0; bottom:0; left:48%; width:6px; transform:rotate(8deg);"></div>
+          <div class="map-road" style="top:65%; left:0; right:0; height:4px;"></div>
+
+          <!-- Station pins -->
+          <!-- Pin 1: idle (green) -->
+          <div class="absolute" style="top:24%; left:18%;">
+            <div class="relative w-9 h-9 rounded-full bg-juice-500 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[10px] font-bold">6</div>
+          </div>
+          <!-- Pin 2: busy (amber) -->
+          <div class="absolute" style="top:30%; left:62%;">
+            <div class="relative w-9 h-9 rounded-full bg-amber2-500 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[10px] font-bold">2</div>
+          </div>
+          <!-- Pin 3: idle -->
+          <div class="absolute" style="top:48%; left:30%;">
+            <div class="relative w-10 h-10 rounded-full bg-juice-500 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[11px] font-bold scale-110">12</div>
+            <!-- selected ring -->
+            <div class="absolute -inset-2 rounded-full border-2 border-volt-500/60 animate-pulse"></div>
+          </div>
+          <!-- Pin 4: fault (red) -->
+          <div class="absolute" style="top:55%; left:75%;">
+            <div class="relative w-8 h-8 rounded-full bg-rose-500 border-[3px] border-white shadow-lg flex items-center justify-center text-white">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 9v4M12 17h.01"/></svg>
+            </div>
+          </div>
+          <!-- Pin 5: idle small -->
+          <div class="absolute" style="top:18%; left:75%;">
+            <div class="w-8 h-8 rounded-full bg-juice-500 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[9px] font-bold">3</div>
+          </div>
+
+          <!-- User location -->
+          <div class="absolute" style="top:60%; left:42%;">
+            <div class="relative w-4 h-4">
+              <div class="absolute inset-0 rounded-full bg-volt-500 border-2 border-white shadow-md"></div>
+              <div class="pulse-ring absolute -inset-1 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top search bar -->
+        <div class="absolute top-12 left-0 right-0 p-4 z-30">
+          <div class="bg-white rounded-2xl shadow-lg flex items-center gap-3 px-4 py-3 border border-zinc-100">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input class="flex-1 bg-transparent text-[14px] text-zinc-900 placeholder:text-zinc-400 outline-none" placeholder="搜电站、地点或桩编号" value="" />
+            <button class="w-8 h-8 rounded-full bg-volt-50 text-volt-500 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+            </button>
+          </div>
+          <!-- Filter chips -->
+          <div class="flex gap-2 mt-3 overflow-x-auto hscroll pb-1">
+            <button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-zinc-900 text-white text-[12px] font-medium flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-juice-400"></span> 快充
+            </button>
+            <button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white text-zinc-700 text-[12px] border border-zinc-200">免费停车</button>
+            <button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white text-zinc-700 text-[12px] border border-zinc-200">PLUS 站</button>
+            <button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white text-zinc-700 text-[12px] border border-zinc-200">≤ 1km</button>
+            <button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white text-zinc-700 text-[12px] border border-zinc-200">即插即充</button>
+          </div>
+        </div>
+
+        <!-- Floating station card -->
+        <div class="absolute" style="top:38%; left:38%; z-index:25;">
+          <div class="bg-white rounded-2xl shadow-xl border border-zinc-100 p-3 w-[180px] -translate-x-1/2">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-[13px] font-semibold text-zinc-900 truncate">国网·滨江中心站</div>
+              <span class="flex-shrink-0 text-[10px] font-mono text-volt-600 bg-volt-50 px-1.5 py-0.5 rounded">4.8</span>
+            </div>
+            <div class="flex items-center gap-2 text-[11px] text-zinc-500 mb-2">
+              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-juice-500"></span> 空闲 12</span>
+              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber2-500"></span> 使用 4</span>
+            </div>
+            <div class="font-mono text-[15px] font-semibold text-zinc-900">¥1.24<span class="text-[10px] text-zinc-500 font-sans"> /度</span></div>
+          </div>
+        </div>
+
+        <!-- Bottom sheet: nearby list -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[28px] shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.18)] z-30 pb-24">
+          <div class="sheet-grab"></div>
+          <div class="px-5 pt-4 pb-2 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <h3 class="text-[15px] font-semibold text-zinc-900">附近电站</h3>
+              <span class="text-[11px] text-zinc-500 font-mono">· 28 个</span>
+            </div>
+            <button class="text-[12px] text-volt-600 flex items-center gap-1">
+              综合排序
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- Station 1 -->
+          <div class="px-5 py-3.5 border-t border-zinc-100 flex gap-3 active:bg-zinc-50 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-juice-500/10 flex flex-col items-center justify-center flex-shrink-0">
+              <span class="font-mono text-[16px] font-bold text-juice-600 leading-none">12</span>
+              <span class="text-[8px] text-juice-600 mt-0.5">空闲</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-[14px] font-semibold text-zinc-900 truncate">国网·滨江中心站</h4>
+                <span class="text-[11px] font-mono text-volt-600 flex-shrink-0 ml-2">¥1.24/度</span>
+              </div>
+              <div class="text-[11px] text-zinc-500 truncate mb-1.5">江南大道与江晖路交叉口 · 280m</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-volt-50 text-volt-600">快充 60kW</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">免费停车</span>
+                <span class="text-[10px] text-zinc-400 font-mono">· 4.8 分</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Station 2 -->
+          <div class="px-5 py-3.5 border-t border-zinc-100 flex gap-3 active:bg-zinc-50 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-amber2-500/10 flex flex-col items-center justify-center flex-shrink-0">
+              <span class="font-mono text-[16px] font-bold text-amber2-600 leading-none">2</span>
+              <span class="text-[8px] text-amber2-600 mt-0.5">空闲</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-[14px] font-semibold text-zinc-900 truncate">特来电·星光时代广场</h4>
+                <span class="text-[11px] font-mono text-volt-600 flex-shrink-0 ml-2">¥1.38/度</span>
+              </div>
+              <div class="text-[11px] text-zinc-500 truncate mb-1.5">江南大道 11 号 B2 层 · 540m</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-volt-50 text-volt-600">超充 120kW</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber2-500/10 text-amber2-600">PLUS 6 折</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Station 3 -->
+          <div class="px-5 py-3.5 border-t border-zinc-100 flex gap-3 active:bg-zinc-50 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-juice-500/10 flex flex-col items-center justify-center flex-shrink-0">
+              <span class="font-mono text-[16px] font-bold text-juice-600 leading-none">8</span>
+              <span class="text-[8px] text-juice-600 mt-0.5">空闲</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-[14px] font-semibold text-zinc-900 truncate">星星充电·物联网小镇</h4>
+                <span class="text-[11px] font-mono text-volt-600 flex-shrink-0 ml-2">¥1.18/度</span>
+              </div>
+              <div class="text-[11px] text-zinc-500 truncate mb-1.5">信诚路与立业路交叉口 · 720m</div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">慢充 7kW</span>
+                <span class="text-[10px] text-zinc-400 font-mono">· 4.6 分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PANE: 扫码 ============ -->
+      <div class="tab-pane absolute inset-0 bg-zinc-990 pt-12" id="pane-scan">
+        <div class="px-6 pt-6 pb-4 flex items-center justify-between text-white">
+          <button class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center" data-close="pane-scan">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+          <h2 class="text-[16px] font-semibold">扫码充电</h2>
+          <button class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16M4 12h16"/></svg>
+          </button>
+        </div>
+
+        <!-- Scan viewport -->
+        <div class="px-8 mt-8">
+          <div class="relative aspect-square rounded-[28px] overflow-hidden bg-zinc-900 border border-zinc-800">
+            <!-- faux camera background -->
+            <div class="absolute inset-0 opacity-50" style="background: radial-gradient(circle at 50% 50%, #1a2a4a 0%, #0a0a0b 70%);"></div>
+            <!-- scan frame -->
+            <div class="absolute inset-8 rounded-2xl">
+              <span class="scan-corner tl"></span>
+              <span class="scan-corner tr"></span>
+              <span class="scan-corner bl"></span>
+              <span class="scan-corner br"></span>
+              <!-- scan line -->
+              <div class="absolute left-0 right-0 h-0.5 bg-volt-500 shimmer-bar" style="top:50%; box-shadow: 0 0 12px #1677FF;"></div>
+            </div>
+            <!-- center hint -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-8">
+              <div class="w-14 h-14 rounded-full bg-volt-500/15 flex items-center justify-center mb-3">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7M17 21h4"/></svg>
+              </div>
+              <div class="text-white text-[14px] font-medium mb-1">将桩上二维码对准框内</div>
+              <div class="text-zinc-500 text-[12px]">自动识别 · 桩号 + 枪号</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual input -->
+        <div class="px-6 mt-7">
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div class="text-[11px] tracking-wider uppercase text-zinc-500 mb-2">扫码失败？手动输入桩号</div>
+            <div class="flex items-center gap-2">
+              <input class="flex-1 bg-transparent font-mono text-[18px] text-white tracking-wider outline-none placeholder:text-zinc-600" placeholder="SS-2026-04-8829" value="SS-2026-04-8829" />
+              <button class="btn-tactile px-4 py-2 rounded-xl bg-volt-500 text-white text-[13px] font-medium">启动</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent piles -->
+        <div class="px-6 mt-7">
+          <div class="text-[11px] tracking-wider uppercase text-zinc-500 mb-3">最近使用</div>
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between py-2.5 border-b border-white/5">
+              <div>
+                <div class="text-white text-[13px] font-medium">国网·滨江中心站 · A03 枪</div>
+                <div class="text-zinc-500 text-[11px] font-mono">SS-2026-04-8829 · 2 小时前</div>
+              </div>
+              <button class="text-volt-400 text-[12px] font-medium">再充</button>
+            </div>
+            <div class="flex items-center justify-between py-2.5 border-b border-white/5">
+              <div>
+                <div class="text-white text-[13px] font-medium">特来电·星光时代 · B12 枪</div>
+                <div class="text-zinc-500 text-[11px] font-mono">TL-1188-2271 · 昨天 19:42</div>
+              </div>
+              <button class="text-volt-400 text-[12px] font-medium">再充</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NFC hint -->
+        <div class="absolute bottom-28 left-6 right-6">
+          <div class="bg-volt-500/10 border border-volt-500/30 rounded-2xl p-3.5 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-volt-500 flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M5 8a14 14 0 0114 0M7 12a9 9 0 019 0M9 16a4 4 0 014 0"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="text-white text-[12px] font-medium">支持 NFC 即插即充</div>
+              <div class="text-zinc-500 text-[11px]">插枪后手机靠近桩感应区即可启动</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PANE: 充电中 ============ -->
+      <div class="tab-pane absolute inset-0 bg-gradient-to-b from-amber2-500/10 to-white pt-12" id="pane-charging">
+        <div class="px-6 pt-5 pb-3 flex items-center justify-between">
+          <button class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center" data-close="pane-charging">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27272a" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="text-center">
+            <div class="text-[12px] text-zinc-500">充电中</div>
+            <div class="text-[13px] font-semibold text-zinc-900 flex items-center gap-1.5 justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber2-500 breathe"></span>
+              SS-2026-04-8829 · A03
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27272a" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          </button>
+        </div>
+
+        <!-- Ring progress -->
+        <div class="px-6 mt-6 flex flex-col items-center">
+          <div class="relative w-[240px] h-[240px]">
+            <svg class="w-full h-full" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="none" class="ring-track" stroke-width="6"/>
+              <circle cx="50" cy="50" r="44" fill="none" class="ring-fill" stroke-width="6"
+                stroke-dasharray="276.46" stroke-dashoffset="80.37"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <div class="text-[11px] tracking-wider uppercase text-amber2-600 mb-1">已充电量</div>
+              <div class="font-mono text-[42px] font-semibold text-zinc-900 leading-none">23.6</div>
+              <div class="text-[12px] text-zinc-500 mt-1">kWh · 71%</div>
+              <div class="mt-3 px-3 py-1 rounded-full bg-amber2-500/15 text-amber2-600 text-[11px] font-medium font-mono">预计 14:32 充满</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live metrics -->
+        <div class="px-6 mt-7 grid grid-cols-3 gap-3">
+          <div class="bg-white rounded-2xl p-3.5 border border-zinc-100 text-center">
+            <div class="text-[10px] tracking-wider uppercase text-zinc-500 mb-1">实时功率</div>
+            <div class="font-mono text-[20px] font-semibold text-zinc-900">58.2</div>
+            <div class="text-[10px] text-zinc-500">kW</div>
+          </div>
+          <div class="bg-white rounded-2xl p-3.5 border border-zinc-100 text-center">
+            <div class="text-[10px] tracking-wider uppercase text-zinc-500 mb-1">已用时长</div>
+            <div class="font-mono text-[20px] font-semibold text-zinc-900">26</div>
+            <div class="text-[10px] text-zinc-500">分钟</div>
+          </div>
+          <div class="bg-white rounded-2xl p-3.5 border border-zinc-100 text-center">
+            <div class="text-[10px] tracking-wider uppercase text-zinc-500 mb-1">当前费用</div>
+            <div class="font-mono text-[20px] font-semibold text-zinc-900">¥29.27</div>
+            <div class="text-[10px] text-zinc-500">·  电力 23.7 / 服务 5.6</div>
+          </div>
+        </div>
+
+        <!-- Power chart -->
+        <div class="px-6 mt-4">
+          <div class="bg-white rounded-2xl p-4 border border-zinc-100">
+            <div class="flex items-center justify-between mb-3">
+              <div class="text-[12px] font-semibold text-zinc-900">功率曲线 · 近 30 分钟</div>
+              <span class="text-[10px] font-mono text-zinc-500">峰值 60.4 kW</span>
+            </div>
+            <svg class="spark w-full" viewBox="0 0 280 60" preserveAspectRatio="none">
+              <path d="M0,40 L15,38 L30,30 L45,22 L60,18 L75,15 L90,12 L105,10 L120,9 L135,11 L150,14 L165,12 L180,15 L195,18 L210,16 L225,12 L240,10 L255,11 L270,13 L280,12"/>
+              <path d="M0,40 L15,38 L30,30 L45,22 L60,18 L75,15 L90,12 L105,10 L120,9 L135,11 L150,14 L165,12 L180,15 L195,18 L210,16 L225,12 L240,10 L255,11 L270,13 L280,12 L280,60 L0,60 Z" fill="rgba(22,119,255,0.08)" stroke="none"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Stop button -->
+        <div class="absolute bottom-28 left-6 right-6">
+          <button class="btn-tactile w-full py-3.5 rounded-2xl bg-zinc-900 text-white text-[14px] font-medium flex items-center justify-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            停止充电
+          </button>
+          <div class="text-center text-[11px] text-zinc-500 mt-2.5">点击后需二次确认 · 充电完成自动扣费</div>
+        </div>
+      </div>
+
+      <!-- ============ PANE: 订单 ============ -->
+      <div class="tab-pane absolute inset-0 bg-zinc-50 pt-12" id="pane-orders">
+        <div class="px-5 pt-3 pb-4 flex items-center justify-between">
+          <h2 class="text-[20px] font-bold text-zinc-900">我的订单</h2>
+          <button class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27272a" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+          </button>
+        </div>
+        <!-- Tabs -->
+        <div class="px-5 mb-3 flex gap-1 border-b border-zinc-200">
+          <button class="px-3 py-2.5 text-[13px] font-medium text-zinc-900 border-b-2 border-volt-500 -mb-px">全部</button>
+          <button class="px-3 py-2.5 text-[13px] text-zinc-500">充电中</button>
+          <button class="px-3 py-2.5 text-[13px] text-zinc-500">已完成</button>
+          <button class="px-3 py-2.5 text-[13px] text-zinc-500">已开票</button>
+        </div>
+
+        <!-- Charging now banner -->
+        <div class="mx-5 mt-3 rounded-2xl bg-gradient-to-r from-amber2-500 to-amber2-600 p-4 text-white relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div class="relative flex items-center justify-between">
+            <div>
+              <div class="text-[11px] uppercase tracking-wider opacity-80 mb-1">充电中</div>
+              <div class="text-[14px] font-semibold">国网·滨江中心站 A03</div>
+              <div class="text-[11px] opacity-90 mt-1 font-mono">23.6 kWh · 71% · 58.2 kW</div>
+            </div>
+            <button class="btn-tactile px-3.5 py-2 rounded-full bg-white text-amber2-600 text-[12px] font-semibold" data-go="pane-charging">查看</button>
+          </div>
+        </div>
+
+        <!-- Order list -->
+        <div class="mt-3 pb-28">
+          <div class="mx-5 bg-white rounded-2xl border border-zinc-100 mb-2.5">
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-volt-50 flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1677FF"><path d="M13 2L4.09 12.97L11 14l-1 8 8.91-10.97L13 10l1-8z"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-[13px] font-semibold text-zinc-900">特来电·星光时代 B12</div>
+                    <div class="text-[11px] text-zinc-500 font-mono">06.16 19:42 · 41 分钟</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-juice-500/10 text-juice-600">已完成</span>
+              </div>
+              <div class="flex items-end justify-between pt-2.5 border-t border-zinc-100">
+                <div>
+                  <div class="text-[11px] text-zinc-500">充电量 / 时长</div>
+                  <div class="font-mono text-[14px] text-zinc-900 font-medium">32.4 kWh · 41 min</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[11px] text-zinc-500">实付</div>
+                  <div class="font-mono text-[16px] text-zinc-900 font-bold">¥40.18</div>
+                </div>
+              </div>
+            </div>
+            <div class="px-4 py-2.5 border-t border-zinc-100 flex items-center justify-between text-[11px]">
+              <span class="text-juice-600 flex items-center gap-1">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+                减碳 27.3 kg
+              </span>
+              <div class="flex gap-3">
+                <button class="text-zinc-500">开发票</button>
+                <button class="text-volt-600 font-medium">评价</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mx-5 bg-white rounded-2xl border border-zinc-100 mb-2.5">
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-volt-50 flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1677FF"><path d="M13 2L4.09 12.97L11 14l-1 8 8.91-10.97L13 10l1-8z"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-[13px] font-semibold text-zinc-900">国网·滨江中心站 A03</div>
+                    <div class="text-[11px] text-zinc-500 font-mono">06.14 08:17 · 28 分钟</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-juice-500/10 text-juice-600">已完成</span>
+              </div>
+              <div class="flex items-end justify-between pt-2.5 border-t border-zinc-100">
+                <div>
+                  <div class="text-[11px] text-zinc-500">充电量 / 时长</div>
+                  <div class="font-mono text-[14px] text-zinc-900 font-medium">22.1 kWh · 28 min</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[11px] text-zinc-500">实付</div>
+                  <div class="font-mono text-[16px] text-zinc-900 font-bold">¥27.42</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mx-5 bg-white rounded-2xl border border-zinc-100 mb-2.5">
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-volt-50 flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1677FF"><path d="M13 2L4.09 12.97L11 14l-1 8 8.91-10.97L13 10l1-8z"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-[13px] font-semibold text-zinc-900">星星充电·物联网小镇 C05</div>
+                    <div class="text-[11px] text-zinc-500 font-mono">06.10 22:08 · 4 小时 12 分</div>
+                  </div>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600">已开票</span>
+              </div>
+              <div class="flex items-end justify-between pt-2.5 border-t border-zinc-100">
+                <div>
+                  <div class="text-[11px] text-zinc-500">充电量 / 时长</div>
+                  <div class="font-mono text-[14px] text-zinc-900 font-medium">28.6 kWh · 4h12min</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[11px] text-zinc-500">实付</div>
+                  <div class="font-mono text-[16px] text-zinc-900 font-bold">¥33.79</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PANE: 我的 ============ -->
+      <div class="tab-pane absolute inset-0 bg-zinc-50 pt-12" id="pane-me">
+        <!-- Profile header -->
+        <div class="bg-gradient-to-br from-volt-500 to-volt-700 px-5 pt-4 pb-8 text-white relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+          <div class="relative flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center font-mono font-bold text-[16px]">陈</div>
+              <div>
+                <div class="text-[15px] font-semibold flex items-center gap-2">陈思远 <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber2-400 text-amber2-600 font-bold">PLUS 金</span></div>
+                <div class="text-[11px] opacity-90 font-mono">138 **** 4827</div>
+              </div>
+            </div>
+            <button class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+          <!-- Wallet strip -->
+          <div class="relative mt-6 grid grid-cols-4 gap-2 text-center">
+            <div>
+              <div class="font-mono text-[16px] font-bold">¥128.50</div>
+              <div class="text-[10px] opacity-80">余额</div>
+            </div>
+            <div>
+              <div class="font-mono text-[16px] font-bold">12</div>
+              <div class="text-[10px] opacity-80">卡券</div>
+            </div>
+            <div>
+              <div class="font-mono text-[16px] font-bold">86.4</div>
+              <div class="text-[10px] opacity-80">能量包 / 度</div>
+            </div>
+            <div>
+              <div class="font-mono text-[16px] font-bold">1,247</div>
+              <div class="text-[10px] opacity-80">碳积分</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Membership card -->
+        <div class="px-5 -mt-5">
+          <div class="bg-gradient-to-r from-amber2-400 to-amber2-600 rounded-2xl p-4 text-amber2-600 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[11px] uppercase tracking-wider opacity-80">PLUS 金卡会员</div>
+                <div class="text-[14px] font-bold mt-0.5">本月已省 ¥68.40</div>
+                <div class="text-[11px] opacity-80 mt-0.5">有效期至 2026.12.31</div>
+              </div>
+              <button class="btn-tactile px-3 py-2 rounded-full bg-white text-[12px] font-semibold">续费</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicles -->
+        <div class="px-5 mt-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-[13px] font-semibold text-zinc-900">我的车辆</h3>
+            <button class="text-[11px] text-volt-600 font-medium">+ 添加</button>
+          </div>
+          <div class="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-zinc-900 flex items-center justify-center text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11h.5a1.5 1.5 0 011.5 1.5V17a1 1 0 01-1 1h-1v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1H4a1 1 0 01-1-1v-4.5A1.5 1.5 0 014.5 11H5zm2.4-1h9.2l-1-3H8.4l-1 3zM6.5 14a1 1 0 100-2 1 1 0 000 2zm11 0a1 1 0 100-2 1 1 0 000 2z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold text-zinc-900">沪 A·8F2Z9</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-juice-500/15 text-juice-600">主车</span>
+              </div>
+              <div class="text-[11px] text-zinc-500 font-mono mt-0.5">特斯拉 Model Y · 国标接口 · 75 kWh</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] text-zinc-500">续航</div>
+              <div class="font-mono text-[13px] font-semibold text-juice-600">312 km</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tools grid -->
+        <div class="px-5 mt-5 pb-28">
+          <h3 class="text-[13px] font-semibold text-zinc-900 mb-3">常用工具</h3>
+          <div class="bg-white rounded-2xl border border-zinc-100 grid grid-cols-4">
+            <button class="flex flex-col items-center gap-1.5 py-4 border-r border-b border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 14h2M8 17h6"/></svg>
+              <span class="text-[11px] text-zinc-700">发票管理</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4 border-r border-b border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              <span class="text-[11px] text-zinc-700">余额充值</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4 border-r border-b border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><path d="M3 12a9 9 0 0118 0M3 12a9 9 0 0018 0M3 12h18"/><path d="M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>
+              <span class="text-[11px] text-zinc-700">即插即充</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4 border-b border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span class="text-[11px] text-zinc-700">收藏电站</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4 border-r border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><path d="M12 2L4 6v6c0 5 3 9 8 10 5-1 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+              <span class="text-[11px] text-zinc-700">电池管家</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4 border-r border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              <span class="text-[11px] text-zinc-700">客服中心</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4 border-r border-zinc-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="1.6"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+              <span class="text-[11px] text-zinc-700">意见反馈</span>
+            </button>
+            <button class="flex flex-col items-center gap-1.5 py-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.6"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+              <span class="text-[11px] text-zinc-700">无法拔枪</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ BOTTOM TAB BAR ============ -->
+      <nav class="absolute bottom-0 left-0 right-0 h-[88px] bg-white border-t border-zinc-100 z-50 flex items-center justify-around px-2 pb-3 pt-2 shadow-[0_-4px_24px_-8px_rgba(0,0,0,0.08)]">
+        <button class="flex flex-col items-center gap-0.5 flex-1 tab-btn active" data-target="pane-home">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span class="text-[10px] font-medium">首页</span>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 flex-1 tab-btn" data-target="pane-orders">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+          <span class="text-[10px]">订单</span>
+        </button>
+        <!-- Center scan button (prominent) -->
+        <button class="flex flex-col items-center justify-center -mt-8 mx-1" data-target="pane-scan">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-br from-volt-500 to-juice-500 shadow-lg flex items-center justify-center text-white">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3M21 14v7h-7M17 21h4"/></svg>
+          </div>
+          <span class="text-[10px] mt-1 text-zinc-700">扫码</span>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 flex-1 tab-btn" data-target="pane-me">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0113 0"/></svg>
+          <span class="text-[10px]">我的</span>
+        </button>
+        <button class="flex flex-col items-center gap-0.5 flex-1 tab-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
+          <span class="text-[10px]">省钱</span>
+        </button>
+      </nav>
+
+      <!-- Home indicator -->
+      <div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-zinc-900 rounded-full z-50"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const panes = document.querySelectorAll('.tab-pane');
+
+  function showPane(id) {
+    panes.forEach(p => p.classList.toggle('active', p.id === id));
+    tabBtns.forEach(b => {
+      const t = b.dataset.target;
+      if (t === id) {
+        b.classList.add('active');
+        b.classList.add('text-volt-500');
+        b.classList.remove('text-zinc-400');
+      } else {
+        b.classList.remove('active');
+        b.classList.remove('text-volt-500');
+        b.classList.add('text-zinc-400');
+      }
+    });
+    // color the icons
+    document.querySelectorAll('.tab-btn svg').forEach(svg => {
+      const parent = svg.parentElement;
+      if (parent.classList.contains('active')) {
+        svg.setAttribute('stroke', '#1677FF');
+      } else {
+        svg.setAttribute('stroke', '#71717a');
+      }
+    });
+  }
+
+  // init
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.add('text-zinc-400');
+    b.querySelector('svg')?.setAttribute('stroke', '#71717a');
+  });
+  showPane('pane-home');
+
+  tabBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      const t = b.dataset.target;
+      if (t) showPane(t);
+    });
+  });
+
+  // Center scan button
+  document.querySelector('[data-target="pane-scan"]').addEventListener('click', () => showPane('pane-scan'));
+
+  // Close buttons
+  document.querySelectorAll('[data-close]').forEach(b => {
+    b.addEventListener('click', () => showPane('pane-home'));
+  });
+
+  // Go to charging
+  document.querySelectorAll('[data-go]').forEach(b => {
+    b.addEventListener('click', () => showPane(b.dataset.go));
+  });
+
+  // Animate ring fill on show
+  const ringFill = document.querySelector('.ring-fill');
+  if (ringFill) {
+    const observer = new MutationObserver(() => {
+      if (ringFill.closest('.tab-pane').classList.contains('active')) {
+        ringFill.style.strokeDashoffset = '80.37';
+      }
+    });
+  }
+</script>
+</body>
+</html>

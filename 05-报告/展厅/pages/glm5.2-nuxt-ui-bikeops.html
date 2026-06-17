@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>城市运营后台 · 共享两轮运营管理系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ===== Nuxt UI v4 语义色 token（运营后台：primary=emerald，neutral=slate） ===== */
+  @theme {
+    --font-sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    --color-primary-50: #ecfdf5;
+    --color-primary-100: #d1fae5;
+    --color-primary-200: #a7f3d0;
+    --color-primary-300: #6ee7b7;
+    --color-primary-400: #34d399;
+    --color-primary-500: #10b981;
+    --color-primary-600: #059669;
+    --color-primary-700: #047857;
+    --color-primary-800: #065f46;
+    --color-primary-900: #064e3b;
+    --color-primary-950: #022c22;
+    --color-secondary-500: #0ea5e9;
+    --color-info-500: #3b82f6;
+    --color-warning-500: #f59e0b;
+    --color-error-500: #ef4444;
+    --color-neutral-50: #f8fafc;
+    --color-neutral-100: #f1f5f9;
+    --color-neutral-200: #e2e8f0;
+    --color-neutral-300: #cbd5e1;
+    --color-neutral-400: #94a3b8;
+    --color-neutral-500: #64748b;
+    --color-neutral-600: #475569;
+    --color-neutral-700: #334155;
+    --color-neutral-800: #1e293b;
+    --color-neutral-900: #0f172a;
+    --color-neutral-950: #020617;
+  }
+  :root {
+    --ui-radius: 0.375rem;
+    --ui-container: 96rem;
+    --ui-header-height: 3.5rem;
+    --ui-bg: #f8fafc;
+    --ui-bg-muted: #f1f5f9;
+    --ui-bg-elevated: #ffffff;
+    --ui-bg-accented: #e2e8f0;
+    --ui-bg-inverted: #0f172a;
+    --ui-text: #0f172a;
+    --ui-text-muted: #64748b;
+    --ui-text-toned: #475569;
+    --ui-text-dimmed: #94a3b8;
+    --ui-text-highlighted: #020617;
+    --ui-text-inverted: #ffffff;
+    --ui-border: #e2e8f0;
+    --ui-border-muted: #f1f5f9;
+    --ui-border-accented: #cbd5e1;
+    --ui-primary: var(--color-primary-500);
+  }
+  html, body { background: var(--ui-bg); color: var(--ui-text); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  .text-default { color: var(--ui-text); }
+  .text-muted { color: var(--ui-text-muted); }
+  .text-toned { color: var(--ui-text-toned); }
+  .text-dimmed { color: var(--ui-text-dimmed); }
+  .text-highlighted { color: var(--ui-text-highlighted); }
+  .text-inverted { color: var(--ui-text-inverted); }
+  .text-primary { color: var(--ui-primary); }
+  .text-secondary { color: var(--color-secondary-500); }
+  .bg-default { background-color: var(--ui-bg); }
+  .bg-muted { background-color: var(--ui-bg-muted); }
+  .bg-elevated { background-color: var(--ui-bg-elevated); }
+  .bg-accented { background-color: var(--ui-bg-accented); }
+  .bg-inverted { background-color: var(--ui-bg-inverted); }
+  .bg-primary { background-color: var(--ui-primary); }
+  .border-default { border-color: var(--ui-border); }
+  .border-muted { border-color: var(--ui-border-muted); }
+  .border-accented { border-color: var(--ui-border-accented); }
+  .nui-btn { @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-md transition-colors select-none whitespace-nowrap; }
+  .nui-btn-solid-primary { background-color: var(--ui-primary); color: #fff; }
+  .nui-btn-solid-primary:hover { background-color: var(--color-primary-600); }
+  .nui-btn-solid-neutral { background-color: var(--ui-bg-inverted); color: #fff; }
+  .nui-btn-outline { border: 1px solid var(--ui-border); background: transparent; color: var(--ui-text); }
+  .nui-btn-outline:hover { background-color: var(--ui-bg-muted); }
+  .nui-btn-soft-primary { background-color: var(--color-primary-100); color: var(--color-primary-700); }
+  .nui-btn-subtle { background-color: var(--ui-bg-muted); color: var(--ui-text); }
+  .nui-btn-subtle:hover { background-color: var(--ui-bg-accented); }
+  .nui-btn-ghost { background: transparent; color: var(--ui-text); }
+  .nui-btn-ghost:hover { background-color: var(--ui-bg-muted); }
+  .nui-card { @apply rounded-lg bg-elevated border border-muted; }
+  .nui-input { @apply rounded-md border border-default bg-default px-3 py-1.5 text-default text-sm w-full outline-none transition-colors; }
+  .nui-input:focus { border-color: var(--ui-primary); box-shadow: 0 0 0 1px var(--ui-primary); }
+  [v-cloak] { display: none; }
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  /* 地图 */
+  .map-bg {
+    background:
+      radial-gradient(circle at 25% 30%, rgba(16,185,129,.15) 0, transparent 12%),
+      radial-gradient(circle at 70% 65%, rgba(245,158,11,.15) 0, transparent 10%),
+      radial-gradient(circle at 55% 20%, rgba(59,130,246,.12) 0, transparent 10%),
+      radial-gradient(circle at 40% 80%, rgba(239,68,68,.1) 0, transparent 8%),
+      linear-gradient(135deg, #f1f5f9 0%, #ffffff 100%);
+  }
+  .map-grid {
+    background-image:
+      linear-gradient(rgba(15,23,42,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,23,42,.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .ring-pulse::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid currentColor; opacity:.4; animation: ring 1.5s infinite; }
+  @keyframes ring { 0%{ transform: scale(.8); opacity:.7;} 100%{ transform: scale(2); opacity:0; } }
+  /* 侧栏导航 hover */
+  .nav-item { @apply flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-toned hover:bg-muted hover:text-highlighted transition-colors cursor-pointer; }
+  .nav-item-active { @apply bg-primary-50 text-primary-700 hover:bg-primary-50 hover:text-primary-700 font-medium; }
+  .nav-group-label { @apply px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-dimmed; }
+  /* 表格 */
+  .nui-table th { @apply text-xs font-semibold text-muted text-left px-3 py-2 border-b border-muted whitespace-nowrap; }
+  .nui-table td { @apply text-sm text-default px-3 py-2.5 border-b border-muted whitespace-nowrap; }
+  .nui-table tbody tr:hover { background-color: var(--ui-bg-muted); }
+  /* 趋势图 */
+  .bar-chart-bar { transition: height .3s ease; }
+</style>
+</head>
+<body>
+<div id="app" v-cloak></div>
+
+<script>
+const { createApp, computed, ref, reactive, onMounted, h, watch } = Vue;
+
+/* ========== Nuxt UI 等效组件 ========== */
+const UButton = {
+  name:'UButton', props:{ label:String, icon:String, trailingIcon:String, size:{default:'sm'}, color:{default:'primary'}, variant:{default:'solid'}, to:String, disabled:Boolean },
+  setup(p,{ slots }){
+    const size = computed(()=>({ xs:'text-xs px-2 py-1', sm:'text-sm px-2.5 py-1.5', md:'text-sm px-3 py-2', lg:'text-base px-4 py-2.5' }[p.size]));
+    const v = computed(()=>{
+      const m = {
+        primary:{ solid:'nui-btn-solid-primary', soft:'nui-btn-soft-primary', outline:'nui-btn-outline', ghost:'nui-btn-ghost', subtle:'nui-btn-subtle' },
+        neutral:{ solid:'nui-btn-solid-neutral', soft:'nui-btn-subtle', outline:'nui-btn-outline', ghost:'nui-btn-ghost', subtle:'nui-btn-subtle' },
+        error:{ solid:'bg-red-500 text-white hover:bg-red-600', soft:'bg-red-100 text-red-700', outline:'border border-red-300 text-red-700', ghost:'text-red-600 hover:bg-red-50', subtle:'bg-red-100 text-red-700' }
+      };
+      return (m[p.color]||m.primary)[p.variant] || 'nui-btn-solid-primary';
+    });
+    return () => h(p.to?'a':'button', { href:p.to, disabled:p.disabled, class:['nui-btn', size.value, v.value] }, [
+      p.icon?h('i',{'data-lucide':p.icon,class:'size-4 shrink-0'}):null,
+      slots.default?slots.default():p.label,
+      p.trailingIcon?h('i',{'data-lucide':p.trailingIcon,class:'size-4 shrink-0'}):null,
+    ]);
+  }
+};
+const UBadge = { name:'UBadge', props:{ color:{default:'primary'}, variant:{default:'subtle'}, label:String, icon:String }, setup(p){
+  const c = { primary:'bg-emerald-100 text-emerald-700', neutral:'bg-slate-100 text-slate-700', success:'bg-emerald-100 text-emerald-700', warning:'bg-amber-100 text-amber-700', error:'bg-red-100 text-red-700', info:'bg-blue-100 text-blue-700' };
+  return () => h('span', { class:['inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium', c[p.color]||c.primary] }, [ p.icon?h('i',{'data-lucide':p.icon,class:'size-3'}):null, p.label ]);
+}};
+const UCard = { name:'UCard', props:{ ui:Object }, setup(p,{ slots }){ return () => h('div', { class: ['nui-card overflow-hidden', p.ui?.root] }, [
+  slots.header?h('div',{class:['px-4 py-3 border-b border-muted flex items-center justify-between', p.ui?.header]}, slots.header()):null,
+  h('div', { class: ['p-4', p.ui?.body] }, slots.default?.()),
+  slots.footer?h('div',{class:['px-4 py-3 border-t border-muted bg-muted/30', p.ui?.footer]}, slots.footer()):null,
+]); }};
+const UInput = { name:'UInput', props:{ modelValue:String, placeholder:String, icon:String, type:{default:'text'} }, emits:['update:modelValue'], setup(p,{ emit }){ return () => h('div',{class:'relative w-full'},[ p.icon?h('i',{'data-lucide':p.icon,class:'size-4 absolute left-3 top-1/2 -translate-y-1/2 text-dimmed'}):null, h('input',{ type:p.type, value:p.modelValue, placeholder:p.placeholder, onInput:e=>emit('update:modelValue',e.target.value), class:['nui-input', p.icon?'pl-9':''] }) ]); }};
+
+/* ========== 应用 ========== */
+const App = {
+  components: { UButton, UBadge, UCard, UInput },
+  setup() {
+    // 侧栏导航
+    const navGroups = [
+      { label:'运营', items:[
+        { key:'overview', label:'运营总览', icon:'layout-dashboard' },
+        { key:'mapops', label:'地图调度中心', icon:'map' },
+        { key:'vehicles', label:'车队资产', icon:'bike' },
+        { key:'battery', label:'电池与能源', icon:'battery-charging' },
+        { key:'workorders', label:'运维工单', icon:'clipboard-list' },
+      ]},
+      { label:'治理', items:[
+        { key:'zones', label:'规则与区域', icon:'shield' },
+        { key:'compliance', label:'合规监管', icon:'landmark' },
+        { key:'analytics', label:'数据报表', icon:'bar-chart-3' },
+      ]},
+      { label:'系统', items:[
+        { key:'org', label:'组织与权限', icon:'users' },
+        { key:'settings', label:'配置与对接', icon:'settings' },
+      ]},
+    ];
+    const activeNav = ref('overview');
+
+    // 时间范围 & 城市
+    const timeRange = ref('today');
+    const timeRanges = [{k:'today',l:'今日'},{k:'yesterday',l:'昨日'},{k:'week',l:'本周'},{k:'month',l:'本月'}];
+    const city = ref('上海');
+
+    // KPI 数据
+    const kpis = [
+      { label:'订单数', value:'48,392', delta:'+12.4%', up:true, icon:'receipt', color:'primary', sub:'较昨日 +5,324' },
+      { label:'GMV 收入', value:'¥186,420', delta:'+8.7%', up:true, icon:'wallet', color:'primary', sub:'较昨日 +¥14,920' },
+      { label:'单车日均骑行', value:'4.6 次', delta:'+0.3', up:true, icon:'trending-up', color:'info', sub:'目标 5.0 次' },
+      { label:'可用率', value:'92.3%', delta:'-1.2%', up:false, icon:'activity', color:'warning', sub:'目标 ≥ 90%' },
+    ];
+
+    // 车辆状态
+    const vehicleStatus = [
+      { label:'可用', value:21834, color:'#10b981' },
+      { label:'使用中', value:4521, color:'#0ea5e9' },
+      { label:'低电', value:1820, color:'#f59e0b' },
+      { label:'故障', value:423, color:'#ef4444' },
+      { label:'离线', value:678, color:'#94a3b8' },
+      { label:'回收中', value:124, color:'#6366f1' },
+    ];
+    const totalVehicles = vehicleStatus.reduce((s, i) => s + i.value, 0);
+
+    // 电池分布
+    const batteryDist = [
+      { range:'0-10%', value:182, color:'#ef4444' },
+      { range:'10-30%', value:1245, color:'#f59e0b' },
+      { range:'30-60%', value:3680, color:'#eab308' },
+      { range:'60-100%', value:5163, color:'#10b981' },
+    ];
+
+    // 告警
+    const alerts = [
+      { level:'P0', title:'浦东陆家嘴聚集堆积', area:'浦东 · 世纪大道', time:'2 分钟前', type:'聚集堆积', color:'error' },
+      { level:'P0', title:'静安寺禁停区违规', area:'静安 · 南京西路', time:'5 分钟前', type:'禁停违规', color:'error' },
+      { level:'P1', title:'徐汇区低电车辆聚集', area:'徐汇 · 衡山路', time:'12 分钟前', type:'低电风险', color:'warning' },
+      { level:'P1', title:'闵行车辆离线超 1 小时', area:'闵行 · 莘庄', time:'25 分钟前', type:'离线告警', color:'warning' },
+      { level:'P2', title:'长宁疑似盗损车辆', area:'长宁 · 中山公园', time:'38 分钟前', type:'疑似盗损', color:'info' },
+    ];
+
+    // 工单
+    const workorders = [
+      { id:'WO-20260617-001', type:'换电', station:'浦东 · 世纪公园西门', assignee:'李伟', status:'执行中', priority:'P1', eta:'15 分钟' },
+      { id:'WO-20260617-002', type:'调度搬运', station:'静安 · 静安寺地铁站', assignee:'张磊', status:'待接单', priority:'P1', eta:'30 分钟' },
+      { id:'WO-20260617-003', type:'故障维修', station:'徐汇 · 徐家汇', assignee:'王芳', status:'待派单', priority:'P2', eta:'1 小时' },
+      { id:'WO-20260617-004', type:'违停处置', station:'黄浦 · 人民广场', assignee:'陈刚', status:'执行中', priority:'P0', eta:'10 分钟' },
+      { id:'WO-20260617-005', type:'巡检', station:'虹口 · 四川北路', assignee:'刘洋', status:'已完成', priority:'P3', eta:'已完成' },
+    ];
+
+    // 24h 订单趋势
+    const hourlyOrders = [
+      320, 180, 120, 90, 70, 110, 380, 920, 1450, 1280, 1100, 1340,
+      1520, 1380, 1220, 1180, 1340, 1820, 2240, 1980, 1560, 1240, 880, 560
+    ];
+    const maxOrder = Math.max(...hourlyOrders);
+
+    // 供需缺口
+    const supplyDemand = [
+      { area:'陆家嘴', gap:-340, type:'缺车' },
+      { area:'静安寺', gap:-220, type:'缺车' },
+      { area:'徐家汇', gap:-180, type:'缺车' },
+      { area:'人民广场', gap:-150, type:'缺车' },
+      { area:'南京西路', gap:280, type:'堆车' },
+      { area:'世纪公园', gap:190, type:'堆车' },
+      { area:'莘庄', gap:160, type:'堆车' },
+    ];
+
+    // 地图车辆点
+    const mapVehicles = [
+      { x:22, y:28, type:'available', count:34 },
+      { x:48, y:35, type:'cluster', count:120 },
+      { x:65, y:22, type:'low', count:8 },
+      { x:35, y:55, type:'available', count:42 },
+      { x:72, y:48, type:'cluster', count:86 },
+      { x:55, y:68, type:'alert', count:3 },
+      { x:28, y:75, type:'available', count:18 },
+      { x:80, y:72, type:'low', count:12 },
+      { x:18, y:50, type:'alert', count:5 },
+    ];
+
+    const selectedVehicle = ref(null);
+
+    onMounted(() => { window.lucide && window.lucide.createIcons(); });
+    watch(activeNav, () => setTimeout(() => window.lucide && window.lucide.createIcons(), 50));
+
+    const formatNum = (n) => n.toLocaleString('zh-CN');
+    const pct = (n) => (n / totalVehicles * 100).toFixed(1) + '%';
+
+    return {
+      navGroups, activeNav, timeRange, timeRanges, city,
+      kpis, vehicleStatus, totalVehicles, batteryDist,
+      alerts, workorders, hourlyOrders, maxOrder, supplyDemand, mapVehicles, selectedVehicle,
+      formatNum, pct,
+    };
+  },
+  template: `
+  <UApp>
+    <div class="flex h-screen overflow-hidden bg-default">
+
+      <!-- ============ 左侧 DashboardSidebar ============ -->
+      <aside class="w-60 shrink-0 bg-elevated border-r border-muted flex flex-col">
+        <!-- Sidebar Header (Logo + Search) -->
+        <div class="h-14 px-4 flex items-center gap-2 border-b border-muted">
+          <span class="inline-flex size-8 items-center justify-center rounded-md bg-gradient-to-br from-primary-500 to-emerald-700 text-white">
+            <i data-lucide="bike" class="size-5"></i>
+          </span>
+          <div class="leading-tight">
+            <p class="text-sm font-bold text-highlighted">城市运营后台</p>
+            <p class="text-[10px] text-muted">v2.4 · 上海站</p>
+          </div>
+        </div>
+
+        <!-- Search Button -->
+        <div class="p-3">
+          <button class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md border border-muted bg-muted/50 text-xs text-muted hover:bg-muted transition">
+            <i data-lucide="search" class="size-3.5"></i>
+            <span>搜索车辆、工单、区域</span>
+            <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-elevated border border-muted">⌘K</span>
+          </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto px-2 pb-4">
+          <template v-for="g in navGroups" :key="g.label">
+            <div class="nav-group-label">{{ g.label }}</div>
+            <a v-for="i in g.items" :key="i.key" @click="activeNav=i.key"
+              :class="['nav-item', activeNav===i.key?'nav-item-active':'']">
+              <i :data-lucide="i.icon" class="size-4 shrink-0"></i>
+              <span>{{ i.label }}</span>
+              <span v-if="i.key==='workorders'" class="ml-auto"><UBadge label="6" color="error" variant="subtle" /></span>
+              <span v-if="i.key==='mapops'" class="ml-auto"><UBadge label="3" color="warning" variant="subtle" /></span>
+            </a>
+          </template>
+        </nav>
+
+        <!-- Sidebar Footer (User) -->
+        <div class="border-t border-muted p-3">
+          <div class="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted cursor-pointer">
+            <div class="size-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-white flex items-center justify-center text-xs font-bold">运</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-highlighted truncate">运营经理 · 周航</p>
+              <p class="text-[10px] text-muted truncate">上海城市站 · 全权限</p>
+            </div>
+            <i data-lucide="chevron-up" class="size-4 text-muted"></i>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============ 右侧 DashboardPanel ============ -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+
+        <!-- DashboardNavbar -->
+        <header class="h-14 bg-elevated border-b border-muted flex items-center justify-between px-5 shrink-0">
+          <div class="flex items-center gap-3">
+            <button class="size-8 rounded-md hover:bg-muted flex items-center justify-center text-muted"><i data-lucide="panel-left" class="size-4"></i></button>
+            <div class="flex items-center gap-1.5 text-sm">
+              <span class="text-muted">运营总览</span>
+              <i data-lucide="chevron-right" class="size-3 text-dimmed"></i>
+              <span class="text-highlighted font-medium">上海城市站</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- 时间范围切换 -->
+            <div class="flex items-center bg-muted rounded-md p-0.5">
+              <button v-for="t in timeRanges" :key="t.k" @click="timeRange=t.k"
+                :class="['px-2.5 py-1 text-xs rounded transition', timeRange===t.k?'bg-elevated text-highlighted shadow-sm':'text-muted']">{{ t.l }}</button>
+            </div>
+            <UButton icon="refresh-cw" color="neutral" variant="ghost" size="sm" />
+            <UButton icon="download" color="neutral" variant="outline" size="sm" label="导出" />
+            <UButton icon="plus" color="primary" variant="solid" size="sm" label="创建工单" />
+          </div>
+        </header>
+
+        <!-- DashboardToolbar -->
+        <div class="h-12 bg-elevated border-b border-muted flex items-center justify-between px-5 shrink-0">
+          <div class="flex items-center gap-2">
+            <UBadge :label="city" color="primary" variant="soft" icon="map-pin" />
+            <UBadge label="全车型" color="neutral" variant="subtle" icon="bike" />
+            <UBadge label="自然日" color="neutral" variant="subtle" icon="calendar" />
+            <button class="text-xs text-primary hover:underline ml-2">+ 添加筛选</button>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-muted">
+            <span class="flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500"></span>数据实时（10 秒前同步）</span>
+            <span>时区：UTC+8</span>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto p-5">
+          <!-- ============ KPI 卡片行 ============ -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            <UCard v-for="k in kpis" :key="k.label" :ui="{ root:'hover:shadow-md transition' }">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-xs text-muted">{{ k.label }}</p>
+                  <p class="text-2xl font-bold text-highlighted mt-1.5">{{ k.value }}</p>
+                  <p class="text-[11px] text-dimmed mt-1">{{ k.sub }}</p>
+                </div>
+                <div :class="['size-9 rounded-md flex items-center justify-center',
+                  k.color==='primary'?'bg-primary-100 text-primary-700':
+                  k.color==='info'?'bg-blue-100 text-blue-700':
+                  k.color==='warning'?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-700']">
+                  <i :data-lucide="k.icon" class="size-5"></i>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center gap-1 text-xs" :class="k.up?'text-emerald-600':'text-red-600'">
+                <i :data-lucide="k.up?'trending-up':'trending-down'" class="size-3.5"></i>
+                <span class="font-medium">{{ k.delta }}</span>
+                <span class="text-muted ml-1">vs 昨日</span>
+              </div>
+            </UCard>
+          </div>
+
+          <!-- ============ 主网格：地图 + 告警 ============ -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+
+            <!-- 地图调度中心 -->
+            <UCard :ui="{ root:'lg:col-span-2', header:'px-4 py-3', body:'p-0' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="map" class="size-4 text-primary"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">地图调度中心 · 实时车辆分布</h3>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button class="px-2 py-1 text-xs rounded bg-primary-50 text-primary-700 font-medium">车辆</button>
+                    <button class="px-2 py-1 text-xs rounded text-muted hover:bg-muted">热力</button>
+                    <button class="px-2 py-1 text-xs rounded text-muted hover:bg-muted">围栏</button>
+                    <button class="px-2 py-1 text-xs rounded text-muted hover:bg-muted">供需</button>
+                  </div>
+                </div>
+              </template>
+              <div class="relative h-96 map-bg map-grid overflow-hidden">
+                <!-- 道路 -->
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 480" preserveAspectRatio="none">
+                  <path d="M0,200 Q200,170 400,210 T800,180" stroke="#cbd5e1" stroke-width="20" fill="none" opacity=".5"/>
+                  <path d="M0,320 L800,340" stroke="#cbd5e1" stroke-width="16" fill="none" opacity=".5"/>
+                  <path d="M280,0 Q300,200 320,400 T300,480" stroke="#cbd5e1" stroke-width="14" fill="none" opacity=".5"/>
+                  <path d="M580,0 L600,480" stroke="#cbd5e1" stroke-width="12" fill="none" opacity=".5"/>
+                </svg>
+
+                <!-- 车辆点 -->
+                <button v-for="(v,i) in mapVehicles" :key="i" @click="selectedVehicle=v"
+                  :class="['absolute -translate-x-1/2 -translate-y-1/2 transition', selectedVehicle===v?'z-20':'z-10']"
+                  :style="{ left: v.x+'%', top: v.y+'%' }">
+                  <div :class="['flex flex-col items-center',
+                    v.type==='available'?'text-emerald-600':
+                    v.type==='cluster'?'text-blue-600':
+                    v.type==='low'?'text-amber-600':
+                    v.type==='alert'?'text-red-600':'text-slate-600']">
+                    <div v-if="v.type==='cluster'" class="relative">
+                      <span class="absolute inset-0 rounded-full bg-blue-500/30 animate-ping"></span>
+                      <span class="relative px-2 py-1 rounded-full text-[10px] font-bold bg-blue-500 text-white shadow">{{ v.count }}</span>
+                    </div>
+                    <div v-else-if="v.type==='alert'" class="relative">
+                      <span class="relative size-5 rounded-full bg-red-500 text-white flex items-center justify-center"><i data-lucide="alert-triangle" class="size-3"></i></span>
+                    </div>
+                    <div v-else class="relative">
+                      <span :class="['size-3 rounded-full ring-2 ring-white shadow',
+                        v.type==='available'?'bg-emerald-500':v.type==='low'?'bg-amber-500':'bg-slate-500']"></span>
+                    </div>
+                  </div>
+                </button>
+
+                <!-- 圈选提示 -->
+                <div class="absolute top-3 left-3 bg-white/95 backdrop-blur rounded-md shadow border border-muted px-3 py-2 flex items-center gap-2">
+                  <i data-lucide="square-dashed" class="size-4 text-primary"></i>
+                  <span class="text-xs text-toned">圈选车辆批量操作</span>
+                </div>
+
+                <!-- 图例 -->
+                <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur rounded-md shadow border border-muted px-3 py-2 space-y-1 text-[11px]">
+                  <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-emerald-500"></span>可用</div>
+                  <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-amber-500"></span>低电</div>
+                  <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-red-500"></span>告警</div>
+                  <div class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-blue-500"></span>聚合点</div>
+                </div>
+
+                <!-- 工具按钮 -->
+                <div class="absolute top-3 right-3 flex flex-col gap-1">
+                  <button class="size-8 rounded-md bg-white shadow border border-muted flex items-center justify-center text-muted hover:text-primary"><i data-lucide="plus" class="size-4"></i></button>
+                  <button class="size-8 rounded-md bg-white shadow border border-muted flex items-center justify-center text-muted hover:text-primary"><i data-lucide="minus" class="size-4"></i></button>
+                  <button class="size-8 rounded-md bg-white shadow border border-muted flex items-center justify-center text-muted hover:text-primary"><i data-lucide="locate" class="size-4"></i></button>
+                </div>
+              </div>
+              <template #footer>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-muted">车辆总数 <span class="font-semibold text-highlighted">{{ formatNum(totalVehicles) }}</span> · 在线率 <span class="font-semibold text-emerald-600">97.2%</span></span>
+                  <div class="flex gap-2">
+                    <UButton label="圈选生成调度" size="xs" color="neutral" variant="subtle" icon="square-dashed" />
+                    <UButton label="批量指令" size="xs" color="primary" variant="soft" icon="zap" />
+                  </div>
+                </div>
+              </template>
+            </UCard>
+
+            <!-- 告警中心 -->
+            <UCard :ui="{ header:'px-4 py-3', body:'p-0' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="bell-ring" class="size-4 text-red-500"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">告警中心</h3>
+                  </div>
+                  <UBadge label="5 条待处理" color="error" variant="subtle" />
+                </div>
+              </template>
+              <div class="divide-y divide-muted max-h-96 overflow-y-auto">
+                <div v-for="(a,i) in alerts" :key="i" class="px-4 py-3 hover:bg-muted cursor-pointer">
+                  <div class="flex items-start gap-2">
+                    <span :class="['shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold',
+                      a.level==='P0'?'bg-red-100 text-red-700':a.level==='P1'?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700']">{{ a.level }}</span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-highlighted">{{ a.title }}</p>
+                      <p class="text-xs text-muted mt-0.5">{{ a.area }} · {{ a.type }}</p>
+                      <p class="text-[10px] text-dimmed mt-1">{{ a.time }}</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="size-4 text-dimmed mt-1"></i>
+                  </div>
+                </div>
+              </div>
+              <template #footer>
+                <button class="w-full text-xs text-primary hover:underline">查看全部告警 →</button>
+              </template>
+            </UCard>
+          </div>
+
+          <!-- ============ 第二行：车辆状态 + 电池 + 24h订单 ============ -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+
+            <!-- 车辆状态分布 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="pie-chart" class="size-4 text-primary"></i>
+                  <h3 class="text-sm font-semibold text-highlighted">车辆状态分布</h3>
+                </div>
+              </template>
+              <!-- SVG 圆环 -->
+              <div class="flex items-center gap-4">
+                <div class="relative size-32 shrink-0">
+                  <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                    <template v-for="(s,i) in vehicleStatus" :key="s.label">
+                      <circle :cx="18" :cy="18" r="15.915" fill="none" :stroke="s.color" stroke-width="3.5"
+                        :stroke-dasharray="(s.value/totalVehicles*100)+' '+(100-s.value/totalVehicles*100)"
+                        :stroke-dashoffset="-(vehicleStatus.slice(0,i).reduce((sum,x)=>sum+x.value/totalVehicles*100,0))" />
+                    </template>
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <p class="text-xl font-bold text-highlighted">{{ formatNum(totalVehicles) }}</p>
+                    <p class="text-[10px] text-muted">车辆总数</p>
+                  </div>
+                </div>
+                <div class="flex-1 space-y-1.5">
+                  <div v-for="s in vehicleStatus" :key="s.label" class="flex items-center gap-2 text-xs">
+                    <span class="size-2 rounded-full" :style="{ background: s.color }"></span>
+                    <span class="text-toned flex-1">{{ s.label }}</span>
+                    <span class="font-medium text-highlighted">{{ formatNum(s.value) }}</span>
+                    <span class="text-dimmed w-10 text-right">{{ pct(s.value) }}</span>
+                  </div>
+                </div>
+              </div>
+            </UCard>
+
+            <!-- 电池分布 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="battery-charging" class="size-4 text-primary"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">电池电量分布</h3>
+                  </div>
+                  <UBadge label="低电 1,427" color="warning" variant="subtle" />
+                </div>
+              </template>
+              <div class="space-y-3">
+                <div v-for="b in batteryDist" :key="b.range">
+                  <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="text-toned">SOC {{ b.range }}</span>
+                    <span class="font-medium text-highlighted">{{ formatNum(b.value) }} 辆</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-muted overflow-hidden">
+                    <div class="h-full rounded-full transition-all" :style="{ width: (b.value/batteryDist.reduce((s,i)=>s+i.value,0)*100)+'%', background: b.color }"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-muted grid grid-cols-2 gap-3 text-xs">
+                <div><p class="text-muted">今日已换电</p><p class="text-lg font-bold text-highlighted mt-0.5">1,284 次</p></div>
+                <div><p class="text-muted">换电成功率</p><p class="text-lg font-bold text-emerald-600 mt-0.5">98.6%</p></div>
+              </div>
+            </UCard>
+
+            <!-- 24h 订单趋势 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="size-4 text-primary"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">24h 订单趋势</h3>
+                  </div>
+                  <UBadge label="高峰 18:00" color="info" variant="subtle" />
+                </div>
+              </template>
+              <div class="flex items-end gap-0.5 h-40">
+                <div v-for="(o,i) in hourlyOrders" :key="i" class="flex-1 group relative">
+                  <div class="bar-chart-bar rounded-t-sm"
+                    :class="i===18 ? 'bg-primary-500' : i>=7 && i<=9 || i>=17 && i<=19 ? 'bg-primary-300' : 'bg-primary-200'"
+                    :style="{ height: (o/maxOrder*100)+'%' }"
+                    :title="i+':00 - '+o+' 单'"></div>
+                  <div class="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-inverted text-inverted text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">{{ i }}时 · {{ o }}单</div>
+                </div>
+              </div>
+              <div class="flex justify-between text-[10px] text-dimmed mt-2">
+                <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+              </div>
+            </UCard>
+          </div>
+
+          <!-- ============ 第三行：工单表 + 供需缺口 ============ -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+
+            <!-- 工单表 -->
+            <UCard :ui="{ root:'lg:col-span-2', header:'px-4 py-3', body:'p-0' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="clipboard-list" class="size-4 text-primary"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">运维工单</h3>
+                    <UBadge label="6 待处理" color="warning" variant="subtle" />
+                  </div>
+                  <div class="flex gap-2">
+                    <UButton label="全部工单" size="xs" color="neutral" variant="ghost" icon="list" />
+                    <UButton label="批量派单" size="xs" color="primary" variant="soft" icon="send" />
+                  </div>
+                </div>
+              </template>
+              <div class="overflow-x-auto">
+                <table class="nui-table w-full">
+                  <thead>
+                    <tr>
+                      <th>工单号</th><th>类型</th><th>位置</th><th>负责人</th><th>优先级</th><th>状态</th><th>预计</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="w in workorders" :key="w.id">
+                      <td class="font-mono text-xs text-primary">{{ w.id }}</td>
+                      <td>{{ w.type }}</td>
+                      <td class="max-w-[200px] truncate">{{ w.station }}</td>
+                      <td>{{ w.assignee }}</td>
+                      <td>
+                        <UBadge :label="w.priority" :color="w.priority==='P0'?'error':w.priority==='P1'?'warning':'neutral'" variant="subtle" />
+                      </td>
+                      <td>
+                        <UBadge :label="w.status" :color="w.status==='执行中'?'info':w.status==='已完成'?'success':'warning'" variant="soft" />
+                      </td>
+                      <td class="text-xs text-muted">{{ w.eta }}</td>
+                      <td><button class="text-muted hover:text-primary"><i data-lucide="more-horizontal" class="size-4"></i></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </UCard>
+
+            <!-- 供需缺口 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="git-compare" class="size-4 text-primary"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">供需缺口 Top</h3>
+                  </div>
+                  <UBadge label="4 缺车" color="error" variant="subtle" />
+                </div>
+              </template>
+              <div class="space-y-2.5">
+                <div v-for="s in supplyDemand" :key="s.area" class="flex items-center gap-3">
+                  <span class="text-xs text-toned w-20 shrink-0 truncate">{{ s.area }}</span>
+                  <div class="flex-1 flex items-center gap-2">
+                    <div v-if="s.gap<0" class="flex-1 flex justify-end">
+                      <div class="h-5 rounded bg-red-100 border border-red-200 flex items-center justify-end px-1.5 text-[10px] text-red-700 font-medium" :style="{ width: Math.abs(s.gap)/3.5*100+'%' }">缺 {{ Math.abs(s.gap) }}</div>
+                    </div>
+                    <span class="text-[10px] text-dimmed w-1 text-center">|</span>
+                    <div v-if="s.gap>0" class="flex-1">
+                      <div class="h-5 rounded bg-amber-100 border border-amber-200 flex items-center px-1.5 text-[10px] text-amber-700 font-medium" :style="{ width: s.gap/3.5*100+'%' }">堆 +{{ s.gap }}</div>
+                    </div>
+                    <div v-else class="flex-1"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-muted">
+                <p class="text-xs text-muted mb-2">建议调度任务</p>
+                <div class="rounded-md bg-primary-50 border border-primary-200 p-2.5 text-xs">
+                  <p class="text-toned">从 <span class="font-semibold text-highlighted">南京西路</span> 调拨 <span class="font-semibold text-primary-700">120 辆</span> 至 <span class="font-semibold text-highlighted">陆家嘴</span></p>
+                  <p class="text-[10px] text-muted mt-0.5">预计耗时 35 分钟 · 推荐运维员：李伟、张磊</p>
+                </div>
+                <UButton label="一键派发调度任务" size="xs" color="primary" variant="solid" block class="mt-2" icon="send" />
+              </div>
+            </UCard>
+          </div>
+
+          <!-- ============ 第四行：合规 + 快捷工作台 ============ -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+
+            <!-- 合规概览 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="landmark" class="size-4 text-primary"></i>
+                  <h3 class="text-sm font-semibold text-highlighted">合规治理概览</h3>
+                </div>
+              </template>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div class="rounded-md border border-muted p-2.5">
+                  <p class="text-xs text-muted">禁停违规</p>
+                  <p class="text-lg font-bold text-red-600 mt-0.5">128 次</p>
+                  <p class="text-[10px] text-dimmed">P90 处置 8 分钟</p>
+                </div>
+                <div class="rounded-md border border-muted p-2.5">
+                  <p class="text-xs text-muted">越界次数</p>
+                  <p class="text-lg font-bold text-amber-600 mt-0.5">42 次</p>
+                  <p class="text-[10px] text-dimmed">P90 处置 12 分钟</p>
+                </div>
+                <div class="rounded-md border border-muted p-2.5">
+                  <p class="text-xs text-muted">投放量 / 上限</p>
+                  <p class="text-lg font-bold text-highlighted mt-0.5">29,400 / 30,000</p>
+                  <p class="text-[10px] text-emerald-600">合规</p>
+                </div>
+                <div class="rounded-md border border-muted p-2.5">
+                  <p class="text-xs text-muted">MDS 上报</p>
+                  <p class="text-lg font-bold text-emerald-600 mt-0.5">99.8%</p>
+                  <p class="text-[10px] text-dimmed">延迟 8s · 健康</p>
+                </div>
+              </div>
+            </UCard>
+
+            <!-- 快捷工作台 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="zap" class="size-4 text-primary"></i>
+                  <h3 class="text-sm font-semibold text-highlighted">快捷工作台</h3>
+                </div>
+              </template>
+              <div class="grid grid-cols-3 gap-2">
+                <button v-for="q in [{i:'send',l:'调度任务',c:'primary'},{i:'battery-charging',l:'换电任务',c:'amber'},{i:'clipboard-check',l:'巡检任务',c:'blue'},{i:'wrench',l:'维修工单',c:'red'},{i:'shield-alert',l:'违停处置',c:'rose'},{i:'package',l:'回收任务',c:'slate'},{i:'map-pinned',l:'围栏编辑',c:'emerald'},{i:'alarm-clock',l:'阈值告警',c:'orange'},{i:'calendar-clock',l:'运营时段',c:'violet'}]" :key="q.l"
+                  class="flex flex-col items-center gap-1.5 py-3 rounded-md border border-muted hover:bg-muted hover:border-primary-300 transition group">
+                  <div :class="['size-9 rounded-md flex items-center justify-center',
+                    q.c==='primary'?'bg-primary-100 text-primary-700':
+                    q.c==='amber'?'bg-amber-100 text-amber-700':
+                    q.c==='blue'?'bg-blue-100 text-blue-700':
+                    q.c==='red'?'bg-red-100 text-red-700':
+                    q.c==='rose'?'bg-rose-100 text-rose-700':
+                    q.c==='slate'?'bg-slate-100 text-slate-700':
+                    q.c==='emerald'?'bg-emerald-100 text-emerald-700':
+                    q.c==='orange'?'bg-orange-100 text-orange-700':'bg-violet-100 text-violet-700']">
+                    <i :data-lucide="q.i" class="size-4"></i>
+                  </div>
+                  <span class="text-[11px] text-toned group-hover:text-highlighted">{{ q.l }}</span>
+                </button>
+              </div>
+            </UCard>
+
+            <!-- 我的待办 -->
+            <UCard :ui="{ header:'px-4 py-3' }">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="list-checks" class="size-4 text-primary"></i>
+                    <h3 class="text-sm font-semibold text-highlighted">我的待办</h3>
+                  </div>
+                  <UBadge label="3 项待处理" color="warning" variant="subtle" />
+                </div>
+              </template>
+              <div class="space-y-2">
+                <div class="rounded-md border border-red-200 bg-red-50 p-2.5">
+                  <div class="flex items-center gap-2">
+                    <UBadge label="P0" color="error" variant="solid" />
+                    <p class="text-xs font-medium text-highlighted flex-1">陆家嘴堆积告警处理</p>
+                  </div>
+                  <p class="text-[10px] text-muted mt-1.5">超时风险 · 剩余 6 分钟</p>
+                </div>
+                <div class="rounded-md border border-amber-200 bg-amber-50 p-2.5">
+                  <div class="flex items-center gap-2">
+                    <UBadge label="P1" color="warning" variant="solid" />
+                    <p class="text-xs font-medium text-highlighted flex-1">审批：夜间补车预案</p>
+                  </div>
+                  <p class="text-[10px] text-muted mt-1.5">提交人：调度主管 · 1 小时前</p>
+                </div>
+                <div class="rounded-md border border-muted p-2.5">
+                  <div class="flex items-center gap-2">
+                    <UBadge label="P2" color="neutral" variant="subtle" />
+                    <p class="text-xs font-medium text-highlighted flex-1">报表导出申请：6 月运营月报</p>
+                  </div>
+                  <p class="text-[10px] text-muted mt-1.5">提交人：数据分析 · 2 小时前</p>
+                </div>
+              </div>
+            </UCard>
+          </div>
+
+          <!-- Footer 说明 -->
+          <div class="text-center text-xs text-dimmed pt-4 pb-2">
+            城市运营后台 v2.4 · 数据每 10 秒自动同步 · 上次刷新：2026-06-17 14:32:18
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </UApp>
+  `
+};
+
+const app = createApp(App);
+app.component('UApp', { name:'UApp', setup(p,{ slots }){ return () => h('div', { class: 'min-h-screen' }, slots.default?.()); }});
+app.mount('#app');
+
+const initIcons = () => { if (window.lucide) window.lucide.createIcons(); setTimeout(initIcons, 500); };
+setTimeout(initIcons, 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>共享两轮城市运营后台 · Movium Ops Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Geist', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          mono: ['Geist Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          canvas: '#f9fafb',
+          line: 'rgba(226,232,240,0.6)',
+          ink: {
+            900: '#0f172a',
+            950: '#020617',
+          },
+          signal: {
+            emerald: '#10b981',
+            amber: '#f59e0b',
+            rose: '#f43f5e',
+            blue: '#3b82f6',
+            violet: '#8b5cf6',
+          },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  body { font-family: 'Geist', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased; background: #f9fafb; }
+
+  /* Bento surfaces */
+  .bento {
+    background: #ffffff;
+    border: 1px solid rgba(226,232,240,0.7);
+    border-radius: 28px;
+    box-shadow: 0 20px 40px -15px rgba(15,23,42,0.05), 0 4px 10px -6px rgba(15,23,42,0.04);
+  }
+  .bento-tight {
+    background: #ffffff;
+    border: 1px solid rgba(226,232,240,0.7);
+    border-radius: 20px;
+  }
+
+  /* Diffusion shadow on dark cards */
+  .shadow-diffuse { box-shadow: 0 24px 50px -20px rgba(15,23,42,0.18); }
+
+  /* Tactile */
+  .btn-tactile { transition: transform 0.18s var(--ease-out-expo), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+  .btn-tactile:active { transform: translateY(1px) scale(0.985); }
+
+  /* Breathing dot */
+  @keyframes breathe {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.78); }
+  }
+  .breathe { animation: breathe 2.2s ease-in-out infinite; }
+
+  /* Pulse ring for map alerts */
+  @keyframes pulse-ring {
+    0% { transform: scale(0.6); opacity: 0.9; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  .pulse-ring::before {
+    content: ''; position: absolute; inset: -4px;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    animation: pulse-ring 2s var(--ease-out-expo) infinite;
+  }
+
+  /* Marquee for ticker */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .marquee-track { animation: marquee 60s linear infinite; }
+
+  /* Shimmer skeleton */
+  @keyframes shimmer {
+    0% { background-position: -150% 0; }
+    100% { background-position: 150% 0; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(148,163,184,0.18), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.6s linear infinite;
+  }
+
+  /* Staggered reveal */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* Sidebar nav active indicator */
+  .nav-item { transition: background-color 0.2s ease, color 0.2s ease; position: relative; }
+  .nav-item.active { background: #0f172a; color: #fff; }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: -16px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 18px; border-radius: 999px; background: #10b981;
+  }
+
+  /* Mini bar chart */
+  .bar { background: linear-gradient(180deg, #10b981 0%, #059669 100%); border-radius: 3px 3px 0 0; transition: transform 0.4s var(--ease-out-expo); transform-origin: bottom; }
+  .bar:hover { transform: scaleY(1.06); }
+  .bar.amber { background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%); }
+  .bar.rose { background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%); }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+  /* Map grid background */
+  .map-grid {
+    background-color: #eef2f6;
+    background-image:
+      linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px),
+      radial-gradient(circle at 30% 35%, #d1fae5 0, transparent 28%),
+      radial-gradient(circle at 70% 60%, #dbeafe 0, transparent 24%),
+      radial-gradient(circle at 50% 85%, #fce7f3 0, transparent 22%);
+    background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%, 100% 100%;
+  }
+  .map-road { position: absolute; background: rgba(255,255,255,0.9); box-shadow: 0 0 0 1px rgba(15,23,42,0.05); }
+  .map-zone { position: absolute; border-radius: 16px; }
+
+  /* Spark line */
+  .spark path { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+
+  /* Progress bar */
+  .progress-track { background: rgba(148,163,184,0.18); border-radius: 999px; overflow: hidden; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .marquee-track, .breathe, .shimmer, .pulse-ring::before { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body class="text-slate-900">
+
+<div class="flex min-h-screen">
+
+  <!-- ============== SIDEBAR ============== -->
+  <aside class="w-64 bg-ink-950 text-slate-300 flex-shrink-0 flex flex-col h-screen sticky top-0">
+    <!-- Brand -->
+    <div class="px-6 py-5 flex items-center gap-3 border-b border-white/5">
+      <div class="w-9 h-9 rounded-xl bg-signal-emerald flex items-center justify-center text-white">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 18a3 3 0 013-3h8a3 3 0 013 3M5 18a3 3 0 003 3h8a3 3 0 003-3M16 6a4 4 0 11-8 0 4 4 0 018 0z"/><path d="M12 10v8"/></svg>
+      </div>
+      <div>
+        <div class="font-semibold text-[14px] text-white tracking-tight leading-none">Movium Ops</div>
+        <div class="text-[10px] tracking-[0.18em] uppercase text-slate-500 mt-1">City Console v3.2</div>
+      </div>
+    </div>
+
+    <!-- Org switcher -->
+    <div class="px-4 py-3 border-b border-white/5">
+      <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-left">
+        <div>
+          <div class="text-[11px] text-slate-500">当前城市</div>
+          <div class="text-[13px] font-medium text-white flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-signal-emerald breathe"></span>
+            杭州 · 滨江区
+          </div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+      </button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+      <div class="text-[10px] tracking-[0.2em] uppercase text-slate-600 px-3 mb-2">运营</div>
+      <a href="#" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        运营总览
+        <span class="ml-auto text-[10px] font-mono text-slate-400">06</span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        地图调度中心
+        <span class="ml-auto text-[10px] font-mono text-slate-500">23</span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="17" r="4"/><circle cx="17" cy="17" r="4"/><path d="M5 13L9 5h6l4 8M9 5l3 8 3-8"/></svg>
+        车队资产
+        <span class="ml-auto text-[10px] font-mono text-slate-500">28.4k</span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M6 7V5a2 2 0 012-2h4a2 2 0 012 2v2M6 17v2M14 17v2"/></svg>
+        电池与能源
+        <span class="ml-auto text-[10px] font-mono text-signal-amber">312</span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        运维工单
+        <span class="ml-auto px-1.5 py-0.5 rounded-full bg-signal-rose text-white text-[9px] font-bold">7</span>
+      </a>
+
+      <div class="text-[10px] tracking-[0.2em] uppercase text-slate-600 px-3 mb-2 mt-5">治理</div>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v16M15 6v16"/></svg>
+        规则与区域
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L4 6v6c0 5 3 9 8 10 5-1 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        合规监管
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>
+        数据报表
+      </a>
+
+      <div class="text-[10px] tracking-[0.2em] uppercase text-slate-600 px-3 mb-2 mt-5">系统</div>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
+        组织与权限
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-300 hover:bg-white/5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.82 1.18V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008.6 19.4l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005.6 14H5a2 2 0 110-4h.09A1.65 1.65 0 006.6 8.6l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 0011 5.6V5a2 2 0 114 0v.09a1.65 1.65 0 002.82 1.18l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 12H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        配置与对接
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-3 border-t border-white/5 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-signal-emerald to-signal-blue text-white flex items-center justify-center font-semibold text-[12px]">林</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[12px] font-medium text-white truncate">林知遥</div>
+        <div class="text-[10px] text-slate-500">城市运营经理</div>
+      </div>
+      <button class="text-slate-500 hover:text-white">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6-6 6 6M6 15l6 6 6-6"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============== MAIN ============== -->
+  <main class="flex-1 min-w-0">
+
+    <!-- Top bar -->
+    <header class="sticky top-0 z-30 bg-canvas/85 backdrop-blur-md border-b border-line">
+      <div class="px-8 h-16 flex items-center justify-between gap-6">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-[13px] text-slate-500">
+          <span>运营</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="text-slate-900 font-medium">运营总览</span>
+          <span class="ml-3 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-signal-emerald border border-emerald-100">实时 · 14:27</span>
+        </div>
+
+        <!-- Range switcher -->
+        <div class="flex items-center gap-1 p-1 bg-white border border-line rounded-full text-[12px]">
+          <button class="px-3 py-1.5 rounded-full text-slate-500 hover:text-slate-900">昨日</button>
+          <button class="px-3 py-1.5 rounded-full bg-ink-950 text-white font-medium">今日</button>
+          <button class="px-3 py-1.5 rounded-full text-slate-500 hover:text-slate-900">本周</button>
+          <button class="px-3 py-1.5 rounded-full text-slate-500 hover:text-slate-900">本月</button>
+          <button class="px-3 py-1.5 rounded-full text-slate-500 hover:text-slate-900 flex items-center gap-1">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            自定义
+          </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <input class="w-56 bg-white border border-line rounded-full pl-9 pr-4 py-2 text-[12px] placeholder:text-slate-400 outline-none focus:border-slate-400" placeholder="搜索车架号 / 设备号 / 订单号"/>
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </div>
+          <button class="btn-tactile w-9 h-9 rounded-full bg-white border border-line flex items-center justify-center text-slate-500 hover:text-slate-900">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+            <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-signal-rose"></span>
+          </button>
+          <button class="btn-tactile px-4 py-2 rounded-full bg-ink-950 text-white text-[12px] font-medium hover:bg-slate-800 flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+            创建任务
+          </button>
+        </div>
+      </div>
+
+      <!-- Live ticker -->
+      <div class="bg-ink-950 text-slate-300 overflow-hidden">
+        <div class="flex whitespace-nowrap marquee-track py-1.5 text-[11px] font-mono">
+          <div class="flex items-center gap-8 px-8">
+            <span class="text-signal-emerald">▲ 在线车辆 24,182 / 28,400</span>
+            <span class="text-signal-amber">● 低电预警 312 辆</span>
+            <span class="text-signal-rose">■ P0 告警 · 滨江聚才路倒地 × 1</span>
+            <span class="text-slate-400">SLA P90 响应 8.4 min</span>
+            <span class="text-signal-blue">◆ 换电任务 · 完成 142 / 待派 18</span>
+            <span class="text-slate-400">MDS 接口正常 · 14:26:58</span>
+            <span class="text-signal-emerald">▲ 今日 GMV ¥184,206.40</span>
+            <span class="text-slate-400">可用率 86.7% · 目标 90%</span>
+          </div>
+          <div class="flex items-center gap-8 px-8" aria-hidden="true">
+            <span class="text-signal-emerald">▲ 在线车辆 24,182 / 28,400</span>
+            <span class="text-signal-amber">● 低电预警 312 辆</span>
+            <span class="text-signal-rose">■ P0 告警 · 滨江聚才路倒地 × 1</span>
+            <span class="text-slate-400">SLA P90 响应 8.4 min</span>
+            <span class="text-signal-blue">◆ 换电任务 · 完成 142 / 待派 18</span>
+            <span class="text-slate-400">MDS 接口正常 · 14:26:58</span>
+            <span class="text-signal-emerald">▲ 今日 GMV ¥184,206.40</span>
+            <span class="text-slate-400">可用率 86.7% · 目标 90%</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============== BENTO DASHBOARD ============== -->
+    <div class="p-8 space-y-5">
+
+      <!-- Row 0: section title -->
+      <div class="reveal flex items-end justify-between">
+        <div>
+          <h1 class="text-[28px] font-semibold tracking-tight text-ink-950 leading-none">早上好，林知遥</h1>
+          <p class="text-[13px] text-slate-500 mt-2">今日运营整体偏紧，滨江聚才路有 1 起 P0 倒地告警待处置，低电车辆数较昨日同期 +18%。</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+          <span class="w-1.5 h-1.5 rounded-full bg-signal-emerald breathe"></span>
+          数据延迟 0.4s · 上次刷新 14:27:32
+        </div>
+      </div>
+
+      <!-- Row 1: KPI strip — asymmetric fractional grid -->
+      <div class="reveal grid grid-cols-12 gap-4">
+        <!-- KPI 1: GMV — featured wide -->
+        <div class="bento col-span-12 lg:col-span-5 p-6 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>
+          <div class="relative">
+            <div class="flex items-center justify-between mb-5">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-signal-emerald">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                </div>
+                <span class="text-[12px] font-medium text-slate-700">今日 GMV</span>
+              </div>
+              <span class="text-[11px] font-mono text-signal-emerald flex items-center gap-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 10H4z"/></svg>
+                +12.4% vs 昨日
+              </span>
+            </div>
+            <div class="font-mono text-[36px] font-semibold text-ink-950 tracking-tight leading-none">¥184,206<span class="text-[18px] text-slate-400">.40</span></div>
+            <div class="mt-4 flex items-end gap-1.5 h-12">
+              <div class="bar w-2 h-[40%]"></div>
+              <div class="bar w-2 h-[55%]"></div>
+              <div class="bar w-2 h-[48%]"></div>
+              <div class="bar w-2 h-[62%]"></div>
+              <div class="bar w-2 h-[58%]"></div>
+              <div class="bar w-2 h-[72%]"></div>
+              <div class="bar w-2 h-[68%]"></div>
+              <div class="bar w-2 h-[78%]"></div>
+              <div class="bar w-2 h-[85%]"></div>
+              <div class="bar w-2 h-[80%]"></div>
+              <div class="bar w-2 h-[92%]"></div>
+              <div class="bar w-2 h-[88%] opacity-60"></div>
+              <div class="bar w-2 h-[95%] opacity-100" style="background: linear-gradient(180deg, #34d399 0%, #10b981 100%);"></div>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-[10px] font-mono text-slate-400">
+              <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 2: rides -->
+        <div class="bento col-span-6 lg:col-span-3 p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-signal-blue">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l4 8M10 9l-2-3H4"/></svg>
+            </div>
+            <span class="text-[12px] font-medium text-slate-700">骑行次数</span>
+          </div>
+          <div class="font-mono text-[30px] font-semibold text-ink-950 leading-none">48,217</div>
+          <div class="text-[11px] text-slate-500 mt-1">目标 52k · 达成 92.7%</div>
+          <div class="mt-4 progress-track h-1.5">
+            <div class="h-full bg-signal-blue rounded-full" style="width:92.7%"></div>
+          </div>
+        </div>
+
+        <!-- KPI 3: availability -->
+        <div class="bento col-span-6 lg:col-span-2 p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-signal-emerald">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4L19 6"/></svg>
+            </div>
+            <span class="text-[12px] font-medium text-slate-700">可用率</span>
+          </div>
+          <div class="font-mono text-[30px] font-semibold text-ink-950 leading-none">86.7<span class="text-[16px] text-slate-400">%</span></div>
+          <div class="text-[11px] mt-1 font-mono text-signal-rose">▼ 3.3pp · 目标 90%</div>
+        </div>
+
+        <!-- KPI 4: low battery -->
+        <div class="bento col-span-12 lg:col-span-2 p-6 bg-ink-950 text-white relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-signal-amber">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M6 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </div>
+              <span class="text-[12px] font-medium text-slate-300">低电车辆</span>
+            </div>
+            <div class="font-mono text-[30px] font-semibold leading-none">312</div>
+            <div class="text-[11px] mt-1 text-signal-amber flex items-center gap-1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 10H4z"/></svg>
+              +47 辆 vs 昨日
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Map + side panel — split 8/4 -->
+      <div class="reveal grid grid-cols-12 gap-4">
+        <!-- Map dispatch -->
+        <div class="bento col-span-12 lg:col-span-8 p-5 relative overflow-hidden" style="height: 480px;">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-[14px] font-semibold text-ink-950">地图调度中心</h3>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-signal-emerald">实时</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5">滨江区 · 28,400 辆 · 6 个网格</p>
+            </div>
+            <div class="flex items-center gap-1 text-[11px]">
+              <button class="px-2.5 py-1.5 rounded-full bg-ink-950 text-white">车辆状态</button>
+              <button class="px-2.5 py-1.5 rounded-full text-slate-500 hover:bg-slate-100">电量热力</button>
+              <button class="px-2.5 py-1.5 rounded-full text-slate-500 hover:bg-slate-100">供需缺口</button>
+              <button class="px-2.5 py-1.5 rounded-full text-slate-500 hover:bg-slate-100">围栏</button>
+            </div>
+          </div>
+
+          <!-- Map canvas -->
+          <div class="map-grid relative rounded-2xl h-[370px] overflow-hidden border border-slate-100">
+            <!-- Roads -->
+            <div class="map-road" style="top:30%; left:0; right:0; height:8px; transform:rotate(-2deg);"></div>
+            <div class="map-road" style="top:0; bottom:0; left:42%; width:8px;"></div>
+            <div class="map-road" style="top:65%; left:0; right:0; height:6px;"></div>
+            <div class="map-road" style="top:0; bottom:0; left:75%; width:5px;"></div>
+
+            <!-- Zones -->
+            <div class="map-zone border-2 border-dashed border-rose-300 bg-rose-50/40" style="top:8%; left:8%; width:18%; height:14%;"></div>
+            <div class="absolute top-[8%] left-[8%] -translate-y-full text-[9px] font-mono text-rose-600 px-1.5 py-0.5 bg-white rounded border border-rose-200">禁停区 · 滨江公园</div>
+            <div class="map-zone border border-emerald-400/60 bg-emerald-50/50" style="bottom:8%; right:8%; width:22%; height:18%;"></div>
+            <div class="absolute bottom-[8%] right-[8%] translate-y-full text-[9px] font-mono text-emerald-700 px-1.5 py-0.5 bg-white rounded border border-emerald-200">推荐停车点 · 星光时代</div>
+
+            <!-- Vehicle clusters -->
+            <!-- Cluster: available (green) -->
+            <div class="absolute" style="top:40%; left:28%;">
+              <div class="w-11 h-11 rounded-full bg-signal-emerald/90 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[12px] font-bold">186</div>
+            </div>
+            <!-- Cluster: low battery (amber) -->
+            <div class="absolute" style="top:55%; left:55%;">
+              <div class="w-10 h-10 rounded-full bg-signal-amber/90 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[11px] font-bold">42</div>
+            </div>
+            <!-- Cluster: available small -->
+            <div class="absolute" style="top:25%; left:65%;">
+              <div class="w-8 h-8 rounded-full bg-signal-emerald/90 border-2 border-white shadow-lg flex items-center justify-center text-white font-mono text-[10px] font-bold">28</div>
+            </div>
+            <!-- Cluster: fault (rose) -->
+            <div class="absolute" style="top:20%; left:18%;">
+              <div class="relative w-9 h-9 rounded-full bg-signal-rose/90 border-[3px] border-white shadow-lg flex items-center justify-center text-white pulse-ring text-signal-rose">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 9v4M12 17h.01"/></svg>
+              </div>
+            </div>
+            <!-- Cluster: charging (blue) -->
+            <div class="absolute" style="top:70%; left:30%;">
+              <div class="w-9 h-9 rounded-full bg-signal-blue/90 border-[3px] border-white shadow-lg flex items-center justify-center text-white font-mono text-[10px] font-bold">17</div>
+            </div>
+            <!-- Single: low battery in zone -->
+            <div class="absolute" style="top:45%; left:48%;">
+              <div class="w-3.5 h-3.5 rounded-full bg-signal-amber border-2 border-white shadow"></div>
+            </div>
+            <!-- Single: available -->
+            <div class="absolute" style="top:38%; left:60%;">
+              <div class="w-3.5 h-3.5 rounded-full bg-signal-emerald border-2 border-white shadow"></div>
+            </div>
+            <div class="absolute" style="top:62%; left:42%;">
+              <div class="w-3.5 h-3.5 rounded-full bg-signal-emerald border-2 border-white shadow"></div>
+            </div>
+            <div class="absolute" style="top:75%; left:60%;">
+              <div class="w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white shadow"></div>
+            </div>
+
+            <!-- Operator (运维员) -->
+            <div class="absolute" style="top:50%; left:38%;">
+              <div class="w-7 h-7 rounded-full bg-violet-500 border-2 border-white shadow-lg flex items-center justify-center text-white">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="3"/><path d="M5 21v-1a6 6 0 016-6h2a6 6 0 016 6v1"/></svg>
+              </div>
+            </div>
+
+            <!-- Map toolbar -->
+            <div class="absolute top-3 right-3 flex flex-col gap-1.5">
+              <button class="w-8 h-8 rounded-lg bg-white shadow border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <button class="w-8 h-8 rounded-lg bg-white shadow border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+              </button>
+              <button class="w-8 h-8 rounded-lg bg-white shadow border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0118 0M3 12a9 9 0 0018 0"/><circle cx="12" cy="12" r="2"/></svg>
+              </button>
+            </div>
+
+            <!-- Legend -->
+            <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur rounded-xl shadow border border-slate-200 px-3 py-2 text-[10px] grid grid-cols-2 gap-x-3 gap-y-1">
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-signal-emerald"></span> 可用 18,642</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-signal-blue"></span> 使用中 4,217</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-signal-amber"></span> 低电 312</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-signal-rose"></span> 故障 47</span>
+            </div>
+
+            <!-- Selection info card -->
+            <div class="absolute bottom-3 right-3 bg-ink-950 text-white rounded-xl shadow-diffuse p-3.5 w-[230px]">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-mono text-slate-400">圈选 · 42 辆</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-signal-amber">需调度</span>
+              </div>
+              <div class="text-[12px] font-semibold mb-2">星光时代广场堆车</div>
+              <div class="text-[10px] text-slate-400 mb-3 font-mono">建议调入 · 西兴路 +18 · 江汉路 +12</div>
+              <button class="btn-tactile w-full py-1.5 rounded-lg bg-signal-emerald text-white text-[11px] font-medium">一键派发调度</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert center -->
+        <div class="bento col-span-12 lg:col-span-4 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-[14px] font-semibold text-ink-950">告警中心</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">P0/P1 优先级 · 7 条未处置</p>
+            </div>
+            <button class="text-[11px] text-slate-500 hover:text-slate-900">全部 →</button>
+          </div>
+
+          <!-- Alert list -->
+          <div class="space-y-2.5 max-h-[400px] overflow-y-auto pr-1">
+            <div class="bento-tight p-3.5 border-l-[3px] border-l-signal-rose">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-signal-rose">P0</span>
+                  <span class="text-[12px] font-semibold text-ink-950">车辆倒地</span>
+                </div>
+                <span class="text-[10px] font-mono text-slate-400">14:21</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mb-2">滨江聚才路 88 号 · 车架 SSC2024H088271</div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="text-slate-400 font-mono">响应中 6m12s</span>
+                <button class="ml-auto px-2 py-1 rounded bg-ink-950 text-white text-[10px]">指派</button>
+                <button class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px]">定位</button>
+              </div>
+            </div>
+
+            <div class="bento-tight p-3.5 border-l-[3px] border-l-signal-amber">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-signal-amber">P1</span>
+                  <span class="text-[12px] font-semibold text-ink-950">越界行驶</span>
+                </div>
+                <span class="text-[10px] font-mono text-slate-400">14:08</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mb-2">滨康路高架 · 车架 SSC2024H088452 · 离开服务区 320m</div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="text-slate-400 font-mono">待派</span>
+                <button class="ml-auto px-2 py-1 rounded bg-ink-950 text-white text-[10px]">指派</button>
+                <button class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px]">定位</button>
+              </div>
+            </div>
+
+            <div class="bento-tight p-3.5 border-l-[3px] border-l-signal-amber">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-signal-amber">P1</span>
+                  <span class="text-[12px] font-semibold text-ink-950">长时间静止</span>
+                </div>
+                <span class="text-[10px] font-mono text-slate-400">13:54</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mb-2">江南大道与江晖路 · 12 辆车超 4 小时未移动</div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="text-slate-400 font-mono">处理中</span>
+                <button class="ml-auto px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px]">查看证据</button>
+              </div>
+            </div>
+
+            <div class="bento-tight p-3.5 border-l-[3px] border-l-slate-400">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 text-slate-600">P2</span>
+                  <span class="text-[12px] font-semibold text-ink-950">疑似聚集堆积</span>
+                </div>
+                <span class="text-[10px] font-mono text-slate-400">13:32</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mb-2">星光时代广场 B2 出口 · 42 辆车聚集</div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="text-slate-400 font-mono">SLA 内</span>
+                <button class="ml-auto px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px]">定位</button>
+              </div>
+            </div>
+
+            <div class="bento-tight p-3.5 border-l-[3px] border-l-slate-400">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 text-slate-600">P2</span>
+                  <span class="text-[12px] font-semibold text-ink-950">低电预警</span>
+                </div>
+                <span class="text-[10px] font-mono text-slate-400">13:18</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mb-2">西兴街道 · 8 辆 SOC < 15% · 待换电</div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="text-slate-400 font-mono">已生成工单</span>
+                <button class="ml-auto px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px]">查看</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Bento 2.0 — vehicle health, battery, supply/demand, work orders -->
+      <div class="reveal grid grid-cols-12 gap-4">
+        <!-- Vehicle health donut -->
+        <div class="bento col-span-12 lg:col-span-3 p-6">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-[14px] font-semibold text-ink-950">车队健康</h3>
+            <span class="text-[10px] font-mono text-slate-400">实时</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-5">28,400 辆 · 5 种状态</p>
+
+          <!-- Donut -->
+          <div class="relative w-[150px] h-[150px] mx-auto mb-5">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" stroke-width="12"/>
+              <!-- 65.7% available emerald -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="12" stroke-dasharray="165 251" stroke-dashoffset="0"/>
+              <!-- 14.8% in-use blue -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" stroke-width="12" stroke-dasharray="37 251" stroke-dashoffset="-165"/>
+              <!-- 1.1% low amber -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="12" stroke-dasharray="3 251" stroke-dashoffset="-202"/>
+              <!-- 0.17% fault rose -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f43f5e" stroke-width="12" stroke-dasharray="0.6 251" stroke-dashoffset="-205"/>
+              <!-- 18.2% offline slate -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#94a3b8" stroke-width="12" stroke-dasharray="46 251" stroke-dashoffset="-206"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <div class="font-mono text-[22px] font-semibold text-ink-950">86.7<span class="text-[12px] text-slate-400">%</span></div>
+              <div class="text-[9px] tracking-wider uppercase text-slate-500 mt-0.5">可用率</div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-2 text-slate-600"><span class="w-2 h-2 rounded-full bg-signal-emerald"></span> 可用</span>
+              <span class="font-mono text-slate-900">18,642 <span class="text-slate-400">· 65.7%</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-2 text-slate-600"><span class="w-2 h-2 rounded-full bg-signal-blue"></span> 使用中</span>
+              <span class="font-mono text-slate-900">4,217 <span class="text-slate-400">· 14.8%</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-2 text-slate-600"><span class="w-2 h-2 rounded-full bg-signal-amber"></span> 低电</span>
+              <span class="font-mono text-slate-900">312 <span class="text-slate-400">· 1.1%</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-2 text-slate-600"><span class="w-2 h-2 rounded-full bg-signal-rose"></span> 故障</span>
+              <span class="font-mono text-slate-900">47 <span class="text-slate-400">· 0.17%</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-2 text-slate-600"><span class="w-2 h-2 rounded-full bg-slate-400"></span> 离线</span>
+              <span class="font-mono text-slate-900">5,182 <span class="text-slate-400">· 18.2%</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery SOC distribution -->
+        <div class="bento col-span-12 lg:col-span-5 p-6">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-[14px] font-semibold text-ink-950">电池电量分布 · SOC</h3>
+            <span class="text-[10px] font-mono text-slate-400">电单车 12,840 辆</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-5">低电阈值 20% · 今日待换电 142 辆</p>
+
+          <!-- Stacked bar -->
+          <div class="flex items-end gap-3 mb-2 h-[140px]">
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="font-mono text-[10px] text-slate-500">182</div>
+              <div class="w-full bar rose" style="height: 28%; min-height:4px;"></div>
+              <div class="text-[10px] font-mono text-slate-600">0-10%</div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="font-mono text-[10px] text-slate-500">340</div>
+              <div class="w-full bar rose" style="height: 42%;"></div>
+              <div class="text-[10px] font-mono text-slate-600">10-20%</div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="font-mono text-[10px] text-slate-500">1,827</div>
+              <div class="w-full bar amber" style="height: 65%;"></div>
+              <div class="text-[10px] font-mono text-slate-600">20-40%</div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="font-mono text-[10px] text-slate-500">3,412</div>
+              <div class="w-full bar amber" style="height: 82%;"></div>
+              <div class="text-[10px] font-mono text-slate-600">40-70%</div>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="font-mono text-[10px] text-slate-500">7,079</div>
+              <div class="w-full bar" style="height: 100%;"></div>
+              <div class="text-[10px] font-mono text-slate-600">70-100%</div>
+            </div>
+          </div>
+
+          <!-- Battery swap progress -->
+          <div class="mt-6 pt-5 border-t border-slate-100">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[12px] font-medium text-slate-700">今日换电任务进度</span>
+              <span class="font-mono text-[11px] text-slate-500">142 / 160 · 88.8%</span>
+            </div>
+            <div class="progress-track h-2 mb-3">
+              <div class="h-full bg-signal-emerald rounded-full" style="width:88.8%"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="bento-tight py-2 px-2">
+                <div class="font-mono text-[16px] font-semibold text-signal-emerald">8.4<span class="text-[10px] text-slate-400">m</span></div>
+                <div class="text-[9px] text-slate-500 mt-0.5">平均单次耗时</div>
+              </div>
+              <div class="bento-tight py-2 px-2">
+                <div class="font-mono text-[16px] font-semibold text-ink-950">18</div>
+                <div class="text-[9px] text-slate-500 mt-0.5">待派任务</div>
+              </div>
+              <div class="bento-tight py-2 px-2">
+                <div class="font-mono text-[16px] font-semibold text-signal-emerald">98.2<span class="text-[10px] text-slate-400">%</span></div>
+                <div class="text-[9px] text-slate-500 mt-0.5">换电成功率</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Supply & Demand -->
+        <div class="bento col-span-12 lg:col-span-4 p-6">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-[14px] font-semibold text-ink-950">供需缺口 · 潮汐</h3>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-signal-amber">晚高峰预警</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-5">17:00-19:00 · 预测缺车 8 区 / 堆车 5 区</p>
+
+          <!-- Top deficit zones -->
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-signal-rose rounded-full"></span>
+                  <span class="text-[12px] font-medium text-ink-950">地铁西兴站 A 口</span>
+                </div>
+                <span class="font-mono text-[11px] text-signal-rose">−18 辆</span>
+              </div>
+              <div class="progress-track h-1.5">
+                <div class="h-full bg-signal-rose rounded-full" style="width:82%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-signal-rose rounded-full"></span>
+                  <span class="text-[12px] font-medium text-ink-950">滨康路地铁站</span>
+                </div>
+                <span class="font-mono text-[11px] text-signal-rose">−14 辆</span>
+              </div>
+              <div class="progress-track h-1.5">
+                <div class="h-full bg-signal-rose rounded-full" style="width:68%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-signal-amber rounded-full"></span>
+                  <span class="text-[12px] font-medium text-ink-950">江汉路公交站</span>
+                </div>
+                <span class="font-mono text-[11px] text-signal-amber">−8 辆</span>
+              </div>
+              <div class="progress-track h-1.5">
+                <div class="h-full bg-signal-amber rounded-full" style="width:42%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-signal-emerald rounded-full"></span>
+                  <span class="text-[12px] font-medium text-ink-950">星光时代广场 B2</span>
+                </div>
+                <span class="font-mono text-[11px] text-signal-emerald">+42 辆</span>
+              </div>
+              <div class="progress-track h-1.5">
+                <div class="h-full bg-signal-emerald rounded-full" style="width:95%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-signal-emerald rounded-full"></span>
+                  <span class="text-[12px] font-medium text-ink-950">江南大道工行</span>
+                </div>
+                <span class="font-mono text-[11px] text-signal-emerald">+28 辆</span>
+              </div>
+              <div class="progress-track h-1.5">
+                <div class="h-full bg-signal-emerald rounded-full" style="width:78%"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-tactile mt-5 w-full py-2.5 rounded-xl bg-ink-950 text-white text-[12px] font-medium hover:bg-slate-800 flex items-center justify-center gap-2">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            生成调度建议清单
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 4: Work orders + Compliance -->
+      <div class="reveal grid grid-cols-12 gap-4">
+        <!-- Work order board -->
+        <div class="bento col-span-12 lg:col-span-7 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-[14px] font-semibold text-ink-950">工单看板</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">待派 / 执行中 / 待验收 / 已完成</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-[11px] hover:bg-slate-200">+ 换电工单</button>
+              <button class="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-[11px] hover:bg-slate-200">+ 调度任务</button>
+              <button class="px-3 py-1.5 rounded-full bg-ink-950 text-white text-[11px]">+ 巡检</button>
+            </div>
+          </div>
+
+          <!-- Kanban columns -->
+          <div class="grid grid-cols-4 gap-3">
+            <!-- 待派 -->
+            <div class="bento-tight p-3 bg-slate-50">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold text-slate-700">待派</span>
+                <span class="px-1.5 py-0.5 rounded bg-amber-100 text-signal-amber text-[10px] font-mono font-bold">18</span>
+              </div>
+              <div class="space-y-2">
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-rose-100 text-signal-rose">P0</span>
+                    <span class="text-[9px] font-mono text-slate-400">14:21</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">车辆倒地 · 聚才路</div>
+                  <div class="text-[9px] text-slate-500 font-mono">SSC2024H088271</div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-amber-100 text-signal-amber">P1</span>
+                    <span class="text-[9px] font-mono text-slate-400">13:54</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">批量换电 · 西兴</div>
+                  <div class="text-[9px] text-slate-500 font-mono">8 辆 · SOC&lt;15%</div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-200 text-slate-600">P2</span>
+                    <span class="text-[9px] font-mono text-slate-400">13:32</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">堆积调度 · 星光</div>
+                  <div class="text-[9px] text-slate-500 font-mono">42 辆</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 执行中 -->
+            <div class="bento-tight p-3 bg-slate-50">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold text-slate-700">执行中</span>
+                <span class="px-1.5 py-0.5 rounded bg-blue-100 text-signal-blue text-[10px] font-mono font-bold">23</span>
+              </div>
+              <div class="space-y-2">
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-blue-100 text-signal-blue">进行</span>
+                    <span class="text-[9px] font-mono text-slate-400">12m</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">换电 · 江汉路</div>
+                  <div class="flex items-center gap-1 mt-1">
+                    <div class="w-5 h-5 rounded-full bg-violet-500 text-white text-[9px] font-bold flex items-center justify-center">王</div>
+                    <span class="text-[9px] text-slate-500">王志强</span>
+                  </div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-blue-100 text-signal-blue">进行</span>
+                    <span class="text-[9px] font-mono text-slate-400">28m</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">巡检 · 江南大道</div>
+                  <div class="flex items-center gap-1 mt-1">
+                    <div class="w-5 h-5 rounded-full bg-violet-500 text-white text-[9px] font-bold flex items-center justify-center">李</div>
+                    <span class="text-[9px] text-slate-500">李秀敏</span>
+                  </div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-amber-100 text-signal-amber">超时</span>
+                    <span class="text-[9px] font-mono text-slate-400">42m</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">维修 · 锁故障</div>
+                  <div class="flex items-center gap-1 mt-1">
+                    <div class="w-5 h-5 rounded-full bg-violet-500 text-white text-[9px] font-bold flex items-center justify-center">陈</div>
+                    <span class="text-[9px] text-slate-500">陈忠和</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 待验收 -->
+            <div class="bento-tight p-3 bg-slate-50">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold text-slate-700">待验收</span>
+                <span class="px-1.5 py-0.5 rounded bg-violet-100 text-violet-600 text-[10px] font-mono font-bold">7</span>
+              </div>
+              <div class="space-y-2">
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-violet-100 text-violet-600">待验</span>
+                    <span class="text-[9px] font-mono text-slate-400">14:02</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">调度 · 滨康路</div>
+                  <div class="text-[9px] text-slate-500 font-mono">+18 辆 · 待拍照</div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-violet-100 text-violet-600">待验</span>
+                    <span class="text-[9px] font-mono text-slate-400">13:48</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">换电 · 江汉路</div>
+                  <div class="text-[9px] text-slate-500 font-mono">6 辆完成</div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono px-1 py-0.5 rounded bg-violet-100 text-violet-600">待验</span>
+                    <span class="text-[9px] font-mono text-slate-400">13:21</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">回收 · 滨兴路</div>
+                  <div class="text-[9px] text-slate-500 font-mono">3 辆报废</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 已完成 -->
+            <div class="bento-tight p-3 bg-slate-50">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold text-slate-700">已完成</span>
+                <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-signal-emerald text-[10px] font-mono font-bold">142</span>
+              </div>
+              <div class="space-y-2">
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><path d="M5 12l4 4L19 6"/></svg>
+                    <span class="text-[9px] font-mono text-slate-400">13:18</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">换电 · 西兴</div>
+                  <div class="text-[9px] text-slate-500 font-mono">12 辆 · 18m</div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><path d="M5 12l4 4L19 6"/></svg>
+                    <span class="text-[9px] font-mono text-slate-400">12:54</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">维修 · 刹车异响</div>
+                  <div class="text-[9px] text-slate-500 font-mono">1 辆 · 26m</div>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-slate-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><path d="M5 12l4 4L19 6"/></svg>
+                    <span class="text-[9px] font-mono text-slate-400">12:32</span>
+                  </div>
+                  <div class="text-[11px] font-medium text-ink-950 mb-1">违停处置 · 江晖</div>
+                  <div class="text-[9px] text-slate-500 font-mono">已挪车 · 8m</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer metrics -->
+          <div class="mt-5 pt-5 border-t border-slate-100 grid grid-cols-4 gap-4">
+            <div>
+              <div class="text-[10px] text-slate-500 mb-1">人效 · 人均完成</div>
+              <div class="font-mono text-[16px] font-semibold text-ink-950">7.8 <span class="text-[10px] text-slate-400">单</span></div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500 mb-1">准时率</div>
+              <div class="font-mono text-[16px] font-semibold text-signal-emerald">94.2<span class="text-[10px] text-slate-400">%</span></div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500 mb-1">一次修复率</div>
+              <div class="font-mono text-[16px] font-semibold text-ink-950">88.6<span class="text-[10px] text-slate-400">%</span></div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500 mb-1">超时工单</div>
+              <div class="font-mono text-[16px] font-semibold text-signal-rose">3</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compliance + Quick actions -->
+        <div class="col-span-12 lg:col-span-5 space-y-4">
+          <!-- Compliance -->
+          <div class="bento p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-[14px] font-semibold text-ink-950">合规监管概览</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">城市级合规 · MDS / GBFS 接口</p>
+              </div>
+              <span class="text-[10px] font-mono px-2 py-1 rounded-full bg-emerald-50 text-signal-emerald border border-emerald-100">健康</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mb-4">
+              <div class="bento-tight p-3">
+                <div class="text-[10px] text-slate-500 mb-1">禁停违规</div>
+                <div class="font-mono text-[18px] font-semibold text-signal-amber">47</div>
+                <div class="text-[9px] text-slate-400 mt-0.5 font-mono">▼ 12 vs 昨日</div>
+              </div>
+              <div class="bento-tight p-3">
+                <div class="text-[10px] text-slate-500 mb-1">越界次数</div>
+                <div class="font-mono text-[18px] font-semibold text-signal-rose">8</div>
+                <div class="text-[9px] text-slate-400 mt-0.5 font-mono">▲ 3 vs 昨日</div>
+              </div>
+              <div class="bento-tight p-3">
+                <div class="text-[10px] text-slate-500 mb-1">处置时效</div>
+                <div class="font-mono text-[18px] font-semibold text-signal-emerald">8.4<span class="text-[10px]">m</span></div>
+                <div class="text-[9px] text-slate-400 mt-0.5 font-mono">P90 ≤ 10m 达标</div>
+              </div>
+            </div>
+
+            <!-- MDS / GBFS status -->
+            <div class="pt-4 border-t border-slate-100 space-y-2.5">
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-signal-emerald breathe"></span>
+                  <span class="text-slate-700 font-medium">MDS Policy endpoint</span>
+                </div>
+                <div class="flex items-center gap-3 font-mono text-slate-500">
+                  <span>14:26:58</span>
+                  <span class="text-signal-emerald">200 OK</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-signal-emerald breathe"></span>
+                  <span class="text-slate-700 font-medium">GBFS station_status</span>
+                </div>
+                <div class="flex items-center gap-3 font-mono text-slate-500">
+                  <span>14:26:55</span>
+                  <span class="text-signal-emerald">200 OK</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-signal-amber breathe"></span>
+                  <span class="text-slate-700 font-medium">政务监管接口 · 杭州城管</span>
+                </div>
+                <div class="flex items-center gap-3 font-mono text-slate-500">
+                  <span>14:24:12</span>
+                  <span class="text-signal-amber">延迟 2m48s</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="bento p-6">
+            <h3 class="text-[14px] font-semibold text-ink-950 mb-1">快捷工作台</h3>
+            <p class="text-[11px] text-slate-500 mb-4">少点击 · 可批量 · 可追踪</p>
+
+            <div class="grid grid-cols-4 gap-2">
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M6 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                <span class="text-[10px] text-slate-700">换电</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l4 8"/></svg>
+                <span class="text-[10px] text-slate-700">调度</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><path d="M9 11l3 3 8-8M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                <span class="text-[10px] text-slate-700">巡检</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                <span class="text-[10px] text-slate-700">违停</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><path d="M3 12a9 9 0 0118 0M3 12a9 9 0 0018 0M3 12h18"/></svg>
+                <span class="text-[10px] text-slate-700">圈选派单</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><path d="M12 2v20M2 12h20"/></svg>
+                <span class="text-[10px] text-slate-700">批量锁车</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.6"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                <span class="text-[10px] text-slate-700">客服派单</span>
+              </button>
+              <button class="btn-tactile flex flex-col items-center gap-1.5 py-3 bento-tight hover:border-slate-300 bg-ink-950">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+                <span class="text-[10px] text-white">新建</span>
+              </button>
+            </div>
+
+            <!-- My todo -->
+            <div class="mt-5 pt-5 border-t border-slate-100">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[12px] font-medium text-slate-700">我的待办</span>
+                <span class="px-1.5 py-0.5 rounded bg-rose-100 text-signal-rose text-[10px] font-mono font-bold">4</span>
+              </div>
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2 text-[11px] text-slate-700 py-1.5">
+                  <span class="w-1 h-1 rounded-full bg-signal-rose"></span>
+                  <span>审批 · 江汉路围栏调整申请</span>
+                  <span class="ml-auto text-[10px] font-mono text-slate-400">14:30</span>
+                </div>
+                <div class="flex items-center gap-2 text-[11px] text-slate-700 py-1.5">
+                  <span class="w-1 h-1 rounded-full bg-signal-amber"></span>
+                  <span>报表导出 · 5 月运营成本</span>
+                  <span class="ml-auto text-[10px] font-mono text-slate-400">14:00</span>
+                </div>
+                <div class="flex items-center gap-2 text-[11px] text-slate-700 py-1.5">
+                  <span class="w-1 h-1 rounded-full bg-slate-400"></span>
+                  <span>规则发布 · 滨江公园禁停 v2.3</span>
+                  <span class="ml-auto text-[10px] font-mono text-slate-400">11:48</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 5: Footer info -->
+      <div class="reveal pt-4 pb-2 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+        <div class="flex items-center gap-4">
+          <span>Movium Ops Console v3.2.4</span>
+          <span>·</span>
+          <span>杭州 · 滨江区</span>
+          <span>·</span>
+          <span>会话 ID 0x4f2a8e21</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-signal-emerald breathe"></span> 系统正常 · 14:27:42</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Staggered reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.04, rootMargin: '0px 0px -4% 0px' });
+  reveals.forEach(r => io.observe(r));
+
+  // Range switcher active state
+  document.querySelectorAll('header button').forEach(btn => {
+    const txt = btn.textContent.trim();
+    if (['昨日','今日','本周','本月'].includes(txt)) {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('header button').forEach(b => {
+          const t = b.textContent.trim();
+          if (['昨日','今日','本周','本月'].includes(t)) {
+            b.classList.remove('bg-ink-950','text-white','font-medium');
+            b.classList.add('text-slate-500');
+          }
+        });
+        btn.classList.add('bg-ink-950','text-white','font-medium');
+        btn.classList.remove('text-slate-500');
+      });
+    }
+  });
+
+  // Nav active state
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

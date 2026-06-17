@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>电动充电桩小程序 · Charge+ 聚合充电</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: '#1677FF',
+          brandd: '#0E5BD8',
+          green: '#52C41A',
+          orange: '#FA8C16',
+          red: '#FF4D4F',
+          ink: '#0A0E1A',
+          graphite: '#1A1F35',
+          mist: '#F5F7FA',
+        },
+        fontFamily: {
+          sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root {
+    --brand: #1677FF;
+    --brandd: #0E5BD8;
+    --green: #52C41A;
+    --orange: #FA8C16;
+    --red: #FF4D4F;
+    --ink: #0A0E1A;
+    --graphite: #1A1F35;
+    --mist: #F5F7FA;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    background: radial-gradient(circle at 20% 20%, #0E5BD8 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #52C41A 0%, transparent 50%),
+                linear-gradient(135deg, #0A0E1A, #1A1F35);
+    min-height: 100vh;
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #fff;
+  }
+  .num { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+
+  /* 手机外壳 */
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: #0A0E1A;
+    border-radius: 50px;
+    padding: 12px;
+    box-shadow:
+      0 50px 100px -20px rgba(0,0,0,0.5),
+      0 30px 60px -30px rgba(22, 119, 255, 0.3),
+      inset 0 0 0 2px rgba(255,255,255,0.05);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    background: var(--mist);
+    color: var(--ink);
+  }
+  .phone-notch {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 28px; background: #000; border-radius: 20px; z-index: 100;
+  }
+
+  /* 状态栏 */
+  .status-bar {
+    height: 44px; padding: 0 28px 0 32px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding-bottom: 8px;
+    font-size: 14px; font-weight: 600;
+    position: relative; z-index: 50;
+  }
+
+  /* 滚动内容区 */
+  .phone-content {
+    height: calc(100% - 44px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    padding-bottom: 90px;
+  }
+  .phone-content::-webkit-scrollbar { display: none; }
+  .phone-content { scrollbar-width: none; }
+
+  /* Tab Bar */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 84px;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex; align-items: flex-start;
+    padding: 8px 16px 24px;
+    z-index: 90;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-size: 10px; color: #999; cursor: pointer; transition: color .2s;
+    padding-top: 6px;
+  }
+  .tab-item.active { color: var(--brand); }
+  .tab-item .ti { font-size: 22px; }
+  .tab-scan {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin-top: -32px;
+  }
+  .scan-btn {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1677FF 0%, #52C41A 100%);
+    box-shadow: 0 6px 20px rgba(22, 119, 255, 0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 26px;
+    border: 4px solid #fff;
+  }
+
+  /* 视图切换 */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* 卡片样式 */
+  .card { background: #fff; border-radius: 16px; }
+
+  /* 状态点 */
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* 地图样式 */
+  .map-bg {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(22, 119, 255, 0.08), transparent 40%),
+      radial-gradient(circle at 70% 60%, rgba(82, 196, 26, 0.08), transparent 40%),
+      linear-gradient(135deg, #E8F0FE 0%, #F0F7E8 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .map-bg::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(22, 119, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 119, 255, 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .map-road {
+    position: absolute; background: rgba(255,255,255,0.7);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  .pin {
+    position: absolute; transform: translate(-50%, -100%);
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer; transition: transform .2s;
+  }
+  .pin:hover { transform: translate(-50%, -100%) scale(1.1); }
+  .pin-bubble {
+    background: #fff; padding: 4px 8px; border-radius: 12px;
+    font-size: 11px; font-weight: 600; color: var(--brand);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    white-space: nowrap;
+    position: relative;
+  }
+  .pin-bubble::after {
+    content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: #fff;
+  }
+  .pin.green .pin-bubble { color: var(--green); }
+  .pin.orange .pin-bubble { color: var(--orange); }
+  .pin-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--brand); border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    margin-top: 4px;
+  }
+  .pin.green .pin-dot { background: var(--green); }
+  .pin.orange .pin-dot { background: var(--orange); }
+
+  /* 抽屉式底部面板 */
+  .bottom-sheet {
+    position: absolute; left: 0; right: 0; bottom: 84px;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.08);
+    padding: 8px 16px 16px;
+    z-index: 50;
+    max-height: 60%;
+    overflow-y: auto;
+  }
+  .bottom-sheet::-webkit-scrollbar { display: none; }
+
+  /* 充电进度环 */
+  .charge-ring {
+    transform: rotate(-90deg);
+  }
+  .charge-ring circle {
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  /* 扫码框 */
+  .scan-frame {
+    position: relative;
+    width: 220px; height: 220px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 24px;
+  }
+  .scan-frame::before, .scan-frame::after,
+  .scan-frame > .corner-tl, .scan-frame > .corner-tr,
+  .scan-frame > .corner-bl, .scan-frame > .corner-br {
+    content: ''; position: absolute;
+    width: 28px; height: 28px;
+    border: 4px solid var(--brand);
+  }
+  .scan-frame::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+  .scan-frame::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+  .scan-frame .corner-tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+  .scan-frame .corner-bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+  .scan-line {
+    position: absolute; left: 8px; right: 8px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--brand), transparent);
+    top: 50%;
+    animation: scan 2s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--brand);
+  }
+  @keyframes scan {
+    0%, 100% { transform: translateY(-100px); }
+    50% { transform: translateY(100px); }
+  }
+
+  /* 切换浮动按钮（桌面端预览模式） */
+  .float-mode-switch {
+    position: fixed; top: 24px; right: 24px;
+    background: rgba(255,255,255,0.08); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px; border-radius: 16px;
+    display: flex; flex-direction: column; gap: 4px;
+    z-index: 100;
+  }
+  .mode-btn {
+    padding: 8px 12px; font-size: 11px; color: rgba(255,255,255,0.6);
+    border-radius: 8px; cursor: pointer; transition: all .2s;
+    white-space: nowrap; min-width: 80px; text-align: center;
+  }
+  .mode-btn.active { background: var(--brand); color: #fff; }
+
+  /* 桌面端布局 */
+  .desktop-wrap {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px; gap: 40px;
+    flex-wrap: wrap;
+  }
+  .info-side {
+    max-width: 380px;
+    color: #fff;
+  }
+  @media (max-width: 900px) {
+    .info-side { display: none; }
+    .desktop-wrap { padding: 20px; }
+  }
+
+  /* 浮动按钮 */
+  .fab {
+    position: absolute; right: 16px; bottom: 100px;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: #fff; color: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    z-index: 60;
+  }
+
+  /* 卡片 hover */
+  .station-card { transition: transform .2s, box-shadow .2s; }
+  .station-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(22,119,255,0.12); }
+
+  /* 优惠卡 */
+  .coupon {
+    background: linear-gradient(135deg, #fff 0%, #fff8f0 100%);
+    border: 1px dashed var(--orange);
+    position: relative;
+  }
+  .coupon::before, .coupon::after {
+    content: ''; position: absolute; width: 12px; height: 12px;
+    background: var(--mist); border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+  }
+  .coupon::before { left: -7px; }
+  .coupon::after { right: -7px; }
+
+  /* 会员卡 */
+  .member-card {
+    background: linear-gradient(135deg, #1A1F35 0%, #0A0E1A 50%, #0E5BD8 100%);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .member-card::before {
+    content: ''; position: absolute; top: -50%; right: -20%;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(232, 184, 109, 0.3), transparent 70%);
+  }
+</style>
+</head>
+<body>
+
+<!-- 桌面端模式切换 -->
+<div class="float-mode-switch">
+  <div class="mode-btn active" data-view="home">首页找桩</div>
+  <div class="mode-btn" data-view="deals">省钱活动</div>
+  <div class="mode-btn" data-view="scan">扫码充电</div>
+  <div class="mode-btn" data-view="charging">充电中</div>
+  <div class="mode-btn" data-view="orders">我的订单</div>
+  <div class="mode-btn" data-view="me">个人中心</div>
+</div>
+
+<div class="desktop-wrap">
+  <!-- 左侧介绍 -->
+  <div class="info-side">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-green flex items-center justify-center">
+        <iconify-icon icon="ph:lightning-fill" class="text-white text-xl"></iconify-icon>
+      </div>
+      <div>
+        <div class="font-bold text-lg">Charge+</div>
+        <div class="text-xs text-white/50 tracking-widest">AGGREGATED EV CHARGING</div>
+      </div>
+    </div>
+    <h1 class="text-4xl font-bold leading-tight mb-4">聚合充电<br/><span class="bg-gradient-to-r from-brand to-green bg-clip-text text-transparent">一图看全 · 扫码即充</span></h1>
+    <p class="text-white/60 text-sm leading-relaxed mb-6">
+      整合特来电、星星充电、云快充等主流运营商资源，以地图为核心视角，结合实时桩态、一键扫码启动、智能会员权益。
+    </p>
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
+        <div class="num text-2xl text-brand font-bold">30s</div>
+        <div class="text-xs text-white/50 mt-1">桩态刷新间隔</div>
+      </div>
+      <div class="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
+        <div class="num text-2xl text-green font-bold">5s</div>
+        <div class="text-xs text-white/50 mt-1">扫码启动响应</div>
+      </div>
+      <div class="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
+        <div class="num text-2xl text-orange font-bold">6<span class="text-xs">折起</span></div>
+        <div class="text-xs text-white/50 mt-1">PLUS 会员折扣</div>
+      </div>
+      <div class="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
+        <div class="num text-2xl text-white font-bold">99.9<span class="text-xs">%</span></div>
+        <div class="text-xs text-white/50 mt-1">核心链路可用率</div>
+      </div>
+    </div>
+    <div class="text-xs text-white/40 leading-relaxed">
+      切换右上角按钮，可预览小程序的 6 个核心场景。<br/>
+      移动端可直接打开浏览，桌面端在手机框内显示。
+    </div>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+
+      <!-- 状态栏 -->
+      <div class="status-bar text-ink">
+        <span class="num">9:41</span>
+        <div class="flex items-center gap-1">
+          <iconify-icon icon="ph:cell-signal-high" class="text-sm"></iconify-icon>
+          <iconify-icon icon="ph:wifi-high" class="text-sm"></iconify-icon>
+          <iconify-icon icon="ph:battery-full" class="text-base"></iconify-icon>
+        </div>
+      </div>
+
+      <!-- 内容区 -->
+      <div class="phone-content" id="content">
+
+        <!-- ========== View 1: 首页找桩 ========== -->
+        <div class="view active" data-view="home">
+          <!-- 顶部位置栏 -->
+          <div class="px-4 pt-2 pb-3 bg-white">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="ph:map-pin-fill" class="text-brand text-lg"></iconify-icon>
+                <div>
+                  <div class="text-xs text-gray-400">当前位置</div>
+                  <div class="text-sm font-semibold flex items-center gap-1">杭州市·西湖区文三路 <iconify-icon icon="ph:caret-down-thin" class="text-xs"></iconify-icon></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <button class="relative">
+                  <iconify-icon icon="ph:bell-thin" class="text-xl text-gray-700"></iconify-icon>
+                  <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red rounded-full"></span>
+                </button>
+              </div>
+            </div>
+            <!-- 搜索 -->
+            <div class="mt-3 flex items-center gap-2">
+              <div class="flex-1 bg-mist rounded-full px-4 py-2 flex items-center gap-2">
+                <iconify-icon icon="ph:magnifying-glass-thin" class="text-gray-400"></iconify-icon>
+                <input class="bg-transparent text-sm flex-1 outline-none placeholder-gray-400" placeholder="搜索充电站 / 商圈 / 地址"/>
+              </div>
+              <button class="w-9 h-9 rounded-full bg-mist flex items-center justify-center text-gray-700">
+                <iconify-icon icon="ph:funnel-thin" class="text-lg"></iconify-icon>
+              </button>
+            </div>
+            <!-- 快捷筛选 -->
+            <div class="flex gap-2 mt-3 overflow-x-auto" style="scrollbar-width:none;">
+              <span class="px-3 py-1 bg-brand text-white text-xs rounded-full whitespace-nowrap">综合排序</span>
+              <span class="px-3 py-1 bg-mist text-gray-700 text-xs rounded-full whitespace-nowrap">快充</span>
+              <span class="px-3 py-1 bg-mist text-gray-700 text-xs rounded-full whitespace-nowrap">免费停车</span>
+              <span class="px-3 py-1 bg-mist text-gray-700 text-xs rounded-full whitespace-nowrap">PLUS 站</span>
+              <span class="px-3 py-1 bg-mist text-gray-700 text-xs rounded-full whitespace-nowrap">高速路</span>
+            </div>
+          </div>
+
+          <!-- 地图区 -->
+          <div class="map-bg relative" style="height: 320px;">
+            <!-- 道路 -->
+            <div class="map-road" style="top: 30%; left: 0; right: 0; height: 6px;"></div>
+            <div class="map-road" style="top: 70%; left: 0; right: 0; height: 4px;"></div>
+            <div class="map-road" style="left: 30%; top: 0; bottom: 0; width: 4px;"></div>
+            <div class="map-road" style="left: 70%; top: 0; bottom: 0; width: 6px;"></div>
+
+            <!-- 桩位 pin -->
+            <div class="pin" style="top: 35%; left: 25%;">
+              <div class="pin-bubble">¥1.2 · 12 空闲</div>
+              <div class="pin-dot"></div>
+            </div>
+            <div class="pin green" style="top: 55%; left: 50%;">
+              <div class="pin-bubble">¥1.0 · 8 空闲</div>
+              <div class="pin-dot"></div>
+            </div>
+            <div class="pin orange" style="top: 30%; left: 75%;">
+              <div class="pin-bubble">¥1.5 · 1 空闲</div>
+              <div class="pin-dot"></div>
+            </div>
+            <div class="pin green" style="top: 75%; left: 80%;">
+              <div class="pin-bubble">¥0.9 · 5 空闲</div>
+              <div class="pin-dot"></div>
+            </div>
+            <div class="pin" style="top: 70%; left: 20%;">
+              <div class="pin-bubble">¥1.3 · 6 空闲</div>
+              <div class="pin-dot"></div>
+            </div>
+
+            <!-- 当前位置 -->
+            <div class="absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+              <div class="w-4 h-4 bg-brand rounded-full border-2 border-white shadow-lg pulse-dot"></div>
+            </div>
+
+            <!-- 地图工具 -->
+            <div class="absolute right-3 top-3 flex flex-col gap-2">
+              <button class="w-9 h-9 bg-white rounded-lg shadow flex items-center justify-center">
+                <iconify-icon icon="ph:plus-thin" class="text-gray-700"></iconify-icon>
+              </button>
+              <button class="w-9 h-9 bg-white rounded-lg shadow flex items-center justify-center">
+                <iconify-icon icon="ph:minus-thin" class="text-gray-700"></iconify-icon>
+              </button>
+              <button class="w-9 h-9 bg-white rounded-lg shadow flex items-center justify-center">
+                <iconify-icon icon="ph:crosshair-thin" class="text-brand"></iconify-icon>
+              </button>
+            </div>
+
+            <!-- 视图切换 -->
+            <div class="absolute left-3 top-3 bg-white rounded-lg shadow p-1 flex text-xs">
+              <span class="px-3 py-1 bg-brand text-white rounded">地图</span>
+              <span class="px-3 py-1 text-gray-600">列表</span>
+            </div>
+          </div>
+
+          <!-- 底部抽屉：附近站点列表 -->
+          <div class="bottom-sheet">
+            <div class="flex justify-center mb-2">
+              <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="font-bold text-base">附近 12 个站点</div>
+              <span class="text-xs text-brand">查看全部 →</span>
+            </div>
+
+            <!-- 站点卡 1 -->
+            <div class="card station-card p-3 mb-3 border border-gray-100">
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span class="font-bold text-sm">特来电 · 西湖文化中心站</span>
+                    <span class="px-1.5 py-0.5 bg-orange/10 text-orange text-[10px] rounded">PLUS</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mb-1">西湖区文三路 199 号 · 距您 320m</div>
+                  <div class="flex items-center gap-2 text-[11px] text-gray-600">
+                    <span class="flex items-center gap-1"><span class="dot bg-green"></span> 快充 12/16</span>
+                    <span class="flex items-center gap-1"><span class="dot bg-orange"></span> 慢充 4/8</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="num text-brand font-bold text-lg">¥1.20<span class="text-[10px] text-gray-400">/度</span></div>
+                  <div class="text-[10px] text-gray-400">2h 停车 ¥5</div>
+                </div>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-gray-50">
+                <button class="flex-1 py-1.5 bg-mist text-brand text-xs rounded-md font-semibold">导航</button>
+                <button class="flex-1 py-1.5 bg-brand text-white text-xs rounded-md font-semibold">扫码充电</button>
+              </div>
+            </div>
+
+            <!-- 站点卡 2 -->
+            <div class="card station-card p-3 mb-3 border border-gray-100">
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span class="font-bold text-sm">星星充电 · 黄龙万科中心</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mb-1">西湖区天目山路 1 号 · 距您 580m</div>
+                  <div class="flex items-center gap-2 text-[11px] text-gray-600">
+                    <span class="flex items-center gap-1"><span class="dot bg-green"></span> 快充 8/12</span>
+                    <span class="text-green">免费停车</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="num text-brand font-bold text-lg">¥1.00<span class="text-[10px] text-gray-400">/度</span></div>
+                  <div class="text-[10px] text-gray-400">免停车费</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== View 2: 省钱活动 ========== -->
+        <div class="view" data-view="deals">
+          <div class="bg-gradient-to-br from-brand to-brandd text-white px-4 pt-4 pb-8">
+            <div class="flex justify-between items-center mb-4">
+              <div class="font-bold text-lg">省钱 / 活动</div>
+              <iconify-icon icon="ph:bell-thin" class="text-xl"></iconify-icon>
+            </div>
+            <!-- 顶部 Banner -->
+            <div class="member-card rounded-2xl p-4 mt-2">
+              <div class="relative">
+                <div class="text-xs opacity-80 mb-1">PLUS 银卡会员</div>
+                <div class="text-2xl font-bold mb-2">本月已省 ¥48.50</div>
+                <div class="flex gap-4 text-xs">
+                  <div><div class="font-bold">5</div><div class="opacity-60">满减券</div></div>
+                  <div><div class="font-bold">6.0<span class="text-[10px]">折</span></div><div class="opacity-60">充电折扣</div></div>
+                  <div><div class="font-bold">¥0</div><div class="opacity-60">停车减免</div></div>
+                </div>
+                <button class="mt-3 px-4 py-1.5 bg-white text-brand rounded-full text-xs font-bold">续费 PLUS · ¥9.9/月</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 -mt-4">
+            <!-- 限时秒杀 -->
+            <div class="card p-4 mb-3">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="ph:lightning-fill" class="text-orange"></iconify-icon>
+                  <span class="font-bold text-sm">限时秒杀</span>
+                </div>
+                <div class="text-xs text-gray-500 flex items-center gap-1">
+                  距结束 <span class="num bg-ink text-white px-1 py-0.5 rounded">02</span>:<span class="num bg-ink text-white px-1 py-0.5 rounded">15</span>:<span class="num bg-ink text-white px-1 py-0.5 rounded">43</span>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="bg-orange/5 rounded-lg p-2 text-center">
+                  <div class="text-[10px] text-gray-500">10 度能量包</div>
+                  <div class="num text-orange font-bold">¥9.9</div>
+                  <div class="text-[10px] text-gray-400 line-through">¥12</div>
+                </div>
+                <div class="bg-orange/5 rounded-lg p-2 text-center">
+                  <div class="text-[10px] text-gray-500">50 度能量包</div>
+                  <div class="num text-orange font-bold">¥45</div>
+                  <div class="text-[10px] text-gray-400 line-through">¥60</div>
+                </div>
+                <div class="bg-orange/5 rounded-lg p-2 text-center">
+                  <div class="text-[10px] text-gray-500">100 度能量包</div>
+                  <div class="num text-orange font-bold">¥85</div>
+                  <div class="text-[10px] text-gray-400 line-through">¥120</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 优惠券 -->
+            <div class="card p-4 mb-3">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-bold text-sm">我的优惠券</span>
+                <span class="text-xs text-brand">查看全部</span>
+              </div>
+              <div class="space-y-2">
+                <div class="coupon rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-center pr-3 border-r border-dashed border-orange/30">
+                    <div class="num text-2xl text-orange font-bold">¥5</div>
+                    <div class="text-[10px] text-gray-500">满 30 可用</div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">充电满减券</div>
+                    <div class="text-[10px] text-gray-500 mt-0.5">全运营商可用 · 6/30 过期</div>
+                  </div>
+                  <button class="px-3 py-1 bg-orange text-white text-xs rounded-full">立即使用</button>
+                </div>
+                <div class="coupon rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-center pr-3 border-r border-dashed border-orange/30">
+                    <div class="num text-2xl text-orange font-bold">8<span class="text-xs">折</span></div>
+                    <div class="text-[10px] text-gray-500">单笔可用</div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">PLUS 专享折扣</div>
+                    <div class="text-[10px] text-gray-500 mt-0.5">限 PLUS 站点 · 6/30 过期</div>
+                  </div>
+                  <button class="px-3 py-1 bg-orange text-white text-xs rounded-full">立即使用</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 活动入口 -->
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div class="card p-3">
+                <iconify-icon icon="ph:gift-thin" class="text-brand text-2xl"></iconify-icon>
+                <div class="font-semibold text-sm mt-1">邀请有礼</div>
+                <div class="text-[10px] text-gray-500">邀好友得 ¥10 券</div>
+              </div>
+              <div class="card p-3">
+                <iconify-icon icon="ph:leaf-thin" class="text-green text-2xl"></iconify-icon>
+                <div class="font-semibold text-sm mt-1">碳积分</div>
+                <div class="text-[10px] text-gray-500">已累计 286.5kg</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== View 3: 扫码充电 ========== -->
+        <div class="view" data-view="scan">
+          <div class="bg-ink text-white px-4 pt-3 pb-4">
+            <div class="flex items-center justify-between mb-2">
+              <button><iconify-icon icon="ph:arrow-left-thin" class="text-2xl"></iconify-icon></button>
+              <div class="font-bold">扫码充电</div>
+              <button><iconify-icon icon="ph:flashlight-thin" class="text-2xl"></iconify-icon></button>
+            </div>
+          </div>
+
+          <!-- 取景框 -->
+          <div class="bg-ink relative" style="height: 480px;">
+            <!-- 模拟相机预览 -->
+            <div class="absolute inset-0 opacity-60" style="background:
+              radial-gradient(circle at 30% 40%, rgba(255,255,255,0.05), transparent 60%),
+              radial-gradient(circle at 70% 60%, rgba(255,255,255,0.05), transparent 60%);"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="scan-frame">
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+                <div class="scan-line"></div>
+              </div>
+            </div>
+            <div class="absolute top-4 left-0 right-0 text-center text-white/80 text-xs">
+              将充电桩上的二维码对准框内
+            </div>
+            <div class="absolute bottom-32 left-0 right-0 text-center text-white/60 text-xs">
+              <iconify-icon icon="ph:qrcode-code-thin" class="text-3xl"></iconify-icon>
+            </div>
+          </div>
+
+          <!-- 底部操作 -->
+          <div class="bg-white pt-4 pb-2 px-4">
+            <div class="flex justify-around">
+              <button class="flex flex-col items-center gap-1 text-gray-700">
+                <div class="w-12 h-12 bg-mist rounded-full flex items-center justify-center">
+                  <iconify-icon icon="ph:keyboard-thin" class="text-xl"></iconify-icon>
+                </div>
+                <span class="text-[10px]">输入桩号</span>
+              </button>
+              <button class="flex flex-col items-center gap-1 text-gray-700">
+                <div class="w-12 h-12 bg-mist rounded-full flex items-center justify-center">
+                  <iconify-icon icon="ph:contactless-payment-thin" class="text-xl"></iconify-icon>
+                </div>
+                <span class="text-[10px]">NFC 感应</span>
+              </button>
+              <button class="flex flex-col items-center gap-1 text-gray-700">
+                <div class="w-12 h-12 bg-mist rounded-full flex items-center justify-center">
+                  <iconify-icon icon="ph:map-pin-thin" class="text-xl"></iconify-icon>
+                </div>
+                <span class="text-[10px]">附近桩</span>
+              </button>
+            </div>
+            <div class="text-center text-[10px] text-gray-400 mt-3">支持特来电 · 星星充电 · 云快充 · e充电</div>
+          </div>
+        </div>
+
+        <!-- ========== View 4: 充电中 ========== -->
+        <div class="view" data-view="charging">
+          <div class="bg-gradient-to-b from-orange to-orange/80 text-white px-4 pt-4 pb-6">
+            <div class="flex items-center justify-between mb-6">
+              <button><iconify-icon icon="ph:arrow-left-thin" class="text-2xl"></iconify-icon></button>
+              <div class="text-center">
+                <div class="font-bold">充电中</div>
+                <div class="text-xs opacity-80">特来电 · 西湖文化中心站 · A03</div>
+              </div>
+              <button><iconify-icon icon="ph:gear-six-thin" class="text-xl"></iconify-icon></button>
+            </div>
+
+            <!-- 进度环 -->
+            <div class="flex justify-center mb-4">
+              <div class="relative w-56 h-56">
+                <svg class="charge-ring w-full h-full" viewBox="0 0 200 200">
+                  <circle cx="100" cy="100" r="86" stroke="rgba(255,255,255,0.2)" stroke-width="10"/>
+                  <circle cx="100" cy="100" r="86" stroke="#fff" stroke-width="10"
+                          stroke-dasharray="540" stroke-dashoffset="216"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
+                  <div class="text-xs opacity-80">已充电量</div>
+                  <div class="num text-5xl font-bold">23.4</div>
+                  <div class="text-xs opacity-80">kWh / 60%</div>
+                  <div class="mt-2 px-3 py-0.5 bg-white/20 rounded-full text-xs">预计 18 分钟后充满</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 -mt-2">
+            <!-- 实时参数 -->
+            <div class="grid grid-cols-3 gap-3 mb-3">
+              <div class="card p-3 text-center">
+                <iconify-icon icon="ph:lightning-fill" class="text-orange text-lg"></iconify-icon>
+                <div class="num text-lg font-bold text-ink">48.2</div>
+                <div class="text-[10px] text-gray-500">实时功率 kW</div>
+              </div>
+              <div class="card p-3 text-center">
+                <iconify-icon icon="ph:clock-fill" class="text-brand text-lg"></iconify-icon>
+                <div class="num text-lg font-bold text-ink">0:38</div>
+                <div class="text-[10px] text-gray-500">已用时长</div>
+              </div>
+              <div class="card p-3 text-center">
+                <iconify-icon icon="ph:currency-cny-fill" class="text-green text-lg"></iconify-icon>
+                <div class="num text-lg font-bold text-ink">28.08</div>
+                <div class="text-[10px] text-gray-500">已产生费用 ¥</div>
+              </div>
+            </div>
+
+            <!-- 充电曲线 -->
+            <div class="card p-4 mb-3">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-bold text-sm">充电曲线</span>
+                <span class="text-[10px] text-gray-400">实时更新</span>
+              </div>
+              <svg viewBox="0 0 300 100" class="w-full h-24">
+                <defs>
+                  <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#FA8C16" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="#FA8C16" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 80 Q 30 75, 50 60 T 100 40 T 150 30 T 200 25 T 250 22 L 300 20 L 300 100 L 0 100 Z" fill="url(#cg)"/>
+                <path d="M0 80 Q 30 75, 50 60 T 100 40 T 150 30 T 200 25 T 250 22 L 300 20" stroke="#FA8C16" stroke-width="2" fill="none"/>
+                <circle cx="250" cy="22" r="4" fill="#FA8C16"/>
+              </svg>
+              <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+                <span>0min</span><span>10min</span><span>20min</span><span>30min</span><span>40min</span>
+              </div>
+            </div>
+
+            <!-- 充电模式 -->
+            <div class="card p-4 mb-3">
+              <div class="text-xs text-gray-500 mb-2">当前充电模式</div>
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-sm">充满为止</span>
+                <button class="text-xs text-brand">切换模式 →</button>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <span class="px-2 py-1 bg-mist text-xs rounded text-gray-600">按金额</span>
+                <span class="px-2 py-1 bg-mist text-xs rounded text-gray-600">按电量</span>
+                <span class="px-2 py-1 bg-orange/10 text-orange text-xs rounded">充满为止</span>
+              </div>
+            </div>
+
+            <!-- 碳积分 -->
+            <div class="card p-3 mb-3 flex items-center gap-3 bg-green/5">
+              <iconify-icon icon="ph:leaf-fill" class="text-green text-2xl"></iconify-icon>
+              <div class="flex-1">
+                <div class="text-sm font-semibold">本次减少碳排放 14.04kg</div>
+                <div class="text-[10px] text-gray-500">累计 286.5kg · 相当于种 1.4 棵树</div>
+              </div>
+            </div>
+
+            <!-- 停止充电 -->
+            <button class="w-full py-3 bg-red text-white rounded-xl font-bold text-sm shadow-lg shadow-red/30">
+              停止充电
+            </button>
+            <div class="text-center text-[10px] text-gray-400 mt-2">点击后需二次确认</div>
+          </div>
+        </div>
+
+        <!-- ========== View 5: 我的订单 ========== -->
+        <div class="view" data-view="orders">
+          <div class="bg-white px-4 pt-3 pb-3 sticky top-0 z-10">
+            <div class="flex items-center justify-between mb-3">
+              <div class="font-bold text-lg">我的订单</div>
+              <iconify-icon icon="ph:magnifying-glass-thin" class="text-xl text-gray-700"></iconify-icon>
+            </div>
+            <div class="flex gap-5 text-sm border-b border-gray-100">
+              <span class="pb-2 border-b-2 border-brand text-brand font-semibold">充电中</span>
+              <span class="pb-2 text-gray-500">已完成</span>
+              <span class="pb-2 text-gray-500">已退款</span>
+              <span class="pb-2 text-gray-500">全部</span>
+            </div>
+          </div>
+
+          <div class="px-4 pt-3">
+            <!-- 充电中订单 -->
+            <div class="card p-4 mb-3 border-l-4 border-orange">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="dot bg-orange"></span>
+                  <span class="font-semibold text-sm">特来电 · 西湖文化中心站</span>
+                </div>
+                <span class="text-xs text-orange">充电中</span>
+              </div>
+              <div class="text-xs text-gray-500 mb-3">A03 桩 · 6/17 14:32 开始</div>
+              <div class="grid grid-cols-3 gap-2 mb-3">
+                <div>
+                  <div class="num text-lg font-bold">23.4</div>
+                  <div class="text-[10px] text-gray-500">电量 kWh</div>
+                </div>
+                <div>
+                  <div class="num text-lg font-bold">48.2</div>
+                  <div class="text-[10px] text-gray-500">功率 kW</div>
+                </div>
+                <div>
+                  <div class="num text-lg font-bold">¥28.08</div>
+                  <div class="text-[10px] text-gray-500">费用</div>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="flex-1 py-2 bg-mist text-gray-700 text-xs rounded-md">查看详情</button>
+                <button class="flex-1 py-2 bg-brand text-white text-xs rounded-md">前往充电页</button>
+              </div>
+            </div>
+
+            <!-- 历史订单 -->
+            <div class="text-xs text-gray-400 mb-2 mt-4">本月订单</div>
+
+            <div class="card p-4 mb-3">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <div class="font-semibold text-sm mb-0.5">星星充电 · 黄龙万科中心</div>
+                  <div class="text-xs text-gray-500">6/16 09:20 · B05 桩 · 32 分钟</div>
+                </div>
+                <span class="text-xs text-green">已完成</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-gray-50">
+                <div class="text-xs text-gray-500">充电 18.6 kWh · 减碳 11.16kg</div>
+                <div class="num font-bold">¥22.32</div>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <button class="flex-1 py-1.5 text-xs border border-gray-200 rounded text-gray-700">开票</button>
+                <button class="flex-1 py-1.5 text-xs border border-gray-200 rounded text-gray-700">评价</button>
+                <button class="flex-1 py-1.5 text-xs border border-gray-200 rounded text-gray-700">再次充电</button>
+              </div>
+            </div>
+
+            <div class="card p-4 mb-3">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <div class="font-semibold text-sm mb-0.5">云快充 · 滨江宝龙广场</div>
+                  <div class="text-xs text-gray-500">6/14 21:08 · C12 桩 · 45 分钟</div>
+                </div>
+                <span class="text-xs text-green">已完成</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-gray-50">
+                <div class="text-xs text-gray-500">充电 28.2 kWh · 减碳 16.92kg</div>
+                <div class="num font-bold">¥33.84</div>
+              </div>
+            </div>
+
+            <div class="card p-4 mb-3">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <div class="font-semibold text-sm mb-0.5">e充电 · 拱墅万达</div>
+                  <div class="text-xs text-gray-500">6/12 18:30 · D02 桩 · 28 分钟</div>
+                </div>
+                <span class="text-xs text-green">已完成</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-gray-50">
+                <div class="text-xs text-gray-500">充电 16.5 kWh · 减碳 9.9kg</div>
+                <div class="num font-bold">¥19.80</div>
+              </div>
+            </div>
+
+            <!-- 月度账单 -->
+            <div class="card p-4 mb-3 bg-gradient-to-br from-brand to-brandd text-white">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <div class="text-xs opacity-80">6 月充电账单</div>
+                  <div class="num text-2xl font-bold mt-1">¥186.45</div>
+                </div>
+                <iconify-icon icon="ph:file-text-thin" class="text-3xl opacity-60"></iconify-icon>
+              </div>
+              <button class="mt-2 px-3 py-1 bg-white/20 rounded-full text-xs">一键开发票</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== View 6: 个人中心 ========== -->
+        <div class="view" data-view="me">
+          <!-- 顶部 -->
+          <div class="bg-gradient-to-br from-brand to-brandd text-white px-4 pt-4 pb-6 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/5"></div>
+            <div class="flex justify-between items-start relative">
+              <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">李</div>
+                <div>
+                  <div class="font-bold text-lg flex items-center gap-2">李*然 <span class="px-1.5 py-0.5 bg-orange/80 text-[10px] rounded">PLUS 银卡</span></div>
+                  <div class="text-xs opacity-80 mt-0.5">138****8856</div>
+                </div>
+              </div>
+              <button><iconify-icon icon="ph:gear-six-thin" class="text-xl"></iconify-icon></button>
+            </div>
+
+            <!-- 钱包 -->
+            <div class="grid grid-cols-4 gap-2 mt-5 text-center">
+              <div>
+                <div class="num text-lg font-bold">¥86.20</div>
+                <div class="text-[10px] opacity-80">余额</div>
+              </div>
+              <div>
+                <div class="num text-lg font-bold">7</div>
+                <div class="text-[10px] opacity-80">卡券</div>
+              </div>
+              <div>
+                <div class="num text-lg font-bold">100<span class="text-[10px]">度</span></div>
+                <div class="text-[10px] opacity-80">能量包</div>
+              </div>
+              <div>
+                <div class="num text-lg font-bold">286.5</div>
+                <div class="text-[10px] opacity-80">碳积分</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 -mt-3">
+            <!-- 车辆管理 -->
+            <div class="card p-4 mb-3">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="ph:car-thin" class="text-brand text-lg"></iconify-icon>
+                  <span class="font-semibold text-sm">我的车辆</span>
+                </div>
+                <button class="text-xs text-brand">+ 添加</button>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg bg-mist flex items-center justify-center">
+                  <iconify-icon icon="ph:car-profile-thin" class="text-2xl text-brand"></iconify-icon>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-sm">浙 A·8F***6 <span class="text-[10px] text-orange ml-1">主车</span></div>
+                  <div class="text-xs text-gray-500">比亚迪汉 EV · 64kWh · 国标</div>
+                  <div class="flex items-center gap-1 mt-1">
+                    <span class="text-[10px] text-gray-500">电池健康度</span>
+                    <span class="num text-xs text-green font-bold">98%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 常用工具 -->
+            <div class="card p-4 mb-3">
+              <div class="font-semibold text-sm mb-3">常用工具</div>
+              <div class="grid grid-cols-4 gap-3">
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-brand">
+                    <iconify-icon icon="ph:clipboard-text-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">我的订单</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-orange">
+                    <iconify-icon icon="ph:invoice-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">发票管理</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-green">
+                    <iconify-icon icon="ph:wallet-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">充值</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-brand">
+                    <iconify-icon icon="ph:contactless-payment-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">即插即充</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-orange">
+                    <iconify-icon icon="ph:bookmark-simple-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">收藏电站</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-brand">
+                    <iconify-icon icon="ph:headset-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">客服中心</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-green">
+                    <iconify-icon icon="ph:shield-check-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">电池卫士</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-xl bg-mist flex items-center justify-center text-red">
+                    <iconify-icon icon="ph:warning-circle-thin" class="text-xl"></iconify-icon>
+                  </div>
+                  <span class="text-[10px] text-gray-700">无法拔枪</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 设置 -->
+            <div class="card overflow-hidden mb-3">
+              <div class="px-4 py-3 flex items-center justify-between border-b border-gray-50">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="ph:bell-thin" class="text-gray-700"></iconify-icon>
+                  <span class="text-sm">消息通知</span>
+                </div>
+                <iconify-icon icon="ph:caret-right-thin" class="text-gray-400"></iconify-icon>
+              </div>
+              <div class="px-4 py-3 flex items-center justify-between border-b border-gray-50">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="ph:handshake-thin" class="text-gray-700"></iconify-icon>
+                  <span class="text-sm">商务合作</span>
+                </div>
+                <iconify-icon icon="ph:caret-right-thin" class="text-gray-400"></iconify-icon>
+              </div>
+              <div class="px-4 py-3 flex items-center justify-between border-b border-gray-50">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="ph:chat-dots-thin" class="text-gray-700"></iconify-icon>
+                  <span class="text-sm">意见反馈</span>
+                </div>
+                <iconify-icon icon="ph:caret-right-thin" class="text-gray-400"></iconify-icon>
+              </div>
+              <div class="px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="ph:info-thin" class="text-gray-700"></iconify-icon>
+                  <span class="text-sm">关于 Charge+</span>
+                </div>
+                <span class="text-xs text-gray-400">v1.5.0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <div class="tab-item active" data-tab="home">
+          <iconify-icon icon="ph:map-trifold-thin" class="ti"></iconify-icon>
+          <span>首页</span>
+        </div>
+        <div class="tab-item" data-tab="deals">
+          <iconify-icon icon="ph:tag-thin" class="ti"></iconify-icon>
+          <span>省钱</span>
+        </div>
+        <div class="tab-scan">
+          <div class="scan-btn"><iconify-icon icon="ph:scan-smile-thin"></iconify-icon></div>
+          <span class="text-[10px] text-gray-700 mt-1">扫码</span>
+        </div>
+        <div class="tab-item" data-tab="orders">
+          <iconify-icon icon="ph:list-checks-thin" class="ti"></iconify-icon>
+          <span>订单</span>
+        </div>
+        <div class="tab-item" data-tab="me">
+          <iconify-icon icon="ph:user-thin" class="ti"></iconify-icon>
+          <span>我的</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 视图切换
+  function switchView(viewName) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.querySelector(`.view[data-view="${viewName}"]`);
+    if (target) target.classList.add('active');
+
+    // 同步 tab 状态
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    let tabMap = { home: 'home', deals: 'deals', orders: 'orders', me: 'me', scan: 'home', charging: 'orders' };
+    const tab = tabMap[viewName];
+    if (tab) {
+      const tabEl = document.querySelector(`.tab-item[data-tab="${tab}"]`);
+      if (tabEl) tabEl.classList.add('active');
+    }
+
+    // 同步右上角按钮
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.mode-btn[data-view="${viewName}"]`);
+    if (btn) btn.classList.add('active');
+
+    // 滚动到顶部
+    document.getElementById('content').scrollTop = 0;
+  }
+
+  // 模式按钮点击
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  // Tab 点击
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    tab.addEventListener('click', () => switchView(tab.dataset.tab));
+  });
+
+  // 扫码按钮
+  document.querySelector('.tab-scan').addEventListener('click', () => switchView('scan'));
+</script>
+
+</body>
+</html>

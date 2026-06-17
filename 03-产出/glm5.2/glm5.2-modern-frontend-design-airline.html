@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星空航空 — 每一次起飞，都是一次全新的抵达</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ═══ Step 0 — Design Token System (OKLCH, no hex anywhere) ═══ */
+  :root {
+    /* COLORS — night-sky cinematic palette */
+    --bg:           oklch(7% 0.025 265);
+    --bg-2:         oklch(10% 0.030 270);
+    --surface:      oklch(13% 0.025 265);
+    --surface-up:   oklch(18% 0.030 265);
+    --fg:           oklch(97% 0.012 95);
+    --fg-muted:     oklch(68% 0.015 265);
+    --fg-dim:       oklch(46% 0.012 265);
+    --primary:      oklch(64% 0.220 280);
+    --primary-up:   oklch(70% 0.220 280);
+    --primary-2:    oklch(66% 0.210 305);
+    --accent:       oklch(78% 0.160 75);        /* warm gold for starlight */
+    --ok:           oklch(70% 0.180 155);
+    --warn:         oklch(78% 0.180 65);
+    --err:          oklch(64% 0.220 25);
+    --border:       oklch(24% 0.020 265);
+    --border-faint: oklch(17% 0.015 265);
+
+    /* TYPOGRAPHY */
+    --font:         'Inter', 'Noto Sans SC', system-ui, sans-serif;
+    --font-display: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    /* RADIUS */
+    --r-xs: 0.25rem; --r-sm: 0.5rem; --r: 0.75rem;
+    --r-lg: 1rem;    --r-xl: 1.5rem; --r-full: 9999px;
+
+    /* MOTION */
+    --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-fast: 150ms; --dur-base: 250ms; --dur-slow: 500ms;
+  }
+
+  /* color-scheme so form controls render dark */
+  :root { color-scheme: dark; }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Grain overlay (warmth layer) ── */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    z-index: 9999; pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* ── Liquid Glass (2026 standard surface) ── */
+  .liquid-glass {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.09) 0%, oklch(100% 0 0 / 0.02) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid oklch(100% 0 0 / 0.12);
+    box-shadow:
+      inset 0 1px 0 oklch(100% 0 0 / 0.15),
+      0 8px 32px oklch(0% 0 0 / 0.30);
+    border-radius: var(--r);
+  }
+  .liquid-glass:hover {
+    border-color: oklch(100% 0 0 / 0.18);
+    box-shadow:
+      inset 0 1px 0 oklch(100% 0 0 / 0.20),
+      0 12px 40px oklch(0% 0 0 / 0.35);
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .liquid-glass-strong {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.14) 0%, oklch(100% 0 0 / 0.04) 100%);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid oklch(100% 0 0 / 0.16);
+    box-shadow:
+      inset 0 1px 0 oklch(100% 0 0 / 0.22),
+      0 16px 48px oklch(0% 0 0 / 0.40);
+  }
+
+  /* ── Native scroll-driven reveal (no JS) ── */
+  .reveal {
+    animation: fade-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 28%;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal-scale {
+    animation: fade-scale linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+  @keyframes fade-scale {
+    from { opacity: 0; transform: scale(0.96) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Reading progress bar (scroll-driven) */
+  .progress-bar {
+    transform-origin: 0 50%;
+    animation: grow-x linear forwards;
+    animation-timeline: scroll(root);
+  }
+  @keyframes grow-x { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+
+  /* ── @starting-style for dialogs/modals ── */
+  .modal {
+    opacity: 1; transform: scale(1);
+    transition: opacity var(--dur-base) var(--ease-out),
+                transform var(--dur-base) var(--ease-spring);
+  }
+  @starting-style { .modal { opacity: 0; transform: scale(0.94); } }
+
+  /* ── View Transitions ── */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation-duration: var(--dur-slow);
+  }
+
+  /* ── prefers-reduced-motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* ── Marquee ── */
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  .animate-marquee { animation: marquee 32s linear infinite; }
+  .marquee-fade {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  }
+
+  /* ── Hero kinetic gradient mesh ── */
+  .hero-mesh {
+    position: absolute; inset: 0; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, oklch(64% 0.22 280 / 0.25), transparent 60%),
+      radial-gradient(ellipse 70% 60% at 85% 30%, oklch(66% 0.21 305 / 0.20), transparent 60%),
+      radial-gradient(ellipse 90% 60% at 50% 100%, oklch(78% 0.16 75 / 0.10), transparent 70%),
+      linear-gradient(180deg, oklch(7% 0.025 265) 0%, oklch(10% 0.030 270) 60%, var(--bg) 100%);
+  }
+  .starfield {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, oklch(100% 0 0 / 0.6), transparent),
+      radial-gradient(1px 1px at 80px 120px, oklch(100% 0 0 / 0.5), transparent),
+      radial-gradient(1.5px 1.5px at 160px 60px, oklch(100% 0 0 / 0.7), transparent),
+      radial-gradient(1px 1px at 240px 200px, oklch(100% 0 0 / 0.4), transparent),
+      radial-gradient(1px 1px at 320px 80px, oklch(100% 0 0 / 0.6), transparent),
+      radial-gradient(1.5px 1.5px at 400px 260px, oklch(100% 0 0 / 0.5), transparent);
+    background-size: 450px 320px;
+    opacity: 0.55;
+    animation: drift 80s linear infinite;
+  }
+  @keyframes drift {
+    from { background-position: 0 0 }
+    to   { background-position: 450px 320px }
+  }
+
+  /* ── Kinetic headline gradient text ── */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Display typography ── */
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+  }
+
+  /* ── Primary CTA with OKLCH glow ── */
+  .btn-primary {
+    background: var(--primary);
+    color: oklch(98% 0 0);
+    box-shadow:
+      0 0 24px oklch(64% 0.22 280 / 0.40),
+      0 0 48px oklch(64% 0.22 280 / 0.15),
+      inset 0 1px 0 oklch(100% 0 0 / 0.20);
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .btn-primary:hover {
+    background: var(--primary-up);
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 32px oklch(64% 0.22 280 / 0.55),
+      0 0 64px oklch(64% 0.22 280 / 0.22);
+  }
+  .btn-ghost {
+    border: 1px solid oklch(100% 0 0 / 0.15);
+    color: var(--fg);
+    transition: all var(--dur-base) var(--ease-out);
+  }
+  .btn-ghost:hover { border-color: oklch(100% 0 0 / 0.32); background: oklch(100% 0 0 / 0.04); }
+
+  /* ── Eyebrow pill animated dot ── */
+  .dot-pulse {
+    width: 8px; height: 8px; border-radius: var(--r-full);
+    background: var(--ok);
+    box-shadow: 0 0 12px oklch(70% 0.18 155 / 0.7);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1) }
+    50%      { opacity: 0.6; transform: scale(0.8) }
+  }
+
+  /* ── Bento card ── */
+  .bento {
+    background: linear-gradient(135deg, oklch(100% 0 0 / 0.05), oklch(100% 0 0 / 0.01));
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    backdrop-filter: blur(12px);
+    transition: all var(--dur-base) var(--ease-out);
+    position: relative; overflow: hidden;
+  }
+  .bento::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,0%), oklch(100% 0 0 / 0.06), transparent 50%);
+    opacity: 0; transition: opacity var(--dur-base);
+    pointer-events: none;
+  }
+  .bento:hover { border-color: oklch(100% 0 0 / 0.16); transform: translateY(-2px); }
+  .bento:hover::before { opacity: 1; }
+
+  /* ── Section divider ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, oklch(100% 0 0 / 0.15), transparent);
+  }
+
+  /* ── Destination image placeholders (CSS art, no external images) ── */
+  .dest-art {
+    border-radius: var(--r-lg);
+    position: relative; overflow: hidden;
+    background: var(--surface);
+  }
+  .dest-sanya    { background: linear-gradient(135deg, oklch(55% 0.18 220), oklch(75% 0.16 200), oklch(82% 0.14 80)); }
+  .dest-chengdu  { background: linear-gradient(135deg, oklch(40% 0.16 145), oklch(58% 0.18 150), oklch(72% 0.15 90)); }
+  .dest-tokyo    { background: linear-gradient(135deg, oklch(70% 0.20 340), oklch(72% 0.16 0), oklch(82% 0.10 280)); }
+  .dest-dubai    { background: linear-gradient(135deg, oklch(70% 0.18 65), oklch(78% 0.15 50), oklch(60% 0.10 280)); }
+  .dest-paris    { background: linear-gradient(135deg, oklch(40% 0.18 285), oklch(60% 0.18 305), oklch(78% 0.12 340)); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--r-full); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--surface-up); }
+
+  /* ── Mobile nav ── */
+  .mobile-menu { display: none; }
+  @media (max-width: 768px) {
+    .desktop-nav { display: none; }
+    .mobile-menu { display: flex; }
+  }
+
+  /* Focus ring */
+  *:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--r-xs);
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Scroll progress bar (top of page, scroll-driven) ── -->
+<div class="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-transparent">
+  <div class="progress-bar h-full" style="background: linear-gradient(to right, var(--primary), var(--primary-2), var(--accent));"></div>
+</div>
+
+<!-- ════════════════ NAVBAR (fixed, liquid-glass) ════════════════ -->
+<nav class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 pt-4">
+  <div class="liquid-glass-strong max-w-7xl mx-auto px-5 py-3 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 0 16px oklch(64% 0.22 280 / 0.5);">
+        <i data-lucide="plane" class="w-5 h-5" style="color: oklch(98% 0 0);"></i>
+      </div>
+      <div class="flex flex-col leading-none">
+        <span class="font-semibold text-base tracking-tight">星空航空</span>
+        <span class="text-[10px] tracking-[0.2em] uppercase" style="color: var(--fg-muted);">Skystar</span>
+      </div>
+    </a>
+    <div class="desktop-nav hidden md:flex items-center gap-8 text-sm" style="color: var(--fg-muted);">
+      <a href="#search" class="hover:text-[var(--fg)] transition-colors">航班查询</a>
+      <a href="#destinations" class="hover:text-[var(--fg)] transition-colors">目的地</a>
+      <a href="#service" class="hover:text-[var(--fg)] transition-colors">服务与礼遇</a>
+      <a href="#member" class="hover:text-[var(--fg)] transition-colors">常旅客</a>
+      <a href="#about" class="hover:text-[var(--fg)] transition-colors">关于我们</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="hidden sm:inline-flex btn-ghost rounded-full px-4 py-2 text-sm">登录</button>
+      <button class="btn-primary rounded-full px-5 py-2 text-sm font-semibold">立即预订</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════ HERO — Cinematic gradient mesh + kinetic typography ════════════════ -->
+<section class="relative min-h-screen flex flex-col overflow-hidden">
+  <div class="hero-mesh"></div>
+  <div class="starfield"></div>
+
+  <!-- Content -->
+  <div class="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-32 pb-20 text-center max-w-5xl mx-auto">
+
+    <!-- Eyebrow pill -->
+    <div class="liquid-glass rounded-full px-4 py-1.5 inline-flex items-center gap-2 mb-8 reveal-scale">
+      <span class="dot-pulse"></span>
+      <span class="text-sm font-medium" style="color: oklch(85% 0.01 95);">2026 夏季航线季 · 杭州 ⇄ 全球 47 个国际目的地</span>
+    </div>
+
+    <!-- Headline (kinetic, gradient, oversized) -->
+    <h1 class="display reveal-scale font-bold mb-6" style="font-size: clamp(3rem, 1rem + 7vw, 7.5rem);">
+      <span class="block" style="color: var(--fg);">每一次起飞</span>
+      <span class="block text-gradient">都是一次全新的抵达</span>
+    </h1>
+
+    <!-- Subhead -->
+    <p class="reveal max-w-2xl mx-auto text-lg leading-8 mb-10" style="color: var(--fg-muted);">
+      星空航空成立于 2008 年，机队规模 186 架，平均机龄仅 5.2 年。航线覆盖国内 82 座城市与亚太、欧洲 47 个国际目的地，每日执飞超过 600 个航班，连续 16 年保持零重大事故安全纪录。
+    </p>
+
+    <!-- CTA row -->
+    <div class="reveal flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
+      <button class="btn-primary rounded-full px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2">
+        <i data-lucide="search" class="w-4 h-4"></i>
+        搜索航班
+      </button>
+      <button class="btn-ghost rounded-full px-8 py-3.5 text-sm font-medium inline-flex items-center gap-2">
+        探索目的地
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Social proof -->
+    <div class="reveal flex items-center justify-center gap-4 flex-wrap">
+      <div class="flex -space-x-3">
+        <div class="w-8 h-8 rounded-full border-2" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); border-color: var(--bg);"></div>
+        <div class="w-8 h-8 rounded-full border-2" style="background: linear-gradient(135deg, var(--accent), var(--primary)); border-color: var(--bg);"></div>
+        <div class="w-8 h-8 rounded-full border-2" style="background: linear-gradient(135deg, var(--primary-2), var(--accent)); border-color: var(--bg);"></div>
+        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold" style="background: var(--surface-up); border-color: var(--bg); color: var(--fg);">+5k</div>
+      </div>
+      <div class="text-sm" style="color: var(--fg-muted);">
+        服务超过 <span class="font-semibold" style="color: var(--fg);">5,200 万</span> 位旅客
+        <span class="mx-1.5">·</span>
+        <span style="color: var(--accent);">★★★★★</span>
+        <span class="ml-1">4.9 / 5.0 旅客满意度</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Flight Search Card (liquid glass, anchor of search section) ═══ -->
+  <div id="search" class="relative z-10 px-4 sm:px-6 lg:px-8 pb-16 -mt-8">
+    <div class="liquid-glass-strong max-w-6xl mx-auto p-2 rounded-[var(--r-xl)]">
+      <!-- Tabs -->
+      <div class="flex items-center gap-1 p-2 pb-3">
+        <button class="rounded-full px-4 py-2 text-sm font-medium" style="background: var(--primary); color: oklch(98% 0 0);">往返</button>
+        <button class="rounded-full px-4 py-2 text-sm" style="color: var(--fg-muted);">单程</button>
+        <button class="rounded-full px-4 py-2 text-sm" style="color: var(--fg-muted);">多程</button>
+        <div class="ml-auto hidden sm:flex items-center gap-2 text-xs" style="color: var(--fg-dim);">
+          <i data-lucide="ticket" class="w-3.5 h-3.5"></i>
+          里程兑换
+        </div>
+      </div>
+      <!-- Fields -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+        <div class="md:col-span-3 rounded-xl p-4 text-left" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+          <div class="text-[11px] uppercase tracking-widest mb-1" style="color: var(--fg-dim);">出发</div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl font-bold">杭州</span>
+            <span class="text-xs" style="color: var(--fg-muted);">HGH · 萧山</span>
+          </div>
+        </div>
+        <div class="md:col-span-1 flex items-center justify-center">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background: oklch(100% 0 0 / 0.05); border: 1px solid var(--border-faint);">
+            <i data-lucide="arrow-left-right" class="w-4 h-4" style="color: var(--fg-muted);"></i>
+          </div>
+        </div>
+        <div class="md:col-span-3 rounded-xl p-4 text-left" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+          <div class="text-[11px] uppercase tracking-widest mb-1" style="color: var(--fg-dim);">到达</div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl font-bold">东京</span>
+            <span class="text-xs" style="color: var(--fg-muted);">NRT · 成田</span>
+          </div>
+        </div>
+        <div class="md:col-span-2 rounded-xl p-4 text-left" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+          <div class="text-[11px] uppercase tracking-widest mb-1" style="color: var(--fg-dim);">出发日期</div>
+          <div class="text-base font-semibold">7月 18 周六</div>
+        </div>
+        <div class="md:col-span-2 rounded-xl p-4 text-left" style="background: oklch(100% 0 0 / 0.04); border: 1px solid var(--border-faint);">
+          <div class="text-[11px] uppercase tracking-widest mb-1" style="color: var(--fg-dim);">返程日期</div>
+          <div class="text-base font-semibold">7月 25 周六</div>
+        </div>
+        <div class="md:col-span-1">
+          <button class="btn-primary w-full h-full rounded-xl flex items-center justify-center">
+            <i data-lucide="search" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Quick chips -->
+      <div class="flex flex-wrap items-center gap-2 px-2 pt-4">
+        <span class="text-xs" style="color: var(--fg-dim);">舱位</span>
+        <span class="rounded-full px-3 py-1 text-xs font-medium" style="background: oklch(100% 0 0 / 0.06); border: 1px solid var(--border-faint);">经济舱</span>
+        <span class="rounded-full px-3 py-1 text-xs" style="color: var(--fg-muted); background: transparent;">商务舱</span>
+        <span class="rounded-full px-3 py-1 text-xs" style="color: var(--fg-muted); background: transparent;">头等舱</span>
+        <span class="mx-2 text-xs" style="color: var(--fg-dim);">·</span>
+        <span class="text-xs" style="color: var(--fg-dim);">乘客</span>
+        <span class="rounded-full px-3 py-1 text-xs font-medium" style="background: oklch(100% 0 0 / 0.06); border: 1px solid var(--border-faint);">1 成人</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ LOGO MARQUEE ════════════════ -->
+<section class="py-10 overflow-hidden marquee-fade">
+  <div class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="text-xs tracking-[0.25em] uppercase text-center" style="color: var(--fg-dim);">合作航司与联盟伙伴</div>
+  </div>
+  <div class="flex w-max animate-marquee">
+    <div class="flex items-center gap-3 pr-3">
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">星空联盟 Star Alliance</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Lufthansa</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">ANA 全日空</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Singapore Airlines</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Thai Airways</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Air France</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Emirates</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">KLM 荷兰皇家</span>
+    </div>
+    <div class="flex items-center gap-3 pr-3" aria-hidden="true">
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">星空联盟 Star Alliance</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Lufthansa</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">ANA 全日空</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Singapore Airlines</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Thai Airways</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Air France</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">Emirates</span>
+      <span class="liquid-glass rounded-full px-5 py-2 text-sm" style="color: var(--fg-muted);">KLM 荷兰皇家</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ WHY CHOOSE SKYSTAR — Bento grid ════════════════ -->
+<section class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Section header -->
+    <div class="max-w-2xl mb-14 reveal">
+      <div class="text-xs tracking-[0.25em] uppercase mb-4" style="color: var(--primary);">Why Skystar Airlines</div>
+      <h2 class="display font-bold mb-5" style="font-size: clamp(2rem, 1rem + 3vw, 3.5rem); color: var(--fg);">
+        为什么选择<span class="text-gradient">星空航空</span>
+      </h2>
+      <p class="text-lg leading-8" style="color: var(--fg-muted);">
+        从机队到餐食，从数字化到可持续承诺——每一个细节都经过反复打磨，让每一段旅程都值得期待。
+      </p>
+    </div>
+
+    <!-- Bento grid: asymmetric, varied sizes -->
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 auto-rows-[180px]">
+
+      <!-- Card 1 — large feature: Cabin experience -->
+      <div class="bento md:col-span-3 md:row-span-2 p-7 flex flex-col justify-between reveal-scale">
+        <div>
+          <div class="w-11 h-11 rounded-lg flex items-center justify-center mb-5" style="background: oklch(64% 0.22 280 / 0.15); border: 1px solid oklch(64% 0.22 280 / 0.25);">
+            <i data-lucide="armchair" class="w-5 h-5" style="color: var(--primary);"></i>
+          </div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: var(--fg-dim);">CABIN EXPERIENCE</div>
+          <h3 class="display text-2xl font-bold mb-3" style="color: var(--fg);">1-2-1 全通道直通平躺座椅</h3>
+          <p class="text-sm leading-7" style="color: var(--fg-muted);">
+            宽体机商务舱配备 17 英寸 4K 触控娱乐屏、降噪耳机与定制寝具。经济舱座椅间距行业领先，10 英寸个人娱乐系统与 USB-C 快充，全程免费 Wi-Fi 覆盖。
+          </p>
+        </div>
+        <div class="flex items-center gap-6 mt-6 pt-6" style="border-top: 1px solid var(--border-faint);">
+          <div>
+            <div class="display text-2xl font-bold text-gradient">17"</div>
+            <div class="text-xs" style="color: var(--fg-dim);">4K 触控屏</div>
+          </div>
+          <div>
+            <div class="display text-2xl font-bold text-gradient">USB-C</div>
+            <div class="text-xs" style="color: var(--fg-dim);">快充接口</div>
+          </div>
+          <div>
+            <div class="display text-2xl font-bold text-gradient">Wi-Fi</div>
+            <div class="text-xs" style="color: var(--fg-dim);">全程免费</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 — Safety -->
+      <div class="bento md:col-span-3 p-6 flex flex-col justify-between reveal-scale">
+        <div class="flex items-start justify-between">
+          <div class="w-11 h-11 rounded-lg flex items-center justify-center" style="background: oklch(70% 0.18 155 / 0.15); border: 1px solid oklch(70% 0.18 155 / 0.25);">
+            <i data-lucide="shield-check" class="w-5 h-5" style="color: var(--ok);"></i>
+          </div>
+          <div class="display text-3xl font-bold" style="color: var(--ok);">16<span class="text-base ml-1" style="color: var(--fg-dim);">年</span></div>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: var(--fg-dim);">SAFETY FIRST</div>
+          <h3 class="display text-lg font-bold mb-2" style="color: var(--fg);">零重大事故安全纪录</h3>
+          <p class="text-sm leading-6" style="color: var(--fg-muted);">
+            机长团队平均飞行经验 9,800 小时，全机队配备波音 787 与空客 A320neo，严格执行 IOSA 国际安全审计。
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 3 — Global network -->
+      <div class="bento md:col-span-3 p-6 flex flex-col justify-between reveal-scale">
+        <div class="flex items-start justify-between">
+          <div class="w-11 h-11 rounded-lg flex items-center justify-center" style="background: oklch(66% 0.21 305 / 0.15); border: 1px solid oklch(66% 0.21 305 / 0.25);">
+            <i data-lucide="globe" class="w-5 h-5" style="color: var(--primary-2);"></i>
+          </div>
+          <div class="display text-3xl font-bold" style="color: var(--primary-2);">190<span class="text-base ml-1" style="color: var(--fg-dim);">城市</span></div>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: var(--fg-dim);">GLOBAL NETWORK</div>
+          <h3 class="display text-lg font-bold mb-2" style="color: var(--fg);">覆盖全球 190 个目的地</h3>
+          <p class="text-sm leading-6" style="color: var(--fg-muted);">
+            与 28 家航司代码共享，与星空联盟共同构建覆盖五大洲的出行网络，让每一段旅程无缝衔接。
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 4 — Dining -->
+      <div class="bento md:col-span-2 p-6 flex flex-col justify-between reveal-scale">
+        <div class="w-11 h-11 rounded-lg flex items-center justify-center" style="background: oklch(78% 0.16 75 / 0.15); border: 1px solid oklch(78% 0.16 75 / 0.25);">
+          <i data-lucide="utensils" class="w-5 h-5" style="color: var(--accent);"></i>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: var(--fg-dim);">IN-FLIGHT DINING</div>
+          <h3 class="display text-lg font-bold mb-2" style="color: var(--fg);">云端匠心餐饮</h3>
+          <p class="text-sm leading-6" style="color: var(--fg-muted);">
+            知名主厨联名菜单，融合东方哲学与现代烹饪，节假日特别航班提供限定节令料理。
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 5 — Digital -->
+      <div class="bento md:col-span-2 p-6 flex flex-col justify-between reveal-scale">
+        <div class="w-11 h-11 rounded-lg flex items-center justify-center" style="background: oklch(64% 0.22 280 / 0.15); border: 1px solid oklch(64% 0.22 280 / 0.25);">
+          <i data-lucide="smartphone" class="w-5 h-5" style="color: var(--primary);"></i>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: var(--fg-dim);">DIGITAL SERVICE</div>
+          <h3 class="display text-lg font-bold mb-2" style="color: var(--fg);">无纸化全流程</h3>
+          <p class="text-sm leading-6" style="color: var(--fg-muted);">
+            一键购票、选座、值机、登机；智能客服"星星"7×24 小时四语交互；18 分钟平均流程时间。
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 6 — Sustainability -->
+      <div class="bento md:col-span-2 p-6 flex flex-col justify-between reveal-scale">
+        <div class="w-11 h-11 rounded-lg flex items-center justify-center" style="background: oklch(70% 0.18 155 / 0.15); border: 1px solid oklch(70% 0.18 155 / 0.25);">
+          <i data-lucide="leaf" class="w-5 h-5" style="color: var(--ok);"></i>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: var(--fg-dim);">SUSTAINABILITY</div>
+          <h3 class="display text-lg font-bold mb-2" style="color: var(--fg);">2035 碳排下降 40%</h3>
+          <p class="text-sm leading-6" style="color: var(--fg-muted);">
+            加入 CORSIA 国际碳抵消机制，新一代节能发动机，三大基地机场地面车辆全面电动化。
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ PROMO BANNER ════════════════ -->
+<section class="py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto reveal-scale">
+    <div class="liquid-glass-strong rounded-[var(--r-xl)] p-8 md:p-12 relative overflow-hidden">
+      <!-- Decorative gradient -->
+      <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full" style="background: radial-gradient(circle, oklch(78% 0.16 75 / 0.18), transparent 70%); filter: blur(60px);"></div>
+      <div class="absolute -bottom-32 -left-32 w-96 h-96 rounded-full" style="background: radial-gradient(circle, oklch(64% 0.22 280 / 0.15), transparent 70%); filter: blur(60px);"></div>
+
+      <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-5 text-xs font-semibold" style="background: oklch(78% 0.16 75 / 0.15); color: var(--accent); border: 1px solid oklch(78% 0.16 75 / 0.25);">
+            <i data-lucide="zap" class="w-3 h-3"></i>
+            限时 · 夏季出行季
+          </div>
+          <h3 class="display font-bold mb-4" style="font-size: clamp(1.75rem, 1rem + 2vw, 2.5rem); color: var(--fg);">
+            特惠机票开抢
+          </h3>
+          <div class="flex flex-wrap gap-6 text-sm" style="color: var(--fg-muted);">
+            <span>杭州 → 三亚 <span class="font-bold text-lg ml-1" style="color: var(--accent);">¥399</span> 起</span>
+            <span>杭州 → 大阪 <span class="font-bold text-lg ml-1" style="color: var(--accent);">¥1,299</span> 起</span>
+            <span>杭州 → 伦敦 <span class="font-bold text-lg ml-1" style="color: var(--accent);">¥3,899</span> 起</span>
+          </div>
+          <p class="text-xs mt-4" style="color: var(--fg-dim);">优惠有效期至 2026 年 6 月 30 日，数量有限，先订先得</p>
+        </div>
+        <button class="btn-primary rounded-full px-7 py-3.5 text-sm font-semibold inline-flex items-center gap-2 whitespace-nowrap">
+          查看全部特惠
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FEATURED DESTINATIONS — Bento ════════════════ -->
+<section id="destinations" class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-12 gap-4 reveal">
+      <div>
+        <div class="text-xs tracking-[0.25em] uppercase mb-4" style="color: var(--primary);">Featured Destinations</div>
+        <h2 class="display font-bold" style="font-size: clamp(2rem, 1rem + 3vw, 3.5rem); color: var(--fg);">精选目的地</h2>
+      </div>
+      <a href="#" class="text-sm inline-flex items-center gap-2" style="color: var(--fg-muted);">
+        浏览全部 190 个目的地
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </a>
+    </div>
+
+    <!-- Bento destinations -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[260px]">
+      <!-- Sanya — large -->
+      <article class="dest-art dest-sanya md:col-span-2 md:row-span-2 p-7 flex flex-col justify-between reveal-scale group">
+        <div class="flex items-start justify-between">
+          <span class="liquid-glass rounded-full px-3 py-1 text-xs font-medium" style="color: var(--fg);">国内 · 海岛</span>
+          <span class="liquid-glass rounded-full px-3 py-1 text-xs font-semibold" style="color: var(--accent);">¥399 起</span>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest uppercase mb-2" style="color: oklch(95% 0.02 95); opacity: 0.75;">SANYA · 三亚</div>
+          <h3 class="display font-bold mb-3" style="font-size: clamp(1.5rem, 1rem + 2vw, 2.5rem); color: oklch(98% 0 0);">阳光与海浪的<br/>完美邂逅</h3>
+          <div class="flex items-center gap-4 text-xs" style="color: oklch(95% 0.02 95); opacity: 0.85;">
+            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i>最快 1h45m 直达</span>
+            <span class="inline-flex items-center gap-1"><i data-lucide="plane" class="w-3.5 h-3.5"></i>每日 4 班</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tokyo -->
+      <article class="dest-art dest-tokyo p-6 flex flex-col justify-between reveal-scale group">
+        <div class="flex items-start justify-between">
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px]" style="color: var(--fg);">亚洲 · 日本</span>
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="color: var(--accent);">¥1,299 起</span>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest uppercase mb-1" style="color: oklch(95% 0.02 95); opacity: 0.75;">TOKYO · 东京</div>
+          <h3 class="display text-xl font-bold mb-2" style="color: oklch(98% 0 0);">赏樱季专属</h3>
+          <p class="text-[11px]" style="color: oklch(95% 0.02 95); opacity: 0.85;">每日 2 班 · 成田 & 羽田双机场</p>
+        </div>
+      </article>
+
+      <!-- Paris -->
+      <article class="dest-art dest-paris p-6 flex flex-col justify-between reveal-scale group">
+        <div class="flex items-start justify-between">
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px]" style="color: var(--fg);">欧洲 · 法国</span>
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="color: var(--accent);">¥3,299 起</span>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest uppercase mb-1" style="color: oklch(95% 0.02 95); opacity: 0.75;">PARIS · 巴黎</div>
+          <h3 class="display text-xl font-bold mb-2" style="color: oklch(98% 0 0);">艺术与浪漫</h3>
+          <p class="text-[11px]" style="color: oklch(95% 0.02 95); opacity: 0.85;">每周 5 班 · CDG 直航</p>
+        </div>
+      </article>
+
+      <!-- Dubai -->
+      <article class="dest-art dest-dubai p-6 flex flex-col justify-between reveal-scale group">
+        <div class="flex items-start justify-between">
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px]" style="color: var(--fg);">中东 · 阿联酋</span>
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="color: var(--accent);">¥2,899 起</span>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest uppercase mb-1" style="color: oklch(95% 0.02 95); opacity: 0.75;">DUBAI · 迪拜</div>
+          <h3 class="display text-xl font-bold mb-2" style="color: oklch(98% 0 0);">沙漠奢旅起点</h3>
+          <p class="text-[11px]" style="color: oklch(95% 0.02 95); opacity: 0.85;">每日 1 班 · 商务舱全程平躺</p>
+        </div>
+      </article>
+
+      <!-- Chengdu -->
+      <article class="dest-art dest-chengdu p-6 flex flex-col justify-between reveal-scale group">
+        <div class="flex items-start justify-between">
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px]" style="color: var(--fg);">国内 · 四川</span>
+          <span class="liquid-glass rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="color: var(--accent);">¥459 起</span>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest uppercase mb-1" style="color: oklch(95% 0.02 95); opacity: 0.75;">CHENGDU · 成都</div>
+          <h3 class="display text-xl font-bold mb-2" style="color: oklch(98% 0 0);">慢下来遇见巴蜀</h3>
+          <p class="text-[11px]" style="color: oklch(95% 0.02 95); opacity: 0.85;">每日 8 班 · 支持中转西藏</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ MEMBERSHIP — Liquid glass pricing-style ════════════════ -->
+<section id="member" class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-14 reveal">
+      <div class="text-xs tracking-[0.25em] uppercase mb-4" style="color: var(--primary);">Skystar Frequent Flyer</div>
+      <h2 class="display font-bold mb-5" style="font-size: clamp(2rem, 1rem + 3vw, 3.5rem); color: var(--fg);">
+        星辰会员计划
+      </h2>
+      <p class="text-lg leading-8" style="color: var(--fg-muted);">
+        每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿、租车及超过 300 个合作品牌的礼遇权益。
+      </p>
+      <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mt-6 text-xs" style="background: oklch(78% 0.16 75 / 0.12); color: var(--accent); border: 1px solid oklch(78% 0.16 75 / 0.25);">
+        <i data-lucide="gift" class="w-3.5 h-3.5"></i>
+        立即注册即送 2,000 里程开户礼
+      </div>
+    </div>
+
+    <!-- 4 tiers, one highlighted -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <!-- Silver -->
+      <div class="liquid-glass rounded-[var(--r-xl)] p-7 flex flex-col reveal-scale">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(75% 0.04 265 / 0.18);">
+            <i data-lucide="medal" class="w-5 h-5" style="color: oklch(80% 0.04 265);"></i>
+          </div>
+          <div>
+            <div class="text-xs tracking-widest uppercase" style="color: var(--fg-dim);">SILVER</div>
+            <div class="font-bold">银卡</div>
+          </div>
+        </div>
+        <div class="display text-3xl font-bold mb-1" style="color: var(--fg);">25,000<span class="text-sm ml-1" style="color: var(--fg-muted);">里程/年</span></div>
+        <div class="text-xs mb-6" style="color: var(--fg-dim);">年飞 25,000 里程达标</div>
+        <ul class="space-y-3 text-sm flex-1" style="color: var(--fg-muted);">
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>优先值机</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>额外行李额 +10kg</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>专属客服热线</li>
+        </ul>
+        <button class="btn-ghost rounded-full py-3 text-sm mt-7">了解详情</button>
+      </div>
+
+      <!-- Gold (featured) -->
+      <div class="relative rounded-[var(--r-xl)] p-px reveal-scale" style="background: linear-gradient(180deg, oklch(64% 0.22 280 / 0.45), oklch(66% 0.21 305 / 0.15));">
+        <div class="rounded-[calc(1.5rem-1px)] p-7 h-full flex flex-col" style="background: oklch(13% 0.03 280);">
+          <span class="absolute top-5 right-5 liquid-glass rounded-full px-3 py-1 text-[10px] font-bold tracking-widest uppercase" style="color: var(--primary);">推荐</span>
+          <div class="flex items-center gap-2 mb-6">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(78% 0.16 75 / 0.18);">
+              <i data-lucide="crown" class="w-5 h-5" style="color: var(--accent);"></i>
+            </div>
+            <div>
+              <div class="text-xs tracking-widest uppercase" style="color: var(--accent);">GOLD</div>
+              <div class="font-bold">金卡</div>
+            </div>
+          </div>
+          <div class="display text-3xl font-bold mb-1 text-gradient">50,000<span class="text-sm ml-1" style="color: var(--fg-muted);">里程/年</span></div>
+          <div class="text-xs mb-6" style="color: var(--fg-dim);">年飞 50,000 里程达标</div>
+          <ul class="space-y-3 text-sm flex-1" style="color: var(--fg-muted);">
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>贵宾休息室无限次</li>
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>优先登机 · 优先行李</li>
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>每年 4 张升舱券</li>
+            <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>里程 1.25 倍累积</li>
+          </ul>
+          <button class="btn-primary rounded-full py-3 text-sm font-semibold mt-7">立即申请</button>
+        </div>
+      </div>
+
+      <!-- Platinum -->
+      <div class="liquid-glass rounded-[var(--r-xl)] p-7 flex flex-col reveal-scale">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(94% 0.02 265 / 0.18);">
+            <i data-lucide="gem" class="w-5 h-5" style="color: oklch(94% 0.01 265);"></i>
+          </div>
+          <div>
+            <div class="text-xs tracking-widest uppercase" style="color: var(--fg-dim);">PLATINUM</div>
+            <div class="font-bold">白金卡</div>
+          </div>
+        </div>
+        <div class="display text-3xl font-bold mb-1" style="color: var(--fg);">100,000<span class="text-sm ml-1" style="color: var(--fg-muted);">里程/年</span></div>
+        <div class="text-xs mb-6" style="color: var(--fg-dim);">年飞 100,000 里程达标</div>
+        <ul class="space-y-3 text-sm flex-1" style="color: var(--fg-muted);">
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>专属顾问 1 对 1 服务</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>头等舱升级券 ×2</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>里程 1.5 倍累积</li>
+        </ul>
+        <button class="btn-ghost rounded-full py-3 text-sm mt-7">了解详情</button>
+      </div>
+
+      <!-- Diamond -->
+      <div class="liquid-glass rounded-[var(--r-xl)] p-7 flex flex-col reveal-scale relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full" style="background: radial-gradient(circle, oklch(66% 0.21 305 / 0.18), transparent 70%); filter: blur(40px);"></div>
+        <div class="relative flex items-center gap-2 mb-6">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(66% 0.21 305 / 0.18);">
+            <i data-lucide="diamond" class="w-5 h-5" style="color: var(--primary-2);"></i>
+          </div>
+          <div>
+            <div class="text-xs tracking-widest uppercase" style="color: var(--primary-2);">DIAMOND</div>
+            <div class="font-bold">钻石卡</div>
+          </div>
+        </div>
+        <div class="relative display text-3xl font-bold mb-1" style="color: var(--fg);">邀请制</div>
+        <div class="relative text-xs mb-6" style="color: var(--fg-dim);">仅限星空航空特邀旅客</div>
+        <ul class="relative space-y-3 text-sm flex-1" style="color: var(--fg-muted);">
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>全部权益解锁</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>私人定制出行方案</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="w-4 h-4 mt-0.5" style="color: var(--ok);"></i>机场专车接送</li>
+        </ul>
+        <button class="btn-ghost rounded-full py-3 text-sm mt-7">了解详情</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SERVICE & CABIN EXPERIENCE ════════════════ -->
+<section id="service" class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div class="reveal">
+        <div class="text-xs tracking-[0.25em] uppercase mb-4" style="color: var(--primary);">Service & Hospitality</div>
+        <h2 class="display font-bold mb-6" style="font-size: clamp(2rem, 1rem + 3vw, 3.25rem); color: var(--fg);">
+          为每一位旅客<br/>提供超出预期的<span class="text-gradient">飞行体验</span>
+        </h2>
+        <p class="text-base leading-8 mb-10" style="color: var(--fg-muted);">
+          从特殊旅客关怀到宠物随行计划，从企业商务服务到地面无缝体验，星空航空始终以旅客为中心，让航空出行不止于位移。
+        </p>
+
+        <div class="space-y-5">
+          <div class="flex items-start gap-4 p-5 rounded-[var(--r-lg)]" style="background: oklch(100% 0 0 / 0.03); border: 1px solid var(--border-faint);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: oklch(64% 0.22 280 / 0.12);">
+              <i data-lucide="heart-handshake" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-1" style="color: var(--fg);">星空关爱 · 特殊旅客服务</h3>
+              <p class="text-sm leading-6" style="color: var(--fg-muted);">婴幼儿推车寄存、轮椅全程陪同、无障碍座位优先、孕妇及行动不便旅客优先登机。杭州、北京、上海枢纽设独立服务柜台。</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 p-5 rounded-[var(--r-lg)]" style="background: oklch(100% 0 0 / 0.03); border: 1px solid var(--border-faint);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: oklch(78% 0.16 75 / 0.12);">
+              <i data-lucide="paw-print" class="w-5 h-5" style="color: var(--accent);"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-1" style="color: var(--fg);">宠物随行计划</h3>
+              <p class="text-sm leading-6" style="color: var(--fg-muted);">符合条件的小型宠物可进入客舱随旅客同乘，大型犬猫提供恒温专属货舱运输，全程专业动物运输团队监护。</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 p-5 rounded-[var(--r-lg)]" style="background: oklch(100% 0 0 / 0.03); border: 1px solid var(--border-faint);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: oklch(70% 0.18 155 / 0.12);">
+              <i data-lucide="building-2" class="w-5 h-5" style="color: var(--ok);"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-1" style="color: var(--fg);">Skystar Business Solutions</h3>
+              <p class="text-sm leading-6" style="color: var(--fg-muted);">企业客户定制化商务出行：统一账期、差旅数据报告、专属客户经理、团体协议价。已服务 12,000+ 企业客户。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: stats panel -->
+      <div class="reveal-scale">
+        <div class="liquid-glass-strong rounded-[var(--r-xl)] p-8 md:p-10">
+          <div class="text-xs tracking-widest uppercase mb-8" style="color: var(--fg-dim);">2026 SAFETY & SERVICE METRICS</div>
+          <div class="grid grid-cols-2 gap-8">
+            <div>
+              <div class="display text-5xl font-bold text-gradient mb-2">186</div>
+              <div class="text-sm" style="color: var(--fg-muted);">机队规模（架）</div>
+            </div>
+            <div>
+              <div class="display text-5xl font-bold text-gradient mb-2">5.2</div>
+              <div class="text-sm" style="color: var(--fg-muted);">平均机龄（年）</div>
+            </div>
+            <div>
+              <div class="display text-5xl font-bold text-gradient mb-2">600+</div>
+              <div class="text-sm" style="color: var(--fg-muted);">每日执飞航班</div>
+            </div>
+            <div>
+              <div class="display text-5xl font-bold text-gradient mb-2">1,200<span class="text-lg">万</span></div>
+              <div class="text-sm" style="color: var(--fg-muted);">累计安全飞行小时</div>
+            </div>
+            <div>
+              <div class="display text-5xl font-bold text-gradient mb-2">9,800</div>
+              <div class="text-sm" style="color: var(--fg-muted);">机长平均飞行小时</div>
+            </div>
+            <div>
+              <div class="display text-5xl font-bold text-gradient mb-2">4.9<span class="text-lg">/5</span></div>
+              <div class="text-sm" style="color: var(--fg-muted);">旅客满意度评分</div>
+            </div>
+          </div>
+          <div class="divider my-8"></div>
+          <div class="flex items-center gap-3 text-xs" style="color: var(--fg-dim);">
+            <i data-lucide="badge-check" class="w-4 h-4" style="color: var(--ok);"></i>
+            <span>CATA 中国航空运输协会会员 · IATA 国际航空运输协会认证 · IOSA 安全审计通过</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ ABOUT + SUSTAINABILITY ════════════════ -->
+<section id="about" class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-5xl mx-auto text-center reveal">
+    <div class="text-xs tracking-[0.25em] uppercase mb-4" style="color: var(--primary);">About Skystar Airlines</div>
+    <h2 class="display font-bold mb-8" style="font-size: clamp(2rem, 1rem + 3vw, 3.5rem); color: var(--fg);">
+      航空出行应该是一段<span class="text-gradient">有温度的旅程</span>
+    </h2>
+    <p class="text-lg leading-9 mb-6" style="color: var(--fg-muted);">
+      星空航空成立于 2008 年，总部位于杭州萧山国际机场，立足长三角、面向全球。我们持续在客舱品质、数字化服务与可持续发展三个维度深度投入。
+    </p>
+    <p class="text-lg leading-9" style="color: var(--fg-muted);">
+      2026 年起，我们全面加入 CORSIA 国际碳抵消机制，承诺 2035 年实现单位客公里碳排放较 2019 年基准下降 40%。新引进机型全部选用新一代节能发动机。
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-14 text-left">
+      <div class="bento p-6">
+        <i data-lucide="leaf" class="w-7 h-7 mb-4" style="color: var(--ok);"></i>
+        <div class="display text-3xl font-bold mb-1" style="color: var(--fg);">-40%</div>
+        <div class="text-xs mb-2" style="color: var(--fg-dim);">2030 CARBON TARGET</div>
+        <p class="text-sm" style="color: var(--fg-muted);">单位客公里碳排放较 2019 基准下降 40%</p>
+      </div>
+      <div class="bento p-6">
+        <i data-lucide="battery-charging" class="w-7 h-7 mb-4" style="color: var(--primary);"></i>
+        <div class="display text-3xl font-bold mb-1" style="color: var(--fg);">100%</div>
+        <div class="text-xs mb-2" style="color: var(--fg-dim);">GROUND VEHICLE EV</div>
+        <p class="text-sm" style="color: var(--fg-muted);">三大基地机场地面车辆全面电动化</p>
+      </div>
+      <div class="bento p-6">
+        <i data-lucide="fuel" class="w-7 h-7 mb-4" style="color: var(--accent);"></i>
+        <div class="display text-3xl font-bold mb-1" style="color: var(--fg);">SAF</div>
+        <div class="text-xs mb-2" style="color: var(--fg-dim);">SUSTAINABLE AVIATION FUEL</div>
+        <p class="text-sm" style="color: var(--fg-muted);">2027 年起逐步引入可持续航空燃料</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FINAL CTA ════════════════ -->
+<section class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-5xl mx-auto reveal-scale">
+    <div class="liquid-glass-strong rounded-[var(--r-xl)] p-10 md:p-16 text-center relative overflow-hidden">
+      <div class="absolute inset-0 opacity-60" style="background: radial-gradient(ellipse at 50% 0%, oklch(64% 0.22 280 / 0.20), transparent 60%);"></div>
+      <div class="relative">
+        <h2 class="display font-bold mb-6" style="font-size: clamp(2rem, 1rem + 3vw, 3.5rem); color: var(--fg);">
+          准备好起飞了吗？
+        </h2>
+        <p class="text-lg mb-10 max-w-xl mx-auto" style="color: var(--fg-muted);">
+          加入星辰会员，开启你的全球探索之旅。新会员注册即送 2,000 里程开户礼。
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button class="btn-primary rounded-full px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2">
+            立即注册会员
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+          <button class="btn-ghost rounded-full px-8 py-3.5 text-sm">联系客服 400-800-9988</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer class="px-4 sm:px-6 lg:px-8 pt-16 pb-10" style="border-top: 1px solid var(--border-faint);">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
+      <div class="col-span-2">
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--primary), var(--primary-2));">
+            <i data-lucide="plane" class="w-5 h-5" style="color: oklch(98% 0 0);"></i>
+          </div>
+          <div class="flex flex-col leading-none">
+            <span class="font-semibold text-base">星空航空</span>
+            <span class="text-[10px] tracking-[0.2em] uppercase" style="color: var(--fg-muted);">Skystar Airlines</span>
+          </div>
+        </div>
+        <p class="text-sm leading-7 mb-5 max-w-sm" style="color: var(--fg-muted);">
+          杭州萧山国际机场运营基地<br/>
+          客服热线：400-800-9988（7×24 小时）<br/>
+          CATA 会员 · IATA 认证
+        </p>
+        <div class="flex items-center gap-3">
+          <a href="#" class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(100% 0 0 / 0.05); border: 1px solid var(--border-faint);"><i data-lucide="message-circle" class="w-4 h-4" style="color: var(--fg-muted);"></i></a>
+          <a href="#" class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(100% 0 0 / 0.05); border: 1px solid var(--border-faint);"><i data-lucide="twitter" class="w-4 h-4" style="color: var(--fg-muted);"></i></a>
+          <a href="#" class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: oklch(100% 0 0 / 0.05); border: 1px solid var(--border-faint);"><i data-lucide="video" class="w-4 h-4" style="color: var(--fg-muted);"></i></a>
+        </div>
+      </div>
+      <div>
+        <div class="text-xs tracking-widest uppercase mb-4" style="color: var(--fg-dim);">服务</div>
+        <ul class="space-y-3 text-sm" style="color: var(--fg-muted);">
+          <li><a href="#" class="hover:text-[var(--fg)]">航班状态查询</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">行李规定</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">退改签政策</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">旅行保险</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs tracking-widest uppercase mb-4" style="color: var(--fg-dim);">关于</div>
+        <ul class="space-y-3 text-sm" style="color: var(--fg-muted);">
+          <li><a href="#" class="hover:text-[var(--fg)]">关于我们</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">企业商务服务</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">可持续承诺</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">招贤纳士</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs tracking-widest uppercase mb-4" style="color: var(--fg-dim);">支持</div>
+        <ul class="space-y-3 text-sm" style="color: var(--fg-muted);">
+          <li><a href="#" class="hover:text-[var(--fg)]">常见问题</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">联系我们</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">意见反馈</a></li>
+          <li><a href="#" class="hover:text-[var(--fg)]">隐私政策</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="divider mb-6"></div>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs" style="color: var(--fg-dim);">
+      <div>© 2026 Skystar Airlines Co., Ltd. · 浙ICP备XXXXXXXX号 · 保留所有权利</div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+        简体中文 · CNY ¥
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Initialize Lucide icons
+  if (window.lucide) lucide.createIcons();
+
+  // Pointer-tracking for bento cards (subtle radial highlight)
+  document.querySelectorAll('.bento').forEach(card => {
+    card.addEventListener('pointermove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+      card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+    });
+  });
+</script>
+</body>
+</html>

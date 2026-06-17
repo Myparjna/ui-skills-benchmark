@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>闪电聚合 · EV Charge Mini — 电动汽车充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e1a;
+  --bg-2:#10162a;
+  --panel:#141a2e;
+  --panel-2:#1a2240;
+  --line:#2a3458;
+  --line-bright:#3a4a78;
+  --text:#e8ecf5;
+  --text-dim:#8a93ad;
+  --text-mute:#5a6280;
+  --lime:#a3ff12;
+  --lime-dim:#6fb000;
+  --amber:#ff9500;
+  --amber-dim:#b86a00;
+  --red:#ff3b5c;
+  --cyan:#00e5ff;
+  --grid:rgba(58,74,120,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Noto Sans SC','Space Mono',monospace;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+}
+/* ambient backdrop */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(163,255,18,0.06), transparent 45%),
+    radial-gradient(ellipse at 85% 80%, rgba(0,229,255,0.05), transparent 45%),
+    linear-gradient(180deg,#06091a 0%,#0a0e1a 100%);
+}
+body::after{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse at center, black 30%, transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+/* noise */
+.grain{
+  position:fixed;inset:0;z-index:998;pointer-events:none;opacity:0.06;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;
+}
+
+/* ===== DESKTOP STAGE (when wide) ===== */
+.stage{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:2rem 1rem;
+  position:relative;
+}
+.stage-meta{
+  position:absolute;top:2rem;left:2rem;
+  font-family:'Space Mono',monospace;font-size:0.72rem;
+  color:var(--text-mute);letter-spacing:0.15em;
+  text-transform:uppercase;line-height:1.7;
+}
+.stage-meta b{color:var(--lime);font-weight:400}
+.stage-meta-r{
+  position:absolute;top:2rem;right:2rem;
+  font-family:'Space Mono',monospace;font-size:0.72rem;
+  color:var(--text-mute);letter-spacing:0.15em;
+  text-transform:uppercase;text-align:right;line-height:1.7;
+}
+.stage-meta-r b{color:var(--cyan);font-weight:400}
+
+/* Phone frame */
+.phone{
+  position:relative;
+  width:390px;
+  max-width:100%;
+  background:var(--bg);
+  border-radius:42px;
+  border:1px solid var(--line-bright);
+  box-shadow:
+    0 0 0 8px #06091a,
+    0 0 0 10px var(--line-bright),
+    0 50px 100px -30px rgba(163,255,18,0.18),
+    0 80px 120px -40px rgba(0,0,0,0.8);
+  overflow:hidden;
+  z-index:1;
+}
+.phone-notch{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  width:120px;height:28px;background:#06091a;border-radius:0 0 18px 18px;
+  z-index:50;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.phone-notch::before{content:'';width:8px;height:8px;border-radius:50%;background:#1a2240;box-shadow:inset 0 0 4px #06091a}
+.phone-notch::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px var(--lime)}
+
+.phone-screen{
+  height:820px;
+  overflow-y:auto;
+  scrollbar-width:none;
+  position:relative;
+}
+.phone-screen::-webkit-scrollbar{display:none}
+
+/* ===== STATUS BAR ===== */
+.statusbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 26px 6px;
+  font-family:'Space Mono',monospace;
+  font-size:0.78rem;color:var(--text);
+  font-weight:700;
+  position:relative;z-index:2;
+}
+.statusbar .icons{display:flex;gap:6px;align-items:center}
+.statusbar .icons span{
+  width:14px;height:8px;border:1px solid var(--text);border-radius:2px;position:relative;
+}
+.statusbar .icons span::after{
+  content:'';position:absolute;left:1px;top:1px;bottom:1px;width:80%;background:var(--lime);
+}
+.statusbar .bat{display:flex;align-items:center;gap:4px;font-size:0.7rem}
+.statusbar .bat::after{content:'⚡';color:var(--lime)}
+
+/* ===== APP HEADER ===== */
+.app-head{
+  padding:18px 22px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;background:linear-gradient(180deg,var(--bg) 70%,transparent);
+  z-index:40;
+}
+.app-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.5rem;letter-spacing:0.05em;
+  display:flex;align-items:center;gap:8px;
+}
+.app-title .dot{
+  width:10px;height:10px;background:var(--lime);
+  box-shadow:0 0 8px var(--lime);
+  border-radius:50%;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.app-loc{
+  display:flex;align-items:center;gap:6px;
+  font-family:'Space Mono',monospace;
+  font-size:0.72rem;color:var(--text-dim);
+  letter-spacing:0.05em;
+}
+.app-loc b{color:var(--text);font-weight:400}
+.head-acts{display:flex;gap:10px}
+.head-act{
+  width:34px;height:34px;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--panel);color:var(--text);
+  cursor:pointer;font-size:0.85rem;
+  transition:all .25s;
+}
+.head-act:hover{border-color:var(--lime);color:var(--lime)}
+
+/* ===== MAP ===== */
+.map-wrap{
+  margin:0 16px;
+  position:relative;
+  height:260px;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(163,255,18,0.08), transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(0,229,255,0.08), transparent 50%),
+    linear-gradient(135deg,#0c1224 0%,#141a2e 100%);
+  border:1px solid var(--line);
+  overflow:hidden;
+}
+.map-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(58,74,120,0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(58,74,120,0.25) 1px, transparent 1px);
+  background-size:26px 26px;
+}
+.map-roads{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(45deg, transparent 48%, rgba(0,229,255,0.2) 49%, rgba(0,229,255,0.2) 51%, transparent 52%),
+    linear-gradient(-30deg, transparent 48%, rgba(163,255,18,0.15) 49%, rgba(163,255,18,0.15) 51%, transparent 52%),
+    linear-gradient(90deg, transparent 48%, rgba(255,149,0,0.1) 49%, rgba(255,149,0,0.1) 51%, transparent 52%);
+}
+.map-river{
+  position:absolute;top:40%;left:-10%;right:-10%;height:24px;
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent);
+  filter:blur(6px);transform:rotate(-5deg);
+}
+/* pins */
+.pin{
+  position:absolute;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;
+  border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  cursor:pointer;transition:transform .25s;
+}
+.pin span{transform:rotate(45deg)}
+.pin.free{background:var(--lime);color:#0a0e1a}
+.pin.busy{background:var(--amber);color:#0a0e1a}
+.pin.fault{background:var(--red);color:#fff}
+.pin.cluster{background:var(--cyan);color:#0a0e1a;width:42px;height:42px;border-radius:50%}
+.pin.cluster span{transform:rotate(45deg)}
+.pin:hover{transform:rotate(-45deg) scale(1.15)}
+.pin::after{
+  content:'';position:absolute;width:100%;height:100%;border-radius:inherit;
+  box-shadow:0 0 0 4px currentColor;opacity:0.15;
+  animation:ripple 2s infinite;
+}
+@keyframes ripple{0%{transform:scale(1);opacity:0.3}100%{transform:scale(1.8);opacity:0}}
+
+.pin-1{top:30%;left:18%}
+.pin-2{top:55%;left:38%}
+.pin-3{top:25%;left:62%;background:var(--lime);color:#0a0e1a}
+.pin-4{top:65%;left:72%}
+.pin-5{top:45%;left:80%;background:var(--amber);color:#0a0e1a}
+.pin-cluster{top:35%;left:45%;width:48px;height:48px}
+
+.map-locate{
+  position:absolute;right:12px;bottom:12px;
+  width:38px;height:38px;background:var(--panel);
+  border:1px solid var(--lime);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--lime);cursor:pointer;
+  box-shadow:0 0 12px rgba(163,255,18,0.3);
+}
+.map-recenter{
+  position:absolute;left:12px;top:12px;
+  padding:6px 10px;background:rgba(10,14,26,0.85);
+  border:1px solid var(--line-bright);
+  font-family:'Space Mono',monospace;font-size:0.68rem;
+  color:var(--text-dim);letter-spacing:0.1em;
+}
+.map-recenter b{color:var(--lime);font-weight:400}
+
+/* ===== FILTER BAR ===== */
+.filters{
+  display:flex;gap:8px;overflow-x:auto;
+  padding:14px 16px 8px;
+  scrollbar-width:none;
+}
+.filters::-webkit-scrollbar{display:none}
+.chip{
+  white-space:nowrap;
+  padding:6px 12px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  font-family:'Space Mono',monospace;
+  font-size:0.72rem;color:var(--text-dim);
+  letter-spacing:0.05em;
+  cursor:pointer;transition:all .25s;
+  display:flex;align-items:center;gap:6px;
+}
+.chip:hover{border-color:var(--lime);color:var(--lime)}
+.chip.active{background:var(--lime);color:#0a0e1a;border-color:var(--lime);font-weight:700}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ===== LIST ===== */
+.list-head{
+  padding:14px 22px 10px;
+  display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid var(--line);
+  margin-top:6px;
+}
+.list-head h3{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.05rem;letter-spacing:0.08em;
+  color:var(--text);
+}
+.list-sort{
+  font-family:'Space Mono',monospace;
+  font-size:0.7rem;color:var(--text-dim);
+  display:flex;gap:8px;align-items:center;
+  cursor:pointer;
+}
+.list-sort b{color:var(--lime);font-weight:400}
+
+.station{
+  margin:0 16px 10px;
+  padding:16px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  position:relative;
+  cursor:pointer;
+  transition:all .25s;
+}
+.station:hover{border-color:var(--lime);transform:translateX(2px)}
+.station::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--lime);
+}
+.station.busy::before{background:var(--amber)}
+.station.fault::before{background:var(--red)}
+.station-head{
+  display:flex;justify-content:space-between;align-items:start;
+  margin-bottom:10px;gap:12px;
+}
+.st-name{
+  font-family:'Noto Sans SC',sans-serif;
+  font-size:1rem;font-weight:500;color:var(--text);
+  margin-bottom:4px;
+}
+.st-brand{
+  font-family:'Space Mono',monospace;
+  font-size:0.68rem;color:var(--text-mute);
+  letter-spacing:0.1em;text-transform:uppercase;
+}
+.st-dist{
+  text-align:right;font-family:'Space Mono',monospace;
+  font-size:0.72rem;color:var(--text-dim);
+  line-height:1.4;
+}
+.st-dist b{color:var(--lime);font-weight:400;font-size:0.9rem}
+.st-addr{
+  font-size:0.78rem;color:var(--text-dim);
+  margin-bottom:10px;line-height:1.4;
+}
+.st-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding-top:10px;border-top:1px dashed var(--line);
+}
+.st-stat{
+  font-family:'Space Mono',monospace;
+}
+.st-stat .label{font-size:0.62rem;color:var(--text-mute);letter-spacing:0.1em;text-transform:uppercase}
+.st-stat .val{font-size:0.92rem;color:var(--text);margin-top:2px;font-weight:700}
+.st-stat .val.free{color:var(--lime)}
+.st-stat .val.busy{color:var(--amber)}
+.st-stat .val.price{color:var(--cyan)}
+.st-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--line);
+}
+.st-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{
+  font-family:'Space Mono',monospace;
+  font-size:0.62rem;padding:2px 6px;
+  border:1px solid var(--line-bright);
+  color:var(--text-dim);letter-spacing:0.05em;
+}
+.tag.plus{color:var(--lime);border-color:var(--lime-dim)}
+.tag.free-park{color:var(--cyan);border-color:var(--cyan)}
+.st-go{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.85rem;letter-spacing:0.1em;
+  color:#0a0e1a;background:var(--lime);
+  padding:5px 10px;cursor:pointer;
+  display:flex;align-items:center;gap:4px;
+}
+
+/* ===== CHARGING WIDGET (collapsed preview) ===== */
+.charging-card{
+  margin:14px 16px 12px;
+  padding:14px 16px;
+  background:linear-gradient(135deg,rgba(255,149,0,0.15),rgba(163,255,18,0.08));
+  border:1px solid var(--amber);
+  display:flex;align-items:center;gap:14px;
+  position:relative;overflow:hidden;
+}
+.charging-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,149,0,0.1),transparent);
+  animation:sweep 3s linear infinite;
+}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.charge-ring{
+  width:54px;height:54px;flex-shrink:0;position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+.charge-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.charge-ring circle{fill:none;stroke-width:4}
+.charge-ring .bg{stroke:rgba(255,149,0,0.2)}
+.charge-ring .fg{stroke:var(--amber);stroke-linecap:round;stroke-dasharray:140 200;filter:drop-shadow(0 0 4px var(--amber))}
+.charge-ring .pct{
+  position:absolute;font-family:'Space Mono',monospace;
+  font-size:0.78rem;font-weight:700;color:var(--amber);
+}
+.charge-info{flex:1;min-width:0}
+.charge-info .lab{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--amber);letter-spacing:0.15em;text-transform:uppercase}
+.charge-info .name{font-size:0.92rem;color:var(--text);margin:2px 0 4px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.charge-info .meta{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--text-dim);display:flex;gap:10px}
+.charge-info .meta b{color:var(--lime);font-weight:400}
+.charge-stop{
+  font-family:'Space Mono',monospace;font-size:0.7rem;
+  padding:6px 10px;border:1px solid var(--red);color:var(--red);
+  background:transparent;cursor:pointer;letter-spacing:0.1em;
+}
+
+/* ===== TABBED BOTTOM ===== */
+.tabs{
+  position:sticky;bottom:0;left:0;right:0;
+  display:grid;grid-template-columns:1fr 1fr 84px 1fr 1fr;
+  align-items:end;
+  background:linear-gradient(180deg,transparent,var(--bg) 30%);
+  padding:10px 0 18px;
+  z-index:40;
+}
+.tab{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--text-mute);cursor:pointer;
+  font-family:'Space Mono',monospace;font-size:0.62rem;
+  letter-spacing:0.1em;text-transform:uppercase;
+  transition:color .25s;
+}
+.tab .ic{font-size:1.1rem;line-height:1}
+.tab.active{color:var(--lime)}
+.tab-scan{
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,var(--lime),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;color:#0a0e1a;
+  box-shadow:0 0 24px rgba(163,255,18,0.5),0 -4px 12px rgba(0,0,0,0.4);
+  margin-top:-22px;cursor:pointer;
+  border:3px solid var(--bg);
+  animation:scanPulse 2.5s ease-in-out infinite;
+}
+@keyframes scanPulse{0%,100%{box-shadow:0 0 24px rgba(163,255,18,0.5),0 -4px 12px rgba(0,0,0,0.4)}50%{box-shadow:0 0 36px rgba(163,255,18,0.8),0 -4px 12px rgba(0,0,0,0.4)}}
+.tab-scan-label{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.7rem;letter-spacing:0.15em;
+  color:var(--lime);margin-top:4px;text-align:center;
+}
+
+/* ===== STAGE SIDE PANELS (desktop) ===== */
+@media (max-width:880px){
+  .stage{padding:0}
+  .stage-meta,.stage-meta-r{display:none}
+  .phone{
+    width:100%;max-width:100%;
+    border-radius:0;border:none;
+    box-shadow:none;min-height:100vh;
+  }
+  .phone-screen{height:auto;min-height:100vh}
+  .phone-notch{display:none}
+  .statusbar{display:none}
+}
+@media (min-width:881px){
+  .stage::before{
+    content:'EV CHARGE MINI · 闪电聚合';
+    position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+    font-family:'Bebas Neue',sans-serif;font-size:0.9rem;
+    letter-spacing:0.4em;color:var(--text-mute);
+  }
+  .side{
+    position:absolute;color:var(--text-mute);
+    font-family:'Space Mono',monospace;font-size:0.7rem;
+    letter-spacing:0.1em;line-height:1.8;
+  }
+  .side.l{left:3rem;top:50%;transform:translateY(-50%);max-width:240px}
+  .side.r{right:3rem;top:50%;transform:translateY(-50%);max-width:240px;text-align:right}
+  .side h5{
+    font-family:'Bebas Neue',sans-serif;color:var(--lime);
+    font-size:0.95rem;letter-spacing:0.2em;margin-bottom:8px;
+  }
+  .side.r h5{color:var(--cyan)}
+  .side code{color:var(--text-dim);font-style:normal}
+  .side .line{
+    display:block;padding:6px 0;border-bottom:1px dashed var(--line);
+  }
+  .side .line b{color:var(--text);font-weight:400}
+}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<div class="stage">
+  <!-- desktop meta -->
+  <div class="stage-meta">
+    <div>SYSTEM · <b>EV-CHARGE-MINI v1.0</b></div>
+    <div>BUILD · 2026.04 · WECHAT MP</div>
+    <div>NETWORK · <b>5G / WIFI</b></div>
+  </div>
+  <div class="stage-meta-r">
+    <div>USER · <b>PLUS-GOLD #0814</b></div>
+    <div>BALANCE · <b>¥ 248.50</b></div>
+    <div>VEHICLE · <b>京A·D8F2K</b></div>
+  </div>
+
+  <!-- desktop side panels -->
+  <div class="side l">
+    <h5>// 充电中</h5>
+    <span class="line">桩号 <b>TLD-04-12-A</b></span>
+    <span class="line">功率 <b>60.2 kW</b></span>
+    <span class="line">已充电量 <b>18.4 / 50 kWh</b></span>
+    <span class="line">费用 <b>¥ 22.07</b></span>
+    <span class="line">剩余 <b>32 分钟</b></span>
+    <span class="line">碳减排 <b>+8.1 kg</b></span>
+  </div>
+  <div class="side r">
+    <h5>附近聚合 //</h5>
+    <span class="line">5km 内 <b>32 站</b></span>
+    <span class="line">空闲快充 <b>87 桩</b></span>
+    <span class="line">空闲慢充 <b>56 桩</b></span>
+    <span class="line">PLUS 优惠站 <b>14</b></span>
+    <span class="line">免费停车 <b>9 站</b></span>
+    <span class="line">实时刷新 <b>30s / 次</b></span>
+  </div>
+
+  <!-- PHONE -->
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+
+      <!-- status -->
+      <div class="statusbar">
+        <span>9:41</span>
+        <div class="icons">
+          <span class="bat">87</span>
+        </div>
+      </div>
+
+      <!-- header -->
+      <div class="app-head">
+        <div>
+          <div class="app-title"><span class="dot"></span>闪电聚合</div>
+          <div class="app-loc"><b>杭州 · 西湖区</b> · 文三路</div>
+        </div>
+        <div class="head-acts">
+          <div class="head-act">Q</div>
+          <div class="head-act">☀</div>
+        </div>
+      </div>
+
+      <!-- map -->
+      <div class="map-wrap">
+        <div class="map-grid"></div>
+        <div class="map-roads"></div>
+        <div class="map-river"></div>
+        <div class="map-recenter">5km · <b>32 站</b> · 30s刷新</div>
+        <div class="pin pin-1 free"><span>4</span></div>
+        <div class="pin pin-2 free"><span>2</span></div>
+        <div class="pin pin-3 free"><span>6</span></div>
+        <div class="pin pin-4 busy"><span>0</span></div>
+        <div class="pin pin-5 busy"><span>1</span></div>
+        <div class="pin pin-cluster cluster"><span>14</span></div>
+        <div class="map-locate">◎</div>
+      </div>
+
+      <!-- filters -->
+      <div class="filters">
+        <div class="chip active"><span class="dot"></span>全部</div>
+        <div class="chip">快充</div>
+        <div class="chip">超充</div>
+        <div class="chip">慢充</div>
+        <div class="chip plus">PLUS 站</div>
+        <div class="chip free-park">免费停车</div>
+        <div class="chip">高速路</div>
+      </div>
+
+      <!-- charging in progress -->
+      <div class="charging-card">
+        <div class="charge-ring">
+          <svg viewBox="0 0 60 60">
+            <circle class="bg" cx="30" cy="30" r="25"/>
+            <circle class="fg" cx="30" cy="30" r="25"/>
+          </svg>
+          <div class="pct">37%</div>
+        </div>
+        <div class="charge-info">
+          <div class="lab">// CHARGING · 充电中</div>
+          <div class="name">特来电 · 西湖文化中心站 · 04号桩</div>
+          <div class="meta">60.2kW · 18.4kWh · ¥22.07 · <b>剩 32 分钟</b></div>
+        </div>
+        <button class="charge-stop">停止</button>
+      </div>
+
+      <!-- list head -->
+      <div class="list-head">
+        <h3>附近充电站 · 5km</h3>
+        <div class="list-sort">SORT BY <b>距离 ↑</b></div>
+      </div>
+
+      <!-- stations -->
+      <div class="station">
+        <div class="station-head">
+          <div>
+            <div class="st-name">特来电 · 西湖文化中心站</div>
+            <div class="st-brand">— TELD · 快充 60kW</div>
+          </div>
+          <div class="st-dist"><b>0.4 km</b><br>步行 5 分钟</div>
+        </div>
+        <div class="st-addr">文三路 388 号 · 西湖文化中心地下停车场 B2</div>
+        <div class="st-stats">
+          <div class="st-stat"><div class="label">空闲 / 总数</div><div class="val free">4 / 8</div></div>
+          <div class="st-stat"><div class="label">单价 / 度</div><div class="val price">¥1.20</div></div>
+          <div class="st-stat"><div class="label">评分</div><div class="val">4.9 ★</div></div>
+        </div>
+        <div class="st-foot">
+          <div class="st-tags">
+            <span class="tag plus">PLUS 6折</span>
+            <span class="tag free-park">2h免费停车</span>
+            <span class="tag">即插即充</span>
+          </div>
+          <div class="st-go">导航 →</div>
+        </div>
+      </div>
+
+      <div class="station busy">
+        <div class="station-head">
+          <div>
+            <div class="st-name">星星充电 · 万塘路广场站</div>
+            <div class="st-brand">— STARCHARGE · 超充 120kW</div>
+          </div>
+          <div class="st-dist"><b>0.9 km</b><br>驾车 3 分钟</div>
+        </div>
+        <div class="st-addr">万塘路 268 号 · 万塘路广场地面停车场 A 区</div>
+        <div class="st-stats">
+          <div class="st-stat"><div class="label">空闲 / 总数</div><div class="val busy">1 / 6</div></div>
+          <div class="st-stat"><div class="label">单价 / 度</div><div class="val price">¥1.45</div></div>
+          <div class="st-stat"><div class="label">评分</div><div class="val">4.7 ★</div></div>
+        </div>
+        <div class="st-foot">
+          <div class="st-tags">
+            <span class="tag plus">PLUS 8折</span>
+            <span class="tag">超充</span>
+            <span class="tag">24h营业</span>
+          </div>
+          <div class="st-go">导航 →</div>
+        </div>
+      </div>
+
+      <div class="station">
+        <div class="station-head">
+          <div>
+            <div class="st-name">e充电 · 南方电网文三站</div>
+            <div class="st-brand">— E-CHARGE · 快充 80kW</div>
+          </div>
+          <div class="st-dist"><b>1.2 km</b><br>驾车 4 分钟</div>
+        </div>
+        <div class="st-addr">文三路 199 号 · 国家电网文三营业厅旁</div>
+        <div class="st-stats">
+          <div class="st-stat"><div class="label">空闲 / 总数</div><div class="val free">6 / 10</div></div>
+          <div class="st-stat"><div class="label">单价 / 度</div><div class="val price">¥0.95</div></div>
+          <div class="st-stat"><div class="label">评分</div><div class="val">4.6 ★</div></div>
+        </div>
+        <div class="st-foot">
+          <div class="st-tags">
+            <span class="tag">国网</span>
+            <span class="tag free-park">免费停车</span>
+            <span class="tag">夜间优惠</span>
+          </div>
+          <div class="st-go">导航 →</div>
+        </div>
+      </div>
+
+      <div class="station">
+        <div class="station-head">
+          <div>
+            <div class="st-name">云快充 · 华星时代广场站</div>
+            <div class="st-brand">— YUNKUAICHONG · 慢充 7kW</div>
+          </div>
+          <div class="st-dist"><b>1.8 km</b><br>驾车 6 分钟</div>
+        </div>
+        <div class="st-addr">华星路 96 号 · 华星时代广场地下停车场</div>
+        <div class="st-stats">
+          <div class="st-stat"><div class="label">空闲 / 总数</div><div class="val free">8 / 12</div></div>
+          <div class="st-stat"><div class="label">单价 / 度</div><div class="val price">¥0.78</div></div>
+          <div class="st-stat"><div class="label">评分</div><div class="val">4.5 ★</div></div>
+        </div>
+        <div class="st-foot">
+          <div class="st-tags">
+            <span class="tag plus">PLUS 5折</span>
+            <span class="tag">慢充</span>
+            <span class="tag free-park">3h免费停车</span>
+          </div>
+          <div class="st-go">导航 →</div>
+        </div>
+      </div>
+
+      <div style="height:80px"></div>
+
+      <!-- tabs -->
+      <div class="tabs">
+        <div class="tab active">
+          <div class="ic">◉</div>
+          <div>首页</div>
+        </div>
+        <div class="tab">
+          <div class="ic">★</div>
+          <div>省钱</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="tab-scan">⊟</div>
+          <div class="tab-scan-label">扫码充电</div>
+        </div>
+        <div class="tab">
+          <div class="ic">≡</div>
+          <div>订单</div>
+        </div>
+        <div class="tab">
+          <div class="ic">○</div>
+          <div>我的</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// basic chip toggle
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+  });
+});
+// tab toggle
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    if(t.classList.contains('tab-scan'))return;
+    document.querySelectorAll('.tab').forEach(x=>{if(!x.querySelector('.tab-scan'))x.classList.remove('active')});
+    t.classList.add('active');
+  });
+});
+// charging ring animated progress
+(function(){
+  const ring=document.querySelector('.charge-ring .fg');
+  const pct=document.querySelector('.charge-ring .pct');
+  if(!ring||!pct)return;
+  let cur=37;const C=2*Math.PI*25;
+  ring.setAttribute('stroke-dasharray',C);
+  function setVal(v){
+    ring.setAttribute('stroke-dasharray',`${C*v/100} ${C}`);
+    pct.textContent=Math.round(v)+'%';
+  }
+  setVal(cur);
+  setInterval(()=>{
+    cur=Math.min(99,cur+0.3);
+    setVal(cur);
+  },1500);
+})();
+</script>
+</body>
+</html>

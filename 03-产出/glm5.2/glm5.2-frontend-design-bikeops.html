@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>城市运营后台 · CityOps — 共享两轮运营管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f1ece1;
+  --paper-2:#e8e1cf;
+  --ink:#0a0a0a;
+  --ink-2:#1f1f1f;
+  --rule:#0a0a0a;
+  --rule-soft:rgba(10,10,10,0.15);
+  --red:#c8392e;
+  --red-deep:#8a2418;
+  --amber:#d97706;
+  --green:#2a6b2f;
+  --blue:#1e3a5f;
+  --mute:#7a7368;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'IBM Plex Sans','Noto Sans SC',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-weight:400;
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    linear-gradient(rgba(10,10,10,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,10,10,0.025) 1px, transparent 1px);
+  background-size:48px 48px;
+  background-position:-1px -1px;
+}
+/* paper grain */
+body::before{
+  content:'';position:fixed;inset:0;z-index:998;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity:0.08;mix-blend-mode:multiply;
+}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  display:grid;
+  grid-template-columns:280px 1fr auto;
+  align-items:stretch;
+  border-bottom:2px solid var(--ink);
+  background:var(--paper);
+  position:sticky;top:0;z-index:50;
+}
+.brand{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 24px;
+  border-right:2px solid var(--ink);
+  background:var(--ink);color:var(--paper);
+}
+.brand-mark{
+  width:34px;height:34px;
+  background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;color:var(--paper);
+  font-size:1.1rem;
+  position:relative;
+}
+.brand-mark::after{
+  content:'';position:absolute;inset:-4px;border:1px solid var(--red);
+}
+.brand-text b{
+  font-family:'Archivo Black',sans-serif;
+  font-size:1.05rem;letter-spacing:-0.01em;
+  display:block;line-height:1;
+}
+.brand-text small{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.65rem;letter-spacing:0.2em;
+  color:rgba(241,236,225,0.6);text-transform:uppercase;
+  display:block;margin-top:4px;
+}
+.topnav{
+  display:flex;align-items:stretch;
+  overflow-x:auto;scrollbar-width:none;
+}
+.topnav::-webkit-scrollbar{display:none}
+.topnav a{
+  display:flex;align-items:center;
+  padding:0 18px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:0.82rem;font-weight:500;
+  color:var(--ink);letter-spacing:0.02em;
+  border-right:1px solid var(--rule-soft);
+  white-space:nowrap;cursor:pointer;
+  transition:background .2s;
+  position:relative;
+}
+.topnav a:hover{background:var(--paper-2)}
+.topnav a.active{background:var(--ink);color:var(--paper)}
+.topnav a.active::after{
+  content:'';position:absolute;left:0;right:0;bottom:-2px;
+  height:2px;background:var(--red);
+}
+.topright{
+  display:flex;align-items:center;
+  border-left:2px solid var(--ink);
+}
+.topright .btn{
+  padding:0 16px;height:100%;display:flex;align-items:center;gap:8px;
+  font-family:'IBM Plex Mono',monospace;font-size:0.75rem;
+  border-right:1px solid var(--rule-soft);cursor:pointer;
+  color:var(--ink);transition:background .2s;
+}
+.topright .btn:hover{background:var(--paper-2)}
+.topright .btn.alert{background:var(--red);color:var(--paper);font-weight:700}
+.topright .btn.alert:hover{background:var(--red-deep)}
+.topright .user{
+  display:flex;align-items:center;gap:10px;padding:0 18px;
+  border-left:1px solid var(--rule-soft);
+}
+.user-av{
+  width:32px;height:32px;background:var(--ink);color:var(--paper);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;font-size:0.8rem;
+}
+.user-info{font-size:0.75rem;line-height:1.3}
+.user-info b{display:block;font-weight:600}
+.user-info small{color:var(--mute);font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em}
+
+/* ===== SUB BAR ===== */
+.subbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 24px;
+  border-bottom:1px solid var(--ink);
+  background:var(--paper);
+  font-family:'IBM Plex Mono',monospace;font-size:0.75rem;
+  letter-spacing:0.05em;
+}
+.subbar .left{display:flex;gap:24px;align-items:center;color:var(--mute)}
+.subbar .left b{color:var(--ink);font-weight:500}
+.subbar .left .live{color:var(--red);font-weight:700;display:flex;align-items:center;gap:6px}
+.subbar .left .live::before{content:'';width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.subbar .right{display:flex;gap:6px;align-items:center}
+.seg{
+  padding:5px 12px;border:1px solid var(--ink);
+  cursor:pointer;font-size:0.7rem;letter-spacing:0.1em;
+  text-transform:uppercase;
+}
+.seg.active{background:var(--ink);color:var(--paper)}
+.seg:hover:not(.active){background:var(--paper-2)}
+
+/* ===== LAYOUT ===== */
+.layout{
+  display:grid;
+  grid-template-columns:1fr 360px;
+  gap:0;
+  border-bottom:1px solid var(--ink);
+}
+.main{padding:24px 28px;border-right:1px solid var(--ink)}
+.aside{padding:24px 24px;background:var(--paper-2)}
+
+/* ===== KPI ROW ===== */
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:0;
+  border:2px solid var(--ink);
+  margin-bottom:24px;
+  background:var(--ink);
+}
+.kpi{
+  background:var(--paper);
+  padding:18px 16px 16px;
+  border-right:1px solid var(--ink);
+  position:relative;
+  cursor:pointer;
+  transition:background .2s;
+}
+.kpi:last-child{border-right:none}
+.kpi:hover{background:var(--paper-2)}
+.kpi .lab{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;letter-spacing:0.15em;
+  color:var(--mute);text-transform:uppercase;
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;
+}
+.kpi .lab .num{
+  font-family:'Archivo Black',sans-serif;
+  color:var(--ink);font-size:0.7rem;
+}
+.kpi .val{
+  font-family:'Archivo Black',sans-serif;
+  font-size:2rem;line-height:1;
+  letter-spacing:-0.02em;
+  margin-bottom:6px;
+}
+.kpi .delta{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.7rem;font-weight:500;
+  display:flex;align-items:center;gap:4px;
+}
+.kpi .delta.up{color:var(--green)}
+.kpi .delta.down{color:var(--red)}
+.kpi .delta.flat{color:var(--mute)}
+.kpi.alert .val{color:var(--red)}
+.kpi.good .val{color:var(--green)}
+
+/* ===== SECTION HEAD ===== */
+.shead{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  margin-bottom:16px;padding-bottom:10px;
+  border-bottom:1px solid var(--ink);
+}
+.shead h2{
+  font-family:'Archivo Black',sans-serif;
+  font-size:1.4rem;letter-spacing:-0.01em;
+  line-height:1;display:flex;align-items:center;gap:10px;
+}
+.shead h2 .ix{
+  font-family:'Playfair Display',serif;font-style:italic;
+  font-weight:400;font-size:0.9rem;color:var(--red);
+  letter-spacing:0;
+}
+.shead .meta{
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  color:var(--mute);letter-spacing:0.1em;text-transform:uppercase;
+}
+.shead .meta b{color:var(--ink);font-weight:500}
+
+/* ===== MAP BLOCK ===== */
+.map-block{
+  border:2px solid var(--ink);
+  background:var(--paper);
+  position:relative;
+  height:380px;
+  overflow:hidden;
+}
+.map-canvas{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(200,57,46,0.15), transparent 35%),
+    radial-gradient(circle at 70% 60%, rgba(42,107,47,0.12), transparent 35%),
+    linear-gradient(135deg,#e8e1cf 0%,#f1ece1 100%);
+}
+.map-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(10,10,10,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,10,10,0.08) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+.map-roads{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(20deg, transparent 49.5%, var(--ink) 49.5%, var(--ink) 50.5%, transparent 50.5%),
+    linear-gradient(-60deg, transparent 49.5%, var(--ink) 49.5%, var(--ink) 50.5%, transparent 50.5%),
+    linear-gradient(90deg, transparent 49.7%, var(--ink) 49.7%, var(--ink) 50.3%, transparent 50.3%),
+    linear-gradient(0deg, transparent 49.7%, var(--ink) 49.7%, var(--ink) 50.3%, transparent 50.3%);
+  opacity:0.18;
+}
+.map-zones{position:absolute;inset:0;pointer-events:none}
+.zone{
+  position:absolute;
+  border:1px dashed var(--ink);
+  background:rgba(10,10,10,0.04);
+}
+.zone.red{border-color:var(--red);background:rgba(200,57,46,0.12)}
+.zone.green{border-color:var(--green);background:rgba(42,107,47,0.1)}
+.zone-label{
+  position:absolute;font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--ink);background:var(--paper);padding:1px 5px;
+  border:1px solid var(--ink);
+}
+.bike{
+  position:absolute;width:8px;height:8px;border-radius:50%;
+}
+.bike.free{background:var(--green)}
+.bike.use{background:var(--blue)}
+.bike.low{background:var(--amber)}
+.bike.fault{background:var(--red)}
+.bike.off{background:var(--mute)}
+.bike-cluster{
+  width:32px;height:32px;font-family:'Archivo Black',sans-serif;
+  font-size:0.8rem;color:var(--paper);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;border:2px solid var(--ink);
+}
+
+.map-legend{
+  position:absolute;left:14px;bottom:14px;
+  background:var(--paper);border:1px solid var(--ink);
+  padding:8px 12px;
+  display:grid;grid-template-columns:repeat(2,auto);
+  gap:4px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+}
+.map-legend .li{display:flex;align-items:center;gap:6px}
+.map-legend .li .dot{width:8px;height:8px;border-radius:50%}
+.map-tools{
+  position:absolute;right:14px;top:14px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.mt-btn{
+  width:36px;height:36px;background:var(--paper);
+  border:1px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-family:'IBM Plex Mono',monospace;
+  font-size:0.85rem;
+  transition:all .2s;
+}
+.mt-btn:hover{background:var(--ink);color:var(--paper)}
+.mt-btn.active{background:var(--ink);color:var(--paper)}
+.map-overlay{
+  position:absolute;right:14px;bottom:14px;
+  background:var(--ink);color:var(--paper);
+  padding:10px 14px;
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  letter-spacing:0.05em;line-height:1.7;
+  border:1px solid var(--ink);
+}
+.map-overlay b{color:var(--red);font-weight:500}
+
+/* ===== ALERTS / DISPATCH GRID ===== */
+.grid-2{
+  display:grid;grid-template-columns:1.2fr 1fr;gap:24px;margin-top:24px;
+}
+
+/* alerts */
+.alerts{border:2px solid var(--ink);background:var(--paper)}
+.alerts-head{
+  padding:10px 14px;background:var(--ink);color:var(--paper);
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'Archivo Black',sans-serif;font-size:0.9rem;letter-spacing:0.02em;
+}
+.alerts-head .count{
+  font-family:'IBM Plex Mono',monospace;font-size:0.75rem;
+  background:var(--red);padding:2px 8px;font-weight:500;
+}
+.alert-item{
+  display:grid;grid-template-columns:auto 1fr auto;gap:12px;
+  padding:12px 14px;
+  border-bottom:1px solid var(--rule-soft);
+  align-items:center;cursor:pointer;transition:background .2s;
+}
+.alert-item:hover{background:var(--paper-2)}
+.alert-item:last-child{border-bottom:none}
+.alert-pri{
+  font-family:'Archivo Black',sans-serif;
+  font-size:0.7rem;padding:3px 6px;
+  border:1px solid var(--ink);
+  letter-spacing:0.05em;
+}
+.alert-pri.p0{background:var(--red);color:var(--paper);border-color:var(--red)}
+.alert-pri.p1{background:var(--amber);color:var(--paper);border-color:var(--amber)}
+.alert-pri.p2{background:var(--paper);color:var(--ink)}
+.alert-body .title{font-size:0.88rem;font-weight:600;margin-bottom:2px}
+.alert-body .meta{
+  font-family:'IBM Plex Mono',monospace;font-size:0.66rem;
+  color:var(--mute);letter-spacing:0.05em;
+}
+.alert-body .meta b{color:var(--ink);font-weight:500}
+.alert-time{
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  color:var(--mute);text-align:right;
+}
+.alert-time b{color:var(--red);font-weight:500}
+
+/* work orders */
+.orders{border:2px solid var(--ink);background:var(--paper)}
+.orders-head{
+  padding:10px 14px;background:var(--ink);color:var(--paper);
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'Archivo Black',sans-serif;font-size:0.9rem;
+}
+.orders-tabs{display:flex;gap:0;font-family:'IBM Plex Mono',monospace;font-size:0.7rem}
+.orders-tabs span{
+  padding:4px 10px;cursor:pointer;
+  border-left:1px solid rgba(241,236,225,0.2);
+  letter-spacing:0.05em;
+}
+.orders-tabs span.active{background:var(--red);color:var(--paper)}
+.order-row{
+  display:grid;grid-template-columns:60px 1fr auto;gap:10px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--rule-soft);
+  align-items:center;font-size:0.78rem;
+}
+.order-id{
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  color:var(--mute);
+}
+.order-body .title{font-weight:600;margin-bottom:2px}
+.order-body .meta{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  color:var(--mute);letter-spacing:0.04em;
+}
+.order-status{
+  font-family:'IBM Plex Mono',monospace;font-size:0.62rem;
+  padding:3px 8px;border:1px solid var(--ink);
+  letter-spacing:0.08em;text-transform:uppercase;
+}
+.order-status.doing{background:var(--amber);color:var(--paper);border-color:var(--amber)}
+.order-status.todo{background:var(--paper);color:var(--ink)}
+.order-status.done{background:var(--green);color:var(--paper);border-color:var(--green)}
+.order-status.over{background:var(--red);color:var(--paper);border-color:var(--red)}
+
+/* ===== CHART ROW ===== */
+.chart-row{
+  display:grid;grid-template-columns:1.5fr 1fr;gap:24px;
+  margin-top:24px;
+}
+.chart-card{
+  border:2px solid var(--ink);background:var(--paper);
+  padding:18px 20px 14px;
+}
+.chart-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:14px;padding-bottom:10px;
+  border-bottom:1px solid var(--ink);
+}
+.chart-head h3{
+  font-family:'Archivo Black',sans-serif;font-size:1rem;letter-spacing:-0.01em;
+}
+.chart-head .ix{
+  font-family:'Playfair Display',serif;font-style:italic;
+  font-size:0.78rem;color:var(--red);margin-left:8px;font-weight:400;
+}
+.chart-head .leg{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  color:var(--mute);letter-spacing:0.05em;
+  display:flex;gap:10px;
+}
+.chart-head .leg span{display:flex;align-items:center;gap:5px}
+.chart-head .leg span::before{content:'';width:10px;height:2px;background:var(--ink)}
+.chart-head .leg span.r::before{background:var(--red)}
+.chart-head .leg span.g::before{background:var(--green)}
+.chart-head .leg span.b::before{background:var(--blue)}
+
+/* bar chart */
+.bars{
+  display:grid;grid-template-columns:repeat(24,1fr);
+  gap:3px;height:180px;align-items:end;
+  padding-bottom:24px;border-bottom:1px solid var(--ink);
+  position:relative;
+}
+.bar{
+  background:var(--ink);
+  position:relative;
+  transition:background .2s;
+}
+.bar.peak{background:var(--red)}
+.bar.low{background:var(--mute);opacity:0.4}
+.bar:hover{background:var(--amber)}
+.bar:hover::after{
+  content:attr(data-v);position:absolute;bottom:100%;left:50%;
+  transform:translateX(-50%);margin-bottom:4px;
+  background:var(--ink);color:var(--paper);
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  padding:2px 6px;white-space:nowrap;
+}
+.bar-axis{
+  display:flex;justify-content:space-between;
+  font-family:'IBM Plex Mono',monospace;font-size:0.6rem;
+  color:var(--mute);margin-top:6px;letter-spacing:0.05em;
+}
+
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:20px}
+.donut{
+  width:140px;height:140px;flex-shrink:0;position:relative;
+}
+.donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut .center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.donut .center b{
+  font-family:'Archivo Black',sans-serif;font-size:1.5rem;line-height:1;
+}
+.donut .center small{
+  font-family:'IBM Plex Mono',monospace;font-size:0.6rem;
+  color:var(--mute);letter-spacing:0.1em;margin-top:4px;
+}
+.donut-legend{font-size:0.78rem;line-height:1.9}
+.donut-legend .li{display:flex;align-items:center;gap:8px;cursor:pointer}
+.donut-legend .li .dot{width:10px;height:10px}
+.donut-legend .li b{font-family:'IBM Plex Mono',monospace;font-weight:500;margin-left:auto;color:var(--mute)}
+
+/* ===== TABLE ===== */
+.table-wrap{
+  border:2px solid var(--ink);background:var(--paper);
+  margin-top:24px;
+}
+.table-head{
+  padding:10px 14px;background:var(--ink);color:var(--paper);
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'Archivo Black',sans-serif;font-size:0.9rem;
+}
+.table-head .meta{
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  color:rgba(241,236,225,0.6);font-weight:400;letter-spacing:0.1em;
+}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+thead th{
+  background:var(--paper-2);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.65rem;letter-spacing:0.12em;
+  text-transform:uppercase;text-align:left;
+  padding:8px 14px;
+  border-bottom:1px solid var(--ink);
+  font-weight:500;color:var(--ink);
+}
+tbody td{
+  padding:9px 14px;
+  border-bottom:1px solid var(--rule-soft);
+  vertical-align:middle;
+}
+tbody tr:hover{background:var(--paper-2)}
+tbody tr:last-child td{border-bottom:none}
+td .id{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--mute)}
+td .strong{font-weight:600}
+.tag{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;
+  font-size:0.62rem;padding:2px 6px;border:1px solid var(--ink);
+  letter-spacing:0.05em;
+}
+.tag.r{background:var(--red);color:var(--paper);border-color:var(--red)}
+.tag.g{background:var(--green);color:var(--paper);border-color:var(--green)}
+.tag.a{background:var(--amber);color:var(--paper);border-color:var(--amber)}
+.tag.b{background:var(--blue);color:var(--paper);border-color:var(--blue)}
+
+/* battery bar */
+.bat-bar{
+  display:flex;align-items:center;gap:6px;
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+}
+.bat-bar .track{
+  flex:1;height:8px;background:var(--paper-2);border:1px solid var(--ink);
+  position:relative;
+}
+.bat-bar .fill{height:100%;background:var(--green)}
+.bat-bar .fill.low{background:var(--red)}
+.bat-bar .fill.mid{background:var(--amber)}
+
+/* ===== ASIDE ===== */
+.aside-block{
+  border:1px solid var(--ink);background:var(--paper);
+  margin-bottom:16px;
+}
+.aside-head{
+  padding:10px 14px;background:var(--ink);color:var(--paper);
+  font-family:'Archivo Black',sans-serif;font-size:0.85rem;
+  letter-spacing:0.02em;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.aside-head .ix{
+  font-family:'Playfair Display',serif;font-style:italic;
+  font-weight:400;color:var(--red);font-size:0.78rem;
+}
+.aside-body{padding:14px}
+.todo-item{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+  padding:10px 0;border-bottom:1px dashed var(--rule-soft);
+  align-items:center;
+}
+.todo-item:last-child{border-bottom:none}
+.todo-pri{
+  width:24px;height:24px;background:var(--ink);color:var(--paper);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;font-size:0.7rem;
+}
+.todo-pri.p0{background:var(--red)}
+.todo-pri.p1{background:var(--amber)}
+.todo-pri.p2{background:var(--ink)}
+.todo-body{font-size:0.8rem}
+.todo-body .title{font-weight:600;margin-bottom:2px}
+.todo-body .meta{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  color:var(--mute);letter-spacing:0.05em;
+}
+.todo-act{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  padding:4px 8px;border:1px solid var(--ink);cursor:pointer;
+  letter-spacing:0.05em;
+}
+.todo-act:hover{background:var(--ink);color:var(--paper)}
+
+/* quick actions */
+.quick-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border:1px solid var(--ink);background:var(--ink);
+}
+.qa{
+  background:var(--paper);padding:14px 12px;
+  border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);
+  cursor:pointer;transition:background .2s;
+  display:flex;flex-direction:column;gap:4px;
+}
+.qa:hover{background:var(--ink);color:var(--paper)}
+.qa:hover .qa-ic{color:var(--red)}
+.qa:nth-child(2n){border-right:none}
+.qa:nth-last-child(-n+2){border-bottom:none}
+.qa-ic{font-family:'Archivo Black',sans-serif;font-size:1rem;color:var(--red);line-height:1}
+.qa-text{font-size:0.78rem;font-weight:600}
+.qa-meta{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--mute);letter-spacing:0.05em}
+.qa:hover .qa-meta{color:rgba(241,236,225,0.6)}
+
+/* ops status */
+.ops-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px dashed var(--rule-soft);
+  font-size:0.78rem;
+}
+.ops-row:last-child{border-bottom:none}
+.ops-row .lab{color:var(--ink)}
+.ops-row .val{font-family:'IBM Plex Mono',monospace;font-weight:500}
+.ops-row .val.r{color:var(--red)}
+.ops-row .val.g{color:var(--green)}
+
+/* ===== FOOTER ===== */
+footer{
+  border-top:2px solid var(--ink);
+  padding:18px 28px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+  letter-spacing:0.08em;color:var(--mute);
+  background:var(--paper);
+}
+footer b{color:var(--ink);font-weight:500}
+footer .ix{
+  font-family:'Playfair Display',serif;font-style:italic;
+  color:var(--red);font-size:0.9rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:1280px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .kpi:nth-child(3){border-right:none}
+  .kpi:nth-child(1),.kpi:nth-child(2),.kpi:nth-child(3){border-bottom:1px solid var(--ink)}
+}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  .aside{border-top:1px solid var(--ink)}
+  .main{border-right:none}
+  .grid-2,.chart-row{grid-template-columns:1fr}
+  .topbar{grid-template-columns:200px 1fr auto}
+  .topnav{font-size:0.75rem}
+}
+@media (max-width:680px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi{border-right:1px solid var(--ink)!important;border-bottom:1px solid var(--ink)}
+  .kpi:nth-child(2n){border-right:none!important}
+  .topbar{grid-template-columns:1fr auto}
+  .topnav{display:none}
+  .subbar{flex-direction:column;align-items:flex-start;gap:8px}
+  .main,.aside{padding:16px}
+  footer{flex-direction:column;gap:8px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div class="brand-text">
+      <b>CITYOPS</b>
+      <small>城市运营后台 · v2.4</small>
+    </div>
+  </div>
+  <nav class="topnav">
+    <a class="active">运营总览</a>
+    <a>地图调度</a>
+    <a>车队资产</a>
+    <a>电池能源</a>
+    <a>运维工单</a>
+    <a>规则区域</a>
+    <a>合规监管</a>
+    <a>数据报表</a>
+    <a>组织权限</a>
+    <a>系统配置</a>
+  </nav>
+  <div class="topright">
+    <div class="btn">⌕ 检索</div>
+    <div class="btn">⌥ 筛选</div>
+    <div class="btn alert">▲ 告警 17</div>
+    <div class="user">
+      <div class="user-av">L</div>
+      <div class="user-info">
+        <b>李文渊</b>
+        <small>CITY MGR · 杭州</small>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SUB BAR -->
+<div class="subbar">
+  <div class="left">
+    <span class="live">LIVE · 实时</span>
+    <span>城市 <b>杭州</b></span>
+    <span>区域 <b>西湖 / 拱墅 / 上城</b></span>
+    <span>车队 <b>混合 · 26,481 辆</b></span>
+    <span>时区 <b>UTC+8</b></span>
+    <span>统计口径 <b>自然日</b></span>
+  </div>
+  <div class="right">
+    <span class="seg">今日</span>
+    <span class="seg active">本周</span>
+    <span class="seg">本月</span>
+    <span class="seg">自定义</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <main class="main">
+
+    <!-- KPI ROW -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="lab"><span>订单数</span><span class="num">01</span></div>
+        <div class="val">42,318</div>
+        <div class="delta up">↑ 8.4% vs 上周</div>
+      </div>
+      <div class="kpi">
+        <div class="lab"><span>GMV 收入</span><span class="num">02</span></div>
+        <div class="val">¥186.4K</div>
+        <div class="delta up">↑ 12.1%</div>
+      </div>
+      <div class="kpi good">
+        <div class="lab"><span>可用率</span><span class="num">03</span></div>
+        <div class="val">91.2%</div>
+        <div class="delta up">↑ 2.3pp</div>
+      </div>
+      <div class="kpi">
+        <div class="lab"><span>单车日均骑行</span><span class="num">04</span></div>
+        <div class="val">5.8</div>
+        <div class="delta flat">→ 持平</div>
+      </div>
+      <div class="kpi alert">
+        <div class="lab"><span>低电车辆</span><span class="num">05</span></div>
+        <div class="val">428</div>
+        <div class="delta down">↓ -82 / 1h</div>
+      </div>
+      <div class="kpi alert">
+        <div class="lab"><span>告警 P0</span><span class="num">06</span></div>
+        <div class="val">9</div>
+        <div class="delta down">↑ 3 / 待处置</div>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="shead">
+      <h2><span class="ix">01 ·</span>地图调度中心</h2>
+      <div class="meta">实时刷新 <b>10s</b> · 在线车辆 <b>22,847</b> · 聚合栅格 <b>H3-9</b></div>
+    </div>
+
+    <div class="map-block">
+      <div class="map-canvas"></div>
+      <div class="map-grid"></div>
+      <div class="map-roads"></div>
+      <div class="map-zones">
+        <div class="zone red" style="left:8%;top:12%;width:22%;height:24%"></div>
+        <div class="zone-label" style="left:8%;top:12%">禁停 · 武林广场</div>
+        <div class="zone green" style="right:10%;bottom:14%;width:26%;height:30%"></div>
+        <div class="zone-label" style="right:10%;bottom:14%">推荐停车 · 钱江新城</div>
+        <div class="zone" style="left:38%;top:42%;width:30%;height:24%"></div>
+        <div class="zone-label" style="left:38%;top:42%">服务区 · 西湖</div>
+
+        <!-- bikes -->
+        <div class="bike free" style="left:15%;top:30%"></div>
+        <div class="bike free" style="left:22%;top:35%"></div>
+        <div class="bike use" style="left:25%;top:25%"></div>
+        <div class="bike low" style="left:18%;top:42%"></div>
+        <div class="bike free" style="left:35%;top:50%"></div>
+        <div class="bike use" style="left:42%;top:48%"></div>
+        <div class="bike fault" style="left:48%;top:55%"></div>
+        <div class="bike free" style="left:55%;top:45%"></div>
+        <div class="bike-cluster free" style="left:60%;top:60%;background:var(--green)">87</div>
+        <div class="bike-cluster" style="left:75%;top:35%;background:var(--amber)">42</div>
+        <div class="bike-cluster" style="left:80%;top:70%;background:var(--red)">18</div>
+        <div class="bike free" style="left:65%;top:30%"></div>
+        <div class="bike use" style="left:70%;top:25%"></div>
+        <div class="bike free" style="left:88%;top:55%"></div>
+        <div class="bike off" style="left:30%;top:65%"></div>
+        <div class="bike free" style="left:45%;top:75%"></div>
+        <div class="bike use" style="left:52%;top:80%"></div>
+      </div>
+
+      <div class="map-tools">
+        <div class="mt-btn active">⊞</div>
+        <div class="mt-btn">◯</div>
+        <div class="mt-btn">⤢</div>
+        <div class="mt-btn">⊕</div>
+        <div class="mt-btn">⌖</div>
+      </div>
+
+      <div class="map-legend">
+        <div class="li"><span class="dot" style="background:var(--green)"></span>可用 18,427</div>
+        <div class="li"><span class="dot" style="background:var(--blue)"></span>使用中 3,892</div>
+        <div class="li"><span class="dot" style="background:var(--amber)"></span>低电 428</div>
+        <div class="li"><span class="dot" style="background:var(--red)"></span>故障 64</div>
+        <div class="li"><span class="dot" style="background:var(--mute)"></span>离线 36</div>
+        <div class="li"><span class="dot" style="background:var(--ink)"></span>回收中 34</div>
+      </div>
+
+      <div class="map-overlay">
+        缺车区 <b>5</b> · 堆车区 <b>3</b><br>
+        建议调度 <b>+218 辆</b>
+      </div>
+    </div>
+
+    <!-- ALERTS + ORDERS -->
+    <div class="grid-2">
+      <div class="alerts">
+        <div class="alerts-head">
+          <span>告警中心 · Alert Center</span>
+          <span class="count">17 待处置</span>
+        </div>
+        <div class="alert-item">
+          <span class="alert-pri p0">P0</span>
+          <div class="alert-body">
+            <div class="title">武林广场禁停区堆积 · 38 辆</div>
+            <div class="meta">类型 <b>禁停堆积</b> · 区域 <b>西湖-武林</b> · 责任人 <b>张工 / 班组 B</b></div>
+          </div>
+          <div class="alert-time">超时 <b>14m</b><br>09:32:14</div>
+        </div>
+        <div class="alert-item">
+          <span class="alert-pri p0">P0</span>
+          <div class="alert-body">
+            <div class="title">疑似盗损 · 设备号 SN-2026-08-F4K</div>
+            <div class="alert-meta"></div>
+            <div class="meta">类型 <b>异常轨迹</b> · 最后上报 <b>02:14</b> · 位置 <b>余杭区</b></div>
+          </div>
+          <div class="alert-time">超时 <b>7h</b><br>02:21:48</div>
+        </div>
+        <div class="alert-item">
+          <span class="alert-pri p1">P1</span>
+          <div class="alert-body">
+            <div class="title">低电聚集 · 西湖文化中心 28 辆 &lt;15%</div>
+            <div class="meta">类型 <b>低电</b> · 建议 <b>换电任务 ×8</b></div>
+          </div>
+          <div class="alert-time">5m 前<br>09:41:02</div>
+        </div>
+        <div class="alert-item">
+          <span class="alert-pri p1">P1</span>
+          <div class="alert-body">
+            <div class="title">越界 · 3 辆电单车驶出服务区</div>
+            <div class="meta">类型 <b>越界</b> · 区域 <b>西湖-灵隐</b> · 已自动锁车</div>
+          </div>
+          <div class="alert-time">12m 前<br>09:34:55</div>
+        </div>
+        <div class="alert-item">
+          <span class="alert-pri p2">P2</span>
+          <div class="alert-body">
+            <div class="title">长时间静止 · 12 辆 &gt; 6h 未移动</div>
+            <div class="meta">类型 <b>静止</b> · 建议 <b>巡检</b></div>
+          </div>
+          <div class="alert-time">22m 前<br>09:24:11</div>
+        </div>
+        <div class="alert-item">
+          <span class="alert-pri p2">P2</span>
+          <div class="alert-body">
+            <div class="title">数据上报延迟 · IoT 平台 P95 &gt; 12s</div>
+            <div class="meta">类型 <b>数据质量</b> · 影响车辆 <b>~840</b></div>
+          </div>
+          <div class="alert-time">31m 前<br>09:15:08</div>
+        </div>
+      </div>
+
+      <div class="orders">
+        <div class="orders-head">
+          <span>运维工单 · Work Orders</span>
+          <div class="orders-tabs">
+            <span>待派 14</span>
+            <span class="active">执行中 23</span>
+            <span>待验 6</span>
+          </div>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7782</span>
+          <div class="order-body">
+            <div class="title">武林广场堆积车辆调度搬运</div>
+            <div class="meta">调度 · 张工 / 班组B · 09:32 派单</div>
+          </div>
+          <span class="order-status over">OVER</span>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7781</span>
+          <div class="order-body">
+            <div class="title">西湖文化中心集中换电 ×8</div>
+            <div class="meta">换电 · 王工 / 班组A · 09:18 派单</div>
+          </div>
+          <span class="order-status doing">DOING</span>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7779</span>
+          <div class="order-body">
+            <div class="title">钱江新城 A 区早高峰补车 +60</div>
+            <div class="meta">调度 · 周工 / 班组C · 07:00 完成</div>
+          </div>
+          <span class="order-status done">DONE</span>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7776</span>
+          <div class="order-body">
+            <div class="title">刹车异响检修 · SN-2026-04-K2R</div>
+            <div class="meta">维修 · 李工 / 班组A · 08:45 接单</div>
+          </div>
+          <span class="order-status doing">DOING</span>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7775</span>
+          <div class="order-body">
+            <div class="title">灵隐越界车辆取证回收</div>
+            <div class="meta">违停处置 · 孙工 / 班组D · 09:35 派单</div>
+          </div>
+          <span class="order-status todo">TODO</span>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7772</span>
+          <div class="order-body">
+            <div class="title">夜间回收 · 拱墅区 24 辆失联车</div>
+            <div class="meta">回收 · 陈工 / 班组B · 昨日 22:00</div>
+          </div>
+          <span class="order-status done">DONE</span>
+        </div>
+        <div class="order-row">
+          <span class="order-id">#WO-7768</span>
+          <div class="order-body">
+            <div class="title">固件升级 · 智能锁 v3.2.1 批量推送</div>
+            <div class="meta">巡检 · 系统自动 · 进度 6,820 / 8,000</div>
+          </div>
+          <span class="order-status doing">DOING</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-head">
+          <h3>24h 潮汐订单 <span class="ix">— 供需曲线</span></h3>
+          <div class="leg">
+            <span>订单</span>
+            <span class="r">缺车</span>
+            <span class="g">补车</span>
+          </div>
+        </div>
+        <div class="bars" id="bars"></div>
+        <div class="bar-axis">
+          <span>00:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>24:00</span>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <h3>车队状态分布 <span class="ix">— 实时</span></h3>
+          <div class="leg"><span>共 26,481 辆</span></div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
+              <!-- segments using stroke-dasharray, circumference = 2π*40 ≈ 251.3 -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--green)" stroke-width="14" stroke-dasharray="174 251.3" stroke-dashoffset="0"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--blue)" stroke-width="14" stroke-dasharray="37 251.3" stroke-dashoffset="-174"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--amber)" stroke-width="14" stroke-dasharray="4 251.3" stroke-dashoffset="-211"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--red)" stroke-width="14" stroke-dasharray="1 251.3" stroke-dashoffset="-215"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--mute)" stroke-width="14" stroke-dasharray="1 251.3" stroke-dashoffset="-216"/>
+            </svg>
+            <div class="center">
+              <b>91.2%</b>
+              <small>可用率</small>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="li"><span class="dot" style="background:var(--green)"></span>可用 <b>18,427</b></div>
+            <div class="li"><span class="dot" style="background:var(--blue)"></span>使用中 <b>3,892</b></div>
+            <div class="li"><span class="dot" style="background:var(--amber)"></span>低电 <b>428</b></div>
+            <div class="li"><span class="dot" style="background:var(--red)"></span>故障 <b>64</b></div>
+            <div class="li"><span class="dot" style="background:var(--mute)"></span>离线/回收 <b>70</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE: 车辆资产 -->
+    <div class="table-wrap">
+      <div class="table-head">
+        <span>车辆资产 · 实时状态 Top 10</span>
+        <span class="meta">共 26,481 辆 · 在线 22,847 · 列出需关注车辆</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>车架号 / 设备号</th>
+            <th>车型</th>
+            <th>状态</th>
+            <th>电量 SOC</th>
+            <th>SOH</th>
+            <th>最后上报</th>
+            <th>位置</th>
+            <th>最近订单</th>
+            <th>风险</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="id">SN-2026-08-F4K</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag r">离线</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill low" style="width:8%"></div></div><span>8%</span></div></td>
+            <td>92%</td>
+            <td>02:14 · 7h 前</td>
+            <td>余杭区 · 临平</td>
+            <td>昨日 21:48</td>
+            <td><span class="tag r">疑似盗损</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2026-04-K2R</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag a">检修中</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill mid" style="width:42%"></div></div><span>42%</span></div></td>
+            <td>78%</td>
+            <td>09:42 · 实时</td>
+            <td>武林维修站</td>
+            <td>09:08 报修</td>
+            <td><span class="tag a">刹车异响</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2025-11-9D3</span></td>
+            <td>自行车</td>
+            <td><span class="tag r">故障</span></td>
+            <td>—</td>
+            <td>—</td>
+            <td>09:38 · 实时</td>
+            <td>西湖 · 文三路</td>
+            <td>09:20 举报</td>
+            <td><span class="tag r">车锁卡死</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2026-07-M5T</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag a">低电</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill low" style="width:12%"></div></div><span>12%</span></div></td>
+            <td>95%</td>
+            <td>09:43 · 实时</td>
+            <td>西湖文化中心</td>
+            <td>09:32 完成</td>
+            <td><span class="tag a">换电待派</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2026-06-B8L</span></td>
+            <td>电单车 · 不可换电</td>
+            <td><span class="tag b">充电中</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill mid" style="width:58%"></div></div><span>58%</span></div></td>
+            <td>88%</td>
+            <td>09:43 · 实时</td>
+            <td>拱墅充电站</td>
+            <td>—</td>
+            <td><span class="tag">正常</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2026-03-V1X</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag g">可用</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill" style="width:94%"></div></div><span>94%</span></div></td>
+            <td>97%</td>
+            <td>09:43 · 实时</td>
+            <td>钱江新城 A</td>
+            <td>09:40 完成</td>
+            <td><span class="tag">正常</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2025-12-H7P</span></td>
+            <td>自行车</td>
+            <td><span class="tag g">可用</span></td>
+            <td>—</td>
+            <td>—</td>
+            <td>09:42 · 实时</td>
+            <td>武林广场</td>
+            <td>09:35 完成</td>
+            <td><span class="tag a">禁停区</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2026-08-Q4N</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag b">使用中</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill" style="width:76%"></div></div><span>76%</span></div></td>
+            <td>96%</td>
+            <td>09:43 · 实时</td>
+            <td>上城 · 南星</td>
+            <td>09:28 开锁</td>
+            <td><span class="tag">正常</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2025-09-C2W</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag r">超温</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill mid" style="width:48%"></div></div><span>48%</span></div></td>
+            <td>74%</td>
+            <td>09:43 · 实时</td>
+            <td>滨江 · 江陵路</td>
+            <td>09:15 完成</td>
+            <td><span class="tag r">电池温度 48℃</span></td>
+          </tr>
+          <tr>
+            <td><span class="id">SN-2026-08-E6Y</span></td>
+            <td>电单车 · 可换电</td>
+            <td><span class="tag g">可用</span></td>
+            <td><div class="bat-bar"><div class="track"><div class="fill" style="width:88%"></div></div><span>88%</span></div></td>
+            <td>99%</td>
+            <td>09:43 · 实时</td>
+            <td>西湖 · 黄龙</td>
+            <td>09:30 完成</td>
+            <td><span class="tag">正常</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- ASIDE -->
+  <aside class="aside">
+
+    <div class="aside-block">
+      <div class="aside-head">
+        <span>今日待办 · To-do</span>
+        <span class="ix">07</span>
+      </div>
+      <div class="aside-body">
+        <div class="todo-item">
+          <div class="todo-pri p0">!</div>
+          <div class="todo-body">
+            <div class="title">武林广场堆积处置</div>
+            <div class="meta">P0 · 超时 14m · 班组B</div>
+          </div>
+          <div class="todo-act">派单 →</div>
+        </div>
+        <div class="todo-item">
+          <div class="todo-pri p0">!</div>
+          <div class="todo-body">
+            <div class="title">疑似盗损车核查</div>
+            <div class="meta">P0 · 超时 7h · 余杭</div>
+          </div>
+          <div class="todo-act">查看 →</div>
+        </div>
+        <div class="todo-item">
+          <div class="todo-pri p1">!</div>
+          <div class="todo-body">
+            <div class="title">早高峰补车复盘报表</div>
+            <div class="meta">P1 · 截止 11:00</div>
+          </div>
+          <div class="todo-act">编辑 →</div>
+        </div>
+        <div class="todo-item">
+          <div class="todo-pri p1">!</div>
+          <div class="todo-body">
+            <div class="title">西湖文化中心换电任务派发</div>
+            <div class="meta">P1 · 8 单待派</div>
+          </div>
+          <div class="todo-act">派发 →</div>
+        </div>
+        <div class="todo-item">
+          <div class="todo-pri p2">·</div>
+          <div class="todo-body">
+            <div class="title">江干区禁停围栏 v1.4 发布</div>
+            <div class="meta">P2 · 待审批</div>
+          </div>
+          <div class="todo-act">审批 →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="aside-block">
+      <div class="aside-head">
+        <span>快捷工作台 · Quick Actions</span>
+        <span class="ix">09</span>
+      </div>
+      <div class="aside-body" style="padding:0">
+        <div class="quick-grid">
+          <div class="qa">
+            <div class="qa-ic">+ 调</div>
+            <div class="qa-text">调度任务</div>
+            <div class="qa-meta">DISPATCH</div>
+          </div>
+          <div class="qa">
+            <div class="qa-ic">+ 换</div>
+            <div class="qa-text">换电任务</div>
+            <div class="qa-meta">SWAP</div>
+          </div>
+          <div class="qa">
+            <div class="qa-ic">+ 巡</div>
+            <div class="qa-text">巡检任务</div>
+            <div class="qa-meta">PATROL</div>
+          </div>
+          <div class="qa">
+            <div class="qa-ic">+ 修</div>
+            <div class="qa-text">维修工单</div>
+            <div class="qa-meta">REPAIR</div>
+          </div>
+          <div class="qa">
+            <div class="qa-ic">+ 违</div>
+            <div class="qa-text">违停处置</div>
+            <div class="qa-meta">VIOLATION</div>
+          </div>
+          <div class="qa">
+            <div class="qa-ic">+ 收</div>
+            <div class="qa-text">回收任务</div>
+            <div class="qa-meta">RECYCLE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="aside-block">
+      <div class="aside-head">
+        <span>换电作业态势</span>
+        <span class="ix">04</span>
+      </div>
+      <div class="aside-body">
+        <div class="ops-row"><span class="lab">今日已完成换电</span><span class="val g">1,284 次</span></div>
+        <div class="ops-row"><span class="lab">在途换电任务</span><span class="val">38 单</span></div>
+        <div class="ops-row"><span class="lab">平均单次耗时</span><span class="val">6.8 分钟</span></div>
+        <div class="ops-row"><span class="lab">换电成功率</span><span class="val g">98.6%</span></div>
+        <div class="ops-row"><span class="lab">在岗运维</span><span class="val">42 / 48</span></div>
+        <div class="ops-row"><span class="lab">超时工单</span><span class="val r">3 单</span></div>
+        <div class="ops-row"><span class="lab">电池库存（满电）</span><span class="val">312 块</span></div>
+        <div class="ops-row"><span class="lab">异常温度电池</span><span class="val r">2 块</span></div>
+      </div>
+    </div>
+
+    <div class="aside-block">
+      <div class="aside-head">
+        <span>合规监管 · 城市级</span>
+        <span class="ix">05</span>
+      </div>
+      <div class="aside-body">
+        <div class="ops-row"><span class="lab">禁停违规</span><span class="val r">17 次 / 今日</span></div>
+        <div class="ops-row"><span class="lab">越界违规</span><span class="val r">9 次 / 今日</span></div>
+        <div class="ops-row"><span class="lab">处置时效 P90</span><span class="val g">8.4 分钟</span></div>
+        <div class="ops-row"><span class="lab">投放量 / 许可上限</span><span class="val">26,481 / 30,000</span></div>
+        <div class="ops-row"><span class="lab">MDS 接口上次上报</span><span class="val g">12s 前</span></div>
+        <div class="ops-row"><span class="lab">GBFS 字段合规率</span><span class="val g">99.7%</span></div>
+        <div class="ops-row"><span class="lab">本月监管报表</span><span class="val">已生成 ✓</span></div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>CITYOPS · 杭州城市运营后台 · <b>UTC+8 09:43:21</b> · 实时数据延迟 <b>≤ 10s</b></span>
+  <span class="ix">"看得见，管得住，调得动，算得清。"</span>
+  <span>BUILD 2026.04.18 · RBAC + AUDIT · <b>© 2026</b></span>
+</footer>
+
+<script>
+// generate 24h bars
+(function(){
+  const wrap=document.getElementById('bars');
+  if(!wrap)return;
+  // peak hours: 7-9, 17-19
+  const peaks=[0.12,0.08,0.05,0.04,0.05,0.10,0.28,0.65,0.92,0.85,0.62,0.55,0.58,0.60,0.55,0.62,0.78,0.98,0.88,0.62,0.42,0.32,0.22,0.15];
+  peaks.forEach((v,i)=>{
+    const b=document.createElement('div');
+    b.className='bar'+(v>0.85?' peak':'')+(v<0.15?' low':'');
+    b.style.height=(v*100)+'%';
+    const orders=Math.round(v*4200);
+    b.setAttribute('data-v',`${String(i).padStart(2,'0')}:00 · ${orders} 单`);
+    wrap.appendChild(b);
+  });
+})();
+// segment toggle on top nav
+document.querySelectorAll('.topnav a').forEach(a=>{
+  a.addEventListener('click',()=>{
+    document.querySelectorAll('.topnav a').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+  });
+});
+document.querySelectorAll('.seg').forEach(s=>{
+  s.addEventListener('click',()=>{
+    document.querySelectorAll('.seg').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

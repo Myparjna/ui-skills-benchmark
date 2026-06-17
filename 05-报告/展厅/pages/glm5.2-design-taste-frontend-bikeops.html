@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UrbanWheels · 共享两轮城市运营后台</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Geist', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          sans:    ['Geist', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          mono:    ['Geist Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          ink: {
+            50:  '#fafafa', 100: '#f4f4f5', 200: '#e4e4e7', 300: '#d4d4d8',
+            400: '#a1a1aa', 500: '#71717a', 600: '#52525b', 700: '#3f3f46',
+            800: '#27272a', 900: '#18181b', 950: '#09090b',
+          },
+          accent: { // emerald accent
+            50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',
+            500:'#10b981',600:'#059669',700:'#047857',
+          },
+          warn: { 500:'#f59e0b', 600:'#d97706' },
+          crit: { 500:'#e11d48', 600:'#be123c' },
+          info: { 500:'#0ea5e9', 600:'#0284c7' },
+        },
+        letterSpacing: { tightest: '-0.045em' }
+      }
+    }
+  }
+</script>
+
+<style>
+  :root { --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  html { scroll-behavior: smooth; }
+  body { background: #fafafa; color: #18181b; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #047857; color: #fff; }
+
+  /* Bento surface */
+  .bento {
+    background: #ffffff;
+    border: 1px solid rgba(228, 228, 231, 0.7);
+    border-radius: 2rem;
+    box-shadow: 0 20px 40px -20px rgba(9, 9, 11, 0.05);
+  }
+  .bento-tight { border-radius: 1.25rem; }
+
+  /* Load-in stagger */
+  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .rise { opacity: 0; animation: riseIn 0.7s var(--ease) forwards; }
+  .rise-1 { animation-delay: 0.04s; } .rise-2 { animation-delay: 0.10s; }
+  .rise-3 { animation-delay: 0.16s; } .rise-4 { animation-delay: 0.22s; }
+  .rise-5 { animation-delay: 0.28s; } .rise-6 { animation-delay: 0.34s; }
+
+  /* Perpetual micro-animations */
+  @keyframes breathe { 0%,100% { opacity: 0.5; transform: scale(0.9) } 50% { opacity: 1; transform: scale(1.2) } }
+  .breathe { animation: breathe 2.4s ease-in-out infinite; }
+
+  @keyframes pulseRing { 0% { transform: scale(0.6); opacity: 0.7 } 100% { transform: scale(2.2); opacity: 0 } }
+  .pulse-ring { animation: pulseRing 2.2s ease-out infinite; }
+
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  .marquee { animation: marquee 26s linear infinite; }
+
+  @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+  .floaty { animation: floaty 4s ease-in-out infinite; }
+
+  /* Typewriter caret */
+  @keyframes caret { 50% { opacity: 0 } }
+  .caret { animation: caret 1s step-end infinite; }
+
+  /* Auto-sorted list shimmer */
+  @keyframes listSwap { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-1px) } }
+
+  /* Skeleton shimmer */
+  @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+  .shimmer { background: linear-gradient(90deg, #f4f4f5 25%, #fafafa 50%, #f4f4f5 75%); background-size: 200% 100%; animation: shimmer 2.4s linear infinite; }
+
+  /* Overshoot badge pop */
+  @keyframes pop {
+    0% { transform: scale(0.4); opacity: 0 }
+    60% { transform: scale(1.12); opacity: 1 }
+    100% { transform: scale(1); opacity: 1 }
+  }
+  .pop { animation: pop 0.6s var(--ease) forwards; }
+
+  /* Tactile */
+  button:active, a[data-tactile]:active { transform: translateY(1px) scale(0.985); }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+  .no-bar::-webkit-scrollbar { display: none; }
+  .no-bar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Grain */
+  .grain::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image: radial-gradient(rgba(9,9,11,0.6) 0.5px, transparent 0.5px);
+    background-size: 4px 4px;
+  }
+
+  /* Number cells use Geist Mono per skill rule 95 (Cockpit Mode) — VISUAL_DENSITY 4 is daily app, but data metrics still benefit from tabular */
+  .num { font-family: 'Geist Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="font-sans grain">
+<div id="root" class="relative z-10"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ---------- Sidebar ---------- */
+function Sidebar() {
+  const nav = [
+    { group: '运营', items: [
+      { id: 'dashboard', icon: 'ph-gauge',           label: '运营总览', active: true },
+      { id: 'map',       icon: 'ph-map-trifold',     label: '地图调度中心' },
+      { id: 'vehicles',  icon: 'ph-bicycle',         label: '车队资产' },
+      { id: 'battery',   icon: 'ph-battery-charging',label: '电池与能源' },
+    ]},
+    { group: '执行', items: [
+      { id: 'work',      icon: 'ph-clipboard-list',  label: '运维工单' },
+      { id: 'zones',     icon: 'ph-map-pin-line',    label: '规则与区域' },
+      { id: 'compliance',icon: 'ph-shield-warning',  label: '合规监管' },
+    ]},
+    { group: '系统', items: [
+      { id: 'analytics', icon: 'ph-chart-line-up',   label: '数据报表' },
+      { id: 'org',       icon: 'ph-users-three',     label: '组织与权限' },
+      { id: 'settings',  icon: 'ph-gear-six',        label: '配置与对接' },
+    ]},
+  ];
+  return (
+    <aside className="hidden lg:flex flex-col w-[240px] bg-ink-950 text-ink-300 sticky top-0 h-screen">
+      <div className="h-16 flex items-center gap-2.5 px-5 border-b border-ink-800">
+        <span className="w-8 h-8 rounded-xl bg-accent-500 grid place-items-center">
+          <i className="ph-fill ph-bicycle text-ink-950 text-base"></i>
+        </span>
+        <div className="leading-none">
+          <div className="font-display font-semibold text-sm tracking-tight text-ink-50">UrbanWheels</div>
+          <div className="font-mono text-[9px] text-ink-500 tracking-widest uppercase">ops · v2.4.1</div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-5 px-3 no-bar">
+        {nav.map(g => (
+          <div key={g.group} className="mb-5">
+            <div className="font-mono text-[9px] uppercase tracking-widest text-ink-600 px-3 mb-2">{g.group}</div>
+            <ul className="space-y-0.5">
+              {g.items.map(it => (
+                <li key={it.id}>
+                  <a href="#" className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${it.active ? 'bg-ink-800/80 text-ink-50' : 'text-ink-400 hover:bg-ink-900 hover:text-ink-100'}`}>
+                    <i className={`${it.active ? 'ph-bold' : 'ph'} ${it.icon} text-base ${it.active ? 'text-accent-400' : ''}`}></i>
+                    <span>{it.label}</span>
+                    {it.id === 'compliance' && <span className="ml-auto text-[9px] font-mono bg-crit-500/15 text-crit-500 px-1.5 py-0.5 rounded">3</span>}
+                    {it.id === 'work' && <span className="ml-auto text-[9px] font-mono bg-warn-500/15 text-warn-500 px-1.5 py-0.5 rounded">12</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-ink-800 p-3">
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-400 to-info-500 grid place-items-center text-ink-950 font-display font-semibold text-xs">CY</div>
+          <div className="leading-tight flex-1 min-w-0">
+            <div className="text-xs text-ink-100 truncate">陈砚秋</div>
+            <div className="font-mono text-[9px] text-ink-500">杭州城市运营经理</div>
+          </div>
+          <button className="w-7 h-7 grid place-items-center text-ink-500 hover:text-ink-100"><i className="ph ph-sign-out"></i></button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ---------- Topbar ---------- */
+function Topbar() {
+  const [city, setCity] = useState('杭州');
+  const [range, setRange] = useState('今日');
+  return (
+    <header className="sticky top-0 z-30 bg-ink-50/85 backdrop-blur-xl border-b border-ink-200/70">
+      <div className="px-5 md:px-8 h-16 flex items-center gap-4">
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2">
+          <span className="w-8 h-8 rounded-xl bg-ink-950 grid place-items-center"><i className="ph-fill ph-bicycle text-accent-400"></i></span>
+        </div>
+
+        {/* City selector */}
+        <div className="flex items-center gap-2">
+          <i className="ph ph-map-pin text-ink-500"></i>
+          <select value={city} onChange={e => setCity(e.target.value)} className="bg-transparent text-sm font-medium text-ink-950 outline-none cursor-pointer">
+            <option>杭州</option><option>上海</option><option>成都</option><option>深圳</option>
+          </select>
+          <span className="font-mono text-[10px] text-ink-500 uppercase tracking-widest hidden md:inline">3 个区域 · 8 子车队</span>
+        </div>
+
+        <div className="hidden md:block w-px h-5 bg-ink-200 mx-2"></div>
+
+        {/* Time range */}
+        <div className="hidden md:flex items-center gap-1">
+          {['今日', '昨日', '本周', '本月', '自定义'].map(r => (
+            <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 text-xs rounded-full transition-colors ${range === r ? 'bg-ink-950 text-ink-50' : 'text-ink-600 hover:text-ink-950'}`}>{r}</button>
+          ))}
+        </div>
+
+        {/* Command search */}
+        <div className="ml-auto hidden md:flex items-center gap-2 h-9 px-3 rounded-full bg-white border border-ink-200 w-[300px]">
+          <i className="ph ph-magnifying-glass text-ink-500"></i>
+          <input placeholder="搜索车架号 / 订单号 / 工单号" className="flex-1 bg-transparent text-xs outline-none placeholder:text-ink-400" />
+          <span className="font-mono text-[9px] text-ink-400 bg-ink-100 px-1.5 py-0.5 rounded">⌘K</span>
+        </div>
+
+        <button className="w-9 h-9 grid place-items-center rounded-full hover:bg-ink-100 text-ink-700 relative">
+          <i className="ph ph-bell text-lg"></i>
+          <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-crit-500"></span>
+        </button>
+        <button className="w-9 h-9 grid place-items-center rounded-full hover:bg-ink-100 text-ink-700">
+          <i className="ph ph-question text-lg"></i>
+        </button>
+      </div>
+    </header>
+  );
+}
+
+/* ---------- KPI Tile (Bento with perpetual motion) ---------- */
+function Kpi({ label, value, unit, delta, trend, icon, spark, accent = 'ink', delay = 'rise-1' }) {
+  const trendColor = trend === 'up' ? 'text-accent-700' : trend === 'down' ? 'text-crit-600' : 'text-ink-500';
+  return (
+    <div className={`bento p-6 rise ${delay}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <i className={`ph-bold ${icon} text-ink-500`}></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">{label}</span>
+        </div>
+        <span className="relative flex w-1.5 h-1.5">
+          <span className="absolute inset-0 rounded-full bg-accent-500 breathe"></span>
+          <span className="relative w-1.5 h-1.5 rounded-full bg-accent-600"></span>
+        </span>
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className={`font-display text-4xl font-semibold tracking-tightest tabular-nums text-ink-950`}>{value}</span>
+        {unit && <span className="font-mono text-xs text-ink-500">{unit}</span>}
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <span className={`num text-xs ${trendColor} flex items-center gap-0.5`}>
+          <i className={`ph-bold ${trend === 'up' ? 'ph-trend-up' : trend === 'down' ? 'ph-trend-down' : 'ph-minus'}`}></i>
+          {delta}
+        </span>
+        <span className="font-mono text-[10px] text-ink-400">vs 昨日</span>
+      </div>
+      {/* Sparkline */}
+      <svg viewBox="0 0 100 28" className="mt-3 w-full h-7">
+        <polyline points={spark} fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={`${spark} 100,28 0,28`} fill="url(#sparkfill)" opacity="0.18" />
+        <defs>
+          <linearGradient id="sparkfill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981"/>
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+/* ---------- Live Status (breathing alert badge) ---------- */
+function LiveAlerts() {
+  const [alerts, setAlerts] = useState([
+    { id: 1, level: 'P0', type: '越界', loc: '西湖景区 · 北山街', t: '12:42', assignee: null },
+    { id: 2, level: 'P1', type: '低电', loc: '滨江区 · 江陵路', t: '12:38', assignee: '李墨白' },
+    { id: 3, level: 'P1', type: '禁停', loc: '余杭区 · 仓前街', t: '12:33', assignee: '王九叙' },
+    { id: 4, level: 'P2', type: '倒地', loc: '萧山区 · 市心北路', t: '12:21', assignee: null },
+    { id: 5, level: 'P2', type: '聚集堆积', loc: '拱墅区 · 武林广场', t: '12:09', assignee: '李墨白' },
+  ]);
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPulse(true);
+      setTimeout(() => setPulse(false), 2400);
+    }, 6500);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="bento p-6 rise rise-4 flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-bell-ringing text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">live alerts · 告警中心</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {pulse && <span className="num text-[10px] pop bg-crit-500/15 text-crit-600 px-2 py-0.5 rounded-full font-medium">+1 new</span>}
+          <button className="text-[10px] text-ink-500 hover:text-ink-950">全部</button>
+        </div>
+      </div>
+      <div className="divide-y divide-ink-100 -mx-2">
+        {alerts.map(a => {
+          const color = a.level === 'P0' ? 'bg-crit-500' : a.level === 'P1' ? 'bg-warn-500' : 'bg-ink-400';
+          const textColor = a.level === 'P0' ? 'text-crit-600' : a.level === 'P1' ? 'text-warn-600' : 'text-ink-500';
+          return (
+            <div key={a.id} className="flex items-center gap-3 px-2 py-3 hover:bg-ink-50 rounded-lg cursor-pointer">
+              <span className={`w-1.5 h-1.5 rounded-full ${color} ${a.level === 'P0' ? 'breathe' : ''}`}></span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`num text-[10px] font-semibold ${textColor}`}>{a.level}</span>
+                  <span className="text-xs font-medium text-ink-900">{a.type}</span>
+                  <span className="font-mono text-[10px] text-ink-400">· {a.t}</span>
+                </div>
+                <div className="text-[11px] text-ink-500 truncate mt-0.5">{a.loc}</div>
+              </div>
+              <div className="text-right">
+                {a.assignee ? (
+                  <span className="text-[10px] text-ink-600">{a.assignee}</span>
+                ) : (
+                  <button className="text-[10px] text-accent-700 hover:underline">指派 →</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between">
+        <span className="font-mono text-[10px] text-ink-500">P90 响应 <span className="num text-ink-950 font-semibold">8.2 min</span></span>
+        <a href="#" className="text-[11px] text-ink-700 hover:text-ink-950 inline-flex items-center gap-1" data-tactile>查看告警台 <i className="ph ph-arrow-right"></i></a>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Map Bento — Operations Center ---------- */
+function OpsMap() {
+  // Simulated zones
+  const zones = [
+    { id: 'westlake', name: '西湖景区', x: 24, y: 32, vehicles: 842, gap: -38, type: 'over' },
+    { id: 'binjiang', name: '滨江',     x: 62, y: 58, vehicles: 416, gap: +24, type: 'under' },
+    { id: 'xihu',     name: '西溪',     x: 18, y: 60, vehicles: 198, gap: -12, type: 'over' },
+    { id: 'xiaoshan', name: '萧山',     x: 78, y: 38, vehicles: 612, gap: +5,  type: 'ok' },
+    { id: 'gongshu',  name: '拱墅',     x: 48, y: 22, vehicles: 524, gap: +8,  type: 'ok' },
+    { id: 'yuhang',   name: '余杭',     x: 36, y: 78, vehicles: 287, gap: -22, type: 'over' },
+  ];
+  return (
+    <div className="bento p-6 rise rise-3 flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-map-trifold text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">map ops · 地图调度</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {['车辆', '电量', '热力', '供需'].map((t, i) => (
+            <button key={t} className={`text-[10px] px-2 py-1 rounded ${i === 0 ? 'bg-ink-950 text-ink-50' : 'text-ink-500 hover:text-ink-950'}`}>{t}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative aspect-[16/9] rounded-xl bg-ink-100 overflow-hidden border border-ink-200">
+        {/* Stylized map */}
+        <svg viewBox="0 0 320 180" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <pattern id="grid2" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e4e4e7" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="320" height="180" fill="url(#grid2)"/>
+          {/* River */}
+          <path d="M -20 60 Q 80 80 160 50 T 360 70" stroke="#bae6fd" strokeWidth="10" fill="none" strokeLinecap="round" opacity="0.7"/>
+          <path d="M 100 -20 Q 120 80 90 200" stroke="#bae6fd" strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.6"/>
+          {/* Roads */}
+          <path d="M -20 130 Q 100 110 220 140 T 360 130" stroke="#d4d4d8" strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <path d="M 60 -20 Q 80 60 50 180" stroke="#d4d4d8" strokeWidth="5" fill="none" strokeLinecap="round"/>
+          {/* Heat zones (subtle) */}
+          <ellipse cx="76.8" cy="57.6" rx="22" ry="14" fill="#e11d48" opacity="0.06"/>
+          <ellipse cx="198.4" cy="104.4" rx="22" ry="14" fill="#0ea5e9" opacity="0.06"/>
+        </svg>
+
+        {/* Zone markers */}
+        {zones.map(z => {
+          const color = z.type === 'over' ? 'bg-warn-500' : z.type === 'under' ? 'bg-info-500' : 'bg-accent-500';
+          const textColor = z.type === 'over' ? 'text-warn-600' : z.type === 'under' ? 'text-info-600' : 'text-accent-700';
+          return (
+            <div key={z.id} className="absolute -translate-x-1/2 -translate-y-1/2 group" style={{ left: `${z.x}%`, top: `${z.y}%` }}>
+              <div className="relative">
+                {z.type !== 'ok' && <span className={`absolute inset-0 rounded-full ${color} pulse-ring opacity-40`}></span>}
+                <div className={`relative w-8 h-8 rounded-full ${color} text-white grid place-items-center font-mono text-[10px] font-semibold shadow-md`}>
+                  {z.vehicles}
+                </div>
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap text-[9px] font-mono">
+                <div className="text-ink-700 font-medium">{z.name}</div>
+                <div className={`${textColor}`}>{z.gap > 0 ? `缺 ${z.gap}` : z.gap < 0 ? `堆 ${-z.gap}` : '平衡'}</div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Toolbar */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
+          {['框选', '测距', '围栏'].map((t, i) => (
+            <button key={t} className="text-[10px] px-2 py-1 rounded bg-white/95 backdrop-blur shadow text-ink-700 hover:text-ink-950 flex items-center gap-1">
+              <i className={`ph ${['ph-frame-corners', 'ph-ruler', 'ph-map-pin'][i]}`}></i> {t}
+            </button>
+          ))}
+        </div>
+        <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-white/95 backdrop-blur rounded shadow px-2 py-1">
+          <button className="w-5 h-5 grid place-items-center text-ink-700"><i className="ph-bold ph-plus"></i></button>
+          <span className="font-mono text-[9px] text-ink-500">1:8k</span>
+          <button className="w-5 h-5 grid place-items-center text-ink-700"><i className="ph-bold ph-minus"></i></button>
+        </div>
+        <div className="absolute bottom-3 left-3 flex items-center gap-2 text-[9px] font-mono bg-white/95 backdrop-blur px-2 py-1 rounded shadow">
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-warn-500"></span>堆积</span>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-info-500"></span>缺车</span>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-accent-500"></span>平衡</span>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+        {[
+          { l: '在线车辆', v: '2,879', u: '辆' },
+          { l: '可用率',   v: '92.4',  u: '%' },
+          { l: '低电车辆', v: '186',   u: '辆' },
+          { l: '在途换电', v: '24',    u: '任务' },
+        ].map(s => (
+          <div key={s.l} className="flex items-baseline gap-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">{s.l}</span>
+            <span className="num text-sm font-semibold text-ink-950">{s.v}</span>
+            <span className="font-mono text-[9px] text-ink-500">{s.u}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Command Input (Typewriter) ---------- */
+function CommandInput() {
+  const prompts = [
+    '查找萧山区低电车辆并生成换电任务',
+    '对比上周与本周武林广场骑行起终点',
+    '导出 5 月余杭区禁停违规清单',
+    '查看 8:00 早高峰滨江缺车预测',
+  ];
+  const [idx, setIdx] = useState(0);
+  const [text, setText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  useEffect(() => {
+    const full = prompts[idx];
+    let t;
+    if (!deleting && text.length < full.length) {
+      t = setTimeout(() => setText(full.slice(0, text.length + 1)), 45);
+    } else if (!deleting && text.length === full.length) {
+      t = setTimeout(() => setDeleting(true), 1600);
+    } else if (deleting && text.length > 0) {
+      t = setTimeout(() => setText(full.slice(0, text.length - 1)), 25);
+    } else {
+      setDeleting(false);
+      setIdx(i => (i + 1) % prompts.length);
+    }
+    return () => clearTimeout(t);
+  }, [text, deleting, idx]);
+  return (
+    <div className="bento p-6 rise rise-5 relative overflow-hidden">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-sparkle text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">ops assistant · 智能指令</span>
+        </div>
+        <span className="font-mono text-[9px] text-ink-400 uppercase tracking-widest">beta</span>
+      </div>
+      <div className="relative">
+        <div className="flex items-center gap-2 h-12 px-4 rounded-xl bg-ink-100 border border-ink-200">
+          <i className="ph ph-magnifying-glass text-ink-500"></i>
+          <span className="text-sm text-ink-900">{text}</span>
+          <span className="w-0.5 h-4 bg-accent-600 caret"></span>
+          <span className="ml-auto font-mono text-[10px] text-ink-500 bg-ink-200 px-1.5 py-0.5 rounded">↵ 执行</span>
+        </div>
+        {/* Suggested quick actions */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {['生成调度', '批量换电', '围栏发布', '导出报表'].map(t => (
+            <button key={t} className="text-[10px] px-2.5 py-1 rounded-full border border-ink-200 text-ink-700 hover:bg-ink-950 hover:text-ink-50 hover:border-ink-950 transition-colors">
+              <i className="ph ph-arrow-square-out mr-0.5"></i> {t}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Vehicle Health distribution ---------- */
+function VehicleHealth() {
+  const data = [
+    { label: '可用',     value: 2654, pct: 92.4, color: 'bg-accent-500', txt: 'text-accent-700' },
+    { label: '使用中',   value: 1248, pct: 43.4, color: 'bg-info-500',   txt: 'text-info-600' },
+    { label: '低电',     value: 186,  pct: 6.5,  color: 'bg-warn-500',   txt: 'text-warn-600' },
+    { label: '故障',     value: 47,   pct: 1.6,  color: 'bg-crit-500',   txt: 'text-crit-600' },
+    { label: '离线',     value: 89,   pct: 3.1,  color: 'bg-ink-400',    txt: 'text-ink-600' },
+    { label: '回收中',   value: 22,   pct: 0.8,  color: 'bg-ink-300',    txt: 'text-ink-500' },
+  ];
+  return (
+    <div className="bento p-6 rise rise-2">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-bicycle text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">fleet health · 车队健康</span>
+        </div>
+        <button className="text-[10px] text-ink-500 hover:text-ink-950">查看资产</button>
+      </div>
+
+      {/* Horizontal stacked bar */}
+      <div className="flex h-3 rounded-full overflow-hidden bg-ink-100">
+        {data.map(d => (
+          <div key={d.label} className={d.color} style={{ width: `${d.pct}%` }} title={`${d.label} ${d.value}`}></div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        {data.map(d => (
+          <div key={d.label} className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${d.color}`}></span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] text-ink-600 truncate">{d.label}</div>
+              <div className="num text-sm font-semibold text-ink-950">{d.value.toLocaleString()}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-ink-100 flex items-center justify-between">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">重点区域可用率</div>
+          <div className="num text-2xl font-semibold text-ink-950 mt-0.5">88.7<span className="text-xs text-ink-500">%</span></div>
+        </div>
+        <div className="text-right">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">vs 上周</div>
+          <div className="num text-sm text-accent-700 mt-0.5">+2.4 pp</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Battery SoC distribution ---------- */
+function Battery() {
+  const segments = [
+    { range: '0–10%',  count: 12,  color: 'bg-crit-500' },
+    { range: '10–30%', count: 86,  color: 'bg-warn-500' },
+    { range: '30–60%', count: 248, color: 'bg-info-500' },
+    { range: '60–100%',count: 1532,color: 'bg-accent-500' },
+  ];
+  const max = Math.max(...segments.map(s => s.count));
+  return (
+    <div className="bento p-6 rise rise-3">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-battery-charging text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">battery soc · 电量分布</span>
+        </div>
+        <span className="num text-[10px] text-warn-600 bg-warn-500/10 px-2 py-0.5 rounded-full">98 待换电</span>
+      </div>
+
+      <div className="space-y-3">
+        {segments.map(s => (
+          <div key={s.range} className="flex items-center gap-3">
+            <span className="font-mono text-[10px] text-ink-500 w-14">{s.range}</span>
+            <div className="flex-1 h-6 rounded bg-ink-100 overflow-hidden relative">
+              <div className={`h-full ${s.color} progress-fill`} style={{ '--p': `${(s.count / max) * 100}%`, transition: 'width 1s var(--ease)' }}></div>
+            </div>
+            <span className="num text-xs font-semibold text-ink-950 w-10 text-right">{s.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-ink-100 grid grid-cols-2 gap-3">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">今日已换电</div>
+          <div className="num text-xl font-semibold text-ink-950 mt-0.5">142 <span className="text-xs text-ink-500">次</span></div>
+        </div>
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">平均耗时</div>
+          <div className="num text-xl font-semibold text-ink-950 mt-0.5">8.4 <span className="text-xs text-ink-500">min</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Wide Data Stream — horizontal carousel of metrics ---------- */
+function DataStream() {
+  const items = [
+    { l: '订单数',     v: '4,892', d: '+12.4%' },
+    { l: '骑行次数',   v: '6,218', d: '+8.1%' },
+    { l: 'GMV',        v: '¥38.2k', d: '+15.6%' },
+    { l: 'DAU',        v: '3,142', d: '+4.2%' },
+    { l: '解锁成功率', v: '99.2%', d: '+0.3pp' },
+    { l: '单车日均',   v: '2.14', d: '+0.18' },
+    { l: '平均时长',   v: '18.4 min', d: '-1.2 min' },
+    { l: '投诉率',     v: '0.42%', d: '-0.08pp' },
+  ];
+  return (
+    <div className="bento p-6 rise rise-4 overflow-hidden">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-chart-line text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">data stream · 运营指标流</span>
+        </div>
+        <span className="font-mono text-[10px] text-ink-400 flex items-center gap-1">
+          <span className="relative flex w-1.5 h-1.5">
+            <span className="absolute inset-0 rounded-full bg-accent-500 breathe"></span>
+            <span className="relative w-1.5 h-1.5 rounded-full bg-accent-600"></span>
+          </span>
+          实时更新
+        </span>
+      </div>
+      <div className="overflow-x-auto no-bar -mx-2">
+        <div className="flex gap-3 px-2" style={{ width: 'max-content' }}>
+          {items.concat(items).map((it, i) => (
+            <div key={i} className="w-[150px] flex-shrink-0 px-4 py-3 rounded-xl border border-ink-100 hover:border-ink-300 transition-colors">
+              <div className="font-mono text-[9px] uppercase tracking-widest text-ink-500">{it.l}</div>
+              <div className="num text-xl font-semibold text-ink-950 mt-1">{it.v}</div>
+              <div className="num text-[10px] text-accent-700 mt-0.5">{it.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Work Orders Pipeline ---------- */
+function WorkOrders() {
+  const cols = [
+    { l: '待派', count: 8, items: [
+      { id: 'WO-2418', type: '换电', loc: '滨江 · 江陵路', p: 'P1' },
+      { id: 'WO-2419', type: '维修', loc: '西湖 · 北山街', p: 'P2' },
+      { id: 'WO-2420', type: '巡检', loc: '余杭 · 仓前街', p: 'P3' },
+    ]},
+    { l: '执行中', count: 14, items: [
+      { id: 'WO-2401', type: '换电', loc: '萧山 · 市心路', p: 'P1', who: '李墨白' },
+      { id: 'WO-2405', type: '调度', loc: '拱墅 · 武林广场', p: 'P2', who: '王九叙' },
+      { id: 'WO-2407', type: '违停', loc: '西湖 · 南山路', p: 'P1', who: '李墨白' },
+    ]},
+    { l: '待验收', count: 5, items: [
+      { id: 'WO-2392', type: '回收', loc: '滨江 · 江南大道', p: 'P3', who: '王九叙' },
+      { id: 'WO-2395', type: '换电', loc: '拱墅 · 湖墅南路', p: 'P2', who: '李墨白' },
+    ]},
+    { l: '已完成', count: 142, items: [
+      { id: 'WO-2301', type: '维修', loc: '萧山 · 金城路', p: 'P2', who: '王九叙' },
+      { id: 'WO-2302', type: '换电', loc: '余杭 · 文一西路', p: 'P1', who: '李墨白' },
+    ]},
+  ];
+  return (
+    <div className="bento p-6 rise rise-5">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-clipboard-list text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">work orders · 工单看板</span>
+        </div>
+        <div className="flex items-center gap-3 text-[10px]">
+          <span className="font-mono text-warn-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-warn-500"></span>临近超时 3</span>
+          <button className="text-ink-700 hover:text-ink-950 inline-flex items-center gap-1"><i className="ph ph-plus"></i> 新建工单</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {cols.map(c => (
+          <div key={c.l} className="bg-ink-50 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-ink-600">{c.l}</span>
+              <span className="num text-xs font-semibold text-ink-950 bg-white px-1.5 py-0.5 rounded">{c.count}</span>
+            </div>
+            <div className="space-y-2">
+              {c.items.map(it => {
+                const pc = it.p === 'P1' ? 'bg-crit-500' : it.p === 'P2' ? 'bg-warn-500' : 'bg-ink-300';
+                return (
+                  <div key={it.id} className="bg-white rounded-lg p-2.5 border border-ink-100 hover:border-ink-300 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${pc}`}></span>
+                      <span className="font-mono text-[10px] text-ink-500">{it.id}</span>
+                    </div>
+                    <div className="text-[11px] font-medium text-ink-950">{it.type} · {it.loc}</div>
+                    {it.who && <div className="text-[10px] text-ink-500 mt-1 flex items-center gap-1"><i className="ph ph-user-circle"></i> {it.who}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Compliance & Supply/Demand ---------- */
+function Compliance() {
+  return (
+    <div className="bento p-6 rise rise-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-shield-warning text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">compliance · 合规监管</span>
+        </div>
+        <span className="font-mono text-[10px] text-crit-600 bg-crit-500/10 px-2 py-0.5 rounded-full">3 项超投预警</span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { l: '禁停违规', v: '47', u: '次', t: '-12%' },
+          { l: '越界次数', v: '23', u: '次', t: '+5%' },
+          { l: '处置时效', v: '9.2', u: 'min', t: '-1.4min' },
+        ].map(s => (
+          <div key={s.l}>
+            <div className="font-mono text-[9px] uppercase tracking-widest text-ink-500">{s.l}</div>
+            <div className="num text-2xl font-semibold text-ink-950 mt-1">{s.v}<span className="text-xs text-ink-500 ml-0.5">{s.u}</span></div>
+            <div className="num text-[10px] text-accent-700 mt-0.5">{s.t}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-ink-100">
+        <div className="flex items-center justify-between mb-3">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">数据共享接口 · MDS/GBFS</span>
+          <span className="flex items-center gap-1 text-[10px] text-accent-700"><span className="w-1.5 h-1.5 rounded-full bg-accent-500 breathe"></span> healthy</span>
+        </div>
+        <div className="space-y-1.5">
+          {[
+            { api: 'policy_publish',    last: '2 分钟前', ok: true },
+            { api: 'trips_push',        last: '47 秒前',  ok: true },
+            { api: 'status_changes',    last: '1 分钟前', ok: true },
+            { api: 'compliance_report', last: '4 分钟前', ok: false },
+          ].map(r => (
+            <div key={r.api} className="flex items-center justify-between text-[11px] py-1">
+              <span className="font-mono text-ink-700">{r.api}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-ink-500">{r.last}</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${r.ok ? 'bg-accent-500' : 'bg-warn-500'}`}></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SupplyDemand() {
+  const hours = Array.from({ length: 24 }, (_, i) => {
+    // Simulate rush hours
+    const r = Math.sin((i - 8) / 24 * Math.PI * 2) * 0.4 + 0.5;
+    return { h: i, supply: 0.4 + Math.random() * 0.3, demand: Math.max(0.1, Math.min(0.95, r + (Math.random() - 0.5) * 0.2)) };
+  });
+  return (
+    <div className="bento p-6 rise rise-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <i className="ph-bold ph-graph text-ink-500"></i>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">supply & demand · 供需潮汐</span>
+        </div>
+        <div className="flex items-center gap-3 text-[10px]">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-info-500"></span>需求</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-500"></span>供给</span>
+        </div>
+      </div>
+
+      <div className="flex items-end gap-0.5 h-32">
+        {hours.map(h => (
+          <div key={h.h} className="flex-1 flex flex-col justify-end gap-px group">
+            <div className="bg-info-500 rounded-t-sm" style={{ height: `${h.demand * 100}%`, opacity: 0.7 }}></div>
+            <div className="bg-accent-500" style={{ height: `${h.supply * 100}%` }}></div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between mt-2 font-mono text-[9px] text-ink-500">
+        {['00', '06', '12', '18', '24'].map(t => <span key={t}>{t}:00</span>)}
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-ink-100 flex items-center justify-between">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">高峰预警</div>
+          <div className="text-xs text-ink-900 mt-1">07:00–09:00 · 17:00–19:00</div>
+        </div>
+        <button className="text-[10px] px-2.5 py-1 rounded-full bg-ink-950 text-ink-50 hover:bg-ink-800 inline-flex items-center gap-1">
+          生成调度建议 <i className="ph-bold ph-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Quick Actions Strip ---------- */
+function QuickActions() {
+  const actions = [
+    { icon: 'ph-bicycle',          label: '调度任务' },
+    { icon: 'ph-battery-charging', label: '换电任务' },
+    { icon: 'ph-clipboard-check',  label: '巡检任务' },
+    { icon: 'ph-wrench',           label: '维修工单' },
+    { icon: 'ph-map-pin-line',     label: '违停处置' },
+    { icon: 'ph-megaphone',        label: '站内公告' },
+    { icon: 'ph-funnel-simple',    label: '批量指令' },
+    { icon: 'ph-calendar-dots',    label: '运营时段' },
+  ];
+  return (
+    <div className="bento p-5 rise rise-2">
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">quick actions · 工作台</span>
+        <button className="text-[10px] text-ink-500 hover:text-ink-950 inline-flex items-center gap-1"><i className="ph ph-dots-three"></i></button>
+      </div>
+      <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
+        {actions.map(a => (
+          <button key={a.label} className="group flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-ink-50 transition-colors">
+            <span className="w-9 h-9 rounded-xl bg-ink-100 group-hover:bg-ink-950 group-hover:text-accent-400 grid place-items-center transition-colors">
+              <i className={`ph-bold ${a.icon} text-base`}></i>
+            </span>
+            <span className="text-[10px] text-ink-700 group-hover:text-ink-950">{a.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- App Layout ---------- */
+function App() {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex-1 min-w-0">
+        <Topbar />
+        <main className="p-5 md:p-8 space-y-5">
+          {/* Page header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 rise rise-1">
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-500 mb-2">— Hangzhou · today</div>
+              <h1 className="font-display font-semibold text-3xl md:text-4xl tracking-tightest text-ink-950 leading-none">
+                运营总览
+              </h1>
+              <p className="text-sm text-ink-600 mt-2 max-w-[60ch]">
+                今日运营是否正常、哪里在出问题、应该先处理什么——一屏掌握。
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="h-9 px-4 rounded-full border border-ink-300 text-sm text-ink-800 hover:border-ink-950 hover:bg-ink-950 hover:text-ink-50 transition-all inline-flex items-center gap-1.5" data-tactile>
+                <i className="ph ph-download-simple"></i> 导出日报
+              </button>
+              <button className="h-9 px-4 rounded-full bg-ink-950 text-ink-50 text-sm hover:bg-ink-800 inline-flex items-center gap-1.5" data-tactile>
+                <i className="ph-bold ph-plus"></i> 创建任务
+              </button>
+            </div>
+          </div>
+
+          {/* KPI Row — 4 tiles via CSS grid (not 3 cards) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            <Kpi label="订单数"       value="4,892"  delta="+12.4%" trend="up"   icon="ph-receipt"     spark="0,22 12,18 25,24 40,20 55,28 70,22 85,30 100,26" delay="rise-1" />
+            <Kpi label="GMV (¥)"      value="38.2k"  delta="+15.6%" trend="up"   icon="ph-currency-cny"spark="0,18 12,22 25,16 40,24 55,20 70,28 85,24 100,30" delay="rise-2" />
+            <Kpi label="可用率"       value="92.4"   unit="%"  delta="+2.4pp"  trend="up"   icon="ph-check-circle"  spark="0,20 12,18 25,22 40,20 55,24 70,22 85,26 100,24" delay="rise-3" />
+            <Kpi label="投诉率"       value="0.42"   unit="%"  delta="-0.08pp" trend="down" icon="ph-warning-circle" spark="0,28 12,26 25,24 40,26 55,22 70,20 85,18 100,16" delay="rise-4" />
+          </div>
+
+          {/* Quick Actions */}
+          <QuickActions />
+
+          {/* Map + Alerts — 70/30 split */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
+            <OpsMap />
+            <LiveAlerts />
+          </div>
+
+          {/* Command Input full-width */}
+          <CommandInput />
+
+          {/* Health + Battery + Supply/Demand */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <VehicleHealth />
+            <Battery />
+            <SupplyDemand />
+          </div>
+
+          {/* Data stream full-width */}
+          <DataStream />
+
+          {/* Work Orders full-width */}
+          <WorkOrders />
+
+          {/* Compliance full-width split */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-5">
+            <Compliance />
+            <div className="bento p-6 rise rise-6">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <i className="ph-bold ph-target text-ink-500"></i>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-ink-500">objectives · OKR 进度</span>
+                </div>
+                <span className="font-mono text-[10px] text-ink-500">2026 Q2</span>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { l: '高峰前 60min 可用车覆盖率',  cur: 92, target: 90, ok: true },
+                  { l: '平均缺车时长',              cur: 78, target: 80, ok: true },
+                  { l: '单车日均运维里程下降',       cur: 64, target: 85, ok: false },
+                  { l: '低电投诉下降 30%',          cur: 42, target: 70, ok: false },
+                  { l: '越界响应 P90 ≤ 10 min',     cur: 88, target: 90, ok: false },
+                ].map(o => (
+                  <div key={o.l}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-ink-700">{o.l}</span>
+                      <span className={`num text-[10px] ${o.ok ? 'text-accent-700' : 'text-warn-600'}`}>{o.cur}% / {o.target}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-ink-100 overflow-hidden">
+                      <div className={`h-full rounded-full ${o.ok ? 'bg-accent-500' : 'bg-warn-500'}`} style={{ width: `${o.cur}%` }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <footer className="pt-6 pb-2 flex flex-col md:flex-row gap-2 md:items-center md:justify-between text-[11px] text-ink-500 font-mono">
+            <div>UrbanWheels Ops Console · v2.4.1 · 数据延迟 P95 ≤ 10s · 单城 3 万车 · 峰值 2-3 万设备在线</div>
+            <div>© 2026 · 杭州城市运营中心 · 审计日志已开启</div>
+          </footer>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

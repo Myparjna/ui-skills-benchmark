@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星空航空 · 每一次起飞，都是一次全新的抵达</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ===== Nuxt UI 语义色 token 体系（与 @nuxt/ui v4 一致） ===== */
+  @theme {
+    --font-sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    /* 航空场景：primary = sky（信任/天空），neutral = slate */
+    --color-primary-50: #f0f9ff;
+    --color-primary-100: #e0f2fe;
+    --color-primary-200: #bae6fd;
+    --color-primary-300: #7dd3fc;
+    --color-primary-400: #38bdf8;
+    --color-primary-500: #0ea5e9;
+    --color-primary-600: #0284c7;
+    --color-primary-700: #0369a1;
+    --color-primary-800: #075985;
+    --color-primary-900: #0c4a6e;
+    --color-primary-950: #082f49;
+    --color-neutral-50: #f8fafc;
+    --color-neutral-100: #f1f5f9;
+    --color-neutral-200: #e2e8f0;
+    --color-neutral-300: #cbd5e1;
+    --color-neutral-400: #94a3b8;
+    --color-neutral-500: #64748b;
+    --color-neutral-600: #475569;
+    --color-neutral-700: #334155;
+    --color-neutral-800: #1e293b;
+    --color-neutral-900: #0f172a;
+    --color-neutral-950: #020617;
+    --color-success-500: #10b981;
+    --color-warning-500: #f59e0b;
+    --color-error-500: #ef4444;
+  }
+  :root {
+    --ui-radius: 0.375rem;
+    --ui-container: 80rem;
+    --ui-header-height: 4rem;
+    --ui-bg: #ffffff;
+    --ui-bg-muted: #f8fafc;
+    --ui-bg-elevated: #ffffff;
+    --ui-bg-accented: #f1f5f9;
+    --ui-bg-inverted: #0f172a;
+    --ui-text: #0f172a;
+    --ui-text-muted: #64748b;
+    --ui-text-toned: #475569;
+    --ui-text-dimmed: #94a3b8;
+    --ui-text-highlighted: #020617;
+    --ui-text-inverted: #ffffff;
+    --ui-border: #e2e8f0;
+    --ui-border-muted: #f1f5f9;
+    --ui-border-accented: #cbd5e1;
+    --ui-primary: var(--color-primary-500);
+    --ui-ring: var(--color-primary-500);
+  }
+  html, body { background: var(--ui-bg); color: var(--ui-text); font-family: var(--font-sans); }
+  /* Nuxt UI 语义工具类 */
+  .text-default { color: var(--ui-text); }
+  .text-muted { color: var(--ui-text-muted); }
+  .text-toned { color: var(--ui-text-toned); }
+  .text-dimmed { color: var(--ui-text-dimmed); }
+  .text-highlighted { color: var(--ui-text-highlighted); }
+  .text-inverted { color: var(--ui-text-inverted); }
+  .text-primary { color: var(--ui-primary); }
+  .bg-default { background-color: var(--ui-bg); }
+  .bg-muted { background-color: var(--ui-bg-muted); }
+  .bg-elevated { background-color: var(--ui-bg-elevated); }
+  .bg-accented { background-color: var(--ui-bg-accented); }
+  .bg-inverted { background-color: var(--ui-bg-inverted); }
+  .bg-primary { background-color: var(--ui-primary); }
+  .border-default { border-color: var(--ui-border); }
+  .border-muted { border-color: var(--ui-border-muted); }
+  .border-accented { border-color: var(--ui-border-accented); }
+  .ring-default { --tw-ring-color: var(--ui-border); }
+  .ring-primary { --tw-ring-color: var(--ui-primary); }
+  /* Nuxt UI variant 按钮 */
+  .nui-btn { @apply inline-flex items-center justify-center gap-2 font-medium rounded-md transition-colors select-none whitespace-nowrap; }
+  .nui-btn-solid-primary { background-color: var(--ui-primary); color: #fff; }
+  .nui-btn-solid-primary:hover { background-color: var(--color-primary-600); }
+  .nui-btn-solid-neutral { background-color: var(--ui-bg-inverted); color: #fff; }
+  .nui-btn-solid-neutral:hover { opacity: .9; }
+  .nui-btn-outline { border: 1px solid var(--ui-border); background: transparent; color: var(--ui-text); }
+  .nui-btn-outline:hover { background-color: var(--ui-bg-muted); }
+  .nui-btn-soft-primary { background-color: var(--color-primary-100); color: var(--color-primary-700); }
+  .nui-btn-soft-primary:hover { background-color: var(--color-primary-200); }
+  .nui-btn-subtle { background-color: var(--ui-bg-muted); color: var(--ui-text); }
+  .nui-btn-subtle:hover { background-color: var(--ui-bg-accented); }
+  .nui-btn-ghost { background: transparent; color: var(--ui-text); }
+  .nui-btn-ghost:hover { background-color: var(--ui-bg-muted); }
+  .nui-btn-link { background: transparent; color: var(--ui-primary); text-decoration: none; }
+  .nui-btn-link:hover { text-decoration: underline; }
+  .nui-card { @apply rounded-lg bg-elevated border border-muted; }
+  .nui-input { @apply rounded-md border border-default bg-default px-3 py-2 text-default text-sm w-full outline-none transition-colors; }
+  .nui-input:focus { border-color: var(--ui-primary); box-shadow: 0 0 0 1px var(--ui-primary); }
+  .nui-input::placeholder { color: var(--ui-text-dimmed); }
+  [v-cloak] { display: none; }
+  /* Hero 背景渐变 */
+  .hero-bg {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(14,165,233,.15), transparent 60%),
+      radial-gradient(900px 500px at 10% 110%, rgba(2,132,199,.12), transparent 60%),
+      linear-gradient(180deg, #f0f9ff 0%, #ffffff 70%);
+  }
+  .sky-gradient { background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 50%, #38bdf8 100%); }
+  .glass-card { background: rgba(255,255,255,.92); backdrop-filter: blur(12px); }
+  .destination-card:hover img { transform: scale(1.05); }
+  .destination-card img { transition: transform .5s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="app" v-cloak></div>
+
+<script>
+const { createApp, computed, ref, reactive, onMounted, h } = Vue;
+
+/* ========== Nuxt UI 等效组件（按 @nuxt/ui v4 API 重建） ========== */
+// UButton
+const UButton = {
+  name: 'UButton',
+  props: {
+    label: String, icon: String, trailingIcon: String, size: { type: String, default: 'md' },
+    color: { type: String, default: 'primary' }, variant: { type: String, default: 'solid' },
+    to: String, block: Boolean, disabled: Boolean
+  },
+  setup(p, { slots }) {
+    const sizeCls = computed(() => ({
+      xs: 'text-xs px-2 py-1', sm: 'text-sm px-2.5 py-1.5', md: 'text-sm px-3 py-2',
+      lg: 'text-base px-4 py-2.5', xl: 'text-base px-5 py-3'
+    }[p.size]));
+    const variantCls = computed(() => {
+      const map = {
+        primary: { solid: 'nui-btn-solid-primary', soft: 'nui-btn-soft-primary', outline: 'nui-btn-outline', ghost: 'nui-btn-ghost', subtle: 'nui-btn-subtle', link: 'nui-btn-link' },
+        neutral: { solid: 'nui-btn-solid-neutral', soft: 'nui-btn-subtle', outline: 'nui-btn-outline', ghost: 'nui-btn-ghost', subtle: 'nui-btn-subtle', link: 'nui-btn-link' }
+      };
+      const c = p.color === 'neutral' ? 'neutral' : 'primary';
+      return (map[c] || map.primary)[p.variant] || 'nui-btn-solid-primary';
+    });
+    return () => h(p.to ? 'a' : 'button', {
+      href: p.to, disabled: p.disabled,
+      class: ['nui-btn', sizeCls.value, variantCls.value, p.block ? 'w-full' : '', 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'],
+    }, [
+      p.icon ? h('i', { 'data-lucide': p.icon, class: 'size-4 shrink-0' }) : null,
+      slots.default ? slots.default() : p.label,
+      p.trailingIcon ? h('i', { 'data-lucide': p.trailingIcon, class: 'size-4 shrink-0' }) : null,
+    ]);
+  }
+};
+// UIcon
+const UIcon = { name: 'UIcon', props: { name: String, class: String }, setup(p){ return () => h('i', { 'data-lucide': (p.name||'').replace('i-lucide-',''), class: p.class }); } };
+// UCard
+const UCard = { name:'UCard', props:{ ui:Object }, setup(p,{ slots }){ return () => h('div', { class: ['nui-card overflow-hidden', p.ui?.root] }, [
+  slots.header ? h('div', { class: ['px-5 py-4 border-b border-muted', p.ui?.header] }, slots.header()) : null,
+  h('div', { class: ['p-5', p.ui?.body] }, slots.default?.()),
+  slots.footer ? h('div', { class: ['px-5 py-3 border-t border-muted bg-muted/50', p.ui?.footer] }, slots.footer()) : null,
+]); }};
+// UBadge
+const UBadge = { name:'UBadge', props:{ color:{default:'primary'}, variant:{default:'subtle'}, label:String, icon:String }, setup(p){ const c = { primary:'bg-primary-100 text-primary-700', neutral:'bg-neutral-100 text-neutral-700', success:'bg-emerald-100 text-emerald-700', warning:'bg-amber-100 text-amber-700', error:'bg-red-100 text-red-700', info:'bg-sky-100 text-sky-700' }; const v = { solid: p.color==='primary'?'bg-primary text-white':'bg-neutral-800 text-white', soft: c[p.color]||c.primary, outline:'border border-current', subtle: c[p.color]||c.primary }; return () => h('span',{class:['inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium', v[p.variant]||v.subtle]},[ p.icon?h('i',{'data-lucide':p.icon,class:'size-3'}):null, p.label ]); }};
+// UInput
+const UInput = { name:'UInput', props:{ modelValue:String, placeholder:String, icon:String, type:{default:'text'} }, emits:['update:modelValue'], setup(p,{ emit }){ return () => h('div',{class:'relative w-full'},[ p.icon?h('i',{'data-lucide':p.icon,class:'size-4 absolute left-3 top-1/2 -translate-y-1/2 text-dimmed'}):null, h('input',{ type:p.type, value:p.modelValue, placeholder:p.placeholder, onInput:e=>emit('update:modelValue', e.target.value), class:['nui-input', p.icon?'pl-9':''] }) ]); }};
+// USelect
+const USelect = { name:'USelect', props:{ modelValue:String, items:Array }, emits:['update:modelValue'], setup(p,{ emit }){ return () => h('div',{class:'relative'},[ h('select',{ value:p.modelValue, onChange:e=>emit('update:modelValue', e.target.value), class:'nui-input appearance-none pr-9 cursor-pointer' }, (p.items||[]).map(i => h('option',{ value: typeof i==='string'?i:i.value }, typeof i==='string'?i:i.label))), h('i',{'data-lucide':'chevron-down', class:'size-4 absolute right-3 top-1/2 -translate-y-1/2 text-dimmed pointer-events-none'}) ]); }};
+// UPageHero
+const UPageHero = { name:'UPageHero', props:{ title:String, description:String, headline:String, links:Array, orientation:{default:'vertical'} }, setup(p,{ slots }){ return () => h('section',{class:['relative', p.orientation==='horizontal'?'py-16 lg:py-20':'py-16 lg:py-24']},[ h('div',{class:'mx-auto max-w-5xl px-6 text-center'},[ p.headline?h('div',{class:'mb-4'},[ h('span',{class:'inline-flex items-center gap-1.5 rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700'},[ h('i',{'data-lucide':'sparkles',class:'size-3.5'}), p.headline ]) ]):null, h('h1',{class:'text-4xl lg:text-6xl font-bold tracking-tight text-highlighted'},[p.title]), p.description?h('p',{class:'mt-5 text-lg text-muted max-w-2xl mx-auto leading-relaxed'},[p.description]):null, slots.default?h('div',{class:'mt-8'},[slots.default()]):null, p.links?h('div',{class:'mt-8 flex flex-wrap items-center justify-center gap-3'}, p.links.map(l => h(UButton,{ label:l.label, icon:l.icon, trailingIcon:l.trailingIcon, color:l.color||'primary', variant:l.variant||'solid', to:l.to }))):null ]) ]); }};
+// UPageSection
+const UPageSection = { name:'UPageSection', props:{ id:String, headline:String, title:String, description:String, features:Array, orientation:{default:'vertical'} }, setup(p,{ slots }){ return () => h('section',{id:p.id, class:'py-16 lg:py-20 border-t border-muted'},[ h('div',{class:'mx-auto max-w-6xl px-6'},[ p.headline?h('p',{class:'text-xs font-semibold uppercase tracking-widest text-primary mb-3'},[p.headline]):null, p.title?h('h2',{class:'text-3xl lg:text-4xl font-bold text-highlighted tracking-tight'},[p.title]):null, p.description?h('p',{class:'mt-3 text-base text-muted max-w-2xl'},[p.description]):null, slots.default?h('div',{class:'mt-10'},[slots.default()]):null, p.features?h('div',{class:'mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6'}, p.features.map(f => h('div',{class:'rounded-lg border border-muted p-6 bg-elevated hover:border-primary-300 hover:shadow-sm transition-all'},[ f.icon?h('div',{class:'size-11 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center mb-4'},[ h('i',{'data-lucide':f.icon,class:'size-5'}) ]):null, h('h3',{class:'text-lg font-semibold text-highlighted mb-2'},[f.title]), h('p',{class:'text-sm text-muted leading-relaxed'},[f.description]) ]))):null ]) ]); }};
+// UPageCTA
+const UPageCTA = { name:'UPageCTA', props:{ title:String, description:String, links:Array }, setup(p){ return () => h('section',{class:'py-16'},[ h('div',{class:'mx-auto max-w-6xl px-6'},[ h('div',{class:'sky-gradient rounded-2xl px-8 py-14 text-center text-white relative overflow-hidden'},[ h('div',{class:'absolute inset-0 opacity-20',style:'background-image:radial-gradient(circle at 20% 20%, white 1px, transparent 1px); background-size: 28px 28px;'}), h('h2',{class:'relative text-3xl lg:text-4xl font-bold mb-4'},[p.title]), p.description?h('p',{class:'relative text-base text-white/90 max-w-2xl mx-auto mb-8'},[p.description]):null, h('div',{class:'relative flex flex-wrap items-center justify-center gap-3'}, p.links?.map(l => h(UButton,{ label:l.label, icon:l.icon, trailingIcon:l.trailingIcon, color:l.color||'neutral', variant:l.variant||'solid', to:l.to }))) ]) ]) ]); }};
+// UHeader
+const UHeader = { name:'UHeader', setup(p,{ slots }){ const open = ref(false); return () => h('header',{class:'sticky top-0 z-40 bg-default/85 backdrop-blur border-b border-muted'},[ h('div',{class:'mx-auto max-w-6xl px-6 h-16 flex items-center justify-between gap-4'},[ h('div',{class:'flex items-center gap-8'},[ slots.title?.(), h('nav',{class:'hidden lg:flex items-center gap-1'}, slots.default?.()) ]), h('div',{class:'flex items-center gap-2'},[ slots.right?.(), h('button',{class:'lg:hidden nui-btn nui-btn-ghost nui-btn-sm p-2', onClick:()=>open.value=!open.value},[ h('i',{'data-lucide': open.value?'x':'menu', class:'size-5'}) ]) ]) ]) , open.value?h('div',{class:'lg:hidden border-t border-muted bg-default'},[ h('nav',{class:'mx-auto max-w-6xl px-6 py-3 flex flex-col gap-1'}, slots.body?.()) ]):null ]); }};
+// UFooter
+const UFooter = { name:'UFooter', setup(p,{ slots }){ return () => h('footer',{class:'border-t border-muted bg-muted/40 mt-8'},[ h('div',{class:'mx-auto max-w-6xl px-6 py-12'},[ slots.default?.() ]) ]); }};
+// UContainer
+const UContainer = { name:'UContainer', setup(p,{ slots }){ return () => h('div',{class:'mx-auto max-w-6xl px-6'},[slots.default?.()]); }};
+
+/* ========== 应用 ========== */
+const App = {
+  components: { UButton, UIcon, UCard, UBadge, UInput, USelect, UPageHero, UPageSection, UPageCTA, UHeader, UFooter, UContainer },
+  setup() {
+    const navItems = [
+      { label: '首页', to: '#home' },
+      { label: '航班查询', to: '#search' },
+      { label: '目的地', to: '#destinations' },
+      { label: '服务与礼遇', to: '#services' },
+      { label: '常旅客计划', to: '#frequent' },
+      { label: '关于我们', to: '#about' },
+    ];
+    // 搜索表单
+    const form = reactive({ from: '杭州 HGH', to: '三亚 SYX', depart: '2026-07-15', ret: '', cabin: '经济舱', pax: '1 成人' });
+    const cities = ['北京 PEK', '上海 SHA', '杭州 HGH', '广州 CAN', '成都 CTU', '三亚 SYX', '深圳 SZX', '西安 XIY'];
+    const cabins = ['经济舱', '超级经济舱', '商务舱', '头等舱'];
+    const paxOptions = ['1 成人', '2 成人', '3 成人', '4 成人', '5 成人'];
+    const tripType = ref('round');
+
+    const features = [
+      { icon:'shield-check', title:'安全第一，永不妥协', description:'平均机长经验 9800+ 小时，全机队配备新一代波音 787 与空客 A320neo，连续 16 年零重大事故。' },
+      { icon:'globe-2', title:'广泛航线，覆盖全球', description:'国内 82 城 + 亚太及欧洲 47 个国际目的地，与全球 28 家航司代码共享，覆盖 190 个目的地。' },
+      { icon:'armchair', title:'精心设计的客舱体验', description:'商务舱 1-2-1 全通道平躺座椅、17 寸 4K 触控屏、定制寝具；经济舱行业领先座椅间距 + USB-C 快充。' },
+      { icon:'utensils', title:'云端餐饮，匠心呈现', description:'与多位知名主厨联名打造机上菜单，融合东方饮食哲学；节假日特别航班提供限定节令料理。' },
+      { icon:'smartphone', title:'数字化服务，便捷出行', description:'App 全流程无纸化：一键购票、选座、值机、登机，行李实时追踪，智能客服"星星"7×24 在线。' },
+      { icon:'leaf', title:'可持续飞行承诺', description:'2035 年单位客公里碳排放较 2019 年下降 40%，加入 CORSIA 国际碳抵消机制，基地地面车辆全面电动化。' },
+    ];
+
+    const destinations = [
+      { city:'三亚', en:'Sanya', tag:'阳光与海浪的完美邂逅', meta:'最快 1h45m 直达 · 每日 4 班', price:'¥1,180 起', img:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80' },
+      { city:'成都', en:'Chengdu', tag:'慢下来，遇见真正的巴蜀', meta:'每日 8 班 · 支持中转西藏', price:'¥980 起', img:'https://images.unsplash.com/photo-1593238793020-a0e3a3f6f74a?w=800&q=80' },
+      { city:'东京', en:'Tokyo', tag:'赏樱季专属航班，限量发售', meta:'每日 2 班 · Narita & Haneda', price:'¥2,580 起', img:'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&q=80' },
+      { city:'迪拜', en:'Dubai', tag:'沙漠奢旅的起点', meta:'每日 1 班 · 商务舱全程平躺', price:'¥4,880 起', img:'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80' },
+      { city:'巴黎', en:'Paris', tag:'艺术与浪漫在等你', meta:'每周 5 班 · CDG 直航', price:'¥5,680 起', img:'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80' },
+      { city:'伦敦', en:'London', tag:'英伦风情的入门之钥', meta:'每周 4 班 · LHR 直航', price:'¥5,980 起', img:'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80' },
+    ];
+
+    const memberTiers = [
+      { tier:'银卡', std:'年飞 25,000 里程', color:'slate', perks:['优先值机','额外行李额','专属客服热线'] },
+      { tier:'金卡', std:'年飞 50,000 里程', color:'amber', perks:['贵宾休息室','优先登机','金卡专属柜台'] },
+      { tier:'白金卡', std:'年飞 100,000 里程', color:'sky', perks:['专属顾问','头等舱升级券','机场专车接送'] },
+      { tier:'钻石卡', std:'邀请制', color:'violet', perks:['全部权益','私人定制服务','全球礼宾'] },
+    ];
+    const tierBg = { slate:'bg-slate-100 text-slate-700 border-slate-200', amber:'bg-amber-100 text-amber-700 border-amber-200', sky:'bg-sky-100 text-sky-700 border-sky-200', violet:'bg-violet-100 text-violet-700 border-violet-200' };
+
+    const promoBanners = [
+      { route:'杭州 → 三亚', price:'¥399 起', tag:'夏日海岛' },
+      { route:'杭州 → 大阪', price:'¥1,299 起', tag:'樱花季' },
+      { route:'杭州 → 伦敦', price:'¥3,899 起', tag:'欧洲长线' },
+    ];
+
+    onMounted(() => { window.lucide && window.lucide.createIcons(); });
+
+    return { navItems, form, cities, cabins, paxOptions, tripType, features, destinations, memberTiers, tierBg, promoBanners };
+  },
+  template: `
+  <UApp>
+    <!-- ============ HEADER ============ -->
+    <UHeader>
+      <template #title>
+        <a href="#home" class="flex items-center gap-2">
+          <span class="inline-flex size-8 items-center justify-center rounded-md sky-gradient text-white">
+            <i data-lucide="plane" class="size-5 -rotate-45"></i>
+          </span>
+          <span class="text-lg font-bold text-highlighted">星空航空<span class="text-muted font-normal text-sm ml-1">Skystar</span></span>
+        </a>
+      </template>
+      <template #default>
+        <a v-for="item in navItems" :key="item.label" :href="item.to" class="px-3 py-1.5 rounded-md text-sm text-toned hover:text-highlighted hover:bg-muted transition-colors">{{ item.label }}</a>
+      </template>
+      <template #right>
+        <UButton label="登录" color="neutral" variant="ghost" size="sm" icon="log-in" class="hidden sm:inline-flex" />
+        <UButton label="注册享 2000 里程" color="primary" variant="solid" size="sm" trailing-icon="arrow-right" />
+      </template>
+      <template #body>
+        <a v-for="item in navItems" :key="item.label" :href="item.to" class="px-3 py-2 rounded-md text-sm text-toned hover:bg-muted">{{ item.label }}</a>
+        <div class="pt-3 mt-2 border-t border-muted flex gap-2">
+          <UButton label="登录" color="neutral" variant="outline" size="sm" class="flex-1" />
+          <UButton label="注册" color="primary" size="sm" class="flex-1" />
+        </div>
+      </template>
+    </UHeader>
+
+    <!-- ============ HERO + 航班搜索 ============ -->
+    <section id="home" class="hero-bg pt-12 pb-20 lg:pt-16 lg:pb-28">
+      <div class="mx-auto max-w-6xl px-6">
+        <div class="text-center max-w-3xl mx-auto">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-white/70 backdrop-blur px-3 py-1 text-xs font-medium text-primary-700 border border-primary-200">
+            <i data-lucide="sparkles" class="size-3.5"></i>2026 夏季出行季 · 特惠机票开抢
+          </span>
+          <h1 class="mt-5 text-4xl lg:text-6xl font-bold tracking-tight text-highlighted leading-tight">
+            每一次起飞<br class="lg:hidden">都是一次<span class="text-primary">全新的抵达</span>
+          </h1>
+          <p class="mt-5 text-base lg:text-lg text-toned">连接世界，触达梦想 · 航线覆盖国内 82 城、国际 47 个目的地，每日执飞 600+ 班次</p>
+        </div>
+
+        <!-- 搜索卡片 -->
+        <div id="search" class="mt-10 max-w-4xl mx-auto">
+          <div class="glass-card rounded-xl shadow-xl border border-white/60 p-2">
+            <!-- 往返/单程切换 -->
+            <div class="flex items-center gap-1 px-3 pt-2">
+              <button v-for="t in [{k:'round',l:'往返'},{k:'one',l:'单程'},{k:'multi',l:'多程'}]" :key="t.k"
+                @click="tripType=t.k"
+                :class="['px-3 py-1 text-xs font-medium rounded-md transition', tripType===t.k?'bg-primary-100 text-primary-700':'text-muted hover:bg-muted']">
+                {{ t.l }}
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2 p-2">
+              <div class="md:col-span-3 relative">
+                <label class="text-xs text-muted px-3">出发城市</label>
+                <USelect v-model="form.from" :items="cities" />
+              </div>
+              <div class="md:col-span-3 relative">
+                <label class="text-xs text-muted px-3">到达城市</label>
+                <USelect v-model="form.to" :items="cities" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="text-xs text-muted px-3">出发日期</label>
+                <UInput v-model="form.depart" type="date" />
+              </div>
+              <div v-if="tripType==='round'" class="md:col-span-2">
+                <label class="text-xs text-muted px-3">返程日期</label>
+                <UInput v-model="form.ret" type="date" />
+              </div>
+              <div :class="tripType==='round'?'md:col-span-1':'md:col-span-2'">
+                <label class="text-xs text-muted px-3">舱位</label>
+                <USelect v-model="form.cabin" :items="cabins" />
+              </div>
+              <div class="md:col-span-1 flex items-end">
+                <UButton label="搜索" icon="search" color="primary" size="lg" block />
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 px-4 pb-3 pt-1 text-xs text-muted">
+              <span class="inline-flex items-center gap-1"><i data-lucide="user" class="size-3.5"></i>{{ form.pax }}</span>
+              <button class="inline-flex items-center gap-1 hover:text-primary"><i data-lucide="tag" class="size-3.5"></i>优惠代码</button>
+              <button class="inline-flex items-center gap-1 hover:text-primary"><i data-lucide="map" class="size-3.5"></i>航班动态</button>
+              <span class="ml-auto inline-flex items-center gap-1 text-success"><i data-lucide="badge-check" class="size-3.5"></i>官网预订保证最低价</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 限时优惠 Banner -->
+        <div class="mt-6 max-w-4xl mx-auto grid sm:grid-cols-3 gap-3">
+          <div v-for="p in promoBanners" :key="p.route" class="rounded-lg border border-primary-200 bg-gradient-to-br from-primary-50 to-white p-4 flex items-center justify-between hover:shadow-md transition">
+            <div>
+              <p class="text-xs text-primary-700 font-medium">{{ p.tag }}</p>
+              <p class="text-sm font-semibold text-highlighted mt-0.5">{{ p.route }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-lg font-bold text-primary-700">{{ p.price }}</p>
+              <p class="text-[10px] text-muted">含税起</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHY CHOOSE SKYSTAR ============ -->
+    <UPageSection id="why" headline="WHY CHOOSE SKYSTAR AIRLINES" title="为什么选择星空航空" description="从安全到服务、从客舱到数字体验，每一个细节都为更美好的旅程而生。">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="f in features" :key="f.title" class="rounded-lg border border-muted p-6 bg-elevated hover:border-primary-300 hover:shadow-md transition-all">
+          <div class="size-11 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center mb-4">
+            <i :data-lucide="f.icon" class="size-5"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-highlighted mb-2">{{ f.title }}</h3>
+          <p class="text-sm text-muted leading-relaxed">{{ f.description }}</p>
+        </div>
+      </div>
+    </UPageSection>
+
+    <!-- ============ 精选目的地 ============ -->
+    <UPageSection id="destinations" headline="FEATURED DESTINATIONS" title="精选目的地" description="从国内热门到国际都市，让每一次出发都有清晰的目的地。">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <a v-for="d in destinations" :key="d.city" href="#search" class="destination-card group rounded-xl overflow-hidden border border-muted bg-elevated hover:shadow-lg transition-all">
+          <div class="aspect-[4/3] overflow-hidden bg-muted relative">
+            <img :src="d.img" :alt="d.city" class="w-full h-full object-cover" loading="lazy" />
+            <span class="absolute top-3 left-3"><UBadge color="primary" variant="solid" :label="d.meta" /></span>
+          </div>
+          <div class="p-5">
+            <div class="flex items-baseline justify-between">
+              <h3 class="text-xl font-bold text-highlighted">{{ d.city }}</h3>
+              <span class="text-xs text-dimmed">{{ d.en }}</span>
+            </div>
+            <p class="text-sm text-toned mt-1">{{ d.tag }}</p>
+            <div class="mt-4 flex items-center justify-between pt-3 border-t border-muted">
+              <span class="text-xs text-muted">起价</span>
+              <span class="text-lg font-bold text-primary-700">{{ d.price }}</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </UPageSection>
+
+    <!-- ============ 常旅客计划 ============ -->
+    <UPageSection id="frequent" headline="SKYSTAR FREQUENT FLYER" title="星辰会员计划" description="加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿、租车及 300+ 合作品牌礼遇。">
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div v-for="m in memberTiers" :key="m.tier" :class="['rounded-xl border-2 p-6 bg-elevated', tierBg[m.color]]">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xl font-bold">{{ m.tier }}</h3>
+            <i data-lucide="award" class="size-6"></i>
+          </div>
+          <p class="text-xs mt-1 opacity-80">{{ m.std }}</p>
+          <ul class="mt-4 space-y-2 text-sm text-toned">
+            <li v-for="perk in m.perks" :key="perk" class="flex items-start gap-2">
+              <i data-lucide="check" class="size-4 mt-0.5 text-current"></i>
+              <span>{{ perk }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-8 rounded-lg bg-primary-50 border border-primary-200 p-5 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <i data-lucide="gift" class="size-6 text-primary-600"></i>
+          <div>
+            <p class="font-semibold text-highlighted">立即注册，即送 2,000 里程开户礼</p>
+            <p class="text-xs text-muted mt-0.5">首次航班起飞后 7 个工作日内入账</p>
+          </div>
+        </div>
+        <UButton label="立即加入星辰会员" color="primary" trailing-icon="arrow-right" />
+      </div>
+    </UPageSection>
+
+    <!-- ============ 服务与礼遇 ============ -->
+    <UPageSection id="services" headline="SERVICE & HOSPITALITY" title="服务与礼遇" description="让每一段旅程都更从容——从特殊旅客关怀到宠物随行，我们用温度覆盖每一位旅客的需求。">
+      <div class="grid md:grid-cols-2 gap-6">
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center"><i data-lucide="heart-handshake" class="size-5"></i></div>
+              <h3 class="font-semibold text-highlighted">特殊旅客关怀</h3>
+            </div>
+          </template>
+          <p class="text-sm text-muted leading-relaxed">为有特殊需求的旅客提供全程无缝协助：婴幼儿推车寄存、轮椅全程陪同、无障碍座位优先安排、孕妇及行动不便旅客优先登机。杭州、北京、上海主要枢纽设有独立的"星空关爱"服务柜台。</p>
+          <template #footer>
+            <UButton label="了解服务申请流程" variant="link" color="primary" trailing-icon="chevron-right" />
+          </template>
+        </UCard>
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center"><i data-lucide="paw-print" class="size-5"></i></div>
+              <h3 class="font-semibold text-highlighted">宠物随行计划</h3>
+            </div>
+          </template>
+          <p class="text-sm text-muted leading-relaxed">毛孩子也是家庭的一员。符合条件的小型宠物可进入客舱随旅客同乘；大型犬猫提供恒温专属货舱运输，全程由专业动物运输团队监护，确保爱宠安全抵达。</p>
+          <template #footer>
+            <UButton label="查看宠物运输指引" variant="link" color="primary" trailing-icon="chevron-right" />
+          </template>
+        </UCard>
+      </div>
+    </UPageSection>
+
+    <!-- ============ 企业商务 ============ -->
+    <UPageSection id="business" headline="SKYSTAR BUSINESS SOLUTIONS" title="企业商务出行服务" description="为 12,000+ 企业客户提供定制化差旅方案：统一账期结算、专属客户经理、团体协议价格。">
+      <div class="rounded-xl border border-muted bg-elevated overflow-hidden">
+        <div class="grid md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-muted">
+          <div class="p-6 text-center">
+            <p class="text-3xl font-bold text-primary-700">12,000+</p>
+            <p class="text-xs text-muted mt-1">服务企业客户</p>
+          </div>
+          <div class="p-6 text-center">
+            <p class="text-3xl font-bold text-primary-700">186</p>
+            <p class="text-xs text-muted mt-1">机队规模（架）</p>
+          </div>
+          <div class="p-6 text-center">
+            <p class="text-3xl font-bold text-primary-700">5.2</p>
+            <p class="text-xs text-muted mt-1">平均机龄（年）</p>
+          </div>
+          <div class="p-6 text-center">
+            <p class="text-3xl font-bold text-primary-700">600+</p>
+            <p class="text-xs text-muted mt-1">每日执飞航班</p>
+          </div>
+        </div>
+      </div>
+    </UPageSection>
+
+    <!-- ============ ABOUT ============ -->
+    <UPageSection id="about" headline="ABOUT SKYSTAR AIRLINES" title="关于星空航空" description="成立于 2008 年，总部位于杭州萧山国际机场，立足长三角、面向全球的现代化航空公司。">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 rounded-xl border border-muted p-8 bg-elevated">
+          <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="leaf" class="size-6 text-emerald-600"></i>
+            <h3 class="text-lg font-semibold text-highlighted">可持续承诺</h3>
+          </div>
+          <p class="text-sm text-muted leading-relaxed mb-4">2026 年起，星空航空全面加入 CORSIA 国际碳抵消机制，承诺 2035 年实现单位客公里碳排放较 2019 年基准下降 40%。新引进机型全部选用新一代节能发动机，并在杭州、上海、北京三大基地机场推行地面车辆全面电动化。</p>
+          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-muted">
+            <div><p class="text-2xl font-bold text-emerald-600">40%</p><p class="text-xs text-muted mt-1">2035 碳排放下降目标</p></div>
+            <div><p class="text-2xl font-bold text-emerald-600">100%</p><p class="text-xs text-muted mt-1">基地地面车辆电动化</p></div>
+            <div><p class="text-2xl font-bold text-emerald-600">5.2y</p><p class="text-xs text-muted mt-1">机队平均机龄</p></div>
+          </div>
+        </div>
+        <div class="rounded-xl sky-gradient text-white p-8 flex flex-col justify-between">
+          <div>
+            <i data-lucide="headset" class="size-8"></i>
+            <h3 class="text-lg font-semibold mt-3">7×24 客户服务</h3>
+            <p class="text-sm text-white/85 mt-2">智能客服"星星"支持中、英、日、韩四语交互，机场平均流程时间仅需 18 分钟。</p>
+          </div>
+          <div class="mt-6">
+            <p class="text-2xl font-bold">400-800-9988</p>
+            <p class="text-xs text-white/70 mt-1">客服热线（7×24 小时）</p>
+          </div>
+        </div>
+      </div>
+    </UPageSection>
+
+    <!-- ============ CTA ============ -->
+    <UPageCTA title="开启你的下一次飞行" description="加入超过 2,000 万星空旅客，让每一次起飞都更值得期待。"
+      :links="[
+        { label:'立即预订', color:'neutral', variant:'solid', trailingIcon:'arrow-right' },
+        { label:'查看常旅客权益', color:'neutral', variant:'subtle' }
+      ]" />
+
+    <!-- ============ FOOTER ============ -->
+    <UFooter>
+      <div class="grid md:grid-cols-4 gap-8">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="inline-flex size-7 items-center justify-center rounded-md sky-gradient text-white"><i data-lucide="plane" class="size-4 -rotate-45"></i></span>
+            <span class="font-bold text-highlighted">星空航空</span>
+          </div>
+          <p class="text-sm text-muted leading-relaxed">杭州萧山国际机场运营基地</p>
+          <p class="text-sm text-muted mt-2">客服热线：400-800-9988（7×24 小时）</p>
+          <p class="text-xs text-dimmed mt-3">CATA 中国航空运输协会会员 · IATA 国际航空运输协会认证</p>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold text-highlighted mb-3">快速链接</h4>
+          <ul class="space-y-2 text-sm text-muted">
+            <li v-for="l in ['航班状态查询','行李规定','退改签政策','旅行保险','常见问题']" :key="l"><a href="#" class="hover:text-primary">{{ l }}</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold text-highlighted mb-3">关于星空</h4>
+          <ul class="space-y-2 text-sm text-muted">
+            <li v-for="l in ['公司简介','投资者关系','人才招聘','新闻中心','企业责任']" :key="l"><a href="#" class="hover:text-primary">{{ l }}</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold text-highlighted mb-3">关注我们</h4>
+          <div class="flex gap-2 mb-4">
+            <a v-for="s in ['message-circle','twitter','video','camera']" :key="s" href="#" class="size-9 rounded-md border border-muted flex items-center justify-center text-muted hover:text-primary hover:border-primary-300 transition">
+              <i :data-lucide="s" class="size-4"></i>
+            </a>
+          </div>
+          <div class="rounded-lg border border-muted p-3">
+            <p class="text-xs text-muted">扫码下载星空航空 App</p>
+            <div class="mt-2 h-16 bg-muted rounded flex items-center justify-center"><i data-lucide="qr-code" class="size-10 text-toned"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-10 pt-6 border-t border-muted flex flex-wrap items-center justify-between gap-3 text-xs text-dimmed">
+        <p>© 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号 · 保留所有权利</p>
+        <div class="flex gap-4">
+          <a href="#" class="hover:text-primary">隐私政策</a>
+          <a href="#" class="hover:text-primary">用户协议</a>
+          <a href="#" class="hover:text-primary">网站地图</a>
+        </div>
+      </div>
+    </UFooter>
+  </UApp>
+  `
+};
+
+const app = createApp(App);
+// UApp 是个透明包装（Nuxt UI 要求）
+app.component('UApp', { name:'UApp', setup(p,{ slots }){ return () => h('div', { class: 'min-h-screen bg-default text-default' }, slots.default?.()); }});
+app.mount('#app');
+
+// 在 Vue 渲染完成后初始化 lucide 图标
+const initIcons = () => { if (window.lucide) window.lucide.createIcons(); setTimeout(initIcons, 500); };
+setTimeout(initIcons, 100);
+</script>
+</body>
+</html>

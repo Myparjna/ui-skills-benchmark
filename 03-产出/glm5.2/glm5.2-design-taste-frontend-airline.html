@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星空航空 · Skystar Airlines</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet" />
+<link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Outfit', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          sans: ['Outfit', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          ink: {
+            50:  '#fafaf9',
+            100: '#f5f5f4',
+            200: '#e7e5e4',
+            300: '#d6d3d1',
+            400: '#a8a29e',
+            500: '#78716c',
+            600: '#57534e',
+            700: '#44403c',
+            800: '#292524',
+            900: '#1c1917',
+            950: '#0c0a09',
+          },
+          accent: {
+            50:  '#ecfdf5',
+            100: '#d1fae5',
+            200: '#a7f3d0',
+            300: '#6ee7b7',
+            400: '#34d399',
+            500: '#10b981',
+            600: '#059669',
+            700: '#047857',
+          }
+        },
+        letterSpacing: {
+          tightest: '-0.04em',
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  :root { --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  html { scroll-behavior: smooth; }
+  body { background: #fafaf9; color: #1c1917; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #047857; color: #fff; }
+
+  /* Staggered load-in cascade */
+  @keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  .rise { opacity: 0; animation: riseIn 0.85s var(--ease) forwards; }
+  .rise-1 { animation-delay: 0.05s; }
+  .rise-2 { animation-delay: 0.18s; }
+  .rise-3 { animation-delay: 0.32s; }
+  .rise-4 { animation-delay: 0.48s; }
+  .rise-5 { animation-delay: 0.64s; }
+  .rise-6 { animation-delay: 0.80s; }
+
+  /* Floating perpetual micro-animation on hero asset */
+  @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+  .floaty { animation: floaty 6s ease-in-out infinite; }
+
+  /* Status dot breathing */
+  @keyframes breathe { 0%,100% { opacity: 0.55; transform: scale(1) } 50% { opacity: 1; transform: scale(1.18) } }
+  .breathe { animation: breathe 2.4s ease-in-out infinite; }
+
+  /* Marquee */
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  .marquee { animation: marquee 28s linear infinite; }
+
+  /* Tactile active feedback */
+  button:active, a[data-tactile]:active { transform: translateY(1px) scale(0.985); }
+
+  /* Inner-border refraction on glass */
+  .glass { box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 20px 40px -15px rgba(12,10,9,0.18); }
+
+  /* Subtle grain overlay */
+  .grain::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.05;
+    background-image: radial-gradient(rgba(12,10,9,0.6) 0.5px, transparent 0.5px);
+    background-size: 4px 4px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+
+  /* Skeleton shimmer for live price ticker (empty-state aesthetic) */
+  @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+  .shimmer {
+    background: linear-gradient(90deg, #e7e5e4 25%, #f5f5f4 50%, #e7e5e4 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2.2s linear infinite;
+  }
+
+  /* Tilted photo card */
+  .tilt { transition: transform 0.5s var(--ease); will-change: transform; }
+  .tilt:hover { transform: perspective(900px) rotateY(-3deg) rotateX(2deg) translateY(-4px); }
+
+  /* Hide scrollbar on horizontal scrollers */
+  .no-bar::-webkit-scrollbar { display: none; }
+  .no-bar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+
+<body class="font-sans grain">
+
+<div id="root" class="relative z-10"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ---------- Magnetic Button (direct DOM, no React state) ---------- */
+function MagneticButton({ children, className = '', strength = 0.25, ...props }) {
+  const ref = useRef(null);
+  const onMove = (e) => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = e.clientX - r.left - r.width / 2;
+    const y = e.clientY - r.top - r.height / 2;
+    el.style.transform = `translate(${x * strength}px, ${y * strength}px)`;
+  };
+  const onLeave = () => {
+    const el = ref.current; if (el) el.style.transform = 'translate(0,0)';
+  };
+  return (
+    <button
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className={`transition-transform duration-300 will-change-transform ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ---------- Nav ---------- */
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const items = ['首页', '航班查询', '目的地', '服务与礼遇', '常旅客计划', '关于我们'];
+  return (
+    <header className={`fixed top-0 inset-x-0 z-40 transition-all duration-500 ${scrolled ? 'bg-ink-50/85 backdrop-blur-xl border-b border-ink-200/60' : 'bg-transparent'}`}>
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-16 md:h-20 flex items-center justify-between">
+        <a href="#" className="flex items-center gap-2.5 group">
+          <span className="w-9 h-9 rounded-full bg-ink-900 text-accent-400 grid place-items-center transition-transform group-hover:rotate-12">
+            <i className="ph-bold ph-airplane-tilt text-lg" style={{ transform: 'rotate(-45deg)' }}></i>
+          </span>
+          <div className="leading-none">
+            <div className="font-display font-semibold text-lg tracking-tightest text-ink-900">星空航空</div>
+            <div className="font-mono text-[10px] text-ink-500 tracking-widest uppercase">Skystar · since 2008</div>
+          </div>
+        </a>
+        <nav className="hidden lg:flex items-center gap-1">
+          {items.map((it, i) => (
+            <a key={it} href="#" className="relative px-4 py-2 text-sm text-ink-700 hover:text-ink-950 transition-colors group">
+              {it}
+              <span className="absolute left-4 right-4 -bottom-0.5 h-px bg-ink-900 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease)' }}></span>
+            </a>
+          ))}
+        </nav>
+        <div className="flex items-center gap-2">
+          <button className="hidden md:grid place-items-center w-9 h-9 rounded-full hover:bg-ink-100 text-ink-700 transition-colors" aria-label="语言">
+            <i className="ph ph-globe text-lg"></i>
+          </button>
+          <MagneticButton className="hidden md:inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink-900 text-ink-50 text-sm font-medium hover:bg-ink-800">
+            <i className="ph ph-user-circle"></i> 登录
+          </MagneticButton>
+          <button className="lg:hidden w-10 h-10 grid place-items-center" aria-label="菜单">
+            <i className="ph ph-list text-2xl"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ---------- Hero (Asymmetric split) ---------- */
+function Hero() {
+  return (
+    <section className="relative pt-28 md:pt-36 pb-16 md:pb-24 overflow-hidden">
+      {/* Asymmetric grid 2fr 1fr */}
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 grid grid-cols-1 lg:grid-cols-[2fr_1.1fr] gap-10 lg:gap-16 items-end">
+        {/* Left text — left-aligned */}
+        <div className="rise rise-1">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inset-0 rounded-full bg-accent-500 breathe"></span>
+              <span className="relative w-2 h-2 rounded-full bg-accent-600"></span>
+            </span>
+            <span className="font-mono text-xs tracking-[0.2em] uppercase text-ink-500">live · 600+ flights / day</span>
+          </div>
+          <h1 className="font-display font-semibold text-5xl md:text-7xl lg:text-[5.5rem] leading-[0.95] tracking-tightest text-ink-950">
+            每一次起飞，<br />
+            都是一次<span className="text-accent-600">全新的</span>抵达
+          </h1>
+          <p className="mt-7 max-w-[58ch] text-base md:text-lg text-ink-600 leading-relaxed">
+            连接世界，触达梦想。星空航空以杭州萧山为基地，航线覆盖国内 82 座城市与 47 个国际目的地，连续 16 年保持零重大事故安全纪录。
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-center gap-4">
+            <MagneticButton className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-ink-900 text-ink-50 font-medium hover:bg-ink-800">
+              搜索航班 <i className="ph-bold ph-arrow-up-right"></i>
+            </MagneticButton>
+            <a href="#destinations" className="inline-flex items-center gap-2 h-12 px-6 rounded-full border border-ink-300 text-ink-800 hover:border-ink-900 hover:bg-ink-900 hover:text-ink-50 transition-all" data-tactile>
+              探索目的地 <i className="ph ph-arrow-right"></i>
+            </a>
+          </div>
+
+          {/* Mini stat row — divided, not boxed */}
+          <dl className="mt-12 grid grid-cols-3 divide-x divide-ink-200 max-w-xl">
+            {[
+              { k: '1200万+', v: '安全飞行小时' },
+              { k: '190', v: '全球目的地' },
+              { k: '5.2年', v: '机队平均机龄' },
+            ].map(s => (
+              <div key={s.v} className="px-4 first:pl-0">
+                <dt className="font-mono text-xs uppercase tracking-widest text-ink-500">{s.v}</dt>
+                <dd className="mt-1 font-display text-2xl font-semibold text-ink-950">{s.k}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        {/* Right asset — floating photo card */}
+        <div className="rise rise-3 relative">
+          <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden tilt">
+            <img
+              src="https://picsum.photos/seed/skystar-cabin-window/800/1000"
+              alt="机舱窗外云海"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink-950/40 via-transparent to-transparent"></div>
+            <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between text-ink-50">
+              <div>
+                <div className="font-mono text-[10px] tracking-widest uppercase opacity-80">flight sk487</div>
+                <div className="font-display text-lg font-medium">HGH → CDG</div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono text-[10px] tracking-widest uppercase opacity-80">altitude</div>
+                <div className="font-mono text-sm">38,000 ft</div>
+              </div>
+            </div>
+          </div>
+          {/* Floating badge */}
+          <div className="floaty absolute -left-6 -top-6 hidden md:block bg-ink-50 border border-ink-200 rounded-2xl px-4 py-3 shadow-[0_20px_40px_-15px_rgba(12,10,9,0.10)]">
+            <div className="flex items-center gap-2">
+              <i className="ph-fill ph-shield-check text-accent-600 text-xl"></i>
+              <div className="leading-tight">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">iosa certified</div>
+                <div className="font-display text-sm font-semibold text-ink-900">安全运营优秀</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Decorative kinetic marquee */}
+      <div className="mt-16 md:mt-24 border-y border-ink-200/70 overflow-hidden">
+        <div className="flex marquee whitespace-nowrap py-3 text-ink-400">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-8 px-4 font-mono text-xs uppercase tracking-[0.25em]">
+              <span>HGH — 三亚 ¥399 起</span><span className="text-ink-300">/</span>
+              <span>HGH — 大阪 ¥1,299 起</span><span className="text-ink-300">/</span>
+              <span>HGH — 伦敦 ¥3,899 起</span><span className="text-ink-300">/</span>
+              <span>HGH — 巴黎 每周 5 班直航</span><span className="text-ink-300">/</span>
+              <span>HGH — 迪拜 商务舱全程平躺</span><span className="text-ink-300">/</span>
+              <span>夏季出行季特惠开抢</span><span className="text-ink-300">/</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Flight Search Panel (Form) ---------- */
+function FlightSearch() {
+  const [trip, setTrip] = useState('round');
+  return (
+    <section className="relative -mt-4 md:-mt-6 z-20">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="bg-ink-50 border border-ink-200/70 rounded-[2rem] p-5 md:p-8 shadow-[0_30px_60px_-30px_rgba(12,10,9,0.12)]">
+          {/* Trip type tabs */}
+          <div className="flex items-center gap-1 mb-6">
+            {[
+              { id: 'round', label: '往返' },
+              { id: 'one',   label: '单程' },
+              { id: 'multi', label: '多程' },
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTrip(t.id)}
+                className={`px-4 py-1.5 text-sm rounded-full transition-colors ${trip === t.id ? 'bg-ink-900 text-ink-50' : 'text-ink-600 hover:text-ink-900'}`}
+              >
+                {t.label}
+              </button>
+            ))}
+            <span className="ml-auto hidden md:flex items-center gap-2 text-xs text-ink-500">
+              <i className="ph ph-tag"></i> 学生票 / 商务舱 / 团体
+            </span>
+          </div>
+
+          {/* Form fields: label above input, gap-2 */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-2">
+            <Field className="md:col-span-3" label="出发城市" hint="杭州 HGH">
+              <i className="ph ph-airplane-takeoff text-ink-400"></i>
+            </Field>
+            <Field className="md:col-span-3" label="到达城市" hint="巴黎 CDG">
+              <i className="ph ph-airplane-landing text-ink-400"></i>
+            </Field>
+            <Field className="md:col-span-2" label="出发日期" hint="2026 / 07 / 18">
+              <i className="ph ph-calendar-blank text-ink-400"></i>
+            </Field>
+            <Field className="md:col-span-2" label="返程日期" hint="2026 / 08 / 02">
+              <i className="ph ph-calendar-blank text-ink-400"></i>
+            </Field>
+            <Field className="md:col-span-2" label="舱位 · 乘客" hint="商务舱 · 2 成人">
+              <i className="ph ph-user-circle text-ink-400"></i>
+            </Field>
+          </div>
+
+          <div className="mt-5 flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-5">
+            <label className="flex items-center gap-2 text-sm text-ink-600">
+              <input type="checkbox" className="accent-ink-900 w-4 h-4" /> 弹性日期 (±3 天)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-ink-600">
+              <input type="checkbox" className="accent-ink-900 w-4 h-4" /> 仅直飞
+            </label>
+            <label className="flex items-center gap-2 text-sm text-ink-600">
+              <input type="checkbox" className="accent-ink-900 w-4 h-4" /> 使用里程抵扣
+            </label>
+            <MagneticButton className="md:ml-auto h-12 px-7 rounded-full bg-accent-600 text-white font-medium hover:bg-accent-700 inline-flex items-center gap-2">
+              <i className="ph-bold ph-magnifying-glass"></i> 搜索航班
+            </MagneticButton>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+function Field({ label, hint, children, className = '' }) {
+  return (
+    <div className={`group ${className}`}>
+      <label className="block font-mono text-[10px] uppercase tracking-widest text-ink-500 mb-1.5">{label}</label>
+      <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-ink-200 bg-white hover:border-ink-400 transition-colors">
+        {children}
+        <input
+          defaultValue={hint}
+          className="flex-1 bg-transparent text-sm font-medium text-ink-900 outline-none placeholder:text-ink-400"
+        />
+        <i className="ph ph-caret-down text-ink-400 text-xs"></i>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Why Choose — 2-col Zig-Zag (NOT 3 equal cards) ---------- */
+function WhyChoose() {
+  const items = [
+    {
+      icon: 'ph-shield-check',
+      tag: '01 / Safety',
+      title: '安全第一，永不妥协',
+      body: '机长团队平均飞行经验 9,800 小时，全机队配备波音 787 与空客 A320neo 系列，严格执行 IOSA 国际安全审计。连续 16 年零重大事故，连续 8 年获中国民航局"安全运营优秀单位"。',
+      stat: '9,800 h',
+      statLabel: 'avg. captain hours',
+      img: 'https://picsum.photos/seed/skystar-cockpit/900/700'
+    },
+    {
+      icon: 'ph-globe-hemisphere-west',
+      tag: '02 / Network',
+      title: '广泛航线，覆盖全球',
+      body: '与全球 28 家航司代码共享，联合星空联盟构建覆盖 190 个目的地的出行网络。无论是北京、东京、迪拜，还是伦敦、巴黎，直达或高效中转皆可。',
+      stat: '190',
+      statLabel: 'global destinations',
+      img: 'https://picsum.photos/seed/skystar-route-map/900/700'
+    },
+    {
+      icon: 'ph-seat',
+      tag: '03 / Cabin',
+      title: '精心设计的客舱体验',
+      body: '商务舱 1-2-1 全通道直通平躺座椅，17 英寸 4K 触控娱乐屏、降噪耳机与定制寝具；经济舱座椅间距行业领先，10 英寸个人娱乐系统与 USB-C 快充，全程免费 Wi-Fi。',
+      stat: '17"',
+      statLabel: '4K touchscreen',
+      img: 'https://picsum.photos/seed/skystar-business-seat/900/700'
+    },
+    {
+      icon: 'ph-fork-knife',
+      tag: '04 / Dining',
+      title: '云端餐饮，匠心呈现',
+      body: '与国内外多位主厨联名打造机上菜单，融合东方饮食哲学与现代烹饪技术。商务舱按需点餐，经济舱提供中西套餐及素食选项，节假日特别航班提供限定节令料理。',
+      stat: '4',
+      statLabel: 'cuisines on board',
+      img: 'https://picsum.photos/seed/skystar-meal/900/700'
+    },
+    {
+      icon: 'ph-device-mobile-camera',
+      tag: '05 / Digital',
+      title: '数字化服务，便捷出行',
+      body: '一键购票、选座、值机、登机，行李实时追踪，航班动态即时推送。智能客服"星星"7×24 小时中英日韩四语交互，机场流程平均 18 分钟。',
+      stat: '18 min',
+      statLabel: 'airport avg. flow',
+      img: 'https://picsum.photos/seed/skystar-app/900/700'
+    },
+  ];
+  return (
+    <section id="why" className="py-20 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        {/* Section header — left-aligned, asymmetric */}
+        <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6 md:gap-16 mb-12 md:mb-20 items-end">
+          <div>
+            <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Why Skystar</div>
+            <h2 className="font-display font-semibold text-4xl md:text-6xl leading-[0.95] tracking-tightest text-ink-950">
+              为什么<br className="md:hidden" /> 选择星空航空
+            </h2>
+          </div>
+          <p className="text-ink-600 leading-relaxed max-w-[55ch]">
+            不止于把您送到目的地。我们将"安全、舒适、准时"作为底色，把每一处细节打磨到可以被记住的程度——这才是飞行应有的样子。
+          </p>
+        </div>
+
+        {/* Zig-zag rows */}
+        <div className="space-y-20 md:space-y-28">
+          {items.map((it, i) => {
+            const reverse = i % 2 === 1;
+            return (
+              <article key={it.tag} className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-14 items-center">
+                <div className={reverse ? 'md:order-2' : ''}>
+                  <div className="relative aspect-[4/3] rounded-[2rem] overflow-hidden group">
+                    <img src={it.img} alt={it.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" style={{ transitionTimingFunction: 'var(--ease)' }} loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-ink-950/30 via-transparent to-transparent"></div>
+                    <div className="absolute top-5 left-5 bg-ink-50/90 backdrop-blur rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-ink-700">{it.tag}</div>
+                  </div>
+                </div>
+                <div className={reverse ? 'md:order-1' : ''}>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="w-10 h-10 rounded-full bg-ink-900 text-accent-400 grid place-items-center">
+                      <i className={`ph-bold ${it.icon} text-lg`}></i>
+                    </span>
+                    <span className="font-mono text-xs uppercase tracking-widest text-ink-500">{it.tag}</span>
+                  </div>
+                  <h3 className="font-display font-semibold text-3xl md:text-4xl tracking-tight text-ink-950 leading-tight">{it.title}</h3>
+                  <p className="mt-5 text-ink-600 leading-relaxed max-w-[52ch]">{it.body}</p>
+                  <div className="mt-7 inline-flex items-baseline gap-2 border-t border-ink-200 pt-4">
+                    <span className="font-mono text-2xl font-semibold text-ink-950">{it.stat}</span>
+                    <span className="font-mono text-xs uppercase tracking-widest text-ink-500">{it.statLabel}</span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Promo Banner (Asymmetric) ---------- */
+function Promo() {
+  return (
+    <section className="py-12 md:py-16">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-ink-950 text-ink-50 p-8 md:p-14">
+          {/* Decorative big empty zone on the right */}
+          <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-8 items-center">
+            <div>
+              <div className="font-mono text-xs uppercase tracking-[0.25em] text-accent-400 mb-4">— summer 2026</div>
+              <h3 className="font-display font-semibold text-4xl md:text-5xl leading-[0.98] tracking-tightest">
+                夏季出行季<br/>
+                <span className="text-accent-400">特惠机票开抢</span>
+              </h3>
+              <p className="mt-5 text-ink-300 max-w-[50ch]">优惠有效期至 2026 年 6 月 30 日，数量有限，先订先得。仅限星空航空官网与 App 渠道。</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                {[
+                  { from: '杭州', to: '三亚', price: '¥399' },
+                  { from: '杭州', to: '大阪', price: '¥1,299' },
+                  { from: '杭州', to: '伦敦', price: '¥3,899' },
+                ].map(p => (
+                  <div key={p.to} className="bg-ink-900/60 border border-ink-700 rounded-2xl px-5 py-3 hover:border-accent-400 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-ink-400">
+                      <span>{p.from}</span><i className="ph ph-arrow-right"></i><span>{p.to}</span>
+                    </div>
+                    <div className="mt-1 font-display text-xl font-semibold">{p.price}<span className="text-xs text-ink-400 font-sans font-normal"> 起</span></div>
+                  </div>
+                ))}
+              </div>
+              <a href="#" className="mt-8 inline-flex items-center gap-2 text-ink-50 hover:text-accent-400 transition-colors" data-tactile>
+                立即查看全部特惠 <i className="ph-bold ph-arrow-up-right"></i>
+              </a>
+            </div>
+            <div className="hidden md:block relative">
+              {/* Massive empty zone with subtle accent dot pattern */}
+              <div className="aspect-square relative">
+                <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 gap-2 opacity-30">
+                  {Array.from({ length: 36 }).map((_, i) => (
+                    <span key={i} className="w-1.5 h-1.5 rounded-full bg-accent-500 place-self-center" style={{ animationDelay: `${i * 80}ms` }}></span>
+                  ))}
+                </div>
+                <div className="absolute inset-0 grid place-items-center">
+                  <div className="text-center">
+                    <div className="font-mono text-xs uppercase tracking-[0.3em] text-accent-400 mb-2">ends in</div>
+                    <CountdownClock />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+function CountdownClock() {
+  const [t, setT] = useState({ d: 14, h: 7, m: 32, s: 18 });
+  useEffect(() => {
+    const id = setInterval(() => {
+      setT(prev => {
+        let { d, h, m, s } = prev;
+        s -= 1;
+        if (s < 0) { s = 59; m -= 1; }
+        if (m < 0) { m = 59; h -= 1; }
+        if (h < 0) { h = 23; d -= 1; }
+        if (d < 0) { d = 14; h = 7; m = 32; s = 18; }
+        return { d, h, m, s };
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  const Cell = ({ v, l }) => (
+    <div className="inline-block">
+      <div className="font-mono text-3xl md:text-4xl font-medium tabular-nums text-ink-50">{String(v).padStart(2, '0')}</div>
+      <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">{l}</div>
+    </div>
+  );
+  return (
+    <div className="flex items-end gap-3">
+      <Cell v={t.d} l="days" />
+      <span className="font-mono text-2xl text-ink-700 pb-5">:</span>
+      <Cell v={t.h} l="hrs" />
+      <span className="font-mono text-2xl text-ink-700 pb-5">:</span>
+      <Cell v={t.m} l="min" />
+      <span className="font-mono text-2xl text-ink-700 pb-5">:</span>
+      <Cell v={t.s} l="sec" />
+    </div>
+  );
+}
+
+/* ---------- Destinations — Masonry-style asymmetric grid ---------- */
+function Destinations() {
+  const items = [
+    { city: '三亚',     en: 'Sanya',     desc: '阳光与海浪的完美邂逅',     meta: '最快 1h45m 直达 · 每日 4 班', price: '¥399',   img: 'https://picsum.photos/seed/skystar-sanya-beach/900/1200', tall: true },
+    { city: '成都',     en: 'Chengdu',   desc: '慢下来，才能遇见真正的巴蜀', meta: '每日 8 班 · 支持中转西藏',     price: '¥459',   img: 'https://picsum.photos/seed/skystar-chengdu-panda/900/700' },
+    { city: '东京',     en: 'Tokyo',     desc: '赏樱季专属航班，限量发售',   meta: '每日 2 班 · Narita & Haneda',  price: '¥1,299', img: 'https://picsum.photos/seed/skystar-tokyo-sakura/900/700' },
+    { city: '迪拜',     en: 'Dubai',     desc: '沙漠奢旅的起点',           meta: '每日 1 班 · 商务舱全程平躺',     price: '¥2,699', img: 'https://picsum.photos/seed/skystar-dubai-desert/900/900', tall: true },
+    { city: '巴黎',     en: 'Paris',     desc: '艺术与浪漫在等你',         meta: '每周 5 班 · CDG 直航',         price: '¥3,899', img: 'https://picsum.photos/seed/skystar-paris-eiffel/900/700' },
+  ];
+  return (
+    <section id="destinations" className="py-20 md:py-32 bg-ink-100/50">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 md:mb-14">
+          <div>
+            <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Featured</div>
+            <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950">
+              精选目的地
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="w-10 h-10 rounded-full border border-ink-300 grid place-items-center hover:bg-ink-900 hover:text-ink-50 transition-colors" aria-label="prev">
+              <i className="ph ph-arrow-left"></i>
+            </button>
+            <button className="w-10 h-10 rounded-full border border-ink-300 grid place-items-center hover:bg-ink-900 hover:text-ink-50 transition-colors" aria-label="next">
+              <i className="ph ph-arrow-right"></i>
+            </button>
+            <a href="#" className="ml-3 text-sm text-ink-700 hover:text-ink-950 inline-flex items-center gap-1.5" data-tactile>
+              全部目的地 <i className="ph ph-arrow-up-right"></i>
+            </a>
+          </div>
+        </div>
+
+        {/* Masonry via CSS columns */}
+        <div className="columns-1 md:columns-2 lg:columns-3 gap-5 [column-fill:_balance]">
+          {items.map((d, i) => (
+            <article
+              key={d.city}
+              className="break-inside-avoid mb-5 group cursor-pointer rise"
+              style={{ animationDelay: `${i * 120}ms` }}
+            >
+              <div className={`relative overflow-hidden rounded-[2rem] ${d.tall ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
+                <img src={d.img} alt={d.city} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" style={{ transitionTimingFunction: 'var(--ease)' }} loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/10 to-transparent"></div>
+                <div className="absolute top-4 right-4 bg-ink-50/90 backdrop-blur rounded-full px-3 py-1 font-mono text-[10px] tabular-nums text-ink-900">{d.price} 起</div>
+                <div className="absolute bottom-5 left-5 right-5 text-ink-50">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.3em] opacity-80">{d.en}</div>
+                  <div className="font-display text-3xl font-semibold tracking-tight mt-0.5">{d.city}</div>
+                  <div className="text-sm text-ink-200 mt-2 max-w-[28ch]">{d.desc}</div>
+                  <div className="mt-4 flex items-center gap-2 text-xs text-ink-300">
+                    <i className="ph ph-path text-accent-400"></i> {d.meta}
+                  </div>
+                </div>
+                <span className="absolute top-4 left-4 w-9 h-9 rounded-full bg-ink-50/15 backdrop-blur grid place-items-center text-ink-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <i className="ph-bold ph-arrow-up-right"></i>
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Frequent Flyer — Bento with table ---------- */
+function FrequentFlyer() {
+  const tiers = [
+    { tier: '银卡', en: 'Silver',   std: '年飞 25,000 里程',  perks: ['优先值机', '额外行李额'],                       color: 'ink-300' },
+    { tier: '金卡', en: 'Gold',     std: '年飞 50,000 里程',  perks: ['贵宾休息室', '优先登机'],                       color: 'accent-400' },
+    { tier: '白金卡', en: 'Platinum', std: '年飞 100,000 里程', perks: ['专属顾问', '头等舱升级券'],                     color: 'ink-700' },
+    { tier: '钻石卡', en: 'Diamond',  std: '邀请制',            perks: ['全部权益', '私人定制服务'],                     color: 'ink-900' },
+  ];
+  return (
+    <section id="frequent" className="py-20 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-10 md:gap-16 items-start">
+          {/* Left: title and CTA */}
+          <div className="md:sticky md:top-28">
+            <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Frequent Flyer</div>
+            <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950">
+              星辰会员<br/>
+              <span className="text-accent-600">计划</span>
+            </h2>
+            <p className="mt-6 text-ink-600 leading-relaxed max-w-[42ch]">
+              加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿、租车及超过 300 个合作品牌的礼遇权益。
+            </p>
+            <div className="mt-7 inline-flex items-baseline gap-2 border-t border-ink-200 pt-5">
+              <span className="font-mono text-3xl font-semibold text-ink-950">2,000</span>
+              <span className="font-mono text-xs uppercase tracking-widest text-ink-500">开户里程礼遇</span>
+            </div>
+            <MagneticButton className="mt-7 inline-flex items-center gap-2 h-12 px-7 rounded-full bg-ink-900 text-ink-50 hover:bg-ink-800">
+              立即注册 <i className="ph-bold ph-arrow-up-right"></i>
+            </MagneticButton>
+          </div>
+
+          {/* Right: tier list — divide-y, no boxes */}
+          <div className="border-t border-ink-200">
+            {tiers.map(t => (
+              <div key={t.tier} className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr_1.6fr] gap-4 md:gap-8 py-7 border-b border-ink-200 group hover:bg-ink-50/60 transition-colors px-2 -mx-2 rounded-lg">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-2.5 h-2.5 rounded-full bg-${t.color}`}></span>
+                    <span className="font-display text-2xl font-semibold tracking-tight text-ink-950">{t.tier}</span>
+                  </div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500 mt-1.5 ml-5">{t.en}</div>
+                </div>
+                <div className="text-ink-600 text-sm leading-relaxed md:border-l md:border-ink-200 md:pl-6">{t.std}</div>
+                <div className="flex flex-wrap gap-2 md:justify-end md:items-center">
+                  {t.perks.map(p => (
+                    <span key={p} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-100 text-xs text-ink-700">
+                      <i className="ph ph-check text-accent-600"></i> {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Services — Asymmetric split ---------- */
+function Services() {
+  return (
+    <section className="py-20 md:py-32 bg-ink-100/50">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
+        <article className="group">
+          <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Care</div>
+          <h3 className="font-display font-semibold text-3xl md:text-4xl tracking-tight text-ink-950 leading-tight">
+            特殊旅客关怀
+          </h3>
+          <p className="mt-5 text-ink-600 leading-relaxed">
+            为有特殊需求的旅客提供全程无缝协助，包括婴幼儿推车寄存、轮椅全程陪同、无障碍座位优先安排、孕妇及行动不便旅客优先登机。杭州、北京、上海枢纽机场设有独立的"星空关爱"服务柜台。
+          </p>
+          <div className="mt-7 flex flex-wrap gap-2">
+            {['轮椅陪同', '婴儿车寄存', '无障碍座位', '孕妇优先登机'].map(x => (
+              <span key={x} className="px-3 py-1.5 rounded-full bg-ink-50 border border-ink-200 text-xs text-ink-700">{x}</span>
+            ))}
+          </div>
+          <a href="#" className="mt-7 inline-flex items-center gap-2 text-ink-900 hover:text-accent-700 transition-colors" data-tactile>
+            了解特殊旅客服务 <i className="ph-bold ph-arrow-up-right"></i>
+          </a>
+        </article>
+        <article className="md:mt-24 group">
+          <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— Pet Travel</div>
+          <h3 className="font-display font-semibold text-3xl md:text-4xl tracking-tight text-ink-950 leading-tight">
+            宠物随行计划
+          </h3>
+          <p className="mt-5 text-ink-600 leading-relaxed">
+            毛孩子也是家庭的一员。符合条件的小型宠物可进入客舱随旅客同乘；大型犬猫提供恒温专属货舱运输，全程由专业动物运输团队监护。
+          </p>
+          <div className="mt-7 flex flex-wrap gap-2">
+            {['客舱随乘', '恒温货舱', '专业监护', '运输指引'].map(x => (
+              <span key={x} className="px-3 py-1.5 rounded-full bg-ink-50 border border-ink-200 text-xs text-ink-700">{x}</span>
+            ))}
+          </div>
+          <a href="#" className="mt-7 inline-flex items-center gap-2 text-ink-900 hover:text-accent-700 transition-colors" data-tactile>
+            宠物运输指引 <i className="ph-bold ph-arrow-up-right"></i>
+          </a>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- About + Sustainability ---------- */
+function About() {
+  return (
+    <section id="about" className="py-20 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-10 md:gap-16 items-start">
+          <div>
+            <div className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500 mb-4">— About Skystar</div>
+            <h2 className="font-display font-semibold text-4xl md:text-6xl tracking-tightest leading-[0.95] text-ink-950">
+              关于<br className="md:hidden" /> 星空航空
+            </h2>
+            <p className="mt-7 text-ink-600 leading-relaxed max-w-[60ch]">
+              成立于 2008 年，是一家总部位于杭州、立足长三角、面向全球的现代化航空公司。机队规模 186 架，平均机龄仅 5.2 年，是国内机队最年轻的航空公司之一。
+            </p>
+            <p className="mt-4 text-ink-600 leading-relaxed max-w-[60ch]">
+              我们相信航空出行不应该只是从 A 到 B 的位移，而应该是一段有温度的旅程。因此我们持续在客舱品质、数字化服务与可持续发展三个维度深度投入。
+            </p>
+            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-px bg-ink-200 border border-ink-200 rounded-2xl overflow-hidden">
+              {[
+                { k: '2008', v: '成立年份' },
+                { k: '186',  v: '机队规模' },
+                { k: '600+', v: '日均航班' },
+                { k: '12,000+', v: '企业客户' },
+              ].map(s => (
+                <div key={s.v} className="bg-ink-50 p-5">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500">{s.v}</div>
+                  <div className="mt-1 font-display text-2xl font-semibold text-ink-950">{s.k}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <aside className="md:sticky md:top-28 bg-accent-50 border border-accent-100 rounded-[2rem] p-7 md:p-8">
+            <div className="flex items-center gap-2 mb-4">
+              <i className="ph-bold ph-leaf text-accent-700 text-xl"></i>
+              <span className="font-mono text-xs uppercase tracking-widest text-accent-700">Sustainability Pledge</span>
+            </div>
+            <h3 className="font-display font-semibold text-2xl tracking-tight text-ink-950">可持续承诺</h3>
+            <p className="mt-4 text-sm text-ink-700 leading-relaxed">
+              2026 年起全面加入 CORSIA 国际碳抵消机制，承诺 2035 年实现单位客公里碳排放较 2019 年基准下降 40%。新引进机型全部选用新一代节能发动机，并在杭州、上海、北京三大基地机场推行地面车辆全面电动化。
+            </p>
+            <dl className="mt-7 space-y-4">
+              {[
+                { k: '40%',   v: '2035 碳排放下降目标' },
+                { k: '100%',  v: '基地机场地面车辆电动化' },
+                { k: 'CORSIA', v: '国际碳抵消机制成员' },
+              ].map(s => (
+                <div key={s.v} className="flex items-baseline justify-between gap-4 border-t border-accent-200/60 pt-3">
+                  <dt className="font-mono text-[10px] uppercase tracking-widest text-ink-600">{s.v}</dt>
+                  <dd className="font-display text-xl font-semibold text-accent-700 tabular-nums">{s.k}</dd>
+                </div>
+              ))}
+            </dl>
+          </aside>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Footer ---------- */
+function Footer() {
+  return (
+    <footer className="bg-ink-950 text-ink-300 pt-16 md:pt-24 pb-10">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="w-9 h-9 rounded-full bg-ink-50 text-accent-500 grid place-items-center">
+                <i className="ph-bold ph-airplane-tilt text-lg" style={{ transform: 'rotate(-45deg)' }}></i>
+              </span>
+              <div className="leading-none">
+                <div className="font-display font-semibold text-lg text-ink-50">星空航空</div>
+                <div className="font-mono text-[10px] text-ink-500 tracking-widest uppercase">Skystar Airlines</div>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-ink-400 max-w-[40ch]">
+              杭州萧山国际机场运营基地<br />
+              客服热线 <span className="font-mono text-ink-200">400-800-9988</span> · 7×24 小时
+            </p>
+            <div className="mt-6 flex items-center gap-3">
+              {['wechat-logo', 'sina-weibo-logo', 'tiktok-logo'].map(ic => (
+                <a key={ic} href="#" className="w-9 h-9 rounded-full border border-ink-800 grid place-items-center hover:border-accent-400 hover:text-accent-400 transition-colors" aria-label={ic}>
+                  <i className={`ph ${ic}`}></i>
+                </a>
+              ))}
+            </div>
+          </div>
+          <FooterCol title="快速链接" items={['航班状态查询', '行李规定', '退改签政策', '旅行保险', '常见问题']} />
+          <FooterCol title="服务支持" items={['特殊旅客服务', '宠物运输', '商务客户方案', '机场贵宾', '联系方式']} />
+          <FooterCol title="关于我们" items={['公司介绍', '新闻中心', '招贤纳士', '投资者关系', '可持续承诺']} />
+        </div>
+
+        <div className="mt-14 pt-7 border-t border-ink-800 flex flex-col md:flex-row gap-3 md:items-center justify-between text-xs text-ink-500">
+          <div className="font-mono">
+            CATA 中国航空运输协会会员 · IATA 国际航空运输协会认证
+          </div>
+          <div className="font-mono">
+            © 2026 Skystar Airlines Co., Ltd. · 浙ICP备XXXXXXXX号 · 保留所有权利
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+function FooterCol({ title, items }) {
+  return (
+    <div>
+      <div className="font-mono text-[10px] uppercase tracking-widest text-ink-500 mb-4">{title}</div>
+      <ul className="space-y-2.5">
+        {items.map(i => (
+          <li key={i}>
+            <a href="#" className="text-sm text-ink-300 hover:text-ink-50 transition-colors" data-tactile>{i}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  return (
+    <>
+      <Nav />
+      <main>
+        <Hero />
+        <FlightSearch />
+        <WhyChoose />
+        <Promo />
+        <Destinations />
+        <FrequentFlyer />
+        <Services />
+        <About />
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
