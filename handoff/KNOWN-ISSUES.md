@@ -32,12 +32,13 @@ client_level: developer
 
 - **评审标准**：`04-评审/` 目录为空，评审标准文档待补充
 - **Gemini 3 截图**：部分补测页面（taste-skill / modern-web-design / superdesign）的截图可能未生成
-- **GLM 5.2 集成（2026-06-17 补测）**：已完成集成部署 ✅
+- **GLM 5.2 集成（2026-06-17 补测）**：**2026-06-18 已完成集成部署** ✅
   - [x] 展厅集成：`05-报告/展厅/index.html` 新增 GLM 5.2 模型按钮（data-model="glm52"）、`getFileMap()` 的 `glm52` 分支、统计数字更新（388 → 430，9 → 10 模型）
   - [x] 文件复制：`03-产出/glm5.2/*.html` → `05-报告/展厅/pages/`（42 个文件）
   - [x] 截图入库：Playwright 截图脚本 `TempScr/screenshot-glm52.js`，airline/bikeops 使用 1920x1080（16:9），charging 使用 390x844（9:16）
-  - [x] 部署：已通过 `npx wrangler pages deploy` 部署到 Cloudflare Pages
-  - 注：GLM 5.2 与系统内置 GLM 5.0 是**两个独立版本**，展厅中并存展示
+  - [x] 部署：已通过 `npx wrangler pages deploy` 部署到 Cloudflare Pages main 分支
+  - [x] Kimi K2.6 截图重截：42 张全部重新截取修复 CDN 加载失败导致的白屏
+  - 注：GLM 5.2 与 GLM 5.0 是**两个独立版本**，展厅中并存展示，GLM 5.2 排在 GLM 5.0 前面
 
 ## 技术债
 
@@ -45,7 +46,7 @@ client_level: developer
 
 - **位置**：`05-报告/展厅/index.html`（约 500 行）
 - **问题**：所有模型配置、文件映射、渲染逻辑都在一个文件中，新增模型需要修改多处代码
-- **建议**：如模型数量继续增长，考虑拆分为 JSON 配置 + 渲染引擎
+- **建议**：新增模型时，需要修改多处代码（模型按钮、分类数组、文件映射、Badge颜色、过滤器、统计数字），考虑抽象为 JSON 配置 + 渲染引擎（模型数量继续增长时建议优化）
 
 ### 2. 文件命名不一致
 
