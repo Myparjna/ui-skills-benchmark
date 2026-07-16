@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1">
+<title>闪充 EV · 聚合充电</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d11;
+    --ink-2:#14161d;
+    --card:#191c25;
+    --card-2:#1f232e;
+    --line:rgba(255,255,255,.08);
+    --lime:#c8f135;
+    --lime-d:#a4cf1f;
+    --amber:#ffb020;
+    --text:#eef1f6;
+    --dim:#8b91a3;
+    --green:#3ddc84;   /* 空闲 */
+    --orange:#ff7a18;  /* 充电中 */
+    --red:#ff3b3b;     /* 故障 */
+    --gray:#5b6172;    /* 未知 */
+    --phone:430px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Noto Sans SC",sans-serif;
+    background:radial-gradient(circle at 50% -10%,#1a1d27,#050608 70%);
+    color:var(--text);display:flex;justify-content:center;
+    min-height:100vh;padding:24px 12px;
+  }
+  .app{width:var(--phone);max-width:100%;background:var(--ink);border-radius:38px;overflow:hidden;
+    position:relative;box-shadow:0 40px 90px -30px #000,0 0 0 1px rgba(255,255,255,.05);min-height:880px}
+  .app::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:30;
+    background:radial-gradient(120% 60% at 50% 0,rgba(200,241,53,.10),transparent 55%)}
+  .disp{display:flex;justify-content:space-between;padding:14px 26px 6px;font-size:.78rem;color:var(--dim);font-weight:500;position:relative;z-index:5}
+  .disp .dots{display:flex;gap:4px;align-items:center}
+  .disp .dots i{width:6px;height:6px;border-radius:50%;background:var(--lime);display:inline-block}
+  .scr{height:calc(100% - 0px);overflow-y:auto;scrollbar-width:none}
+  .scr::-webkit-scrollbar{display:none}
+
+  /* top bar */
+  .top{padding:6px 20px 14px;display:flex;align-items:center;gap:12px;position:relative}
+  .top .hi{font-family:"Syne",sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:-.02em}
+  .top .hi small{display:block;font-family:"Noto Sans SC";font-weight:300;font-size:.72rem;color:var(--dim);letter-spacing:0}
+  .loc{margin-left:auto;display:flex;align-items:center;gap:5px;background:var(--card);padding:7px 12px;border-radius:30px;font-size:.8rem;border:1px solid var(--line)}
+  .loc b{color:var(--lime)}
+  .bell{width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:1rem;position:relative}
+  .bell::after{content:"";position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 8px var(--orange)}
+
+  /* map */
+  .map{margin:0 16px;border-radius:26px;overflow:hidden;position:relative;height:300px;background:
+      linear-gradient(135deg,#11141c,#1b2030);border:1px solid var(--line)}
+  .map svg{position:absolute;inset:0;width:100%;height:100%}
+  .road{stroke:rgba(255,255,255,.07);stroke-width:6;fill:none}
+  .road.b{stroke-width:3;stroke:rgba(200,241,53,.10)}
+  .pin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;transition:.25s}
+  .pin:hover{transform:translate(-50%,-110%) scale(1.12)}
+  .pin .dot{width:34px;height:34px;border-radius:50% 50% 50% 6px;transform:rotate(45deg);display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+  .pin .dot span{transform:rotate(-45deg);font-size:.8rem}
+  .pin .cnt{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:.62rem;background:#000a;padding:1px 6px;border-radius:8px;white-space:nowrap;border:1px solid var(--line)}
+  .me{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 4px rgba(200,241,53,.25),0 0 18px var(--lime);left:50%;top:58%;transform:translate(-50%,-50%)}
+  .map .recenter{position:absolute;right:12px;bottom:12px;width:42px;height:42px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:1.1rem;color:var(--lime);cursor:pointer;z-index:4}
+  .map .chip{position:absolute;left:12px;top:12px;background:#000a;backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:30px;padding:6px 12px;font-size:.74rem;z-index:4}
+  .map .chip b{color:var(--lime)}
+
+  /* list sheet */
+  .sheet{margin:-22px 0 0;background:var(--ink-2);border-radius:26px 26px 0 0;padding:16px 16px 120px;position:relative;z-index:3}
+  .grip{width:42px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .row h3{font-family:"Syne",sans-serif;font-weight:700;font-size:1.05rem}
+  .row .sort{font-size:.76rem;color:var(--dim);background:var(--card);padding:6px 12px;border-radius:20px;border:1px solid var(--line)}
+  .stat{display:flex;gap:8px;margin-bottom:14px}
+  .stat .s{flex:1;background:var(--card);border-radius:14px;padding:10px;text-align:center;border:1px solid var(--line)}
+  .stat .s b{font-family:"Syne";font-size:1.1rem;display:block}
+  .stat .s span{font-size:.66rem;color:var(--dim)}
+  .stat .s.g b{color:var(--green)}.stat .s.o b{color:var(--orange)}.stat .s.r b{color:var(--red)}
+
+  .st{background:var(--card);border-radius:18px;padding:14px;margin-bottom:12px;border:1px solid var(--line);transition:.25s;cursor:pointer}
+  .st:hover{border-color:var(--lime-d);transform:translateY(-2px)}
+  .st .h{display:flex;align-items:center;gap:10px}
+  .st .nm{font-weight:700;font-size:.98rem}
+  .st .op{font-size:.66rem;color:var(--dim);border:1px solid var(--line);padding:1px 7px;border-radius:8px}
+  .st .km{margin-left:auto;font-size:.76rem;color:var(--dim)}
+  .st .km b{color:var(--text);font-family:"Syne"}
+  .st .meta{display:flex;gap:14px;margin-top:10px;font-size:.76rem;color:var(--dim);flex-wrap:wrap}
+  .st .meta .free b{color:var(--green);font-family:"Syne"}
+  .st .meta .price b{color:var(--lime);font-family:"Syne"}
+  .st .bar{height:5px;border-radius:5px;background:var(--ink);margin-top:10px;overflow:hidden;display:flex}
+  .st .bar i{height:100%}
+  .st .bar .g{background:var(--green)}.st .bar .o{background:var(--orange)}.st .bar .r{background:var(--red)}
+
+  /* membership promo */
+  .promo{margin:4px 16px 16px;background:linear-gradient(120deg,#c8f135,#7fae12);color:#0c0d11;border-radius:18px;padding:16px;position:relative;overflow:hidden}
+  .promo::after{content:"";position:absolute;right:-20px;top:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.35)}
+  .promo h4{font-family:"Syne";font-weight:800;font-size:1.05rem}
+  .promo p{font-size:.74rem;font-weight:500;margin-top:3px}
+  .promo .btn{margin-top:10px;display:inline-block;background:#0c0d11;color:var(--lime);padding:7px 16px;border-radius:20px;font-size:.78rem;font-weight:700;text-decoration:none}
+
+  /* tabbar */
+  .tab{position:absolute;left:0;right:0;bottom:0;height:84px;background:linear-gradient(180deg,rgba(12,13,17,0),var(--ink) 28%);display:flex;align-items:flex-end;justify-content:space-around;padding:0 10px 14px;z-index:20}
+  .tab a{flex:1;text-align:center;color:var(--dim);font-size:.62rem;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.25s}
+  .tab a .ic{font-size:1.2rem}
+  .tab a.on{color:var(--lime)}
+  .scan{width:62px;height:62px;border-radius:50%;background:conic-gradient(from 200deg,var(--lime),var(--amber),var(--lime));display:grid;place-items:center;margin-bottom:6px;box-shadow:0 0 0 5px var(--ink),0 10px 24px -6px rgba(200,241,53,.6);transform:translateY(-6px);cursor:pointer;transition:.25s}
+  .scan:active{transform:translateY(-2px) scale(.96)}
+  .scan span{width:30px;height:30px;border-radius:8px;background:var(--ink);display:grid;place-items:center;color:var(--lime);font-size:1rem}
+
+  /* scan sheet */
+  .scanwin{position:absolute;inset:0;background:rgba(5,6,8,.86);backdrop-filter:blur(8px);z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+  .scanwin.show{display:flex;animation:fade .3s}
+  @keyframes fade{from{opacity:0}}
+  .scanframe{width:230px;height:230px;border:2px solid var(--lime);border-radius:18px;position:relative;display:grid;place-items:center;overflow:hidden}
+  .scanframe::before{content:"";position:absolute;left:0;right:0;height:2px;background:var(--lime);box-shadow:0 0 12px var(--lime);animation:scan 2s linear infinite}
+  @keyframes scan{0%{top:0}100%{top:228px}}
+  .scanframe .corner{position:absolute;width:22px;height:22px;border:3px solid var(--lime)}
+  .c1{left:8px;top:8px;border-right:0;border-bottom:0}.c2{right:8px;top:8px;border-left:0;border-bottom:0}.c3{left:8px;bottom:8px;border-right:0;border-top:0}.c4{right:8px;bottom:8px;border-left:0;border-top:0}
+  .scanwin p{margin-top:22px;color:var(--text);font-size:.9rem}
+  .scanwin .sub{color:var(--dim);font-size:.74rem;margin-top:6px}
+  .scanwin .manual{margin-top:18px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:10px 22px;border-radius:24px;font-size:.8rem;text-decoration:none}
+  .scanwin .close{position:absolute;top:24px;right:24px;font-size:1.5rem;color:var(--dim)}
+
+  /* charging widget */
+  .charging{position:absolute;left:14px;right:14px;bottom:96px;background:linear-gradient(150deg,#1d2230,#10131b);border:1px solid var(--orange);border-radius:22px;padding:16px;z-index:25;display:none;box-shadow:0 20px 50px -16px rgba(255,122,24,.5)}
+  .charging.show{display:block;animation:rise .4s}
+  @keyframes rise{from{transform:translateY(20px);opacity:0}}
+  .charging .topc{display:flex;align-items:center;gap:14px}
+  .ring{width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--orange) calc(var(--p)*1%),#222 0);display:grid;place-items:center;position:relative;flex-shrink:0}
+  .ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#10131b}
+  .ring b{position:relative;font-family:"Syne";font-size:1.05rem;color:var(--orange)}
+  .charging .info h5{font-size:.95rem}
+  .charging .info .stn{font-size:.72rem;color:var(--dim)}
+  .charging .grid{display:flex;gap:14px;margin-top:14px;text-align:center}
+  .charging .grid div{flex:1}
+  .charging .grid b{font-family:"Syne";font-size:1.05rem;color:var(--lime);display:block}
+  .charging .grid span{font-size:.64rem;color:var(--dim)}
+  .charging .stop{margin-top:12px;width:100%;background:transparent;border:1px solid var(--red);color:var(--red);padding:9px;border-radius:12px;font-size:.82rem;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="disp"><span>23:48</span><span class="dots"><i></i><i></i><i></i> 5G ▱</span></div>
+  <div class="scr">
+    <div class="top">
+      <div class="hi">晚上好，王师傅<small>附近 5km 内有 28 个充电站</small></div>
+      <div class="loc">📍 <b>杭州·萧山</b></div>
+      <div class="bell">🔔</div>
+    </div>
+
+    <!-- MAP -->
+    <div class="map">
+      <svg viewBox="0 0 430 300" preserveAspectRatio="xMidYMid slice">
+        <path class="road" d="M-20 80 H460"/>
+        <path class="road" d="M-20 210 H460"/>
+        <path class="road" d="M90 -20 V320"/>
+        <path class="road" d="M300 -20 V320"/>
+        <path class="road b" d="M-20 150 Q120 120 220 160 T460 140"/>
+        <path class="road b" d="M180 -20 Q200 140 160 320"/>
+      </svg>
+      <div class="chip">实时桩态 · <b>刷新 12s 前</b></div>
+      <div class="pin" style="left:22%;top:30%"><div class="cnt">空闲 8</div><div class="dot" style="background:var(--green)"><span>⚡</span></div></div>
+      <div class="pin" style="left:64%;top:24%"><div class="cnt">空闲 3</div><div class="dot" style="background:var(--green)"><span>⚡</span></div></div>
+      <div class="pin" style="left:78%;top:62%"><div class="cnt">充电 5</div><div class="dot" style="background:var(--orange)"><span>🔌</span></div></div>
+      <div class="pin" style="left:38%;top:70%"><div class="cnt">故障 1</div><div class="dot" style="background:var(--red)"><span>⚠</span></div></div>
+      <div class="pin" style="left:50%;top:46%"><div class="cnt">空闲 12</div><div class="dot" style="background:var(--green)"><span>⚡</span></div></div>
+      <div class="me"></div>
+      <div class="recenter" title="回到我的位置">⊕</div>
+    </div>
+
+    <!-- SHEET LIST -->
+    <div class="sheet">
+      <div class="grip"></div>
+      <div class="row"><h3>附近充电站</h3><div class="sort">综合排序 ▾</div></div>
+      <div class="stat">
+        <div class="s g"><b>126</b><span>空闲枪</span></div>
+        <div class="s o"><b>58</b><span>充电中</span></div>
+        <div class="s r"><b>4</b><span>故障</span></div>
+      </div>
+
+      <div class="st" onclick="openCharge()">
+        <div class="h"><span class="nm">萧山万象汇超充站</span><span class="op">特来电</span><span class="km"><b>0.6</b>km</span></div>
+        <div class="meta"><span class="free">空闲 <b>12</b>/20 枪</span><span>快充 120kW</span><span class="price">¥<b>0.98</b>/度</span><span>免费停车 2h</span></div>
+        <div class="bar"><i class="g" style="width:60%"></i><i class="o" style="width:35%"></i><i class="r" style="width:5%"></i></div>
+      </div>
+      <div class="st">
+        <div class="h"><span class="nm">市心路公共充电点</span><span class="op">星星充电</span><span class="km"><b>1.2</b>km</span></div>
+        <div class="meta"><span class="free">空闲 <b>8</b>/16 枪</span><span>超充 250kW</span><span class="price">¥<b>1.15</b>/度</span><span>停车 ¥5/h</span></div>
+        <div class="bar"><i class="g" style="width:50%"></i><i class="o" style="width:50%"></i></div>
+      </div>
+      <div class="st">
+        <div class="h"><span class="nm">钱江新城 PLUS 站</span><span class="op">云快充</span><span class="km"><b>2.4</b>km</span></div>
+        <div class="meta"><span class="free">空闲 <b>3</b>/10 枪</span><span>快充 60kW</span><span class="price">¥<b>0.88</b>/度</span><span>PLUS 专享</span></div>
+        <div class="bar"><i class="g" style="width:30%"></i><i class="o" style="width:70%"></i></div>
+      </div>
+
+      <!-- membership -->
+      <div class="promo">
+        <h4>PLUS 会员 · 月省 ¥50 起</h4>
+        <p>充电 6 折起 · 每月 5 张满减券 · 停车减免</p>
+        <a href="#" class="btn">¥2.9/月 开通 →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- charging widget -->
+  <div class="charging" id="charge">
+    <div class="topc">
+      <div class="ring" id="ring" style="--p:64"><b>64%</b></div>
+      <div class="info"><h5>充电中 · 萧山万象汇</h5><div class="stn">枪号 A07 · 比亚迪 汉 EV</div></div>
+    </div>
+    <div class="grid">
+      <div><b id="kw">78.4</b><span>实时功率 kW</span></div>
+      <div><b id="kwh">32.6</b><span>已充 kWh</span></div>
+      <div><b id="cost">¥31.9</b><span>已产生费用</span></div>
+      <div><b id="eta">14</b><span>预计分钟</span></div>
+    </div>
+    <button class="stop" onclick="closeCharge()">停止充电（需二次确认）</button>
+  </div>
+
+  <!-- tabbar -->
+  <div class="tab">
+    <a class="on"><span class="ic">🗺️</span>首页</a>
+    <a><span class="ic">🎟️</span>省钱</a>
+    <div class="scan" onclick="openScan()"><span>⊹</span></div>
+    <a><span class="ic">📋</span>订单</a>
+    <a><span class="ic">👤</span>我的</a>
+  </div>
+
+  <!-- scan sheet -->
+  <div class="scanwin" id="scan">
+    <div class="close" onclick="closeScan()">✕</div>
+    <div class="scanframe"><span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span><span style="font-size:2rem">⊹</span></div>
+    <p>将二维码放入框内，即可启动充电</p>
+    <div class="sub">支持桩面二维码 / 桩编号输入 / NFC 感应</div>
+    <a href="#" class="manual" onclick="event.preventDefault();closeScan();openCharge()">手动输入桩编号</a>
+  </div>
+</div>
+
+<script>
+function openScan(){document.getElementById('scan').classList.add('show')}
+function closeScan(){document.getElementById('scan').classList.remove('show')}
+function openCharge(){
+  closeScan();
+  const w=document.getElementById('charge');w.classList.add('show');
+  let p=64;const ring=document.getElementById('ring');
+  const t=setInterval(()=>{
+    p=Math.min(100,p+1);ring.style.setProperty('--p',p);
+    ring.querySelector('b').textContent=p+'%';
+    document.getElementById('kwh').textContent=(32.6+(p-64)*0.45).toFixed(1);
+    document.getElementById('cost').textContent='¥'+(31.9+(p-64)*0.48).toFixed(1);
+    document.getElementById('eta').textContent=Math.max(0,100-p)*0.22|0;
+    if(p>=100)clearInterval(t);
+  },900);
+}
+function closeCharge(){document.getElementById('charge').classList.remove('show')}
+/* tab active */
+document.querySelectorAll('.tab a').forEach(a=>a.onclick=()=>{document.querySelectorAll('.tab a').forEach(x=>x.classList.remove('on'));a.classList.add('on')});
+</script>
+</body>
+</html>

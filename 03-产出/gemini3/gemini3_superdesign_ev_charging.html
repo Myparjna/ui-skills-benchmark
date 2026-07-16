@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charging Mini Program</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ev-primary': '#1677FF',
+                        'ev-success': '#52C41A',
+                        'ev-warning': '#FA8C16',
+                        'ev-bg': '#F5F7FA',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .iphone-container {
+            width: 390px;
+            height: 844px;
+            background: #fff;
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            border: 8px solid #333;
+        }
+        .status-bar {
+            height: 44px;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .dynamic-island {
+            width: 120px;
+            height: 35px;
+            background: #000;
+            border-radius: 20px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .tab-bar {
+            height: 84px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #eee;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding-top: 10px;
+        }
+        .scan-btn {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #1677FF, #00B96B);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+            margin-top: -30px;
+        }
+        .map-bg {
+            height: 300px;
+            background: #e5e7eb;
+            position: relative;
+            background-image: url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/120.15,30.28,12,0/390x300?access_token=pk.eyJ1IjoiZGVzaWduZXIiLCJhIjoiY2p4eHh4eHh4eHh4eCJ9.xxxxxxxx');
+            background-size: cover;
+        }
+        .station-pin {
+            position: absolute;
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .station-pin::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="iphone-container flex flex-col">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="dynamic-island"></div>
+            <div class="flex gap-1 items-center">
+                <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M12,21L15.6,16.2C14.6,15.45 13.35,15 12,15C10.65,15 9.4,15.45 8.4,16.2L12,21M12,2C7.31,2 3.07,3.9 0,7L12,22L24,7C20.93,3.9 16.69,2 12,2M12,4C15.31,4 18.33,5.17 20.7,7.11L12,18L3.3,7.11C5.67,5.17 8.69,4 12,4Z" /></svg>
+                <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M16,18H6V8H16M16,6H14V4H8V6H6A2,2 0 0,0 4,8V18A2,2 0 0,0 6,20H16A2,2 0 0,0 18,18V8A2,2 0 0,0 16,6Z" /></svg>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="px-5 py-3 flex items-center justify-between bg-white">
+            <div class="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full flex-1 mr-4">
+                <svg viewBox="0 0 24 24" class="w-4 h-4 text-gray-400"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+                <span class="text-sm text-gray-400">搜索充电站/地标</span>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-ev-primary/10 flex items-center justify-center text-ev-primary">
+                <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M12,2C15.31,4 18.33,5.17 20.7,7.11L12,18L3.3,7.11C5.67,5.17 8.69,4 12,4M12,2C7.31,2 3.07,3.9 0,7L12,22L24,7C20.93,3.9 16.69,2 12,2Z" /></svg>
+            </div>
+        </div>
+
+        <!-- Map View -->
+        <div class="map-bg">
+            <div class="station-pin top-20 left-10">
+                <div class="w-2 h-2 rounded-full bg-ev-success"></div>
+                <span>空闲 8</span>
+            </div>
+            <div class="station-pin top-40 right-20">
+                <div class="w-2 h-2 rounded-full bg-ev-warning"></div>
+                <span>空闲 2</span>
+            </div>
+            <div class="station-pin bottom-20 left-1/2">
+                <div class="w-2 h-2 rounded-full bg-ev-success"></div>
+                <span>空闲 12</span>
+            </div>
+            
+            <div class="absolute bottom-4 right-4 flex flex-col gap-2">
+                <button class="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" class="w-6 h-6 text-gray-600"><path d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z" /></svg>
+                </button>
+                <button class="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" class="w-6 h-6 text-gray-600"><path d="M15,5H13V3H11V5H9V7H11V9H13V7H15V5Z" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 bg-white rounded-t-[32px] -mt-6 z-10 px-5 pt-6 overflow-y-auto pb-24">
+            <!-- Filter Pills -->
+            <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+                <button class="px-4 py-1.5 bg-ev-primary text-white text-xs rounded-full font-medium whitespace-nowrap">推荐排序</button>
+                <button class="px-4 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium whitespace-nowrap">距离最近</button>
+                <button class="px-4 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium whitespace-nowrap">价格最低</button>
+                <button class="px-4 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium whitespace-nowrap">快充优先</button>
+            </div>
+
+            <!-- Station List -->
+            <div class="space-y-4">
+                <!-- Station 1 -->
+                <div class="p-4 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-900">特来电 - 萧山国际机场站</h3>
+                        <span class="text-ev-primary text-xs font-bold">1.2km</span>
+                    </div>
+                    <div class="flex gap-3 text-[10px] mb-3">
+                        <span class="bg-green-50 text-ev-success px-2 py-0.5 rounded">快充 12/16</span>
+                        <span class="bg-blue-50 text-ev-primary px-2 py-0.5 rounded">慢充 4/8</span>
+                        <span class="bg-orange-50 text-ev-warning px-2 py-0.5 rounded">免停车费</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] text-gray-400">服务费 ¥0.4/度 | 电费 ¥0.8/度</p>
+                            <p class="text-lg font-bold text-gray-900">¥1.20 <span class="text-xs font-normal text-gray-400">/度</span></p>
+                        </div>
+                        <button class="px-6 py-2 bg-ev-primary text-white text-sm font-bold rounded-full">去充电</button>
+                    </div>
+                </div>
+
+                <!-- Station 2 -->
+                <div class="p-4 border border-gray-100 rounded-2xl shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-900">星星充电 - 萧山科技园</h3>
+                        <span class="text-ev-primary text-xs font-bold">2.5km</span>
+                    </div>
+                    <div class="flex gap-3 text-[10px] mb-3">
+                        <span class="bg-green-50 text-ev-success px-2 py-0.5 rounded">快充 5/10</span>
+                        <span class="bg-gray-50 text-gray-400 px-2 py-0.5 rounded">慢充 0/2</span>
+                        <span class="bg-gray-50 text-gray-400 px-2 py-0.5 rounded">停车收费</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] text-gray-400">PLUS会员立减 ¥0.2</p>
+                            <p class="text-lg font-bold text-gray-900">¥0.98 <span class="text-xs font-normal text-gray-400">/度</span></p>
+                        </div>
+                        <button class="px-6 py-2 bg-ev-primary text-white text-sm font-bold rounded-full">去充电</button>
+                    </div>
+                </div>
+
+                <!-- Promo Banner -->
+                <div class="bg-gradient-to-r from-ev-primary to-blue-400 p-4 rounded-2xl text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="text-xs font-medium opacity-80 mb-1">PLUS会员限定</p>
+                        <h4 class="font-bold text-lg">开通享充电6折起</h4>
+                        <button class="mt-3 bg-white text-ev-primary text-xs font-bold px-4 py-2 rounded-full">立即开通</button>
+                    </div>
+                    <svg viewBox="0 0 24 24" class="absolute right-[-10px] bottom-[-10px] w-32 h-32 opacity-20 fill-current"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="flex flex-col items-center gap-1">
+                <svg viewBox="0 0 24 24" class="w-6 h-6 text-ev-primary"><path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z" /></svg>
+                <span class="text-[10px] text-ev-primary font-bold">找桩</span>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+                <svg viewBox="0 0 24 24" class="w-6 h-6 text-gray-400"><path d="M12.79,21L12,20.21L13.59,18.62L12,17.03L12.79,16.24L15.17,18.62L12.79,21M11.21,21L8.83,18.62L11.21,16.24L12,17.03L10.41,18.62L12,20.21L11.21,21M15.1,13.79L12,10.69L8.9,13.79L8.19,13.08L11.29,9.98L8.19,6.88L8.9,6.17L12,9.27L15.1,6.17L15.81,6.88L12.71,9.98L15.81,13.08L15.1,13.79Z" /></svg>
+                <span class="text-[10px] text-gray-400">优惠</span>
+            </div>
+            <div class="scan-btn">
+                <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M4,4H10V6H6V10H4V4M14,4H20V10H18V6H14V4M14,18H18V14H20V20H14V18M10,18H6V14H4V20H10V18M7,7H11V11H7V7M13,7H17V11H13V7M13,13H17V17H13V13M7,13H11V17H7V13Z" /></svg>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+                <svg viewBox="0 0 24 24" class="w-6 h-6 text-gray-400"><path d="M13,12H11V10H13V12M13,16H11V14H13V16M17,2H7A2,2 0 0,0 5,4V20A2,2 0 0,0 7,22H17A2,2 0 0,0 19,20V4A2,2 0 0,0 17,2M17,20H7V4H17V20Z" /></svg>
+                <span class="text-[10px] text-gray-400">订单</span>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+                <svg viewBox="0 0 24 24" class="w-6 h-6 text-gray-400"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>
+                <span class="text-[10px] text-gray-400">我的</span>
+            </div>
+        </div>
+
+        <!-- Home Indicator -->
+        <div class="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-black rounded-full opacity-20"></div>
+    </div>
+
+</body>
+</html>

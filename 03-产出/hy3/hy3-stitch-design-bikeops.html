@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>城市级共享两轮运营管理后台 · City BikeOps Console</title>
+<!--
+  ============================================================================
+  STITCH PROMPT-ENHANCEMENT PIPELINE — ENHANCED PROMPT
+  ----------------------------------------------------------------------------
+  [整体氛围 / VIBE]
+  Professional / Corporate 专业可信 + Tech 数据驱动。城市级共享两轮运营管理后台，
+  深石板色侧边栏 + 浅色画布，结构化层级清晰，强调实时地图、状态色板与告警优先级。
+
+  DESIGN SYSTEM (REQUIRED):
+  - Platform: Web, Desktop-first
+  - Palette (语义化角色命名):
+      Sidebar Surface   深石板 #0F172A — 主导航背景
+      Primary Action    品牌蓝 #2563EB — 激活态 / 主按钮
+      Canvas            画布   #F1F5F9 — 页面背景
+      Surface           #FFFFFF         — 卡片表面
+      Status-Available  #22C55E / In-Use #3B82F6 / Low-Battery #F59E0B
+      Status-Fault      #EF4444 / Offline #94A3B8
+      Accent (Data)      #38BDF8         — 图表高亮
+  - Typography: Noto Sans SC（清晰无衬线，数据密集）
+  - Styles: 容器 rounded-lg(12px)，whisper-soft 阴影；状态用语义色点/徽章；
+            侧边栏 icon-label 配对，顶部全局时间/范围控件（时间范围 + 城市 + 车型）。
+
+  PAGE STRUCTURE:
+  1. Sidebar       : 10 项一级导航（运营总览 激活）
+  2. TopBar        : 标题 + 全局控件（时间范围/城市/车型）
+  3. KPI Overview  : 核心经营指标卡片 + 同比涨跌
+  4. Map Ops Center: 实时车辆地图（按状态着色）+ 围栏/热力 + 告警面板
+  5. Fleet Health  : 车辆状态分布 donut + 电池 SOC 分段
+  6. Supply/Alerts : 供需缺口 Top + 告警中心(P0/P1/P2) + 工单池
+  7. Quick Actions : 快捷创建 / 我的待办
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sidebar-surface:#0F172A;
+    --color-primary-action:#2563EB;
+    --color-primary-hover:#1D4ED8;
+    --color-canvas:#F1F5F9;
+    --color-surface:#FFFFFF;
+    --status-available:#22C55E;
+    --status-inuse:#3B82F6;
+    --status-low:#F59E0B;
+    --status-fault:#EF4444;
+    --status-offline:#94A3B8;
+    --accent-data:#38BDF8;
+    --color-text-strong:#0F172A;
+    --color-text-body:#475569;
+    --color-text-muted:#94A3B8;
+    --radius-lg:12px;
+    --radius-md:8px;
+    --radius-pill:999px;
+    --shadow-card:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+    --shadow-soft:0 6px 18px rgba(15,23,42,.08);
+    --font:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--color-canvas);color:var(--color-text-body);display:flex;min-height:100vh;font-size:14px}
+  a{color:inherit;text-decoration:none}
+  .sdot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .sdot.av{background:var(--status-available)} .sdot.in{background:var(--status-inuse)}
+  .sdot.lo{background:var(--status-low)} .sdot.fa{background:var(--status-fault)} .sdot.of{background:var(--status-offline)}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{width:236px;flex-shrink:0;background:var(--sidebar-surface);color:#CBD5E1;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .logo{display:flex;align-items:center;gap:10px;padding:20px 22px;font-family:var(--font);font-weight:900;color:#fff;font-size:17px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .logo .mk{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--color-primary-action),var(--accent-data));display:grid;place-items:center;font-size:18px}
+  .nav{padding:14px 12px;overflow-y:auto;flex:1}
+  .nav .grp{font-size:11px;letter-spacing:.1em;color:#64748B;padding:14px 12px 6px}
+  .nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-md);font-weight:500;color:#CBD5E1;transition:.18s;margin-bottom:2px}
+  .nav a .ic{font-size:17px;width:22px;text-align:center}
+  .nav a:hover{background:rgba(255,255,255,.05);color:#fff}
+  .nav a.on{background:var(--color-primary-action);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.4)}
+  .nav a .badge{margin-left:auto;background:var(--status-fault);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:var(--radius-pill)}
+  .side-foot{padding:14px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px;font-size:13px}
+  .side-foot .av{width:32px;height:32px;border-radius:50%;background:#334155;display:grid;place-items:center}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{height:64px;background:var(--color-surface);border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;padding:0 26px;position:sticky;top:0;z-index:20}
+  .topbar h1{font-size:19px;font-weight:900;color:var(--color-text-strong)}
+  .topbar .crumb{font-size:12px;color:var(--color-text-muted)}
+  .global-ctl{display:flex;gap:10px;align-items:center}
+  .ctl{background:var(--color-canvas);border:1px solid #E2E8F0;border-radius:var(--radius-md);padding:8px 12px;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--color-text-body);cursor:pointer}
+  .ctl select{border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:600;color:var(--color-text-strong);outline:none}
+  .seg{display:flex;background:var(--color-canvas);border:1px solid #E2E8F0;border-radius:var(--radius-md);overflow:hidden}
+  .seg button{border:none;background:transparent;padding:8px 14px;font-size:13px;font-weight:600;color:var(--color-text-muted);cursor:pointer;font-family:var(--font)}
+  .seg button.on{background:var(--color-primary-action);color:#fff}
+  .avatar-sm{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#38BDF8);display:grid;place-items:center;color:#fff;font-weight:700}
+
+  .content{padding:24px 26px;overflow-y:auto}
+  .card{background:var(--color-surface);border:1px solid #EAEEF3;border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:20px}
+  .card h3{font-size:15px;font-weight:800;color:var(--color-text-strong);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card h3 .more{margin-left:auto;font-size:12px;font-weight:600;color:var(--color-primary-action);cursor:pointer}
+
+  /* KPI grid */
+  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:18px}
+  .kpi{background:var(--color-surface);border:1px solid #EAEEF3;border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-card)}
+  .kpi .lab{font-size:12px;color:var(--color-text-muted);display:flex;align-items:center;gap:6px}
+  .kpi .val{font-size:24px;font-weight:900;color:var(--color-text-strong);margin:6px 0 4px}
+  .kpi .delta{font-size:12px;font-weight:700}
+  .delta.up{color:var(--status-available)} .delta.down{color:var(--status-fault)}
+
+  .grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-bottom:18px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+
+  /* Map */
+  .map-wrap{position:relative;height:380px;border-radius:var(--radius-lg);overflow:hidden;background:
+      radial-gradient(circle at 70% 30%,#e0f2fe,#dbeafe 50%,#c7dcff 100%)}
+  .map-wrap::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(37,99,235,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.06) 1px,transparent 1px);background-size:36px 36px}
+  .road{position:absolute;background:#fff;opacity:.65;border-radius:6px}
+  .road.a{top:160px;left:-30px;right:-30px;height:18px;transform:rotate(-4deg)}
+  .road.b{top:-30px;bottom:-30px;left:38%;width:16px;transform:rotate(6deg)}
+  .heat{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,.35),transparent 70%);filter:blur(4px)}
+  .fence{position:absolute;border:2px dashed rgba(37,99,235,.5);border-radius:14px;background:rgba(37,99,235,.05)}
+  .veh{position:absolute;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 3px rgba(255,255,255,.7)}
+  .veh.av{background:var(--status-available)} .veh.in{background:var(--status-inuse)}
+  .veh.lo{background:var(--status-low)} .veh.fa{background:var(--status-fault)} .veh.of{background:var(--status-offline)}
+  .map-legend{position:absolute;left:14px;bottom:14px;background:rgba(255,255,255,.92);border-radius:var(--radius-md);padding:10px 12px;font-size:12px;display:flex;gap:14px;flex-wrap:wrap;box-shadow:var(--shadow-card)}
+  .map-legend span{display:flex;align-items:center;gap:5px}
+  .map-ctl{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:8px}
+  .map-ctl button{width:38px;height:38px;border-radius:9px;border:1px solid #E2E8F0;background:#fff;cursor:pointer;font-size:16px;box-shadow:var(--shadow-card)}
+
+  /* Alert list */
+  .alert-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .asum{border-radius:var(--radius-md);padding:12px;text-align:center}
+  .asum.p0{background:rgba(239,68,68,.10);color:var(--status-fault)}
+  .asum.p1{background:rgba(245,158,11,.12);color:var(--status-low)}
+  .asum.p2{background:rgba(59,130,246,.10);color:var(--status-inuse)}
+  .asum b{display:block;font-size:22px;font-weight:900}
+  .asum span{font-size:11px}
+  .alert{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F1F5F9;font-size:13px}
+  .alert:last-child{border-bottom:none}
+  .alert .lv{font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0}
+  .lv.p0{background:var(--status-fault);color:#fff} .lv.p1{background:var(--status-low);color:#fff} .lv.p2{background:var(--status-inuse);color:#fff}
+  .alert .txt{flex:1;color:var(--color-text-body)}
+  .alert .txt small{display:block;color:var(--color-text-muted);font-size:11px}
+  .alert .acts{display:flex;gap:6px}
+  .alert .acts button{border:1px solid #E2E8F0;background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;color:var(--color-text-body)}
+  .alert .acts button.go{background:var(--color-primary-action);color:#fff;border-color:var(--color-primary-action)}
+
+  /* Donut + bars */
+  .donut-row{display:flex;align-items:center;gap:18px}
+  .donut{position:relative;width:140px;height:140px;flex-shrink:0}
+  .donut .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .donut .c b{font-size:22px;font-weight:900;color:var(--color-text-strong)}
+  .donut .c span{font-size:11px;color:var(--color-text-muted)}
+  .legend{font-size:12.5px;flex:1}
+  .legend div{display:flex;align-items:center;gap:8px;padding:4px 0;justify-content:space-between}
+  .legend div b{color:var(--color-text-strong)}
+  .soc-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:6px 0 12px}
+  .soc-bar i{height:100%}
+  .soc-legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--color-text-muted)}
+  .soc-legend span{display:flex;align-items:center;gap:5px}
+
+  /* Supply heatlist */
+  .rank{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F5F9;font-size:13px}
+  .rank:last-child{border-bottom:none}
+  .rank .no{width:22px;height:22px;border-radius:6px;background:var(--color-canvas);display:grid;place-items:center;font-weight:800;font-size:12px;color:var(--color-text-muted)}
+  .rank .no.hot{background:rgba(239,68,68,.12);color:var(--status-fault)}
+  .rank .nm{flex:1;color:var(--color-text-body)} .rank .v{font-weight:800;color:var(--color-text-strong)}
+
+  /* Work order pool */
+  .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .col{background:var(--color-canvas);border-radius:var(--radius-md);padding:12px}
+  .col .ch{font-size:12px;font-weight:800;color:var(--color-text-body);margin-bottom:10px;display:flex;justify-content:space-between}
+  .col .ch .n{background:#fff;border-radius:var(--radius-pill);padding:0 8px;font-size:11px}
+  .job{background:#fff;border:1px solid #EAEEF3;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px}
+  .job .t{font-weight:700;color:var(--color-text-strong);margin-bottom:3px}
+  .job .m{color:var(--color-text-muted);display:flex;justify-content:space-between}
+  .job .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;margin-top:5px}
+  .job .tag.e{background:rgba(245,158,11,.14);color:var(--status-low)}
+  .job .tag.w{background:rgba(59,130,246,.12);color:var(--status-inuse)}
+  .job .tag.r{background:rgba(239,68,68,.12);color:var(--status-fault)}
+
+  /* Quick actions */
+  .qa-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+  .qa{background:var(--color-canvas);border:1px dashed #CBD5E1;border-radius:var(--radius-md);padding:14px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--color-text-body);cursor:pointer;transition:.18s}
+  .qa:hover{border-color:var(--color-primary-action);color:var(--color-primary-action);background:rgba(37,99,235,.04)}
+  .qa .ic{font-size:20px;display:block;margin-bottom:5px}
+  .todo{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F1F5F9;font-size:13px}
+  .todo:last-child{border-bottom:none}
+  .todo .pr{font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(239,68,68,.12);color:var(--status-fault)}
+  .todo .pr.p1{background:rgba(245,158,11,.14);color:var(--status-low)}
+  .todo .pr.p2{background:rgba(59,130,246,.12);color:var(--status-inuse)}
+  .todo .tx{flex:1;color:var(--color-text-body)} .todo .tm{color:var(--color-text-muted);font-size:11px}
+
+  @media(max-width:1280px){
+    .kpi-grid{grid-template-columns:repeat(3,1fr)}
+    .grid-2,.grid-3{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr 1fr}
+    .qa-grid{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(max-width:860px){
+    .sidebar{display:none}
+    .kpi-grid{grid-template-columns:1fr 1fr}
+    .kanban{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===================== 1. SIDEBAR ===================== -->
+  <aside class="sidebar">
+    <div class="logo"><span class="mk">🚲</span>骑迹运营台</div>
+    <nav class="nav">
+      <div class="grp">总览</div>
+      <a class="on" href="#"><span class="ic">📊</span>运营总览</a>
+      <a href="#"><span class="ic">🗺️</span>地图调度中心</a>
+      <div class="grp">资产与能源</div>
+      <a href="#"><span class="ic">🚲</span>车队资产</a>
+      <a href="#"><span class="ic">🔋</span>电池与能源</a>
+      <div class="grp">执行与治理</div>
+      <a href="#"><span class="ic">🛠️</span>运维工单<span class="badge">23</span></a>
+      <a href="#"><span class="ic">⚠️</span>规则与区域</a>
+      <a href="#"><span class="ic">🏛️</span>合规监管<span class="badge">5</span></a>
+      <div class="grp">分析与管理</div>
+      <a href="#"><span class="ic">📈</span>数据报表</a>
+      <a href="#"><span class="ic">👥</span>组织与权限</a>
+      <a href="#"><span class="ic">⚙️</span>系统配置与对接</a>
+    </nav>
+    <div class="side-foot"><div class="av">运</div><div>城市运营经理<br><small style="color:#64748B">杭州 · 西湖区</small></div></div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+    <!-- TopBar : 全局控件 -->
+    <header class="topbar">
+      <div>
+        <div class="crumb">运营总览 / 杭州城市站</div>
+        <h1>运营总览 Dashboard</h1>
+      </div>
+      <div class="global-ctl">
+        <div class="ctl">🕒<select><option>今日</option><option>昨日</option><option>本周</option><option>本月</option><option>自定义</option></select></div>
+        <div class="ctl">📍<select><option>全城</option><option>重点区域</option><option>自定义围栏</option></select></div>
+        <div class="seg"><button class="on">混合车队</button><button>自行车</button><button>电单车</button></div>
+        <div class="avatar-sm">运</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- 3. KPI Overview -->
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lab">📦 订单数</div><div class="val">184,210</div><div class="delta up">▲ 8.2% vs 昨日</div></div>
+        <div class="kpi"><div class="lab">💰 GMV</div><div class="val">¥92.4万</div><div class="delta up">▲ 6.5% vs 昨日</div></div>
+        <div class="kpi"><div class="lab">👤 活跃用户 DAU</div><div class="val">56,830</div><div class="delta up">▲ 3.1% vs 昨日</div></div>
+        <div class="kpi"><div class="lab">✅ 全城可用率</div><div class="val">91.3%</div><div class="delta down">▼ 1.4% vs 昨日</div></div>
+        <div class="kpi"><div class="lab">⏱ 平均骑行时长</div><div class="val">14.6 分</div><div class="delta up">▲ 0.3 分</div></div>
+        <div class="kpi"><div class="lab">🔓 开锁成功率</div><div class="val">99.1%</div><div class="delta up">▲ 0.2%</div></div>
+      </div>
+
+      <!-- 4. Map Ops Center + Alert Center -->
+      <div class="grid-2">
+        <div class="card">
+          <h3>🗺️ 地图调度中心 <span class="more">全屏 ›</span></h3>
+          <div class="map-wrap">
+            <div class="road a"></div><div class="road b"></div>
+            <div class="heat" style="left:18%;top:22%;width:160px;height:120px"></div>
+            <div class="heat" style="left:60%;top:55%;width:140px;height:110px"></div>
+            <div class="fence" style="left:10%;top:14%;width:200px;height:150px"></div>
+            <div class="veh av" style="left:24%;top:40%"></div>
+            <div class="veh av" style="left:30%;top:52%"></div>
+            <div class="veh in" style="left:42%;top:30%"></div>
+            <div class="veh in" style="left:55%;top:42%"></div>
+            <div class="veh lo" style="left:48%;top:64%"></div>
+            <div class="veh lo" style="left:68%;top:60%"></div>
+            <div class="veh fa" style="left:62%;top:34%"></div>
+            <div class="veh of" style="left:36%;top:70%"></div>
+            <div class="veh av" style="left:78%;top:30%"></div>
+            <div class="veh in" style="left:72%;top:48%"></div>
+            <div class="veh av" style="left:20%;top:66%"></div>
+            <div class="veh lo" style="left:84%;top:66%"></div>
+            <div class="map-ctl"><button title="框选">▢</button><button title="定位">📍</button><button title="图层">🗂️</button></div>
+            <div class="map-legend">
+              <span><i class="sdot av"></i>可用</span><span><i class="sdot in"></i>使用中</span>
+              <span><i class="sdot lo"></i>低电</span><span><i class="sdot fa"></i>故障</span><span><i class="sdot of"></i>离线</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚠️ 告警中心 <span class="more">全部 ›</span></h3>
+          <div class="alert-sum">
+            <div class="asum p0"><b>6</b><span>P0 高</span></div>
+            <div class="asum p1"><b>14</b><span>P1 中</span></div>
+            <div class="asum p2"><b>31</b><span>P2 低</span></div>
+          </div>
+          <div class="alert"><span class="lv p0">P0</span><div class="txt">万达广场禁停区聚集 23 辆<small>西湖区 · 2 分钟前</small></div><div class="acts"><button class="go">定位</button><button>工单</button></div></div>
+          <div class="alert"><span class="lv p0">P0</span><div class="txt">滨江驿站电池温度异常 61℃<small>自动锁定隔离</small></div><div class="acts"><button class="go">证据</button><button>工单</button></div></div>
+          <div class="alert"><span class="lv p1">P1</span><div class="txt">文三路低电车辆 38 辆跌破阈值<small>建议生成换电任务</small></div><div class="acts"><button class="go">定位</button><button>工单</button></div></div>
+          <div class="alert"><span class="lv p1">P1</span><div class="txt">城西银泰越界 4 辆<small>触发围栏规则</small></div><div class="acts"><button class="go">定位</button><button>工单</button></div></div>
+          <div class="alert"><span class="lv p2">P2</span><div class="txt">12 辆车离线超 1 小时<small>数据质量预警</small></div><div class="acts"><button class="go">定位</button><button>证据</button></div></div>
+        </div>
+      </div>
+
+      <!-- 5. Fleet Health + Battery SOC -->
+      <div class="grid-3">
+        <div class="card">
+          <h3>🚲 车队健康分布</h3>
+          <div class="donut-row">
+            <div class="donut">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#E2E8F0" stroke-width="16"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#22C55E" stroke-width="16" stroke-dasharray="352" stroke-dashoffset="70" stroke-linecap="round"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#3B82F6" stroke-width="16" stroke-dasharray="352" stroke-dashoffset="180" stroke-linecap="round"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#F59E0B" stroke-width="16" stroke-dasharray="352" stroke-dashoffset="250" stroke-linecap="round"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#EF4444" stroke-width="16" stroke-dasharray="352" stroke-dashoffset="300" stroke-linecap="round"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#94A3B8" stroke-width="16" stroke-dasharray="352" stroke-dashoffset="335" stroke-linecap="round"/>
+              </svg>
+              <div class="c"><b>28,640</b><span>总车辆</span></div>
+            </div>
+            <div class="legend">
+              <div><span><i class="sdot av"></i>可用</span><b>76%</b></div>
+              <div><span><i class="sdot in"></i>使用中</span><b>14%</b></div>
+              <div><span><i class="sdot lo"></i>低电</span><b>5%</b></div>
+              <div><span><i class="sdot fa"></i>故障</b></span><b>2.5%</b></div>
+              <div><span><i class="sdot of"></i>离线</span><b>2.5%</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🔋 电池 SOC 分布</h3>
+          <div class="soc-bar">
+            <i style="width:6%;background:#EF4444"></i>
+            <i style="width:14%;background:#F59E0B"></i>
+            <i style="width:38%;background:#FBBF24"></i>
+            <i style="width:42%;background:#22C55E"></i>
+          </div>
+          <div class="soc-legend">
+            <span><i class="sdot fa"></i>0–10% (1,720)</span>
+            <span><i class="sdot lo"></i>10–30% (4,010)</span>
+            <span><i style="background:#FBBF24;width:8px;height:8px;border-radius:50%;display:inline-block"></i>30–60% (10,880)</span>
+            <span><i class="sdot av"></i>60–100% (12,030)</span>
+          </div>
+          <div style="margin-top:14px;font-size:12.5px;color:var(--color-text-muted);line-height:1.8">
+            低电风险车辆 <b style="color:var(--status-low)">5,730</b> 辆 · 今日换电完成 <b style="color:var(--status-available)">1,284</b> 次<br>
+            在途换电任务 <b>46</b> · 平均单次换电 <b>4.2 分</b> · 换电成功率 <b>98.6%</b>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📉 供需缺口 Top</h3>
+          <div class="rank"><span class="no hot">1</span><span class="nm">地铁 2 号线·庆春路</span><span class="v" style="color:var(--status-fault)">缺车 312</span></div>
+          <div class="rank"><span class="no hot">2</span><span class="nm">湖滨银泰步行街</span><span class="v" style="color:var(--status-fault)">缺车 268</span></div>
+          <div class="rank"><span class="no">3</span><span class="nm">浙大紫金港校区</span><span class="v" style="color:var(--status-fault)">缺车 201</span></div>
+          <div class="rank"><span class="no">4</span><span class="nm">城西银泰 B2</span><span class="v" style="color:var(--status-low)">堆车 156</span></div>
+          <div class="rank"><span class="no">5</span><span class="nm">市民中心东门</span><span class="v" style="color:var(--status-low)">堆车 132</span></div>
+          <div style="margin-top:12px;font-size:12px;color:var(--color-text-muted);background:var(--color-canvas);border-radius:8px;padding:10px">
+            🔔 高峰预警 17–19 时：建议向 Top3 区域调度 <b style="color:var(--color-primary-action)">780 辆</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Work Order Pool -->
+      <div class="card" style="margin-bottom:18px">
+        <h3>🛠️ 运维工单池 <span class="more">工单看板 ›</span></h3>
+        <div class="kanban">
+          <div class="col"><div class="ch">待派 <span class="n">18</span></div>
+            <div class="job"><div class="t">换电 · 文三路</div><div class="m"><span>低电 38 辆</span><span>高</span></div><span class="tag e">换电</span></div>
+            <div class="job"><div class="t">违停处置 · 万达</div><div class="m"><span>P0 聚集</span><span>紧急</span></div><span class="tag r">违停</span></div>
+          </div>
+          <div class="col"><div class="ch">执行中 <span class="n">9</span></div>
+            <div class="job"><div class="t">维修 · 车辆 Z2031</div><div class="m"><span>锁故障</span><span>王工</span></div><span class="tag w">维修</span></div>
+            <div class="job"><div class="t">巡检 · 西湖区</div><div class="m"><span>网格 A</span><span>李队</span></div><span class="tag w">巡检</span></div>
+          </div>
+          <div class="col"><div class="ch">待验收 <span class="n">5</span></div>
+            <div class="job"><div class="t">调度搬运 · 庆春路</div><div class="m"><span>调入 120</span><span>待核</span></div><span class="tag w">调度</span></div>
+          </div>
+          <div class="col"><div class="ch">已完成(今日) <span class="n">247</span></div>
+            <div class="job"><div class="t">换电 · 滨江驿站</div><div class="m"><span>完成 14:20</span><span>✓</span></div><span class="tag e">换电</span></div>
+            <div class="job"><div class="t">回收 · 城西银泰</div><div class="m"><span>完成 13:05</span><span>✓</span></div><span class="tag r">回收</span></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12.5px;color:var(--color-text-muted)">超时工单 <b style="color:var(--status-fault)">7</b> 单 · 人效 人均 18.4 单/日 · 一次修复率 <b style="color:var(--status-available)">94%</b></div>
+      </div>
+
+      <!-- 7. Quick Actions + To-do -->
+      <div class="grid-2">
+        <div class="card">
+          <h3>⚡ 快捷工作台</h3>
+          <div class="qa-grid">
+            <div class="qa"><span class="ic">🚚</span>创建调度任务</div>
+            <div class="qa"><span class="ic">🔋</span>创建换电任务</div>
+            <div class="qa"><span class="ic">🔍</span>巡检任务</div>
+            <div class="qa"><span class="ic">🛠️</span>维修工单</div>
+            <div class="qa"><span class="ic">📋</span>违停处置</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <span class="qa" style="flex:1;margin:0"><span class="ic">🔎</span>车辆 / 电池检索</span>
+            <span class="qa" style="flex:1;margin:0"><span class="ic">📡</span>批量指令(圈选)</span>
+            <span class="qa" style="flex:1;margin:0"><span class="ic">🧭</span>任务分配与班次</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>📌 我的待办</h3>
+          <div class="todo"><span class="pr">P0</span><span class="tx">万达禁停聚集 — 生成处置工单</span><span class="tm">2 分钟前</span></div>
+          <div class="todo"><span class="pr p1">P1</span><span class="tx">文三路低电换电任务待派</span><span class="tm">12 分钟前</span></div>
+          <div class="todo"><span class="pr p1">P1</span><span class="tx">滨江驿站电池异常复核</span><span class="tm">25 分钟前</span></div>
+          <div class="todo"><span class="pr p2">P2</span><span class="tx">6 月合规报表导出审批</span><span class="tm">今日</span></div>
+          <div class="todo"><span class="pr p2">P2</span><span class="tx">MDS 接口延迟告警处理</span><span class="tm">今日</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

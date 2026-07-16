@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1677ff" />
+<meta name="description" content="聚合型电动汽车充电小程序 — 附近充电站一图看全、实时桩态透明、扫码即充无感支付。" />
+<title>闪充 · 电动车充电 — 找桩、充电、支付一站搞定</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" />
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f6fa;
+    --bg-app: #ffffff;
+    --bg-subtle: #f7f9fc;
+    --fg: #0d1117;
+    --fg-muted: #5b6470;
+    --fg-faint: #98a2b3;
+    --border: #e6e9ef;
+    --accent: #1677ff;
+    --accent-2: #13c2c2;
+    --idle: #52c41a;
+    --charging: #fa8c16;
+    --fault: #ff4d4f;
+    --ring: #1677ff;
+    --shadow-sm: 0 1px 2px rgba(13,17,23,.06);
+    --shadow-md: 0 8px 28px rgba(13,17,23,.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 18px;
+    --nav-h: 64px;
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #05070a;
+    --bg-app: #0e1116;
+    --bg-subtle: #161b22;
+    --fg: #e6edf3;
+    --fg-muted: #9aa4b2;
+    --fg-faint: #6b7280;
+    --border: #222932;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.6);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+  body {
+    margin: 0; font-family: 'Inter','Noto Sans SC',system-ui,-apple-system,sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.55;
+    -webkit-font-smoothing: antialiased; touch-action: manipulation;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  h1,h2,h3 { text-wrap: balance; letter-spacing: -.01em; margin: 0; font-weight: 700; line-height: 1.25; }
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 6px; }
+  .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+  .skip-link { position:absolute; left:12px; top:-48px; z-index:200; background:var(--fg); color:var(--bg); padding:10px 16px; border-radius:8px; }
+  .skip-link:focus { top:12px; }
+
+  /* Phone frame */
+  .phone {
+    max-width: 430px; margin: 0 auto; background: var(--bg-app); min-height: 100vh;
+    box-shadow: var(--shadow-md); position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  @media (min-width: 480px) {
+    body { padding: 24px 0; }
+    .phone { min-height: calc(100vh - 48px); border-radius: 28px; border: 1px solid var(--border); }
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 14px) 18px 14px;
+    background: var(--accent); color: #fff;
+  }
+  .topbar .loc { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 1rem; }
+  .topbar .loc svg { width: 18px; height: 18px; }
+  .topbar .spacer { flex: 1; }
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 0; border-radius: 10px; background: rgba(255,255,255,.18); color: #fff; cursor: pointer;
+    transition: background-color .15s ease;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.3); }
+
+  /* Scroll area */
+  .scroll { flex: 1; overflow-y: auto; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px); -webkit-overflow-scrolling: touch; }
+
+  .pad { padding: 16px 18px; }
+  .eyebrow { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .muted { color: var(--fg-muted); }
+
+  /* Map */
+  .map {
+    position: relative; height: 240px; margin: 12px 14px 0; border-radius: var(--radius-lg); overflow: hidden;
+    background: linear-gradient(135deg, #dbeafe, #e0f2fe 40%, #dcfce7);
+  }
+  [data-theme="dark"] .map { background: linear-gradient(135deg, #10243d, #0b2a3a 50%, #103024); }
+  .map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pin {
+    position: absolute; transform: translate(-50%,-100%); display: flex; flex-direction: column; align-items: center;
+    cursor: pointer; background: none; border: 0; padding: 0;
+  }
+  .pin .dot { width: 14px; height: 14px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,.3); }
+  .pin .bub { margin-top: 6px; font-size: .68rem; font-weight: 700; color: #fff; background: var(--fg); padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+  .pin.idle .dot { background: var(--idle); }
+  .pin.busy .dot { background: var(--charging); }
+  .pin.fault .dot { background: var(--fault); }
+  .map .locate {
+    position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--bg-app); color: var(--accent); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-sm);
+  }
+
+  /* Station sheet */
+  .sheet {
+    margin: 14px; background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden;
+  }
+  .sheet h2 { font-size: 1.05rem; padding: 16px 16px 4px; }
+  .sheet .sub { padding: 0 16px 12px; font-size: .82rem; color: var(--fg-muted); }
+  .station {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--border);
+    transition: background-color .15s ease; cursor: pointer; width: 100%; text-align: left; background: none; border-left: 0; border-right: 0; border-bottom: 0; font: inherit; color: inherit;
+  }
+  .station:hover { background: var(--bg-subtle); }
+  .station .info { flex: 1; min-width: 0; }
+  .station .name { font-weight: 600; font-size: .95rem; }
+  .station .meta { font-size: .78rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .station .avail { text-align: right; flex: none; }
+  .station .avail .n { font-size: 1.3rem; font-weight: 700; }
+  .station .avail .u { font-size: .72rem; color: var(--fg-muted); }
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .status-dot.idle { background: var(--idle); }
+  .status-dot.busy { background: var(--charging); }
+  .status-dot.fault { background: var(--fault); }
+  .price-tag { font-size: .78rem; font-weight: 700; color: var(--accent); }
+
+  /* Generic card */
+  .card { background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .card + .card { margin-top: 14px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .row .spacer { flex: 1; }
+
+  /* Promo / energy packs */
+  .banner {
+    margin: 14px; border-radius: var(--radius-lg); padding: 18px; color: #fff;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  }
+  .banner h2 { font-size: 1.15rem; }
+  .banner p { font-size: .85rem; opacity: .92; margin-top: 6px; }
+  .packs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .pack { background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .pack .kwh { font-size: 1.4rem; font-weight: 700; }
+  .pack .price { color: var(--accent); font-weight: 700; }
+  .pack .old { color: var(--fg-faint); text-decoration: line-through; font-size: .78rem; margin-left: 6px; }
+
+  /* Scan / charging flow */
+  .scan-hero { margin: 16px; border-radius: var(--radius-lg); padding: 28px 20px; text-align: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .scan-frame {
+    width: 150px; height: 150px; margin: 0 auto 14px; border: 3px dashed rgba(255,255,255,.7); border-radius: 18px;
+    display: grid; place-items: center; position: relative; overflow: hidden;
+  }
+  .scan-frame .laser { position: absolute; left: 0; right: 0; height: 2px; background: #fff; box-shadow: 0 0 8px #fff; animation: laser 2s ease-in-out infinite; }
+  @keyframes laser { 0%,100% { top: 12%; } 50% { top: 86%; } }
+  @media (prefers-reduced-motion: reduce) { .scan-frame .laser { animation: none; top: 50%; } }
+  .scan-hero p { font-size: .85rem; opacity: .92; }
+
+  .charge-panel { margin: 16px; background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 20px; text-align: center; }
+  .ring { position: relative; width: 180px; height: 180px; margin: 8px auto 16px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring .kwh { font-size: 2rem; font-weight: 700; }
+  .ring .kwh small { font-size: .9rem; font-weight: 500; color: var(--fg-muted); }
+  .ring .pct { font-size: .85rem; color: var(--fg-muted); }
+  .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 8px 0 18px; }
+  .metric { background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 12px 6px; }
+  .metric .v { font-size: 1.15rem; font-weight: 700; }
+  .metric .k { font-size: .72rem; color: var(--fg-muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-weight: 600;
+    cursor: pointer; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 13px 20px; width: 100%;
+    transition: background-color .15s ease, filter .15s ease, transform .1s ease; touch-action: manipulation;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-danger { background: var(--fault); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--fg); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--bg-subtle); }
+
+  .field { display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 14px; }
+  .field label { font-size: .82rem; font-weight: 600; color: var(--fg-muted); }
+  .field input, .field select {
+    font: inherit; width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg-app); color: var(--fg); transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(22,119,255,.18); }
+  .seg { display: flex; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 999px; padding: 4px; gap: 4px; margin-bottom: 16px; }
+  .seg button { flex: 1; font: inherit; font-weight: 600; font-size: .88rem; cursor: pointer; border: 0; background: transparent; color: var(--fg-muted); padding: 9px; border-radius: 999px; transition: background-color .15s ease, color .15s ease; }
+  .seg button[aria-pressed="true"] { background: var(--bg-app); color: var(--fg); box-shadow: var(--shadow-sm); }
+
+  /* Orders */
+  .order { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .order:last-child { border-bottom: 0; }
+  .order .ic { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--bg-subtle); color: var(--accent); display: grid; place-items: center; }
+  .order .info { flex: 1; min-width: 0; }
+  .order .name { font-weight: 600; font-size: .92rem; }
+  .order .meta { font-size: .78rem; color: var(--fg-muted); }
+
+  /* Profile */
+  .profile-head { display: flex; align-items: center; gap: 14px; padding: 20px 18px; background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.25); display: grid; place-items: center; font-weight: 700; font-size: 1.4rem; }
+  .profile-head .name { font-weight: 700; font-size: 1.1rem; }
+  .profile-head .lvl { font-size: .8rem; opacity: .9; }
+  .wallet { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 14px; }
+  .wallet .w { background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .wallet .v { font-size: 1.3rem; font-weight: 700; }
+  .wallet .k { font-size: .74rem; color: var(--fg-muted); }
+  .menu { margin: 0 14px 14px; background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .menu a { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: .92rem; transition: background-color .15s ease; }
+  .menu a:last-child { border-bottom: 0; }
+  .menu a:hover { background: var(--bg-subtle); }
+  .menu .ic { color: var(--accent); display: inline-flex; }
+  .menu .spacer { flex: 1; }
+  .menu .chev { color: var(--fg-faint); }
+
+  /* Bottom tab bar */
+  .tabbar {
+    position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom); display: flex; align-items: center;
+    background: color-mix(in srgb, var(--bg-app) 90%, transparent); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border); z-index: 40;
+  }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; font: inherit;
+    color: var(--fg-faint); cursor: pointer; padding: 8px 0; font-size: .68rem; transition: color .15s ease; }
+  .tab svg { width: 22px; height: 22px; }
+  .tab[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+  .tab.scan { flex: 0 0 72px; }
+  .tab.scan .fab {
+    width: 56px; height: 56px; margin-top: -28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+    display: grid; place-items: center; box-shadow: 0 6px 16px rgba(22,119,255,.45);
+    transition: transform .12s ease;
+  }
+  .tab.scan:active .fab { transform: scale(.94); }
+  .tab.scan span { color: var(--accent); font-weight: 600; }
+
+  /* Views */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Modal */
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-end; justify-content: center; z-index: 90; }
+  .modal-mask.show { display: flex; }
+  .modal {
+    width: 100%; max-width: 430px; background: var(--bg-app); border-radius: 18px 18px 0 0; padding: 20px 18px calc(env(safe-area-inset-bottom) + 20px);
+    overscroll-behavior: contain; animation: slideUp .22s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 6px; }
+  .modal .sub { color: var(--fg-muted); font-size: .85rem; margin-bottom: 16px; }
+  .modal .actions { display: flex; gap: 12px; margin-top: 18px; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 20px); transform: translate(-50%,12px);
+    background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: .85rem;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 120; max-width: 90%; text-align: center; }
+  .toast.show { opacity: 1; transform: translate(-50%,0); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="phone">
+  <header class="topbar" id="main">
+    <span class="loc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.3-7-11a7 7 0 0114 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      杭州 · 西湖区
+    </span>
+    <span class="spacer"></span>
+    <button class="icon-btn" type="button" aria-label="消息通知">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+    </button>
+    <button class="icon-btn" id="themeToggle" type="button" aria-label="切换深色模式" aria-pressed="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+    </button>
+  </header>
+
+  <div class="scroll">
+    <!-- 首页 -->
+    <section class="view active" id="view-home" aria-label="首页">
+      <div class="map" role="img" aria-label="附近充电站地图">
+        <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <path d="M-20 60 H160 L200 110 L260 90 H420" stroke="rgba(255,255,255,.55)" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <path d="M40 -20 V120 L70 170 V260" stroke="rgba(255,255,255,.4)" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <rect x="30" y="150" width="60" height="40" rx="6" fill="rgba(255,255,255,.35)"/>
+          <rect x="280" y="40" width="70" height="46" rx="6" fill="rgba(255,255,255,.3)"/>
+        </svg>
+        <button class="pin idle" type="button" aria-label="城西银泰充电站，空闲 8 个" style="left:30%;top:42%"><span class="dot"></span><span class="bub">8 空闲</span></button>
+        <button class="pin busy" type="button" aria-label="文一路快充站，充电中" style="left:58%;top:30%"><span class="dot"></span><span class="bub">忙碌</span></button>
+        <button class="pin idle" type="button" aria-label="西溪龙湖充电站，空闲 12 个" style="left:72%;top:64%"><span class="dot"></span><span class="bub">12 空闲</span></button>
+        <button class="pin fault" type="button" aria-label="古翠路充电站，故障" style="left:45%;top:72%"><span class="dot"></span><span class="bub">故障</span></button>
+        <button class="locate" type="button" aria-label="定位到我的位置">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        </button>
+      </div>
+
+      <div class="sheet">
+        <h2>附近充电站</h2>
+        <p class="sub">默认展示 5&nbsp;km 内站点 · 实时桩态每 30&nbsp;秒刷新</p>
+        <button class="station" type="button" data-station="城西银泰充电站">
+          <span class="info">
+            <span class="name">城西银泰充电站</span>
+            <span class="meta"><span class="status-dot idle"></span>快充 8 · 慢充 6 空闲 · 距您 0.8&nbsp;km</span>
+          </span>
+          <span class="avail"><span class="n num">8</span><span class="u"> 空闲</span><br><span class="price-tag">¥1.05/度</span></span>
+        </button>
+        <button class="station" type="button" data-station="西溪龙湖充电站">
+          <span class="info">
+            <span class="name">西溪龙湖充电站</span>
+            <span class="meta"><span class="status-dot idle"></span>超充 12 · 快充 4 空闲 · 距您 1.6&nbsp;km</span>
+          </span>
+          <span class="avail"><span class="n num">12</span><span class="u"> 空闲</span><br><span class="price-tag">¥0.98/度</span></span>
+        </button>
+        <button class="station" type="button" data-station="文一路快充站">
+          <span class="info">
+            <span class="name">文一路快充站</span>
+            <span class="meta"><span class="status-dot busy"></span>充电中 · 2 空闲 · 距您 2.3&nbsp;km</span>
+          </span>
+          <span class="avail"><span class="n num">2</span><span class="u"> 空闲</span><br><span class="price-tag">¥1.20/度</span></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 省钱 -->
+    <section class="view" id="view-deals" aria-label="省钱活动">
+      <div class="banner">
+        <h2>PLUS 会员 · 充电低至 6 折</h2>
+        <p>开通即送满减券包 ×5，停车减免资格同步开启。</p>
+        <a class="btn btn-ghost" style="margin-top:14px;width:auto;padding:9px 18px" href="#view-me">查看我的会员 →</a>
+      </div>
+      <div class="pad">
+        <p class="eyebrow">能量包 · 锁价预购</p>
+        <h2 style="font-size:1.1rem;margin:6px 0 4px">预购度数，对冲电价波动</h2>
+        <p class="muted" style="font-size:.85rem">适合高频用户，后续充电自动抵扣。</p>
+        <div class="packs">
+          <div class="pack"><div class="kwh num">100 <small style="font-size:.8rem;color:var(--fg-muted)">度</small></div><div><span class="price">¥79</span><span class="old">¥99</span></div></div>
+          <div class="pack"><div class="kwh num">200 <small style="font-size:.8rem;color:var(--fg-muted)">度</small></div><div><span class="price">¥149</span><span class="old">¥198</span></div></div>
+          <div class="pack"><div class="kwh num">300 <small style="font-size:.8rem;color:var(--fg-muted)">度</small></div><div><span class="price">¥219</span><span class="old">¥297</span></div></div>
+          <div class="pack"><div class="kwh num">500 <small style="font-size:.8rem;color:var(--fg-muted)">度</small></div><div><span class="price">¥359</span><span class="old">¥495</span></div></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="row"><strong style="font-size:.95rem">限时满减活动</strong><span class="spacer"></span><span class="tag" style="font-size:.74rem;font-weight:700;color:var(--accent);background:rgba(22,119,255,.12);padding:3px 10px;border-radius:999px">PL‑2026</span></div>
+          <p class="muted" style="font-size:.85rem;margin-top:8px">单笔满 ¥30 减 ¥8，叠加能量包更省。活动截至 2026 年 6 月 30 日。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 扫码 -->
+    <section class="view" id="view-scan" aria-label="扫码充电">
+      <div class="scan-hero">
+        <div class="scan-frame">
+          <span class="laser" aria-hidden="true"></span>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"/></svg>
+        </div>
+        <p>将镜头对准充电桩二维码<br>或点击下方「输入桩编号」</p>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-ghost" type="button" id="scanStart" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.4)">扫码启动</button>
+          <button class="btn btn-ghost" type="button" id="manualBtn" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.4)">输入桩编号</button>
+        </div>
+      </div>
+
+      <div class="charge-panel" id="chargePanel" hidden>
+        <p class="eyebrow">充电中</p>
+        <h2 style="font-size:1.05rem;margin:4px 0 2px" id="chargeStation">城西银泰充电站 · A03 枪</h2>
+        <div class="ring">
+          <svg width="180" height="180" viewBox="0 0 180 180" aria-hidden="true">
+            <circle cx="90" cy="90" r="78" fill="none" stroke="var(--border)" stroke-width="14"/>
+            <circle id="ringFg" cx="90" cy="90" r="78" fill="none" stroke="var(--charging)" stroke-width="14" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490"/>
+          </svg>
+          <div class="center">
+            <div class="kwh num"><span id="kwh">12.4</span><small> kWh</small></div>
+            <div class="pct num">已充 <span id="pct">42</span>%</div>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><div class="v num"><span id="power">62</span></div><div class="k">当前功率 kW</div></div>
+          <div class="metric"><div class="v num">¥<span id="cost">14.6</span></div><div class="k">实时费用</div></div>
+          <div class="metric"><div class="v num" id="eta">18</div><div class="k">预计剩余分</div></div>
+        </div>
+        <button class="btn btn-danger" type="button" id="stopCharge">停止充电</button>
+        <p class="muted" style="font-size:.76rem;margin-top:10px">充电完成后将自动扣费并推送账单。</p>
+      </div>
+
+      <div class="pad" id="scanConfirm" hidden>
+        <div class="card">
+          <h2 style="font-size:1.05rem">确认启动充电</h2>
+          <p class="sub muted" style="font-size:.82rem;margin:6px 0 14px">城西银泰充电站 · A03 枪 · 60&nbsp;kW 直流快充</p>
+          <div class="seg" role="group" aria-label="充电模式">
+            <button type="button" data-mode="amount" aria-pressed="false">按金额</button>
+            <button type="button" data-mode="kwh" aria-pressed="false">按电量</button>
+            <button type="button" data-mode="full" aria-pressed="true">充满为止</button>
+          </div>
+          <div class="field"><label for="payMethod">支付方式</label>
+            <select id="payMethod">
+              <option value="balance">余额（免密支付）</option>
+              <option value="wechat">微信支付</option>
+              <option value="alipay">支付宝</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="button" id="confirmCharge">确认启动</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 订单 -->
+    <section class="view" id="view-orders" aria-label="订单">
+      <div class="pad">
+        <h2 style="font-size:1.2rem;margin-bottom:4px">充电订单</h2>
+        <p class="muted" style="font-size:.85rem;margin-bottom:8px">充电中 1 · 历史 3</p>
+        <div class="card">
+          <div class="order">
+            <span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></span>
+            <span class="info"><span class="name">城西银泰充电站</span><span class="meta">充电中 · 已充 12.4&nbsp;kWh · 预计 18&nbsp;分钟完成</span></span>
+          </div>
+          <div class="order">
+            <span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <span class="info"><span class="name">西溪龙湖充电站</span><span class="meta">2026‑06‑08 · 28.6&nbsp;kWh · ¥27.40</span></span>
+          </div>
+          <div class="order">
+            <span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <span class="info"><span class="name">文一路快充站</span><span class="meta">2026‑06‑05 · 41.2&nbsp;kWh · ¥49.10</span></span>
+          </div>
+          <div class="order">
+            <span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <span class="info"><span class="name">城北万达充电站</span><span class="meta">2026‑06‑01 · 19.8&nbsp;kWh · ¥21.80</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 我的 -->
+    <section class="view" id="view-me" aria-label="我的">
+      <div class="profile-head">
+        <div class="avatar" aria-hidden="true">星</div>
+        <div>
+          <div class="name">星充电用户</div>
+          <div class="lvl">PLUS 会员（金） · 138****6677</div>
+        </div>
+      </div>
+      <div class="wallet">
+        <div class="w"><div class="v num">¥128.5</div><div class="k">钱包余额</div></div>
+        <div class="w"><div class="v num">5</div><div class="k">卡券</div></div>
+        <div class="w"><div class="v num">320</div><div class="k">碳积分</div></div>
+      </div>
+      <nav class="menu" aria-label="个人中心菜单">
+        <a href="#view-me"><span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span>我的钱包<span class="spacer"></span><span class="chev" aria-hidden="true">›</span></a>
+        <a href="#view-me"><span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg></span>PLUS 会员<span class="spacer"></span><span class="chev" aria-hidden="true">›</span></a>
+        <a href="#view-me"><span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14M6 17l1-6a3 3 0 016 0l1 6M9 17v3M15 17v3"/></svg></span>我的车辆<span class="spacer"></span><span class="chev" aria-hidden="true">›</span></a>
+        <a href="#view-orders"><span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h2l2 12h10l2-8H7"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg></span>订单与发票<span class="spacer"></span><span class="chev" aria-hidden="true">›</span></a>
+        <a href="#view-me"><span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>客服中心<span class="spacer"></span><span class="chev" aria-hidden="true">›</span></a>
+        <a href="#view-me"><span class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1l-.3-2.6h-4l-.3 2.6a7 7 0 00-1.7 1l-2.3-1-2 3.4L4.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.3 2.6h4l.3-2.6a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg></span>设置<span class="spacer"></span><span class="chev" aria-hidden="true">›</span></a>
+      </nav>
+    </section>
+  </div>
+
+  <!-- Bottom tab bar -->
+  <nav class="tabbar" aria-label="主导航">
+    <button class="tab" type="button" data-view="home" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10l9-7 9 7v9a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2z"/></svg>
+      首页
+    </button>
+    <button class="tab" type="button" data-view="deals" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 12l-8 8-8-8a5 5 0 017-7l1 1 1-1a5 5 0 017 7z"/></svg>
+      省钱
+    </button>
+    <button class="tab scan" type="button" id="tabScan" aria-selected="false" aria-label="扫码充电">
+      <span class="fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"/></svg></span>
+      扫码
+    </button>
+    <button class="tab" type="button" data-view="orders" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h2l2 12h10l2-8H7"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
+      订单
+    </button>
+    <button class="tab" type="button" data-view="me" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+      我的
+    </button>
+  </nav>
+</div>
+
+<!-- Stop confirm modal -->
+<div class="modal-mask" id="stopModal" role="dialog" aria-modal="true" aria-labelledby="stopTitle">
+  <div class="modal">
+    <h3 id="stopTitle">确认停止充电？</h3>
+    <p class="sub">停止后将按已充电量结算并自动扣费，本次充电进度不会保留。</p>
+    <div class="actions">
+      <button class="btn btn-ghost" type="button" id="stopCancel">继续充电</button>
+      <button class="btn btn-danger" type="button" id="stopConfirm">确认停止</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual input modal -->
+<div class="modal-mask" id="manualModal" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+  <div class="modal">
+    <h3 id="manualTitle">输入桩编号</h3>
+    <p class="sub">扫码失败时，手动输入充电桩上的 8 位编号启动充电。</p>
+    <form id="manualForm">
+      <div class="field"><label for="pileNo">桩编号</label>
+        <input id="pileNo" name="pileNo" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="例如 33010866 …" maxlength="8" />
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" id="manualCancel">取消</button>
+        <button class="btn btn-primary" type="submit">识别并启动</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  (function () {
+    "use strict";
+    var root = document.documentElement;
+    var toggle = document.getElementById("themeToggle");
+    function applyTheme(t) {
+      root.setAttribute("data-theme", t);
+      toggle.setAttribute("aria-pressed", t === "dark" ? "true" : "false");
+      document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "dark" ? "#0e1116" : "#1677ff");
+    }
+    applyTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    toggle.addEventListener("click", function () { applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"); });
+
+    var toast = document.getElementById("toast");
+    var toastTimer;
+    function showToast(msg) {
+      toast.textContent = msg; toast.classList.add("show");
+      clearTimeout(toastTimer); toastTimer = setTimeout(function () { toast.classList.remove("show"); }, 2400);
+    }
+
+    var nf = new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    var cf = new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" });
+
+    // Tab switching
+    var tabs = document.querySelectorAll(".tab[data-view]");
+    function selectView(v) {
+      document.querySelectorAll(".view").forEach(function (el) { el.classList.remove("active"); });
+      var view = document.getElementById("view-" + v);
+      if (view) view.classList.add("active");
+      tabs.forEach(function (t) { t.setAttribute("aria-selected", t.dataset.view === v ? "true" : "false"); });
+      document.getElementById("tabScan").setAttribute("aria-selected", v === "scan" ? "true" : "false");
+      document.querySelector(".scroll").scrollTop = 0;
+    }
+    tabs.forEach(function (t) { t.addEventListener("click", function () { selectView(t.dataset.view); }); });
+    document.getElementById("tabScan").addEventListener("click", function () { selectView("scan"); });
+
+    // Station tap -> open scan confirm
+    document.querySelectorAll(".station").forEach(function (s) {
+      s.addEventListener("click", function () {
+        selectView("scan");
+        document.getElementById("chargeStation").textContent = s.dataset.station + " · A03 枪";
+        document.getElementById("scanConfirm").hidden = false;
+        document.getElementById("chargePanel").hidden = true;
+        showToast("已定位站点：" + s.dataset.station);
+      });
+    });
+
+    // Scan flow
+    var scanConfirm = document.getElementById("scanConfirm");
+    var chargePanel = document.getElementById("chargePanel");
+    document.getElementById("scanStart").addEventListener("click", function () {
+      scanConfirm.hidden = false; chargePanel.hidden = true;
+      showToast("正在识别二维码…");
+    });
+    var manualBtn = document.getElementById("manualBtn");
+    var manualModal = document.getElementById("manualModal");
+    manualBtn.addEventListener("click", function () { manualModal.classList.add("show"); document.getElementById("pileNo").focus(); });
+    document.getElementById("manualCancel").addEventListener("click", function () { manualModal.classList.remove("show"); });
+    document.getElementById("manualForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var v = document.getElementById("pileNo").value.trim();
+      if (!v) { showToast("请输入桩编号"); return; }
+      manualModal.classList.remove("show");
+      scanConfirm.hidden = false; chargePanel.hidden = true;
+      showToast("已识别桩编号 " + v);
+    });
+
+    // Mode segmented
+    var modeBtns = scanConfirm.querySelectorAll(".seg button");
+    modeBtns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        modeBtns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+        b.setAttribute("aria-pressed", "true");
+      });
+    });
+
+    // Confirm -> start charging simulation
+    var kwhEl = document.getElementById("kwh"), pctEl = document.getElementById("pct"),
+        powerEl = document.getElementById("power"), costEl = document.getElementById("cost"),
+        etaEl = document.getElementById("eta"), ringFg = document.getElementById("ringFg");
+    var CIRC = 2 * Math.PI * 78; // ~490
+    var charging = false, timer = null, kwh = 12.4, pct = 42, power = 62;
+    function render() {
+      kwhEl.textContent = nf.format(kwh); pctEl.textContent = Math.round(pct);
+      powerEl.textContent = Math.round(power);
+      costEl.textContent = nf.format(kwh * 1.05);
+      etaEl.textContent = Math.max(0, Math.round((100 - pct) / 2.4));
+      ringFg.setAttribute("stroke-dasharray", CIRC.toFixed(1));
+      ringFg.setAttribute("stroke-dashoffset", (CIRC * (1 - pct / 100)).toFixed(1));
+    }
+    document.getElementById("confirmCharge").addEventListener("click", function () {
+      scanConfirm.hidden = true; chargePanel.hidden = false;
+      charging = true; render();
+      showToast("充电已启动 · 实时功率 " + Math.round(power) + " kW");
+      timer = setInterval(function () {
+        if (!charging) return;
+        pct += 1.1; kwh += 0.28; power = 40 + Math.random() * 30;
+        if (pct >= 100) {
+          pct = 100; render(); finishCharge(); return;
+        }
+        render();
+      }, 1000);
+    });
+    function finishCharge() {
+      charging = false; clearInterval(timer);
+      showToast("充电完成 · 已自动扣费 " + cf.format(kwh * 1.05));
+    }
+
+    // Stop charge
+    var stopModal = document.getElementById("stopModal");
+    document.getElementById("stopCharge").addEventListener("click", function () { stopModal.classList.add("show"); });
+    document.getElementById("stopCancel").addEventListener("click", function () { stopModal.classList.remove("show"); });
+    document.getElementById("stopConfirm").addEventListener("click", function () {
+      stopModal.classList.remove("show");
+      charging = false; clearInterval(timer);
+      chargePanel.hidden = true; scanConfirm.hidden = false;
+      showToast("已停止并结算：" + cf.format(kwh * 1.05));
+    });
+
+    render();
+  })();
+</script>
+</body>
+</html>

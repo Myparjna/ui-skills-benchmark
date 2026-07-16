@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>骑迹运营 · 共享两轮城市运营管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  :root{
+    --indigo:#5b5bf0; --indigo-2:#7c6bff; --indigo-d:#3f3fd6;
+    --ink:#0f1430; --ink-2:#3a4063; --muted:#8089a8; --line:#ebeef7; --bg:#f4f6fc;
+    --green:#22c55e; --orange:#fb923c; --red:#f43f5e; --cyan:#06b6d4; --amber:#f59e0b; --violet:#8b5cf6;
+    --r:18px; --r-sm:13px; --r-lg:24px;
+    --sh:0 8px 24px rgba(28,38,90,.07); --sh-lg:0 18px 46px rgba(28,38,90,.12);
+    --font:'Plus Jakarta Sans','Noto Sans SC',system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  iconify-icon{line-height:1}
+  .layout{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+  /* SIDEBAR */
+  .side{background:linear-gradient(180deg,#15183a,#1d2150);color:#cdd2f0;padding:22px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+  .side .brand{display:flex;align-items:center;gap:11px;color:#fff;font-weight:800;font-size:18px;margin-bottom:26px;padding:0 6px}
+  .side .brand .mk{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--indigo),var(--cyan));display:grid;place-items:center;color:#fff;box-shadow:0 10px 24px rgba(91,91,240,.5)}
+  .side .brand .mk iconify-icon{font-size:23px}
+  .side .brand small{display:block;font-size:10px;font-weight:600;letter-spacing:.16em;color:#8b92c4}
+  .nav-group{font-size:11px;font-weight:700;letter-spacing:.1em;color:#7a82b4;padding:14px 12px 8px}
+  .nav-i{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:13px;font-size:14px;font-weight:600;color:#b9bfe6;cursor:pointer;transition:.2s;margin-bottom:3px}
+  .nav-i iconify-icon{font-size:20px}
+  .nav-i:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-i.on{background:linear-gradient(135deg,var(--indigo),var(--indigo-2));color:#fff;box-shadow:0 10px 24px rgba(91,91,240,.4)}
+  .nav-i .tag{margin-left:auto;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:999px}
+  .side .foot{margin-top:auto;padding:14px;background:rgba(255,255,255,.05);border-radius:15px;display:flex;align-items:center;gap:10px}
+  .side .foot .av{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#ff9d5c,#ff6b6b);display:grid;place-items:center;color:#fff;font-weight:800}
+  .side .foot div b{font-size:13px;color:#fff;display:block} .side .foot div span{font-size:11px;color:#8b92c4}
+
+  /* MAIN */
+  .main{padding:22px 28px 40px;overflow:hidden}
+  .topbar{display:flex;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .topbar h1{font-size:23px;font-weight:800}
+  .topbar .sub{font-size:13px;color:var(--muted);margin-top:2px}
+  .topbar .tools{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .select{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:var(--sh)}
+  .select iconify-icon{font-size:17px;color:var(--indigo)}
+  .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:var(--sh);min-width:210px}
+  .search iconify-icon{font-size:17px;color:var(--muted)}
+  .search input{border:none;outline:none;font-family:var(--font);font-size:13.5px;width:100%}
+  .icon-b{width:42px;height:42px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;box-shadow:var(--sh);color:var(--ink-2);position:relative}
+  .icon-b iconify-icon{font-size:20px}
+  .icon-b .dot{position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid #fff}
+  .avatar{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--indigo),var(--cyan));display:grid;place-items:center;color:#fff;font-weight:800;cursor:pointer}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:18px}
+  .kpi{background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:.25s}
+  .kpi:hover{transform:translateY(-4px);box-shadow:var(--sh-lg)}
+  .kpi .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:12px}
+  .kpi .ic iconify-icon{font-size:22px}
+  .kpi .v{font-size:27px;font-weight:800;font-family:var(--font);letter-spacing:-.5px}
+  .kpi .l{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .kpi .chg{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;margin-top:9px}
+  .kpi .chg.up{color:var(--green)} .kpi .chg.down{color:var(--red)}
+  .i1{background:linear-gradient(145deg,#eef0ff,#dfe3ff);color:var(--indigo)} .i2{background:linear-gradient(145deg,#e6fbf0,#d2f5e3);color:var(--green)} .i3{background:linear-gradient(145deg,#fff3e6,#ffe2c4);color:var(--amber)} .i4{background:linear-gradient(145deg,#e6f6ff,#cdeeff);color:var(--cyan)} .i5{background:linear-gradient(145deg,#f3eaff,#e6d8ff);color:var(--violet)}
+
+  .grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:18px}
+  .card{background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+  .card .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .card .hd h3{font-size:16px;font-weight:800}
+  .card .hd .more{font-size:12.5px;color:var(--indigo);font-weight:700;cursor:pointer}
+  .card .hd .sub{font-size:12px;color:var(--muted)}
+
+  /* MAP */
+  .map{position:relative;height:360px;border-radius:var(--r-sm);overflow:hidden;background:linear-gradient(160deg,#e9f0ff,#dde7fb);margin-bottom:14px}
+  .map .grid-l{position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(91,91,240,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(91,91,240,.08) 1px,transparent 1px);background-size:46px 46px}
+  .map .heat{position:absolute;width:120px;height:120px;border-radius:50%;filter:blur(2px);opacity:.6;mix-blend-mode:multiply}
+  .h1{left:12%;top:18%;background:radial-gradient(circle,#f43f5e,transparent 70%)}
+  .h2{left:55%;top:48%;background:radial-gradient(circle,#fb923c,transparent 70%)}
+  .h3{left:30%;top:62%;background:radial-gradient(circle,#22c55e,transparent 70%)}
+  .h4{left:70%;top:20%;background:radial-gradient(circle,#f59e0b,transparent 70%)}
+  .map .mk{position:absolute;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(45deg);box-shadow:0 4px 10px rgba(0,0,0,.2);cursor:pointer}
+  .mk.a{background:var(--indigo)} .mk.b{background:var(--green)} .mk.c{background:var(--amber)} .mk.d{background:var(--red)}
+  .map .leg{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.92);border-radius:12px;padding:9px 12px;display:flex;gap:14px;font-size:11.5px;font-weight:700;box-shadow:var(--sh)}
+  .map .leg span{display:flex;align-items:center;gap:5px} .map .leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .map .ctrl{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px}
+  .map .ctrl button{width:36px;height:36px;border:none;border-radius:10px;background:#fff;box-shadow:var(--sh);cursor:pointer;color:var(--indigo);display:grid;place-items:center}
+  .map .ctrl button iconify-icon{font-size:18px}
+  .map-tools{display:flex;gap:8px;flex-wrap:wrap}
+  .mt{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:9px 13px;border-radius:11px;background:var(--bg);cursor:pointer;transition:.2s;border:1px solid transparent}
+  .mt:hover{border-color:#d7ddf7;color:var(--indigo)}
+  .mt iconify-icon{font-size:16px;color:var(--indigo)}
+
+  /* DONUT + bars */
+  .donut-wrap{display:flex;align-items:center;gap:18px}
+  .donut{width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--green) 0 62%,var(--cyan) 62% 78%,var(--amber) 78% 88%,var(--red) 88% 94%,#d7ddf0 94% 100%);display:grid;place-items:center;flex:none;position:relative}
+  .donut::after{content:"";position:absolute;width:96px;height:96px;border-radius:50%;background:#fff}
+  .donut .ctr{position:relative;text-align:center} .donut .ctr b{font-size:24px;font-weight:800;font-family:var(--font);display:block} .donut .ctr span{font-size:11.5px;color:var(--muted)}
+  .legend{flex:1;display:flex;flex-direction:column;gap:11px}
+  .legend .li{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600}
+  .legend .li i{width:11px;height:11px;border-radius:4px;flex:none}
+  .legend .li .v{margin-left:auto;font-weight:800;font-family:var(--font)}
+
+  .bars{display:flex;flex-direction:column;gap:13px}
+  .bar-row{display:grid;grid-template-columns:74px 1fr 46px;align-items:center;gap:10px;font-size:13px}
+  .bar-row .nm{font-weight:700;color:var(--ink-2)}
+  .bar-row .track{height:10px;background:var(--bg);border-radius:999px;overflow:hidden}
+  .bar-row .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--indigo),var(--cyan))}
+  .bar-row .val{font-weight:800;font-family:var(--font);text-align:right;font-size:12.5px}
+
+  /* ALERTS */
+  .alert{display:flex;align-items:flex-start;gap:11px;padding:12px;border-radius:13px;background:var(--bg);margin-bottom:9px;cursor:pointer;transition:.2s}
+  .alert:hover{background:#eef1fb}
+  .alert .lv{font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:7px;flex:none;margin-top:1px}
+  .lv.p0{background:#fde4e8;color:var(--red)} .lv.p1{background:#fff0e0;color:var(--amber)} .lv.p2{background:#e6f6ff;color:var(--cyan)}
+  .alert .tx{flex:1} .alert .tx b{font-size:13.5px;display:block} .alert .tx span{font-size:12px;color:var(--muted)}
+  .alert .go{color:#b6bdce;font-size:18px}
+
+  /* WORK ORDERS */
+  .wo{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:14px}
+  .wo .w{background:var(--bg);border-radius:14px;padding:14px;text-align:center}
+  .wo .w b{font-size:22px;font-weight:800;font-family:var(--font);display:block} .wo .w span{font-size:12px;color:var(--muted)}
+  .wo .w.r b{color:var(--red)} .wo .w.o b{color:var(--amber)} .wo .w.g b{color:var(--green)} .wo .w.b b{color:var(--indigo)}
+  .wo-bar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-bottom:6px}
+  .wo-bar i{display:block} .wo-leg{display:flex;gap:14px;font-size:12px;font-weight:600;color:var(--muted)}
+  .wo-leg span{display:flex;align-items:center;gap:5px} .wo-leg i{width:9px;height:9px;border-radius:3px}
+
+  /* QUICK WORKBENCH */
+  .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .q{display:flex;align-items:center;gap:11px;background:var(--bg);border-radius:14px;padding:14px;cursor:pointer;transition:.2s;border:1px solid transparent}
+  .q:hover{border-color:#d7ddf7;transform:translateY(-3px);box-shadow:var(--sh)}
+  .q .ic{width:40px;height:40px;border-radius:12px;background:#fff;display:grid;place-items:center;color:var(--indigo);box-shadow:var(--sh);flex:none}
+  .q .ic iconify-icon{font-size:21px}
+  .q .tx b{font-size:13.5px;display:block} .q .tx span{font-size:11.5px;color:var(--muted)}
+
+  /* COMPLIANCE */
+  .comp{display:flex;flex-direction:column;gap:12px}
+  .comp .cr{display:flex;align-items:center;gap:11px}
+  .comp .cr .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none}
+  .comp .cr .ic iconify-icon{font-size:20px}
+  .comp .cr .tx{flex:1} .comp .cr .tx b{font-size:13.5px} .comp .cr .tx span{font-size:11.5px;color:var(--muted);display:block}
+  .comp .cr .st{font-size:12px;font-weight:800}
+
+  .grid3{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+
+  @media(max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .side{display:none}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2,.grid3{grid-template-columns:1fr}
+  }
+  @media(max-width:560px){
+    .kpis{grid-template-columns:1fr}
+    .wo,.quick{grid-template-columns:1fr 1fr}
+    .main{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand"><span class="mk"><iconify-icon icon="solar:bicycle-bold"></iconify-icon></span><span>骑迹运营<small>CITY OPS</small></span></div>
+    <div class="nav-group">运营中心</div>
+    <div class="nav-i on"><iconify-icon icon="solar:widget-3-bold"></iconify-icon> 运营总览</div>
+    <div class="nav-i"><iconify-icon icon="solar:map-point-bold"></iconify-icon> 地图调度中心</div>
+    <div class="nav-i"><iconify-icon icon="solar:bicycle-bold"></iconify-icon> 车队资产</div>
+    <div class="nav-i"><iconify-icon icon="solar:battery-charge-bold"></iconify-icon> 电池与能源</div>
+    <div class="nav-i"><iconify-icon icon="solar:clipboard-list-bold"></iconify-icon> 运维工单 <span class="tag">12</span></div>
+    <div class="nav-group">治理与配置</div>
+    <div class="nav-i"><iconify-icon icon="solar:shield-check-bold"></iconify-icon> 规则与区域</div>
+    <div class="nav-i"><iconify-icon icon="solar:building-bold"></iconify-icon> 合规监管 <span class="tag">3</span></div>
+    <div class="nav-i"><iconify-icon icon="solar:chart-bold"></iconify-icon> 数据报表</div>
+    <div class="nav-i"><iconify-icon icon="solar:users-group-bold"></iconify-icon> 组织与权限</div>
+    <div class="nav-i"><iconify-icon icon="solar:settings-bold"></iconify-icon> 系统配置</div>
+    <div class="foot"><div class="av">运</div><div><b>王调度</b><span>杭州城市站 · 主管</span></div></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>运营总览</h1>
+        <div class="sub">杭州 · 全城 · 2026-07-12 周日 · 自然日口径</div>
+      </div>
+      <div class="tools">
+        <div class="select"><iconify-icon icon="solar:calendar-bold"></iconify-icon> 今日 ▾</div>
+        <div class="select"><iconify-icon icon="solar:global-bold"></iconify-icon> 杭州 · 全城 ▾</div>
+        <div class="select"><iconify-icon icon="solar:bicycle-bold"></iconify-icon> 混合车队 ▾</div>
+        <div class="search"><iconify-icon icon="solar:search-linear"></iconify-icon><input placeholder="车架号 / 订单 / 电池ID" /></div>
+        <div class="icon-b"><iconify-icon icon="solar:bell-bold"></iconify-icon><span class="dot"></span></div>
+        <div class="avatar">王</div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpis">
+      <div class="kpi"><div class="ic i1"><iconify-icon icon="solar:receipt-bold"></iconify-icon></div><div class="v">38.6万</div><div class="l">今日订单数</div><div class="chg up"><iconify-icon icon="solar:arrow-up-bold"></iconify-icon> 8.2% 较昨日</div></div>
+      <div class="kpi"><div class="ic i2"><iconify-icon icon="solar:check-circle-bold"></iconify-icon></div><div class="v">91.4%</div><div class="l">全城可用率</div><div class="chg up"><iconify-icon icon="solar:arrow-up-bold"></iconify-icon> 2.1% 较上周</div></div>
+      <div class="kpi"><div class="ic i3"><iconify-icon icon="solar:wallet-money-bold"></iconify-icon></div><div class="v">¥52.8万</div><div class="l">今日 GMV</div><div class="chg up"><iconify-icon icon="solar:arrow-up-bold"></iconify-icon> 5.6% 较昨日</div></div>
+      <div class="kpi"><div class="ic i4"><iconify-icon icon="solar:battery-charge-bold"></iconify-icon></div><div class="v">1,842</div><div class="l">低电车辆</div><div class="chg down"><iconify-icon icon="solar:arrow-down-bold"></iconify-icon> 320 较 1h 前</div></div>
+      <div class="kpi"><div class="ic i5"><iconify-icon icon="solar:shield-warning-bold"></iconify-icon></div><div class="v">37</div><div class="l">活跃告警</div><div class="chg down"><iconify-icon icon="solar:arrow-up-bold"></iconify-icon> 6 P0 待处置</div></div>
+    </div>
+
+    <!-- MAP + ALERTS -->
+    <div class="grid2">
+      <div class="card">
+        <div class="hd"><h3>地图调度中心</h3><span class="more">进入工作台 ›</span></div>
+        <div class="map">
+          <div class="grid-l"></div>
+          <div class="heat h1"></div><div class="heat h2"></div><div class="heat h3"></div><div class="heat h4"></div>
+          <div class="mk a" style="left:20%;top:26%"></div><div class="mk b" style="left:34%;top:60%"></div>
+          <div class="mk c" style="left:58%;top:30%"></div><div class="mk d" style="left:66%;top:66%"></div>
+          <div class="mk a" style="left:46%;top:44%"></div><div class="mk c" style="left:78%;top:38%"></div>
+          <div class="mk b" style="left:26%;top:74%"></div><div class="mk d" style="left:52%;top:18%"></div>
+          <div class="leg">
+            <span><i style="background:var(--indigo)"></i>可用</span><span><i style="background:var(--green)"></i>使用中</span>
+            <span><i style="background:var(--amber)"></i>低电</span><span><i style="background:var(--red)"></i>异常</span>
+          </div>
+          <div class="ctrl"><button><iconify-icon icon="solar:add-circle-bold"></iconify-icon></button><button><iconify-icon icon="solar:minus-circle-bold"></iconify-icon></button><button><iconify-icon icon="solar:target-bold"></iconify-icon></button></div>
+        </div>
+        <div class="map-tools">
+          <div class="mt"><iconify-icon icon="solar:frame-bold"></iconify-icon> 框选车辆</div>
+          <div class="mt"><iconify-icon icon="solar:bolt-bold"></iconify-icon> 批量指令</div>
+          <div class="mt"><iconify-icon icon="solar:routing-bold"></iconify-icon> 创建调度</div>
+          <div class="mt"><iconify-icon icon="solar:battery-charge-bold"></iconify-icon> 换电任务</div>
+          <div class="mt"><iconify-icon icon="solar:fire-bold"></iconify-icon> 供需热力</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>告警与异常中心</h3><span class="more">全部 ›</span></div>
+        <div class="alert"><span class="lv p0">P0</span><div class="tx"><b>禁停区聚集 · 武林广场</b><span>12 辆车违规停放，已触发锁车处置</span></div><iconify-icon icon="solar:alt-arrow-right-bold" class="go"></iconify-icon></div>
+        <div class="alert"><span class="lv p0">P0</span><div class="tx"><b>越界 · 滨江非服务区</b><span>3 辆电单车驶出服务区，待回收</span></div><iconify-icon icon="solar:alt-arrow-right-bold" class="go"></iconify-icon></div>
+        <div class="alert"><span class="lv p1">P1</span><div class="tx"><b>低电预警 · 西湖景区</b><span>86 辆低于 10% SOC，建议优先换电</span></div><iconify-icon icon="solar:alt-arrow-right-bold" class="go"></iconify-icon></div>
+        <div class="alert"><span class="lv p1">P1</span><div class="tx"><b>倒地车辆 · 地铁口</b><span>9 辆疑似倒地，需现场扶正</span></div><iconify-icon icon="solar:alt-arrow-right-bold" class="go"></iconify-icon></div>
+        <div class="alert"><span class="lv p2">P2</span><div class="tx"><b>离线设备 · 城西</b><span>14 辆 1h 未上报，数据质量待核查</span></div><iconify-icon icon="solar:alt-arrow-right-bold" class="go"></iconify-icon></div>
+      </div>
+    </div>
+
+    <!-- DONUT + SOC bars -->
+    <div class="grid2">
+      <div class="card">
+        <div class="hd"><h3>车辆健康与可用性</h3><span class="sub">共 28,640 辆</span></div>
+        <div class="donut-wrap">
+          <div class="donut"><div class="ctr"><b>91.4%</b><span>可用率</span></div></div>
+          <div class="legend">
+            <div class="li"><i style="background:var(--green)"></i> 可用 <span class="v">17,820</span></div>
+            <div class="li"><i style="background:var(--cyan)"></i> 使用中 <span class="v">4,604</span></div>
+            <div class="li"><i style="background:var(--amber)"></i> 低电待换 <span class="v">1,842</span></div>
+            <div class="li"><i style="background:var(--red)"></i> 故障/异常 <span class="v">1,718</span></div>
+            <div class="li"><i style="background:#d7ddf0"></i> 离线/回收 <span class="v">2,656</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>电池 SOC 分布</h3><span class="sub">电单车 · 可换电</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="nm">0–10%</span><div class="track"><div class="fill" style="width:14%"></div></div><span class="val">1,842</span></div>
+          <div class="bar-row"><span class="nm">10–30%</span><div class="track"><div class="fill" style="width:23%"></div></div><span class="val">3,010</span></div>
+          <div class="bar-row"><span class="nm">30–60%</span><div class="track"><div class="fill" style="width:38%"></div></div><span class="val">5,124</span></div>
+          <div class="bar-row"><span class="nm">60–100%</span><div class="track"><div class="fill" style="width:81%"></div></div><span class="val">10,860</span></div>
+        </div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)">
+          <span>今日换电 <b style="color:var(--ink);font-family:var(--font)">1,206</b> 次</span>
+          <span>在途任务 <b style="color:var(--ink);font-family:var(--font)">58</b></span>
+          <span>换电成功率 <b style="color:var(--green);font-family:var(--font)">98.3%</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORK ORDERS + SUPPLY -->
+    <div class="grid2">
+      <div class="card">
+        <div class="hd"><h3>运维工单概览</h3><span class="more">工单池 ›</span></div>
+        <div class="wo">
+          <div class="w r"><b>23</b><span>待派</span></div>
+          <div class="w o"><b>41</b><span>执行中</span></div>
+          <div class="w g"><b>312</b><span>今日完成</span></div>
+          <div class="w b"><b>8</b><span>超时</span></div>
+        </div>
+        <div class="wo-bar">
+          <i style="background:var(--red);width:14%"></i><i style="background:var(--amber);width:25%"></i><i style="background:var(--green);width:55%"></i><i style="background:var(--indigo);width:6%"></i>
+        </div>
+        <div class="wo-leg">
+          <span><i style="background:var(--red)"></i> 待派 23</span><span><i style="background:var(--amber)"></i> 执行中 41</span><span><i style="background:var(--green)"></i> 已完成 312</span><span><i style="background:var(--indigo)"></i> 超时 8</span>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px">
+          <div class="q" style="flex:1"><div class="ic"><iconify-icon icon="solar:wrench-bold"></iconify-icon></div><div class="tx"><b>维修</b><span>156 单</span></div></div>
+          <div class="q" style="flex:1"><div class="ic"><iconify-icon icon="solar:battery-charge-bold"></iconify-icon></div><div class="tx"><b>换电</b><span>1,206 单</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>供需与调度态势</h3><span class="sub">栅格维度</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="nm">缺车区域</span><div class="track"><div class="fill" style="width:62%;background:linear-gradient(90deg,#f43f5e,#fb923c)"></div></div><span class="val">14 区</span></div>
+          <div class="bar-row"><span class="nm">堆车区域</span><div class="track"><div class="fill" style="width:48%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div></div><span class="val">9 区</span></div>
+          <div class="bar-row"><span class="nm">早高峰建议</span><div class="track"><div class="fill" style="width:88%;background:linear-gradient(90deg,var(--indigo),var(--cyan))"></div></div><span class="val">+2,400</span></div>
+          <div class="bar-row"><span class="nm">调度完成率</span><div class="track"><div class="fill" style="width:93%;background:linear-gradient(90deg,var(--green),#34d399)"></div></div><span class="val">93%</span></div>
+        </div>
+        <div style="margin-top:16px;padding:13px 15px;background:linear-gradient(135deg,#eef0ff,#e3e9ff);border-radius:13px;display:flex;align-items:center;gap:11px">
+          <iconify-icon icon="solar:routing-bold" style="font-size:24px;color:var(--indigo)"></iconify-icon>
+          <div style="font-size:13px;color:var(--ink-2)"><b>高峰预警 7–9 / 17–19</b><br>建议向「地铁口·西湖」「滨江写字楼」调入车辆</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK + COMPLIANCE -->
+    <div class="grid3">
+      <div class="card">
+        <div class="hd"><h3>快速工作台</h3><span class="more">全部 ›</span></div>
+        <div class="quick">
+          <div class="q"><div class="ic"><iconify-icon icon="solar:routing-bold"></iconify-icon></div><div class="tx"><b>创建调度</b><span>潮汐补车</span></div></div>
+          <div class="q"><div class="ic"><iconify-icon icon="solar:battery-charge-bold"></iconify-icon></div><div class="tx"><b>换电任务</b><span>低电优先</span></div></div>
+          <div class="q"><div class="ic"><iconify-icon icon="solar:wrench-bold"></iconify-icon></div><div class="tx"><b>维修工单</b><span>故障报修</span></div></div>
+          <div class="q"><div class="ic"><iconify-icon icon="solar:shield-warning-bold"></iconify-icon></div><div class="tx"><b>违停处置</b><span>生成工单</span></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="hd"><h3>合规与治理概览</h3><span class="more">监管台 ›</span></div>
+        <div class="comp">
+          <div class="cr"><div class="ic" style="background:#e6f6ff;color:var(--cyan)"><iconify-icon icon="solar:shield-check-bold"></iconify-icon></div><div class="tx"><b>数据共享接口 (MDS/GBFS)</b><span>最近上报 2 分钟前</span></div><div class="st" style="color:var(--green)">健康</div></div>
+          <div class="cr"><div class="ic" style="background:#fde4e8;color:var(--red)"><iconify-icon icon="solar:forbidden-bold"></iconify-icon></div><div class="tx"><b>禁停 / 越界违规</b><span>今日 226 次 · 处置时效 8min</span></div><div class="st" style="color:var(--amber)">观察</div></div>
+          <div class="cr"><div class="ic" style="background:#fff3e6;color:var(--amber)"><iconify-icon icon="solar:building-bold"></iconify-icon></div><div class="tx"><b>超投 vs 许可上限</b><span>投放 28,640 / 上限 30,000</span></div><div class="st" style="color:var(--green)">达标</div></div>
+          <div class="cr"><div class="ic" style="background:#f3eaff;color:var(--violet)"><iconify-icon icon="solar:file-text-bold"></iconify-icon></div><div class="tx"><b>合规报表自动生成</b><span>覆盖 100% 规定项</span></div><div class="st" style="color:var(--green)">已生成</div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+  document.querySelectorAll('.nav-i').forEach(n=>n.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));n.classList.add('on');
+  }));
+</script>
+</body>
+</html>

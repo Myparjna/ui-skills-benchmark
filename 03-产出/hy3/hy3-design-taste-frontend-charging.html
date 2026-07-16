@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>云涌充电 · 找桩充电一步到位</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { display: ['Outfit','Noto Sans SC','sans-serif'], sans: ['Outfit','Noto Sans SC','sans-serif'] },
+        colors: {
+          ink: '#10131A',
+          brand: '#2563EB',
+          idle: '#2FA84F',
+          charging: '#E8831E',
+          fault: '#D6433B',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root { --brand:#2563EB; }
+  html,body { margin:0; }
+  body { background:#0B0D12; font-family:'Outfit','Noto Sans SC',sans-serif; -webkit-font-smoothing:antialiased; }
+  .app { width:100%; max-width:430px; margin:0 auto; min-height:100dvh; background:#F4F6FA; position:relative; overflow:hidden; }
+  @media(min-width:480px){ body{ padding:22px 0; } .app{ min-height:860px; border-radius:38px; box-shadow:0 40px 90px -30px rgba(0,0,0,.7); border:1px solid rgba(255,255,255,.06);} }
+  .view { display:none; }
+  .view.active { display:block; animation: fade .35s cubic-bezier(0.16,1,0.3,1); }
+  @keyframes fade { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  .tabbar { position:absolute; bottom:0; left:0; right:0; }
+  .sheet { transition: transform .4s cubic-bezier(0.16,1,0.3,1); }
+  .tactile:active { transform: scale(0.96); }
+  .pin { animation: drop .5s cubic-bezier(0.34,1.56,0.64,1) backwards; }
+  @keyframes drop { from{ transform: translateY(-14px); opacity:0; } to{ transform:none; opacity:1; } }
+  .shimmer { background:linear-gradient(100deg,#e7ebf2 30%,#f3f6fb 50%,#e7ebf2 70%); background-size:200% 100%; animation:sh 1.4s infinite; }
+  @keyframes sh { from{background-position:200% 0} to{background-position:-200% 0} }
+  .ring circle { transform: rotate(-90deg); transform-origin:50% 50%; transition: stroke-dashoffset .6s cubic-bezier(0.16,1,0.3,1); }
+  .float-cta { animation: bob 3.5s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .scanline { animation: scan 2.2s ease-in-out infinite; }
+  @keyframes scan { 0%,100%{ transform:translateY(-46%); opacity:.3 } 50%{ transform:translateY(46%); opacity:.9 } }
+  ::-webkit-scrollbar{ width:0; height:0; }
+  .no-scrollbar::-webkit-scrollbar{ display:none; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============ HOME (MAP) ============ -->
+  <section class="view active" id="view-home">
+    <!-- top bar -->
+    <div class="px-5 pt-7 pb-3 flex items-center justify-between">
+      <div>
+        <p class="text-[12px] text-stone-400">当前位置</p>
+        <p class="font-display font-600 text-[17px] text-ink flex items-center gap-1">杭州 · 拱墅区
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+        </p>
+      </div>
+      <button class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center tactile" aria-label="消息">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10131A" stroke-width="1.7"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10.5 21a2 2 0 0 0 3 0"/></svg>
+      </button>
+    </div>
+
+    <!-- map -->
+    <div class="relative mx-4 rounded-3xl overflow-hidden h-[46vh] min-h-[320px] bg-[#E4E9F1]">
+      <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 400">
+        <rect width="400" height="400" fill="#E9EDF3"/>
+        <path d="M0 120 H400 M0 250 H400 M120 0 V400 M270 0 V400" stroke="#D7DDE6" stroke-width="10"/>
+        <path d="M0 185 H400" stroke="#C9D2DE" stroke-width="22"/>
+        <path d="M195 0 V400" stroke="#BFD4C0" stroke-width="16" opacity=".5"/>
+        <circle cx="120" cy="120" r="70" fill="#D8E3F2" opacity=".5"/>
+      </svg>
+      <!-- operator-colored pins -->
+      <div class="absolute top-[18%] left-[22%] pin"><span class="block w-3.5 h-3.5 rounded-full bg-idle ring-4 ring-idle/20"></span></div>
+      <div class="absolute top-[30%] left-[58%] pin" style="animation-delay:.1s"><span class="block w-3.5 h-3.5 rounded-full bg-brand ring-4 ring-brand/20"></span></div>
+      <div class="absolute top-[55%] left-[40%] pin" style="animation-delay:.2s"><span class="block w-3.5 h-3.5 rounded-full bg-charging ring-4 ring-charging/20"></span></div>
+      <div class="absolute top-[68%] left-[72%] pin" style="animation-delay:.3s"><span class="block w-3.5 h-3.5 rounded-full bg-idle ring-4 ring-idle/20"></span></div>
+      <div class="absolute top-[44%] left-[80%] pin" style="animation-delay:.15s"><span class="block w-3.5 h-3.5 rounded-full bg-fault ring-4 ring-fault/20"></span></div>
+      <!-- selected cluster -->
+      <div class="absolute top-[30%] left-[58%] -translate-x-1/2 -translate-y-[140%] bg-ink text-white text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap shadow-lg">云栖充电站 · 12 空闲</div>
+      <!-- locate btn -->
+      <button class="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center tactile" aria-label="定位">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+      <!-- filter chips -->
+      <div class="absolute top-3 left-3 flex gap-1.5">
+        <span class="text-[11px] bg-white/90 backdrop-blur px-2.5 py-1 rounded-full text-ink font-500">快充</span>
+        <span class="text-[11px] bg-white/90 backdrop-blur px-2.5 py-1 rounded-full text-ink font-500">免费停车</span>
+      </div>
+    </div>
+
+    <!-- bottom sheet : nearby list -->
+    <div class="absolute bottom-[76px] left-0 right-0 px-4">
+      <div class="bg-white rounded-3xl shadow-[0_-8px_30px_-12px_rgba(0,0,0,.18)] p-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="font-display font-600 text-[15px] text-ink">附近充电站 · 5km 内 8 个</p>
+          <button class="text-[12px] text-brand font-500 flex items-center gap-1" onclick="document.getElementById('sheetList').classList.toggle('hidden')">列表/地图
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+        <div id="sheetList" class="space-y-2.5 max-h-[34vh] overflow-y-auto no-scrollbar">
+          <!-- station card -->
+          <button onclick="openStation('云栖充电站','拱墅区通益路 88 号','4.8','12 / 20','1.18','免费','特来电')" class="w-full text-left rounded-2xl border border-stone-100 p-3.5 flex items-center gap-3 hover:border-brand/40 transition-colors">
+            <span class="w-11 h-11 rounded-xl bg-idle/10 flex items-center justify-center shrink-0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2FA84F" stroke-width="1.7"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2"><p class="font-500 text-[14px] text-ink truncate">云栖充电站</p><span class="text-[11px] text-idle bg-idle/10 px-1.5 py-0.5 rounded">空闲 12</span></div>
+              <p class="text-[12px] text-stone-400 truncate">拱墅区通益路 88 号 · 4.8 分</p>
+            </div>
+            <div class="text-right shrink-0"><p class="font-display font-600 text-[14px] text-brand">¥1.18<span class="text-[10px] text-stone-400">/度</span></p><p class="text-[11px] text-stone-400">320m</p></div>
+          </button>
+          <button onclick="openStation('运河快充港','拱墅区丽水路 21 号','4.6','3 / 16','1.32','¥5/h','星星充电')" class="w-full text-left rounded-2xl border border-stone-100 p-3.5 flex items-center gap-3 hover:border-brand/40 transition-colors">
+            <span class="w-11 h-11 rounded-xl bg-charging/10 flex items-center justify-center shrink-0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8831E" stroke-width="1.7"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2"><p class="font-500 text-[14px] text-ink truncate">运河快充港</p><span class="text-[11px] text-charging bg-charging/10 px-1.5 py-0.5 rounded">充电中 3</span></div>
+              <p class="text-[12px] text-stone-400 truncate">拱墅区丽水路 21 号 · 4.6 分</p>
+            </div>
+            <div class="text-right shrink-0"><p class="font-display font-600 text-[14px] text-brand">¥1.32<span class="text-[10px] text-stone-400">/度</span></p><p class="text-[11px] text-stone-400">560m</p></div>
+          </button>
+          <button onclick="openStation('桥西超充站','拱墅区桥弄街 5 号','4.9','8 / 12','1.05','免费','云快充')" class="w-full text-left rounded-2xl border border-stone-100 p-3.5 flex items-center gap-3 hover:border-brand/40 transition-colors">
+            <span class="w-11 h-11 rounded-xl bg-idle/10 flex items-center justify-center shrink-0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2FA84F" stroke-width="1.7"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2"><p class="font-500 text-[14px] text-ink truncate">桥西超充站</p><span class="text-[11px] text-idle bg-idle/10 px-1.5 py-0.5 rounded">空闲 8</span></div>
+              <p class="text-[12px] text-stone-400 truncate">拱墅区桥弄街 5 号 · 4.9 分</p>
+            </div>
+            <div class="text-right shrink-0"><p class="font-display font-600 text-[14px] text-brand">¥1.05<span class="text-[10px] text-stone-400">/度</span></p><p class="text-[11px] text-stone-400">740m</p></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATION DETAIL (overlay) ============ -->
+  <section class="view" id="view-station">
+    <div class="px-5 pt-7 pb-2 flex items-center justify-between">
+      <button onclick="switchView('home')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center tactile" aria-label="返回">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10131A" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center tactile" aria-label="收藏">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.7"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+      </button>
+    </div>
+    <div class="px-5">
+      <h2 id="st-name" class="font-display font-700 text-[22px] text-ink">云栖充电站</h2>
+      <p id="st-addr" class="text-[13px] text-stone-400 mt-1">拱墅区通益路 88 号</p>
+      <div class="flex items-center gap-3 mt-2 text-[12px] text-stone-500">
+        <span id="st-score" class="text-brand font-500">★ 4.8</span><span id="st-op">特来电</span><span id="st-park" class="text-idle">免费停车</span>
+      </div>
+    </div>
+    <!-- gun status -->
+    <div class="px-5 mt-4 grid grid-cols-3 gap-2.5">
+      <div class="rounded-2xl bg-white border border-stone-100 p-3 text-center"><p class="font-display font-700 text-[20px] text-idle" id="st-idle">12</p><p class="text-[11px] text-stone-400">空闲</p></div>
+      <div class="rounded-2xl bg-white border border-stone-100 p-3 text-center"><p class="font-display font-700 text-[20px] text-charging">5</p><p class="text-[11px] text-stone-400">充电中</p></div>
+      <div class="rounded-2xl bg-white border border-stone-100 p-3 text-center"><p class="font-display font-700 text-[20px] text-stone-300">3</p><p class="text-[11px] text-stone-400">故障</p></div>
+    </div>
+    <!-- price tiers -->
+    <div class="px-5 mt-4 rounded-2xl bg-white border border-stone-100 p-4">
+      <p class="font-500 text-[13px] text-ink mb-2">分时段电价</p>
+      <div class="space-y-1.5 text-[12px] text-stone-500">
+        <div class="flex justify-between"><span>谷时 00:00–08:00</span><span class="font-500 text-ink">¥0.92/度</span></div>
+        <div class="flex justify-between"><span>平段 08:00–17:00</span><span class="font-500 text-ink">¥1.18/度</span></div>
+        <div class="flex justify-between"><span>峰时 17:00–22:00</span><span class="font-500 text-charging">¥1.46/度</span></div>
+      </div>
+    </div>
+    <button onclick="switchView('scan')" class="tactile mx-5 mt-4 w-[calc(100%-2.5rem)] bg-brand text-white font-500 py-3.5 rounded-2xl flex items-center justify-center gap-2">扫码启动充电
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/></svg>
+    </button>
+  </section>
+
+  <!-- ============ SCAN / CHARGING ============ -->
+  <section class="view" id="view-scan">
+    <!-- Step A: scanner -->
+    <div id="scanStep">
+      <div class="px-5 pt-7 pb-3 flex items-center justify-between">
+        <button onclick="switchView('home')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center tactile" aria-label="返回">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10131A" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <p class="font-display font-600 text-[15px] text-ink">扫码充电</p>
+        <div class="w-10"></div>
+      </div>
+      <div class="px-6 mt-2">
+        <div class="relative mx-auto w-[240px] h-[240px] rounded-3xl bg-ink overflow-hidden flex items-center justify-center">
+          <div class="absolute inset-0 opacity-20" style="background:repeating-linear-gradient(0deg,transparent 0 18px,#fff 18px 19px)"></div>
+          <div class="scanline absolute left-6 right-6 h-[2px] bg-brand rounded-full"></div>
+          <div class="absolute inset-5 border-2 border-brand/70 rounded-xl"></div>
+          <p class="absolute bottom-5 text-white/70 text-[12px]">将二维码放入框内</p>
+        </div>
+        <button onclick="startCharge()" class="tactile mt-6 w-full bg-brand text-white font-500 py-3.5 rounded-2xl">模拟识别 · 桩号 YY-0427</button>
+        <button onclick="switchView('home')" class="mt-3 w-full text-[13px] text-stone-400 py-2">手动输入桩编号</button>
+      </div>
+    </div>
+
+    <!-- Step B: charging in progress -->
+    <div id="chargeStep" class="hidden px-6 pt-10">
+      <p class="text-center text-[13px] text-stone-400">云栖充电站 · 枪号 A07</p>
+      <div class="relative w-[210px] h-[210px] mx-auto mt-6">
+        <svg class="ring w-full h-full" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#E8ECF2" stroke-width="10"/>
+          <circle id="ringFg" cx="60" cy="60" r="52" fill="none" stroke="#E8831E" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <p class="font-display font-700 text-[34px] text-ink" id="kwhNum">0.0</p>
+          <p class="text-[12px] text-stone-400">已充电量 kWh</p>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-3 gap-2.5 text-center">
+        <div class="rounded-2xl bg-white border border-stone-100 py-3"><p class="font-display font-600 text-[17px] text-charging" id="kwNum">61</p><p class="text-[11px] text-stone-400">实时功率 kW</p></div>
+        <div class="rounded-2xl bg-white border border-stone-100 py-3"><p class="font-display font-600 text-[17px] text-ink" id="costNum">¥0.0</p><p class="text-[11px] text-stone-400">实时费用</p></div>
+        <div class="rounded-2xl bg-white border border-stone-100 py-3"><p class="font-display font-600 text-[17px] text-ink" id="etaNum">28:10</p><p class="text-[11px] text-stone-400">预计剩余</p></div>
+      </div>
+      <button onclick="showStop()" class="tactile mt-5 w-full border border-stone-200 text-stone-600 font-500 py-3 rounded-2xl">停止充电</button>
+    </div>
+
+    <!-- Step C: stop confirm modal -->
+    <div id="stopModal" class="hidden absolute inset-0 z-30 bg-ink/40 flex items-end">
+      <div class="w-full bg-white rounded-t-3xl p-6">
+        <p class="font-display font-600 text-[17px] text-ink text-center">确认停止充电？</p>
+        <p class="text-[13px] text-stone-400 text-center mt-1.5">本次已充 23.4 kWh · 费用 ¥27.9，停止后将自动结算。</p>
+        <div class="mt-5 flex gap-3">
+          <button onclick="hideStop()" class="flex-1 border border-stone-200 text-stone-600 font-500 py-3 rounded-2xl tactile">再充一会</button>
+          <button onclick="finishCharge()" class="flex-1 bg-fault text-white font-500 py-3 rounded-2xl tactile">确认停止</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step D: complete -->
+    <div id="doneStep" class="hidden px-6 pt-14 text-center">
+      <div class="w-16 h-16 mx-auto rounded-full bg-idle/10 flex items-center justify-center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2FA84F" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h2 class="font-display font-700 text-[22px] text-ink mt-4">充电完成</h2>
+      <p class="text-[13px] text-stone-400 mt-1">已自动从微信免密扣款</p>
+      <div class="mt-5 rounded-2xl bg-white border border-stone-100 p-5 text-left space-y-2.5">
+        <div class="flex justify-between text-[13px]"><span class="text-stone-400">已充电量</span><span class="font-500 text-ink">23.4 kWh</span></div>
+        <div class="flex justify-between text-[13px]"><span class="text-stone-400">电费 + 服务费</span><span class="font-500 text-ink">¥21.6 + ¥6.3</span></div>
+        <div class="flex justify-between text-[13px] border-t border-stone-100 pt-2.5"><span class="text-stone-500">实付</span><span class="font-display font-700 text-brand">¥27.9</span></div>
+        <div class="flex justify-between text-[12px]"><span class="text-idle">本次碳减排</span><span class="text-idle font-500">+14.6 kg CO₂</span></div>
+      </div>
+      <button onclick="switchView('home')" class="tactile mt-5 w-full bg-brand text-white font-500 py-3.5 rounded-2xl">完成</button>
+    </div>
+  </section>
+
+  <!-- ============ MINE ============ -->
+  <section class="view" id="view-mine">
+    <div class="px-5 pt-7">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-[#1E40AF] flex items-center justify-center text-white font-display font-600 text-[18px]">沈</div>
+        <div class="flex-1">
+          <p class="font-display font-600 text-[16px] text-ink">沈砚清</p>
+          <p class="text-[12px] text-stone-400">138****4729 · PLUS 金卡</p>
+        </div>
+        <span class="text-[11px] bg-charging/10 text-charging px-2 py-1 rounded-full font-500">PLUS 金</span>
+      </div>
+      <!-- wallet -->
+      <div class="mt-5 rounded-3xl bg-ink text-white p-5">
+        <div class="flex justify-between items-center">
+          <div><p class="text-[12px] text-white/55">钱包余额</p><p class="font-display font-700 text-[28px]">¥186.40</p></div>
+          <button class="text-[12px] bg-white/10 px-3 py-1.5 rounded-full tactile">充值</button>
+        </div>
+        <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+          <div><p class="font-display font-600 text-[15px]">3</p><p class="text-[11px] text-white/55">优惠券</p></div>
+          <div class="border-x border-white/10"><p class="font-display font-600 text-[15px]">2</p><p class="text-[11px] text-white/55">能量包</p></div>
+          <div><p class="font-display font-600 text-[15px]">1,240</p><p class="text-[11px] text-white/55">碳积分</p></div>
+        </div>
+      </div>
+      <!-- tools -->
+      <p class="text-[13px] text-stone-400 mt-6 mb-3">常用工具</p>
+      <div class="grid grid-cols-4 gap-3">
+        <div class="flex flex-col items-center gap-1.5 text-[11px] text-stone-500"><span class="w-11 h-11 rounded-2xl bg-white border border-stone-100 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.7"><path d="M3 7h18M3 12h18M3 17h12"/></svg></span>我的订单</div>
+        <div class="flex flex-col items-center gap-1.5 text-[11px] text-stone-500"><span class="w-11 h-11 rounded-2xl bg-white border border-stone-100 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.7"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>发票管理</div>
+        <div class="flex flex-col items-center gap-1.5 text-[11px] text-stone-500"><span class="w-11 h-11 rounded-2xl bg-white border border-stone-100 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>车辆管理</div>
+        <div class="flex flex-col items-center gap-1.5 text-[11px] text-stone-500"><span class="w-11 h-11 rounded-2xl bg-white border border-stone-100 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.7"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></span>收藏电站</div>
+      </div>
+      <!-- member card -->
+      <div class="mt-6 rounded-3xl bg-gradient-to-br from-[#1E40AF] to-brand p-5 text-white">
+        <div class="flex items-center justify-between">
+          <div><p class="text-[12px] text-white/60">PLUS 会员</p><p class="font-display font-600 text-[16px]">金卡 · 月省约 ¥100</p></div>
+          <button class="text-[12px] bg-white/15 px-3 py-1.5 rounded-full tactile">续费</button>
+        </div>
+        <div class="mt-3 h-1.5 rounded-full bg-white/20 overflow-hidden"><div class="h-full bg-white rounded-full" style="width:64%"></div></div>
+        <p class="text-[11px] text-white/60 mt-2">本月已省 ¥64.2 · 含月赠能量包</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB BAR ============ -->
+  <nav class="tabbar bg-white/95 backdrop-blur border-t border-stone-100 px-3 pt-2 pb-5 flex items-end justify-between">
+    <button onclick="switchView('home')" class="flex flex-col items-center gap-1 text-[10px] w-12 text-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>首页
+    </button>
+    <button onclick="switchView('home')" class="flex flex-col items-center gap-1 text-[10px] w-12 text-stone-400">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7h18M3 12h18M3 17h12"/></svg>省钱
+    </button>
+    <!-- center scan -->
+    <button onclick="switchView('scan')" class="float-cta -mt-7 w-16 h-16 rounded-full bg-gradient-to-br from-brand to-[#1E9E8F] flex items-center justify-center shadow-[0_12px_24px_-8px_rgba(37,99,235,.6)] tactile" aria-label="扫码充电">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg>
+    </button>
+    <button onclick="switchView('home')" class="flex flex-col items-center gap-1 text-[10px] w-12 text-stone-400">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3 3-3M12 3v12M5 21h14"/></svg>订单
+    </button>
+    <button onclick="switchView('mine')" class="flex flex-col items-center gap-1 text-[10px] w-12 text-stone-400">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>我的
+    </button>
+  </nav>
+</div>
+
+<script>
+  function switchView(id){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const el=document.getElementById('view-'+id); if(el) el.classList.add('active');
+  }
+  function openStation(name,addr,score,idle,price,park,op){
+    document.getElementById('st-name').textContent=name;
+    document.getElementById('st-addr').textContent=addr;
+    document.getElementById('st-score').textContent='★ '+score;
+    document.getElementById('st-op').textContent=op;
+    document.getElementById('st-park').textContent=park;
+    document.getElementById('st-idle').textContent=idle.split(' ')[0];
+    switchView('station');
+  }
+  // charging simulation
+  let chg=null, kwh=0;
+  const CIRC=2*Math.PI*52;
+  function startCharge(){
+    document.getElementById('scanStep').classList.add('hidden');
+    document.getElementById('chargeStep').classList.remove('hidden');
+    chg=setInterval(()=>{
+      kwh+=0.4; if(kwh>23.4)kwh=23.4;
+      const pct=kwh/30;
+      document.getElementById('kwhNum').textContent=kwh.toFixed(1);
+      document.getElementById('ringFg').style.strokeDashoffset=CIRC*(1-pct);
+      document.getElementById('costNum').textContent='¥'+(kwh*1.18).toFixed(1);
+      const remain=Math.max(0,Math.round((30-kwh)*72));
+      document.getElementById('etaNum').textContent=String(Math.floor(remain/60)).padStart(2,'0')+':'+String(remain%60).padStart(2,'0');
+    },600);
+  }
+  function showStop(){ document.getElementById('stopModal').classList.remove('hidden'); }
+  function hideStop(){ document.getElementById('stopModal').classList.add('hidden'); }
+  function finishCharge(){
+    clearInterval(chg); hideStop();
+    document.getElementById('chargeStep').classList.add('hidden');
+    document.getElementById('doneStep').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云充 · 电动车充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ── taste-skill · 高判断力设计 · 可调参数 ── */
+:root{
+  --density:compact;             /* 信息密度：紧凑 */
+  --motion:subtle;
+  --tech:#1677FF;                /* 科技蓝 主色 */
+  --idle:#52C41A;                /* 空闲 绿 */
+  --warn:#FA8C16;                /* 充电中/警示 橙 */
+  --danger:#FF4D4F;             /* 故障 红 */
+  --ink:#1a2330;
+  --sub:#6b7585;
+  --line:#eef1f5;
+  --bg:#f4f6fa;
+  --card:#fff;
+  --radius:12px;
+  --sans:"Noto Sans SC",system-ui,sans-serif;
+  --serif:"Noto Serif SC",serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);color:var(--ink);background:#2a2f3a;display:flex;justify-content:center;min-height:100vh;padding:24px 12px}
+.iphone{width:390px;max-width:100%;height:844px;max-height:96vh;background:var(--bg);border-radius:46px;overflow:hidden;position:relative;box-shadow:0 40px 90px rgba(0,0,0,.5);border:10px solid #0c0e14;display:flex;flex-direction:column}
+.statusbar{height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:14px;font-weight:500;flex-shrink:0;position:relative;z-index:5}
+.statusbar .dots{display:flex;gap:5px;align-items:center}
+.statusbar .bat{width:24px;height:12px;border:1.5px solid var(--ink);border-radius:3px;position:relative;padding:1.5px}
+.statusbar .bat::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:5px;background:var(--ink);border-radius:1px}
+.statusbar .bat i{display:block;height:100%;width:72%;background:var(--ink);border-radius:1px}
+
+/* app scroll area */
+.app{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;scrollbar-width:none}
+.app::-webkit-scrollbar{display:none}
+
+/* search header */
+.hd{padding:6px 18px 14px;background:linear-gradient(180deg,#1677FF,#3b91ff);color:#fff;position:sticky;top:0;z-index:4}
+.hd .loc{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;margin-bottom:12px}
+.hd .loc svg{width:15px;height:15px}
+.hd .searchbar{background:rgba(255,255,255,.95);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;color:var(--ink);font-size:14px;font-weight:400}
+.hd .searchbar .pin{color:var(--tech)}
+.hd .searchbar .arrow{margin-left:auto;color:var(--sub);font-size:12px}
+
+/* map */
+.map{position:relative;height:300px;background:
+  radial-gradient(120px 120px at 30% 40%,#e8f0ff,transparent),
+  radial-gradient(160px 160px at 70% 65%,#eafaf0,transparent),
+  linear-gradient(135deg,#dfe7f2,#eef3f8);
+  overflow:hidden}
+.map .road{position:absolute;background:#fff;opacity:.9}
+.map .r1{left:0;right:0;top:46%;height:14px;transform:rotate(-3deg)}
+.map .r2{top:0;bottom:0;left:38%;width:13px;transform:rotate(4deg)}
+.map .r3{left:-10%;right:-10%;top:78%;height:10px;transform:rotate(2deg)}
+.map .river{position:absolute;left:-20%;top:20%;width:140%;height:60px;background:linear-gradient(90deg,transparent,#bfe0ff,transparent);transform:rotate(-8deg);opacity:.7}
+.marker{position:absolute;transform:translate(-50%,-100%);cursor:pointer;transition:transform .25s}
+.marker:active{transform:translate(-50%,-100%) scale(1.12)}
+.marker .dot{width:34px;height:34px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);display:grid;place-items:center;box-shadow:0 6px 14px rgba(0,0,0,.2);border:2px solid #fff}
+.marker .dot span{transform:rotate(-45deg);font-size:12px;color:#fff;font-weight:700}
+.marker .lbl{position:absolute;top:-8px;left:50%;transform:translate(-50%,-100%);background:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.12)}
+.marker.g .dot{background:var(--idle)}
+.marker.o .dot{background:var(--warn)}
+.marker.b .dot{background:var(--tech)}
+.marker.active{z-index:3}
+.marker.active .dot{outline:3px solid rgba(22,119,255,.35);outline-offset:2px}
+.locate{position:absolute;right:14px;bottom:14px;width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.18);color:var(--tech);font-size:18px}
+.banner{position:absolute;left:14px;top:14px;background:rgba(255,255,255,.94);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.12);max-width:200px}
+.banner b{color:var(--tech)}
+
+/* bottom sheet */
+.sheet{background:var(--card);border-radius:18px 18px 0 0;margin-top:-18px;position:relative;z-index:3;padding:14px 16px 0;flex-shrink:0}
+.sheet .grip{width:38px;height:4px;border-radius:3px;background:#dfe3ea;margin:0 auto 14px}
+.sheet .row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sheet .row1 h3{font-size:16px;font-weight:700}
+.sheet .row1 .filter{font-size:12px;color:var(--tech);background:#eaf2ff;padding:6px 12px;border-radius:8px;font-weight:500}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;font-size:12.5px;padding:7px 14px;border-radius:999px;background:#f1f4f8;color:var(--sub);font-weight:400;white-space:nowrap}
+.chip.on{background:var(--tech);color:#fff;font-weight:500}
+.station{border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:11px;transition:border-color .3s, box-shadow .3s}
+.station:active{border-color:var(--tech);box-shadow:0 6px 18px rgba(22,119,255,.12)}
+.st-top{display:flex;justify-content:space-between;align-items:flex-start}
+.st-name{font-size:15px;font-weight:700}
+.st-dist{font-size:12px;color:var(--sub);margin-top:2px}
+.st-rate{font-size:12px;color:var(--warn);font-weight:500}
+.st-info{display:flex;gap:14px;margin-top:10px;font-size:12.5px;color:var(--sub)}
+.st-info b{color:var(--ink)}
+.st-piles{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.pile{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+.pile.idle{background:var(--idle)}
+.pile.busy{background:var(--warn)}
+.pile.bad{background:var(--danger)}
+.st-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+.st-price{font-size:13px;color:var(--sub)}
+.st-price b{color:var(--ink);font-size:15px;font-weight:700}
+.st-price b small{font-size:11px;font-weight:400}
+.st-nav{background:var(--tech);color:#fff;font-size:12.5px;font-weight:500;padding:8px 16px;border-radius:8px}
+
+/* tabbar */
+.tabbar{height:78px;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;padding:0 8px;flex-shrink:0;position:relative;z-index:6}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--sub);font-size:11px;font-weight:400}
+.tab.on{color:var(--tech);font-weight:500}
+.tab svg{width:22px;height:22px}
+.tab.scan{flex:0 0 auto;width:64px}
+.scanbtn{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--tech),#26d0a8);display:grid;place-items:center;color:#fff;font-size:24px;margin-top:-26px;box-shadow:0 8px 22px rgba(22,119,255,.45);border:4px solid #fff;transition:transform .2s}
+.scanbtn:active{transform:scale(.94)}
+
+/* overlay (scan / charging) */
+.overlay{position:absolute;inset:0;background:rgba(7,15,32,.92);z-index:20;display:none;flex-direction:column;color:#fff;padding:60px 24px 40px}
+.overlay.show{display:flex;animation:fade .35s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.scan-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+.scan-frame{width:230px;height:230px;border:2px solid rgba(255,255,255,.3);border-radius:16px;position:relative;overflow:hidden}
+.scan-frame .corner{position:absolute;width:26px;height:26px;border:3px solid #26d0a8}
+.scan-frame .c1{top:0;left:0;border-right:0;border-bottom:0}
+.scan-frame .c2{top:0;right:0;border-left:0;border-bottom:0}
+.scan-frame .c3{bottom:0;left:0;border-right:0;border-top:0}
+.scan-frame .c4{bottom:0;right:0;border-left:0;border-top:0}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#26d0a8,transparent);animation:scanmove 2s linear infinite}
+@keyframes scanmove{0%{top:6%}100%{top:94%}}
+.scan-tip{font-size:14px;color:rgba(255,255,255,.8);text-align:center}
+
+/* charging view */
+.charge-view{flex:1;display:none;flex-direction:column;align-items:center;padding-top:10px}
+.charge-view.show{display:flex}
+.ring{position:relative;width:200px;height:200px}
+.ring svg{transform:rotate(-90deg)}
+.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .kwh{font-family:var(--serif);font-size:40px;font-weight:600;color:#fff}
+.ring .kwh small{font-size:15px;font-weight:400}
+.ring .pct{font-size:14px;color:var(--idle);margin-top:2px}
+.charge-stats{display:flex;gap:26px;margin:26px 0;color:#fff}
+.charge-stats .cs{text-align:center}
+.charge-stats .cs b{font-size:19px;font-weight:600;display:block}
+.charge-stats .cs span{font-size:12px;color:rgba(255,255,255,.6)}
+.stop{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);padding:12px 40px;border-radius:999px;font-size:15px;font-weight:500;margin-top:6px}
+.cv-title{font-size:18px;font-weight:600;margin-bottom:4px}
+.cv-sub{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px}
+
+.back{position:absolute;top:18px;left:18px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:20px;z-index:21}
+
+@media(max-width:430px){
+  body{padding:0;background:#000}
+  .iphone{width:100%;height:100vh;max-height:none;border-radius:0;border:none}
+}
+</style>
+</head>
+<body>
+<div class="iphone">
+  <!-- status bar -->
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="dots">●●● 5G ▮<span class="bat"><i></i></span></span>
+  </div>
+
+  <!-- app -->
+  <div class="app">
+    <div class="hd">
+      <div class="loc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+        杭州市 · 西湖区文三路
+      </div>
+      <div class="searchbar">
+        <span class="pin">📍</span> 找附近充电站
+        <span class="arrow">筛选 ▾</span>
+      </div>
+    </div>
+
+    <!-- map -->
+    <div class="map" id="map">
+      <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+      <div class="river"></div>
+      <div class="banner">🔋 附近 <b>5km</b> 内 23 个充电站 · 86 个空闲桩</div>
+      <div class="marker g active" style="left:32%;top:38%"><div class="lbl">云充·星耀站</div><div class="dot"><span>8</span></div></div>
+      <div class="marker b" style="left:58%;top:30%"><div class="dot"><span>3</span></div></div>
+      <div class="marker o" style="left:46%;top:58%"><div class="dot"><span>1</span></div></div>
+      <div class="marker g" style="left:70%;top:62%"><div class="dot"><span>12</span></div></div>
+      <div class="marker b" style="left:24%;top:66%"><div class="dot"><span>5</span></div></div>
+      <div class="locate" title="定位">◎</div>
+    </div>
+
+    <!-- sheet -->
+    <div class="sheet">
+      <div class="grip"></div>
+      <div class="row1">
+        <h3>附近充电站</h3>
+        <span class="filter">⚙ 筛选</span>
+      </div>
+      <div class="chips">
+        <span class="chip on">综合排序</span>
+        <span class="chip">距离最近</span>
+        <span class="chip">价格最低</span>
+        <span class="chip">快充优先</span>
+        <span class="chip">免费停车</span>
+        <span class="chip">PLUS 会员站</span>
+      </div>
+
+      <div class="station">
+        <div class="st-top">
+          <div><div class="st-name">云充·星耀充电站</div><div class="st-dist">距您 320m · 文三路 456 号</div></div>
+          <div class="st-rate">★ 4.8</div>
+        </div>
+        <div class="st-info"><span>快充 <b>20</b></span><span>慢充 <b>10</b></span><span>空闲 <b style="color:var(--idle)">8</b></span></div>
+        <div class="st-piles">
+          <span class="pile idle">闲</span><span class="pile idle">闲</span><span class="pile idle">闲</span>
+          <span class="pile busy">充</span><span class="pile idle">闲</span><span class="pile bad">障</span>
+          <span class="pile idle">闲</span><span class="pile busy">充</span>
+        </div>
+        <div class="st-foot">
+          <div class="st-price">¥<b>1.05</b><small>/度起 · 停车免费</small></div>
+          <span class="st-nav">导航前往</span>
+        </div>
+      </div>
+
+      <div class="station">
+        <div class="st-top">
+          <div><div class="st-name">特来电·西溪龙湖站</div><div class="st-dist">距您 680m · 龙湖天街 B2</div></div>
+          <div class="st-rate">★ 4.6</div>
+        </div>
+        <div class="st-info"><span>超充 <b>12</b></span><span>快充 <b>18</b></span><span>空闲 <b style="color:var(--idle)">12</b></span></div>
+        <div class="st-piles">
+          <span class="pile idle">闲</span><span class="pile idle">闲</span><span class="pile idle">闲</span>
+          <span class="pile idle">闲</span><span class="pile busy">充</span><span class="pile idle">闲</span>
+          <span class="pile idle">闲</span><span class="pile idle">闲</span>
+        </div>
+        <div class="st-foot">
+          <div class="st-price">¥<b>0.98</b><small>/度起 · 会员 6 折</small></div>
+          <span class="st-nav">导航前往</span>
+        </div>
+      </div>
+
+      <div class="station">
+        <div class="st-top">
+          <div><div class="st-name">星星充电·益乐路站</div><div class="st-dist">距您 1.2km · 益乐路 12 号</div></div>
+          <div class="st-rate">★ 4.5</div>
+        </div>
+        <div class="st-info"><span>快充 <b>16</b></span><span>慢充 <b>8</b></span><span>空闲 <b style="color:var(--warn)">1</b></span></div>
+        <div class="st-piles">
+          <span class="pile busy">充</span><span class="pile busy">充</span><span class="pile busy">充</span>
+          <span class="pile busy">充</span><span class="pile idle">闲</span><span class="pile busy">充</span>
+          <span class="pile bad">障</span><span class="pile busy">充</span>
+        </div>
+        <div class="st-foot">
+          <div class="st-price">¥<b>1.18</b><small>/度起 · 停车 2h 免费</small></div>
+          <span class="st-nav">导航前往</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- tabbar -->
+  <div class="tabbar">
+    <div class="tab on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+      首页
+    </div>
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12a8 8 0 1 0-2.3 5.6"/><path d="M20 5v4h-4"/></svg>
+      省钱
+    </div>
+    <div class="tab scan"><div class="scanbtn" id="scanBtn">⊞</div></div>
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14v12H5z"/><path d="M9 7V5h6v2"/><path d="M9 12h6"/></svg>
+      订单
+    </div>
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+      我的
+    </div>
+  </div>
+
+  <!-- overlay -->
+  <div class="overlay" id="overlay">
+    <div class="back" id="backBtn">‹</div>
+    <!-- scan view -->
+    <div class="scan-view" id="scanView">
+      <div class="scan-frame">
+        <span class="corner c1"></span><span class="corner c2"></span>
+        <span class="corner c3"></span><span class="corner c4"></span>
+        <div class="scan-line"></div>
+      </div>
+      <div class="scan-tip">将二维码放入框内，即可自动识别桩号并启动充电</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.5)">或 <span style="color:#26d0a8">手动输入桩编号</span> · NFC 感应启动</div>
+      <button class="stop" id="simCharge" style="background:linear-gradient(135deg,#1677FF,#26d0a8);border:none;margin-top:10px">模拟识别 · 进入充电</button>
+    </div>
+    <!-- charging view -->
+    <div class="charge-view" id="chargeView">
+      <div class="cv-title">正在充电</div>
+      <div class="cv-sub">云充·星耀充电站 · 8 号枪</div>
+      <div class="ring">
+        <svg width="200" height="200">
+          <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="14"/>
+          <circle id="prog" cx="100" cy="100" r="88" fill="none" stroke="#52C41A" stroke-width="14" stroke-linecap="round" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
+        </svg>
+        <div class="center">
+          <div class="kwh" id="kwh">12.4<small> kWh</small></div>
+          <div class="pct" id="pct">62%</div>
+        </div>
+      </div>
+      <div class="charge-stats">
+        <div class="cs"><b id="power">62<small style="font-size:12px">kW</small></b><span>当前功率</span></div>
+        <div class="cs"><b id="cost">¥14.6</b><span>已充电费</span></div>
+        <div class="cs"><b id="eta">18<small style="font-size:12px">分</small></b><span>预计完成</span></div>
+      </div>
+      <button class="stop" id="stopBtn">停止充电</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const overlay=document.getElementById('overlay');
+const scanView=document.getElementById('scanView');
+const chargeView=document.getElementById('chargeView');
+document.getElementById('scanBtn').addEventListener('click',()=>{overlay.classList.add('show');scanView.style.display='flex';chargeView.classList.remove('show')});
+document.getElementById('backBtn').addEventListener('click',()=>overlay.classList.remove('show'));
+document.getElementById('simCharge').addEventListener('click',()=>{
+  scanView.style.display='none';chargeView.classList.add('show');
+  let pct=62,kwh=12.4,cost=14.6,eta=18,power=62;
+  const circ=552.9;
+  const prog=document.getElementById('prog');
+  window._t=setInterval(()=>{
+    pct=Math.min(100,pct+1);kwh+=(power/60*0.5);cost+=power/60*1.05*0.5;eta=Math.max(0,eta-1);
+    power=pct>90?Math.max(20,power-6):Math.max(30,power-1);
+    prog.style.strokeDashoffset=circ*(1-pct/100);
+    document.getElementById('kwh').innerHTML=kwh.toFixed(1)+'<small> kWh</small>';
+    document.getElementById('pct').textContent=pct+'%';
+    document.getElementById('power').innerHTML=Math.round(power)+'<small style="font-size:12px">kW</small>';
+    document.getElementById('cost').textContent='¥'+cost.toFixed(1);
+    document.getElementById('eta').innerHTML=eta+'<small style="font-size:12px">分</small>';
+    if(pct>=100){clearInterval(window._t);document.getElementById('pct').textContent='已充满';document.querySelector('.cv-title').textContent='充电完成'}
+  },900);
+});
+document.getElementById('stopBtn').addEventListener('click',()=>{clearInterval(window._t);overlay.classList.remove('show')});
+/* marker select */
+document.querySelectorAll('.marker').forEach(m=>m.addEventListener('click',()=>{
+  document.querySelectorAll('.marker').forEach(x=>x.classList.remove('active'));
+  m.classList.add('active');
+}));
+/* chips */
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');
+}));
+</script>
+</body>
+</html>

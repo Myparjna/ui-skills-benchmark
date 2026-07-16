@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星空航空 · Skystar Airlines — 飞向更远的地方</title>
+  <meta name="description" content="星空航空官网 — 安全、舒适、准时的现代化航空公司。航班查询、目的地推荐、常旅客计划与会员礼遇。" />
+
+  <!-- 字体：Noto Sans SC（中文）+ Public Sans（Nuxt UI 默认西文无衬线） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS（Play CDN，运行时编译） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Public Sans', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            // —— Nuxt UI 语义色板（primary = 科技蓝，neutral = slate）——
+            primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a',950:'#172554' },
+            neutral: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a',950:'#020617' },
+            success: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d1',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b',950:'#022c22' },
+            warning: { 50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309',800:'#92400e',900:'#78350f',950:'#451a03' },
+            error:   { 50:'#fff1f2',100:'#ffe4e6',200:'#fecdd3',300:'#fda4af',400:'#fb7185',500:'#f43f5e',600:'#e11d48',700:'#be123c',800:'#9f1239',900:'#881337',950:'#4c0519' },
+            info:    { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#0ea5e9',600:'#0284c7',700:'#0369a1',800:'#075985',900:'#0c4a6e',950:'#082f49' },
+            // 自定义品牌色（primary 视觉强调，由 @theme static 思路而来）
+            brand: { 400:'#60a5fa',500:'#3b82f6',600:'#2563eb' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Iconify Web Component：即 Nuxt UI 底层 @nuxt/icon 所用的 Iconify，默认 lucide 集合 -->
+  <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+
+  <!-- Vue 3（全局构建，运行时渲染） -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    /* ===== Nuxt UI 语义色彩令牌（Semantic Colors） ===== */
+    :root {
+      --text-default: 15 23 42;   --text-muted: 100 116 139; --text-toned: 71 85 105;
+      --text-dimmed: 148 163 184;  --text-highlighted: 2 6 23;
+      --bg-default: 255 255 255;    --bg-muted: 248 250 252; --bg-elevated: 255 255 255;
+      --bg-accented: 241 245 249;  --bg-inverted: 15 23 42;
+      --border-default: 226 232 240; --border-muted: 241 245 249; --border-accented: 203 213 225;
+      --primary: #3b82f6;
+      --ui-radius: 0.75rem;
+      --ui-header-height: 4rem;
+      --ui-container: 80rem;
+    }
+    .dark {
+      --text-default: 248 250 252; --text-muted: 148 163 184; --text-toned: 203 213 225;
+      --text-dimmed: 100 116 139;  --text-highlighted: 255 255 255;
+      --bg-default: 9 9 11;        --bg-muted: 24 24 27;       --bg-elevated: 24 24 27;
+      --bg-accented: 39 39 42;     --bg-inverted: 250 250 250;
+      --border-default: 39 39 42;   --border-muted: 24 24 27;   --border-accented: 63 63 70;
+      --primary: #60a5fa;
+    }
+
+    /* 语义工具类（对应 Nuxt UI 的 text-default / bg-elevated / border-muted 等） */
+    .text-default  { color: rgb(var(--text-default)); }
+    .text-muted    { color: rgb(var(--text-muted)); }
+    .text-toned    { color: rgb(var(--text-toned)); }
+    .text-dimmed   { color: rgb(var(--text-dimmed)); }
+    .text-highlighted { color: rgb(var(--text-highlighted)); }
+    .text-inverted { color: rgb(var(--bg-inverted)); }
+
+    .bg-default   { background-color: rgb(var(--bg-default)); }
+    .bg-muted     { background-color: rgb(var(--bg-muted)); }
+    .bg-elevated  { background-color: rgb(var(--bg-elevated)); }
+    .bg-accented  { background-color: rgb(var(--bg-accented)); }
+    .bg-inverted  { background-color: rgb(var(--bg-inverted)); }
+
+    .border-default { border-color: rgb(var(--border-default)); }
+    .border-muted   { border-color: rgb(var(--border-muted)); }
+    .border-accented{ border-color: rgb(var(--border-accented)); }
+
+    /* ===== 组件基类（贴近 Nuxt UI 的 Card / Input / Badge） ===== */
+    .page-bg { background-color: rgb(var(--bg-default)); color: rgb(var(--text-default)); }
+    .card {
+      background-color: rgb(var(--bg-elevated));
+      border: 1px solid rgb(var(--border-default));
+      border-radius: var(--ui-radius);
+    }
+    .card-muted {
+      background-color: rgb(var(--bg-muted));
+      border: 1px solid rgb(var(--border-muted));
+      border-radius: 0.75rem;
+    }
+    .field {
+      background-color: rgb(var(--bg-default));
+      border: 1px solid rgb(var(--border-accented));
+      border-radius: 0.5rem;
+      color: rgb(var(--text-default));
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field::placeholder { color: rgb(var(--text-dimmed)); }
+    .field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent); }
+    .badge { display:inline-flex; align-items:center; gap:.25rem; padding:.125rem .5rem; border-radius:.375rem; font-size:.75rem; font-weight:500; line-height:1.25rem; }
+    .divider { border-color: rgb(var(--border-default)); }
+
+    /* 滚动条（轻量化，贴近 Nuxt UI 观感） */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgb(var(--border-accented)); border-radius: 9999px; border: 2px solid rgb(var(--bg-default)); }
+    ::-webkit-scrollbar-thumb:hover { background: rgb(var(--text-dimmed)); }
+
+    [v-cloak] { display: none; }
+    body { font-family: 'Public Sans','Noto Sans SC',system-ui,sans-serif; -webkit-font-smoothing: antialiased; }
+  </style>
+</head>
+
+<body class="page-bg">
+  <div id="app" class="isolate" v-cloak>
+    <!-- ============ UApp 包裹层 ============ -->
+    <u-app>
+
+      <!-- ============ UHeader ============ -->
+      <header class="sticky top-0 z-40 border-b divider bg-default/80 backdrop-blur supports-[backdrop-filter]:bg-default/60">
+        <div class="mx-auto flex h-16 max-w-[var(--ui-container)] items-center gap-4 px-4 sm:px-6">
+          <!-- 标题 / Logo -->
+          <a href="#top" class="flex items-center gap-2 font-bold text-highlighted">
+            <span class="grid size-9 place-items-center rounded-lg bg-primary text-white shadow-sm">
+              <iconify-icon icon="lucide:plane" class="size-5"></iconify-icon>
+            </span>
+            <span class="flex flex-col leading-none">
+              <span class="text-base font-extrabold tracking-tight">星空航空</span>
+              <span class="text-[10px] font-medium text-muted">SKYSTAR AIRLINES</span>
+            </span>
+          </a>
+
+          <!-- 桌面导航 UNavigationMenu -->
+          <nav class="ml-6 hidden items-center gap-1 lg:flex">
+            <a v-for="item in nav" :key="item.label" :href="item.to"
+               class="rounded-lg px-3 py-2 text-sm font-medium text-toned transition-colors hover:bg-accented hover:text-default">
+              {{ item.label }}
+            </a>
+          </nav>
+
+          <div class="ml-auto flex items-center gap-2">
+            <!-- 颜色模式切换（UColorModeButton 等价物） -->
+            <button @click="toggleDark()" aria-label="切换深浅色"
+              class="grid size-9 place-items-center rounded-lg text-toned transition-colors hover:bg-accented hover:text-default">
+              <iconify-icon :icon="dark ? 'lucide:sun' : 'lucide:moon'" class="size-5"></iconify-icon>
+            </button>
+            <u-btn label="登录" color="neutral" variant="ghost" size="sm" icon="lucide:user-round" class="hidden sm:inline-flex" />
+            <u-btn label="搜索航班" color="primary" variant="solid" size="sm" icon="lucide:search" />
+            <!-- 移动端菜单按钮 -->
+            <button @click="mobileOpen = !mobileOpen" class="grid size-9 place-items-center rounded-lg text-toned hover:bg-accented lg:hidden">
+              <iconify-icon icon="lucide:menu" class="size-5"></iconify-icon>
+            </button>
+          </div>
+        </div>
+        <!-- 移动端导航主体（#body 等价） -->
+        <div v-show="mobileOpen" class="border-t divider lg:hidden">
+          <nav class="mx-auto flex max-w-[var(--ui-container)] flex-col px-4 py-2">
+            <a v-for="item in nav" :key="item.label" :href="item.to"
+               class="rounded-lg px-3 py-2.5 text-sm font-medium text-toned hover:bg-accented">
+              {{ item.label }}
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <!-- ============ UPageHero（水平布局 + 航班搜索） ============ -->
+        <section id="top" class="relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary-50 via-default to-info-50 dark:from-primary-950/40 dark:via-default dark:to-info-950/30"></div>
+          <div class="absolute -right-24 -top-24 size-96 rounded-full bg-primary/20 blur-3xl"></div>
+          <div class="absolute -left-24 bottom-0 size-80 rounded-full bg-info/20 blur-3xl"></div>
+
+          <div class="relative mx-auto grid max-w-[var(--ui-container)] items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:py-20">
+            <div>
+              <span class="badge bg-primary/10 text-primary mb-4">
+                <iconify-icon icon="lucide:sparkles" class="size-3.5"></iconify-icon> 飞向更远的地方
+              </span>
+              <h1 class="text-4xl font-extrabold leading-tight text-highlighted sm:text-5xl">
+                每一次起飞，<br/>都是一次<span class="text-primary">全新的抵达</span>
+              </h1>
+              <p class="mt-5 max-w-lg text-base text-muted sm:text-lg">
+                连接世界，触达梦想。星空航空以「安全、舒适、准时」为核心承诺，航线覆盖国内 82 座城市与 47 个国际目的地，每日执飞超过 600 个航班。
+              </p>
+              <div class="mt-7 flex flex-wrap items-center gap-3">
+                <u-btn label="立即查询航班" color="primary" variant="solid" size="lg" icon="lucide:plane-takeoff" trailing-icon="lucide:arrow-right" />
+                <u-btn label="了解常旅客计划" color="neutral" variant="soft" size="lg" icon="lucide:star" />
+              </div>
+              <dl class="mt-9 grid max-w-lg grid-cols-3 gap-4">
+                <div class="card-muted p-4">
+                  <dt class="text-xs text-muted">连续安全</dt>
+                  <dd class="mt-1 text-2xl font-bold text-highlighted">16<span class="text-sm font-medium text-muted">年</span></dd>
+                </div>
+                <div class="card-muted p-4">
+                  <dt class="text-xs text-muted">机队规模</dt>
+                  <dd class="mt-1 text-2xl font-bold text-highlighted">186<span class="text-sm font-medium text-muted">架</span></dd>
+                </div>
+                <div class="card-muted p-4">
+                  <dt class="text-xs text-muted">累计飞行</dt>
+                  <dd class="mt-1 text-2xl font-bold text-highlighted">1200<span class="text-sm font-medium text-muted">万时</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- 航班搜索卡（UCard + 表单字段） -->
+            <div class="card p-6 shadow-xl shadow-primary/5">
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-highlighted">您想去哪里？</h2>
+                <span class="badge bg-success/10 text-success"><iconify-icon icon="lucide:circle-check-big" class="size-3.5"></iconify-icon> 实时余票</span>
+              </div>
+              <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-muted">出发城市</label>
+                    <div class="relative">
+                      <iconify-icon icon="lucide:map-pin" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                      <input class="field h-11 w-full pl-9 text-sm" value="杭州 HGH" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-muted">到达城市</label>
+                    <div class="relative">
+                      <iconify-icon icon="lucide:navigation" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                      <input class="field h-11 w-full pl-9 text-sm" placeholder="选择目的地" />
+                    </div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-muted">出发日期</label>
+                    <div class="relative">
+                      <iconify-icon icon="lucide:calendar" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                      <input type="date" class="field h-11 w-full pl-9 text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-muted">返程日期</label>
+                    <div class="relative">
+                      <iconify-icon icon="lucide:calendar-clock" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                      <input type="date" class="field h-11 w-full pl-9 text-sm" />
+                    </div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-muted">舱位</label>
+                    <div class="relative">
+                      <iconify-icon icon="lucide:armchair" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                      <select class="field h-11 w-full appearance-none pl-9 pr-8 text-sm">
+                        <option>经济舱</option><option>超级经济舱</option><option>商务舱</option><option>头等舱</option>
+                      </select>
+                      <iconify-icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-muted">乘客人数</label>
+                    <div class="relative">
+                      <iconify-icon icon="lucide:users" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                      <select class="field h-11 w-full appearance-none pl-9 pr-8 text-sm">
+                        <option>1 名成人</option><option>2 名成人</option><option>家庭出行</option>
+                      </select>
+                      <iconify-icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+                <u-btn label="搜索航班" color="primary" variant="solid" size="lg" block icon="lucide:search" class="mt-1" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ UPageSection：为什么选择星空航空 ============ -->
+        <section id="features" class="mx-auto max-w-[var(--ui-container)] px-4 py-16 sm:px-6">
+          <div class="mx-auto max-w-2xl text-center">
+            <p class="text-sm font-semibold uppercase tracking-widest text-primary">Why Choose Skystar Airlines</p>
+            <h2 class="mt-2 text-3xl font-extrabold text-highlighted">为什么选择星空航空</h2>
+            <p class="mt-3 text-muted">从安全到云端餐饮，每一处细节都为更好的抵达而设计。</p>
+          </div>
+          <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <article v-for="f in features" :key="f.title" class="card p-6 transition-shadow hover:shadow-lg">
+              <span class="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
+                <iconify-icon :icon="f.icon" class="size-6"></iconify-icon>
+              </span>
+              <h3 class="mt-4 text-lg font-bold text-highlighted">{{ f.title }}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-muted">{{ f.desc }}</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ============ 限时优惠 Banner（UPageCTA 软色块） ============ -->
+        <section class="mx-auto max-w-[var(--ui-container)] px-4 sm:px-6">
+          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-info p-8 text-white shadow-lg sm:p-10">
+            <div class="absolute -right-10 -top-10 size-48 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <span class="badge bg-white/15 text-white mb-3"><iconify-icon icon="lucide:megaphone" class="size-3.5"></iconify-icon> 夏季出行季 · 特惠机票开抢</span>
+                <h3 class="text-2xl font-extrabold sm:text-3xl">把夏天，飞成一段旅程</h3>
+                <p class="mt-2 text-sm text-white/80">优惠有效期至 2026 年 6 月 30 日，数量有限，先订先得。</p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <div class="rounded-xl bg-white/10 px-5 py-3 text-center backdrop-blur">
+                  <p class="text-xs text-white/70">杭州 → 三亚</p><p class="text-xl font-bold">¥399<span class="text-sm">起</span></p>
+                </div>
+                <div class="rounded-xl bg-white/10 px-5 py-3 text-center backdrop-blur">
+                  <p class="text-xs text-white/70">杭州 → 大阪</p><p class="text-xl font-bold">¥1,299<span class="text-sm">起</span></p>
+                </div>
+                <div class="rounded-xl bg-white/10 px-5 py-3 text-center backdrop-blur">
+                  <p class="text-xs text-white/70">杭州 → 伦敦</p><p class="text-xl font-bold">¥3,899<span class="text-sm">起</span></p>
+                </div>
+              </div>
+            </div>
+            <u-btn label="立即查看全部特惠" color="neutral" variant="solid" class="relative mt-6 bg-white text-primary hover:bg-white/90" icon="lucide:arrow-right" />
+          </div>
+        </section>
+
+        <!-- ============ 精选目的地（UPageGrid / UPageCard） ============ -->
+        <section class="mx-auto max-w-[var(--ui-container)] px-4 py-16 sm:px-6">
+          <div class="flex items-end justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold uppercase tracking-widest text-primary">Featured Destinations</p>
+              <h2 class="mt-2 text-3xl font-extrabold text-highlighted">精选目的地</h2>
+            </div>
+            <u-btn label="查看全部航线" color="neutral" variant="ghost" icon="lucide:map" trailing-icon="lucide:arrow-right" class="hidden sm:inline-flex" />
+          </div>
+          <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <article v-for="d in destinations" :key="d.name" class="card group overflow-hidden transition-shadow hover:shadow-xl">
+              <div class="relative h-40" :style="{ background: d.grad }">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                <span class="absolute right-3 top-3 badge bg-black/30 text-white backdrop-blur"><iconify-icon icon="lucide:clock" class="size-3.5"></iconify-icon> {{ d.freq }}</span>
+                <h3 class="absolute bottom-3 left-4 text-xl font-extrabold text-white">{{ d.name }}</h3>
+              </div>
+              <div class="p-5">
+                <p class="text-sm font-medium text-default">{{ d.tagline }}</p>
+                <p class="mt-1 text-sm text-muted">{{ d.note }}</p>
+                <div class="mt-4 flex items-center justify-between">
+                  <span class="text-sm text-muted">起价 <span class="text-lg font-bold text-primary">{{ d.price }}</span></span>
+                  <u-btn label="预订" color="primary" variant="soft" size="sm" trailing-icon="lucide:arrow-right" />
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ============ 常旅客计划（星辰会员） ============ -->
+        <section id="membership" class="bg-muted">
+          <div class="mx-auto max-w-[var(--ui-container)] px-4 py-16 sm:px-6">
+            <div class="mx-auto max-w-2xl text-center">
+              <p class="text-sm font-semibold uppercase tracking-widest text-primary">Skystar Frequent Flyer</p>
+              <h2 class="mt-2 text-3xl font-extrabold text-highlighted">星辰会员计划</h2>
+              <p class="mt-3 text-muted">加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿与超过 300 个合作品牌的礼遇权益。</p>
+            </div>
+            <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              <div v-for="(t, i) in tiers" :key="t.name"
+                   class="card relative p-6" :class="t.highlight ? 'ring-2 ring-primary' : ''">
+                <span v-if="t.highlight" class="absolute -top-3 left-6 badge bg-primary text-white">最受欢迎</span>
+                <div class="flex items-center gap-2">
+                  <span class="grid size-10 place-items-center rounded-lg" :class="t.iconBg">
+                    <iconify-icon :icon="t.icon" class="size-5"></iconify-icon>
+                  </span>
+                  <h3 class="text-lg font-bold text-highlighted">{{ t.name }}</h3>
+                </div>
+                <p class="mt-3 text-sm text-muted">{{ t.standard }}</p>
+                <ul class="mt-4 space-y-2 text-sm">
+                  <li v-for="b in t.benefits" :key="b" class="flex items-start gap-2 text-toned">
+                    <iconify-icon icon="lucide:check" class="mt-0.5 size-4 shrink-0 text-success"></iconify-icon>{{ b }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl card-muted p-6 sm:flex-row">
+              <p class="text-sm text-toned">立即注册，即送 <span class="font-bold text-primary">2,000</span> 里程作为开户礼。</p>
+              <u-btn label="免费注册会员" color="primary" variant="solid" icon="lucide:user-plus" />
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 服务与礼遇 + 企业商务（双栏 UPageSection） ============ -->
+        <section class="mx-auto max-w-[var(--ui-container)] px-4 py-16 sm:px-6">
+          <div class="grid gap-8 lg:grid-cols-2">
+            <div>
+              <h2 class="text-2xl font-extrabold text-highlighted">服务与礼遇</h2>
+              <div class="mt-6 space-y-4">
+                <div class="card flex gap-4 p-5">
+                  <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-info/10 text-info"><iconify-icon icon="lucide:heart-handshake" class="size-5"></iconify-icon></span>
+                  <div>
+                    <h3 class="font-bold text-default">特殊旅客关怀</h3>
+                    <p class="mt-1 text-sm text-muted">婴幼儿推车寄存、轮椅全程陪同、无障碍座位优先安排，主要枢纽设独立「星空关爱」柜台。</p>
+                  </div>
+                </div>
+                <div class="card flex gap-4 p-5">
+                  <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-warning/10 text-warning"><iconify-icon icon="lucide:paw-print" class="size-5"></iconify-icon></span>
+                  <div>
+                    <h3 class="font-bold text-default">宠物随行计划</h3>
+                    <p class="mt-1 text-sm text-muted">符合条件的小型宠物可进入客舱同乘，大型犬猫提供恒温专属货舱运输与专业监护。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h2 class="text-2xl font-extrabold text-highlighted">企业商务服务</h2>
+              <div class="mt-6 space-y-4">
+                <div class="card p-5">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="lucide:briefcase" class="size-5 text-primary"></iconify-icon>
+                    <h3 class="font-bold text-default">Skystar Business Solutions</h3>
+                  </div>
+                  <p class="mt-2 text-sm text-muted">统一账期结算、差旅数据报告、专属客户经理与团体协议价格。已为超过 12,000 家企业客户提供服务的。</p>
+                  <u-btn label="联系商务团队" color="primary" variant="link" size="sm" icon="lucide:arrow-right" class="mt-3 px-0" />
+                </div>
+                <div class="card p-5">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="lucide:leaf" class="size-5 text-success"></iconify-icon>
+                    <h3 class="font-bold text-default">可持续承诺</h3>
+                  </div>
+                  <p class="mt-2 text-sm text-muted">2026 年全面加入 CORSIA 国际碳抵消机制，承诺 2035 年单位客公里碳排放较 2019 年下降 40%。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 关于我们 ============ -->
+        <section class="bg-muted">
+          <div class="mx-auto grid max-w-[var(--ui-container)] items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2">
+            <div>
+              <p class="text-sm font-semibold uppercase tracking-widest text-primary">About Skystar Airlines</p>
+              <h2 class="mt-2 text-3xl font-extrabold text-highlighted">关于星空航空</h2>
+              <p class="mt-4 text-muted">星空航空成立于 2008 年，是一家总部位于杭州、立足长三角、面向全球的现代化航空公司。我们相信，航空出行不该只是从 A 到 B 的位移，而该是一段有温度的旅程。</p>
+              <div class="mt-6 grid grid-cols-3 gap-4">
+                <div class="card p-4 text-center"><p class="text-2xl font-bold text-primary">82</p><p class="text-xs text-muted">国内城市</p></div>
+                <div class="card p-4 text-center"><p class="text-2xl font-bold text-primary">47</p><p class="text-xs text-muted">国际目的地</p></div>
+                <div class="card p-4 text-center"><p class="text-2xl font-bold text-primary">5.2<span class="text-sm">年</span></p><p class="text-xs text-muted">平均机龄</p></div>
+              </div>
+            </div>
+            <div class="card overflow-hidden">
+              <div class="grid grid-cols-2 gap-px bg-border-default">
+                <div class="bg-elevated p-6"><iconify-icon icon="lucide:shield-check" class="size-7 text-success"></iconify-icon><h4 class="mt-3 font-bold text-default">IOSA 审计</h4><p class="mt-1 text-sm text-muted">连续 8 年获民航局安全运营优秀单位。</p></div>
+                <div class="bg-elevated p-6"><iconify-icon icon="lucide:wifi" class="size-7 text-primary"></iconify-icon><h4 class="mt-3 font-bold text-default">全程免费 Wi-Fi</h4><p class="mt-1 text-sm text-muted">经济舱配备 10 英寸娱乐系统与 USB-C 快充。</p></div>
+                <div class="bg-elevated p-6"><iconify-icon icon="lucide:utensils" class="size-7 text-warning"></iconify-icon><h4 class="mt-3 font-bold text-default">主厨联名餐食</h4><p class="mt-1 text-sm text-muted">融合东方饮食哲学与现代烹饪技术。</p></div>
+                <div class="bg-elevated p-6"><iconify-icon icon="lucide:headset" class="size-7 text-info"></iconify-icon><h4 class="mt-3 font-bold text-default">智能客服「星星」</h4><p class="mt-1 text-sm text-muted">7×24 小时，支持中/英/日/韩四语交互。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ============ UFooter（UFooterColumns 等价） ============ -->
+      <footer class="border-t divider bg-default">
+        <div class="mx-auto max-w-[var(--ui-container)] px-4 py-12 sm:px-6">
+          <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+            <div class="lg:col-span-2">
+              <div class="flex items-center gap-2 font-bold text-highlighted">
+                <span class="grid size-9 place-items-center rounded-lg bg-primary text-white"><iconify-icon icon="lucide:plane" class="size-5"></iconify-icon></span>
+                <span>星空航空 · Skystar Airlines</span>
+              </div>
+              <p class="mt-4 max-w-xs text-sm text-muted">杭州萧山国际机场运营基地</p>
+              <p class="mt-2 text-sm text-muted">客服热线：<span class="font-semibold text-default">400-800-9988</span>（7×24 小时）</p>
+              <div class="mt-4 flex gap-2">
+                <span class="badge bg-success/10 text-success">CATA 会员</span>
+                <span class="badge bg-info/10 text-info">IATA 认证</span>
+              </div>
+            </div>
+            <div v-for="col in footerCols" :key="col.title">
+              <h4 class="text-sm font-semibold text-highlighted">{{ col.title }}</h4>
+              <ul class="mt-3 space-y-2 text-sm">
+                <li v-for="l in col.links" :key="l"><a href="#" class="text-muted transition-colors hover:text-primary">{{ l }}</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t divider pt-6 sm:flex-row">
+            <p class="text-xs text-dimmed">© 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号 保留所有权利</p>
+            <div class="flex items-center gap-2 text-muted">
+              <span class="text-xs">关注我们：</span>
+              <a href="#" class="rounded-md p-1.5 hover:bg-accented" aria-label="微信"><iconify-icon icon="lucide:message-circle" class="size-4"></iconify-icon></a>
+              <a href="#" class="rounded-md p-1.5 hover:bg-accented" aria-label="微博"><iconify-icon icon="lucide:globe" class="size-4"></iconify-icon></a>
+              <a href="#" class="rounded-md p-1.5 hover:bg-accented" aria-label="抖音"><iconify-icon icon="lucide:music-2" class="size-4"></iconify-icon></a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+    </u-app>
+  </div>
+
+  <script>
+    const { createApp, reactive, ref, computed } = Vue;
+
+    /* —— 复刻 Nuxt UI 的 UButton（color + variant 体系） —— */
+    const app = createApp({
+      setup() {
+        const dark = ref(false);
+        const mobileOpen = ref(false);
+        const initDark = () => {
+          const saved = localStorage.getItem('nuxt-ui-color-mode');
+          if (saved) dark.value = saved === 'dark';
+          else dark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark.value);
+        };
+        const toggleDark = () => {
+          dark.value = !dark.value;
+          document.documentElement.classList.toggle('dark', dark.value);
+          localStorage.setItem('nuxt-ui-color-mode', dark.value ? 'dark' : 'light');
+        };
+        initDark();
+
+        const nav = [
+          { label: '首页', to: '#top' },
+          { label: '航班查询', to: '#top' },
+          { label: '目的地', to: '#destinations' },
+          { label: '服务与礼遇', to: '#features' },
+          { label: '常旅客计划', to: '#membership' },
+          { label: '关于我们', to: '#top' },
+        ];
+
+        const features = [
+          { icon: 'lucide:shield', title: '安全第一，永不妥协', desc: '平均飞行经验超 9,800 小时的机长团队，全机队配备 787 梦想客机与 A320neo，连续 16 年零重大事故。' },
+          { icon: 'lucide:globe', title: '广泛航线，覆盖全球', desc: '与 28 家航司代码共享，携手星空联盟构建覆盖全球 190 个目的地的出行网络。' },
+          { icon: 'lucide:armchair', title: '精心设计的客舱体验', desc: '商务舱 1-2-1 全通道平躺座椅、17 英寸 4K 娱乐屏与降噪耳机，经济舱间距行业领先。' },
+          { icon: 'lucide:utensils', title: '云端餐饮，匠心呈现', desc: '与多位知名主厨联名打造机上菜单，融合东方饮食哲学，节假日奉上限量节令料理。' },
+          { icon: 'lucide:smartphone', title: '数字化服务，便捷出行', desc: 'App 全流程无纸化：购票、选座、值机、登机一气呵成，智能客服「星星」随时待命。' },
+          { icon: 'lucide:leaf', title: '可持续承诺', desc: '加入 CORSIA 碳抵消机制，2035 年单位客公里碳排放目标较 2019 年下降 40%。' },
+        ];
+
+        const destinations = [
+          { name: '三亚', tagline: '阳光与海浪的完美邂逅', note: '最快 1 小时 45 分直达 · 每日 4 班', freq: '每日 4 班', price: '¥399', grad: 'linear-gradient(135deg,#0ea5e9,#22d3ee)' },
+          { name: '成都', tagline: '慢下来，才能遇见真正的巴蜀', note: '每日 8 班 · 支持中转西藏', freq: '每日 8 班', price: '¥520', grad: 'linear-gradient(135deg,#f59e0b,#ef4444)' },
+          { name: '东京', tagline: '赏樱季专属航班，限量发售', note: 'Narita & Haneda 双机场', freq: '每日 2 班', price: '¥1,299', grad: 'linear-gradient(135deg,#ec4899,#8b5cf6)' },
+          { name: '迪拜', tagline: '沙漠奢旅的起点', note: '商务舱全程平躺', freq: '每日 1 班', price: '¥2,680', grad: 'linear-gradient(135deg,#f59e0b,#f97316)' },
+          { name: '巴黎', tagline: '艺术与浪漫在等你', note: 'CDG 直航 · 每周 5 班', freq: '每周 5 班', price: '¥3,899', grad: 'linear-gradient(135deg,#6366f1,#0ea5e9)' },
+          { name: '伦敦', tagline: '从历史到未来的跨越', note: 'LHR 直航 · 暑期特惠', freq: '每周 6 班', price: '¥3,899', grad: 'linear-gradient(135deg,#475569,#0ea5e9)' },
+        ];
+
+        const tiers = [
+          { name: '银卡', standard: '年飞 25,000 里程', icon: 'lucide:medal', iconBg: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300', highlight: false, benefits: ['优先值机', '额外行李额'] },
+          { name: '金卡', standard: '年飞 50,000 里程', icon: 'lucide:award', iconBg: 'bg-warning/10 text-warning', highlight: false, benefits: ['贵宾休息室', '优先登机'] },
+          { name: '白金卡', standard: '年飞 100,000 里程', icon: 'lucide:crown', iconBg: 'bg-primary/10 text-primary', highlight: true, benefits: ['专属顾问', '头等舱升级券'] },
+          { name: '钻石卡', standard: '邀请制', icon: 'lucide:gem', iconBg: 'bg-info/10 text-info', highlight: false, benefits: ['全部权益', '私人定制服务'] },
+        ];
+
+        const footerCols = [
+          { title: '旅行服务', links: ['航班状态查询', '行李规定', '退改签政策', '旅行保险', '常见问题'] },
+          { title: '关于星空', links: ['企业简介', '可持续发展', '招贤纳士', '新闻中心', '联系我们'] },
+          { title: '合作伙伴', links: ['企业商务', '常旅客计划', '星空联盟', '货邮运输', '开放平台'] },
+        ];
+
+        return { dark, toggleDark, mobileOpen, nav, features, destinations, tiers, footerCols };
+      }
+    });
+
+    /* —— UButton 组件定义 —— */
+    app.component('u-btn', {
+      props: {
+        color: { type: String, default: 'primary' },
+        variant: { type: String, default: 'solid' },
+        size: { type: String, default: 'md' },
+        block: Boolean, icon: String, trailingIcon: String, label: String, href: String, to: String,
+      },
+      computed: {
+        tag() { return this.href || this.to ? 'a' : 'button'; },
+        cls() {
+          const sizes = { xs:'h-7 px-2.5 text-xs', sm:'h-8 px-3 text-sm', md:'h-9 px-4 text-sm', lg:'h-10 px-5 text-base' };
+          const base = 'inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-colors select-none whitespace-nowrap';
+          const map = {
+            solid: {
+              primary:'bg-primary text-white shadow-sm hover:bg-primary-600',
+              neutral:'bg-neutral-900 text-white hover:bg-neutral-800',
+              error:'bg-error text-white hover:bg-error-600',
+              success:'bg-success text-white hover:bg-success-600',
+            },
+            soft: {
+              primary:'bg-primary/10 text-primary hover:bg-primary/20',
+              neutral:'bg-neutral-100 dark:bg-neutral-800 text-default hover:bg-neutral-200 dark:hover:bg-neutral-700',
+              error:'bg-error/10 text-error hover:bg-error/20',
+              success:'bg-success/10 text-success hover:bg-success/20',
+            },
+            outline: {
+              primary:'ring-1 ring-inset ring-primary/50 text-primary hover:bg-primary/10',
+              neutral:'ring-1 ring-inset ring-neutral-300 dark:ring-neutral-700 text-default hover:bg-neutral-100 dark:hover:bg-neutral-800',
+              error:'ring-1 ring-inset ring-error/50 text-error hover:bg-error/10',
+            },
+            ghost: {
+              primary:'text-primary hover:bg-primary/10',
+              neutral:'text-default hover:bg-neutral-100 dark:hover:bg-neutral-800',
+              error:'text-error hover:bg-error/10',
+            },
+            link: {
+              primary:'text-primary underline-offset-4 hover:underline px-0!',
+              neutral:'text-default underline-offset-4 hover:underline px-0!',
+            },
+          };
+          return [base, sizes[this.size] || sizes.md, (map[this.variant] || map.solid)[this.color] || map.solid.primary, this.block ? 'w-full' : ''];
+        }
+      },
+      template: `
+        <component :is="tag" :href="href || (to ? to : null)" :class="cls">
+          <iconify-icon v-if="icon" :icon="icon" class="size-4"></iconify-icon>
+          <span v-if="label">{{ label }}</span>
+          <iconify-icon v-if="trailingIcon" :icon="trailingIcon" class="size-4"></iconify-icon>
+        </component>`
+    });
+
+    /* —— UApp 包裹组件（提供 isolate 根、深浅色上下文） —— */
+    app.component('u-app', { template: '<div class="min-h-screen bg-default text-default"><slot/></div>' });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>

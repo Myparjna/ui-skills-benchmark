@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>闪充 · EV 充电聚合小程序</title>
+  <meta name="description" content="聚合型电动汽车充电小程序：地图找桩、扫码即充、实时桩态、免密支付与 PLUS 会员权益。" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Public Sans','Noto Sans SC','system-ui','sans-serif'] },
+          colors: {
+            // 主色：科技蓝；状态色沿用 Nuxt UI 语义色（success空闲 / warning充电中 / error故障）
+            primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a',950:'#172554' },
+            neutral: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a',950:'#020617' },
+            success: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d1',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b',950:'#022c22' },
+            warning: { 50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309',800:'#92400e',900:'#78350f',950:'#451a03' },
+            error:   { 50:'#fff1f2',100:'#ffe4e6',200:'#fecdd3',300:'#fda4af',400:'#fb7185',500:'#f43f5e',600:'#e11d48',700:'#be123c',800:'#9f1239',900:'#881337',950:'#4c0519' },
+            info:    { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#0ea5e9',600:'#0284c7',700:'#0369a1',800:'#075985',900:'#0c4a6e',950:'#082f49' },
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    :root {
+      --text-default: 15 23 42;   --text-muted: 100 116 139; --text-toned: 71 85 105;
+      --text-dimmed: 148 163 184;  --text-highlighted: 2 6 23;
+      --bg-default: 255 255 255;    --bg-muted: 248 250 252; --bg-elevated: 255 255 255;
+      --bg-accented: 241 245 249;  --bg-inverted: 15 23 42;
+      --border-default: 226 232 240; --border-muted: 241 245 249; --border-accented: 203 213 225;
+      --primary: #3b82f6;
+    }
+    .dark {
+      --text-default: 248 250 252; --text-muted: 148 163 184; --text-toned: 203 213 225;
+      --text-dimmed: 100 116 139;  --text-highlighted: 255 255 255;
+      --bg-default: 9 9 11;        --bg-muted: 24 24 27;       --bg-elevated: 24 24 27;
+      --bg-accented: 39 39 42;     --bg-inverted: 250 250 250;
+      --border-default: 39 39 42;   --border-muted: 24 24 27;   --border-accented: 63 63 70;
+      --primary: #60a5fa;
+    }
+    .text-default{color:rgb(var(--text-default))}.text-muted{color:rgb(var(--text-muted))}
+    .text-toned{color:rgb(var(--text-toned))}.text-dimmed{color:rgb(var(--text-dimmed))}
+    .text-highlighted{color:rgb(var(--text-highlighted))}.text-inverted{color:rgb(var(--bg-inverted))}
+    .bg-default{background-color:rgb(var(--bg-default))}.bg-muted{background-color:rgb(var(--bg-muted))}
+    .bg-elevated{background-color:rgb(var(--bg-elevated))}.bg-accented{background-color:rgb(var(--bg-accented))}
+    .bg-inverted{background-color:rgb(var(--bg-inverted))}
+    .border-default{border-color:rgb(var(--border-default))}.border-muted{border-color:rgb(var(--border-muted))}
+    .border-accented{border-color:rgb(var(--border-accented))}
+
+    .page-bg{background-color:rgb(var(--bg-default));color:rgb(var(--text-default));}
+    .card{background-color:rgb(var(--bg-elevated));border:1px solid rgb(var(--border-default));border-radius:.75rem;}
+    .card-muted{background-color:rgb(var(--bg-muted));border:1px solid rgb(var(--border-muted));border-radius:.75rem;}
+    .field{background-color:rgb(var(--bg-default));border:1px solid rgb(var(--border-accented));border-radius:.5rem;color:rgb(var(--text-default));transition:border-color .15s,box-shadow .15s;}
+    .field:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 25%,transparent);}
+    .badge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;border-radius:.375rem;font-size:.75rem;font-weight:500;line-height:1.25rem;}
+
+    [v-cloak]{display:none;}
+    body{font-family:'Public Sans','Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+    /* 移动端外壳 */
+    .phone-shell{max-width:27rem;margin:0 auto;min-height:100vh;position:relative;background-color:rgb(var(--bg-default));}
+    @media (min-width:768px){ .phone-shell{box-shadow:0 0 0 1px rgb(var(--border-default));} }
+    .tabbar-h{padding-bottom:calc(4rem + env(safe-area-inset-bottom));}
+    .map-grid{
+      background-color:#eef2f7;background-image:
+        linear-gradient(rgba(59,130,246,.07) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(59,130,246,.07) 1px,transparent 1px),
+        linear-gradient(115deg,rgba(16,185,129,.10),rgba(59,130,246,.12));
+      background-size:28px 28px,28px 28px,100% 100%;
+    }
+    .dark .map-grid{background-color:#0b1220;background-image:
+        linear-gradient(rgba(96,165,250,.08) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(96,165,250,.08) 1px,transparent 1px),
+        linear-gradient(115deg,rgba(16,185,129,.12),rgba(59,130,246,.16));}
+    ::-webkit-scrollbar{width:0;height:0;}
+  </style>
+</head>
+
+<body class="page-bg">
+  <div id="app" class="isolate" v-cloak>
+    <u-app>
+      <div class="phone-shell tabbar-h flex flex-col min-h-screen">
+
+        <!-- ============ 顶部状态条 / Header ============ -->
+        <header class="sticky top-0 z-30 bg-default/85 backdrop-blur border-b divider">
+          <div class="flex items-center gap-2 px-4 pt-3 pb-2">
+            <button class="flex items-center gap-1 text-highlighted font-bold">
+              <iconify-icon icon="lucide:map-pin" class="size-4 text-primary"></iconify-icon>
+              <span>杭州 · 西湖区</span>
+              <iconify-icon icon="lucide:chevron-down" class="size-4 text-muted"></iconify-icon>
+            </button>
+            <div class="ml-auto flex items-center gap-1">
+              <button class="grid size-9 place-items-center rounded-lg text-toned hover:bg-accented"><iconify-icon icon="lucide:search" class="size-5"></iconify-icon></button>
+              <button class="relative grid size-9 place-items-center rounded-lg text-toned hover:bg-accented">
+                <iconify-icon icon="lucide:bell" class="size-5"></iconify-icon>
+                <span class="absolute right-2 top-2 size-2 rounded-full bg-error"></span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- ============ 视图切换区 ============ -->
+        <main class="flex-1 overflow-hidden">
+
+          <!-- ---- 首页：地图 + 附近站列表 ---- -->
+          <section v-show="view==='home'" class="relative h-[calc(100vh-8.5rem)]">
+            <!-- 地图 -->
+            <div class="map-grid absolute inset-0">
+              <!-- 模拟充电站标注（按状态着色） -->
+              <button v-for="s in stations" :key="s.id" @click="selectStation(s)"
+                class="absolute -translate-x-1/2 -translate-y-1/2 grid place-items-center rounded-full text-white text-xs font-bold shadow-lg ring-2 ring-white/70 transition-transform active:scale-95"
+                :class="s.free>0 ? 'bg-success' : (s.charging>0 ? 'bg-warning' : 'bg-neutral-400')"
+                :style="{ left: s.x+'%', top: s.y+'%' }">
+                <span class="px-2 py-1">{{ s.free>0 ? s.free : (s.charging>0?'充':'满') }}</span>
+              </button>
+              <!-- 定位点 -->
+              <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <span class="block size-4 rounded-full bg-primary ring-4 ring-primary/30"></span>
+              </div>
+            </div>
+
+            <!-- 定位 / 刷新 悬浮按钮 -->
+            <div class="absolute right-3 top-3 flex flex-col gap-2">
+              <button @click="refresh()" class="grid size-10 place-items-center rounded-full bg-elevated border-default shadow-md text-primary"><iconify-icon icon="lucide:locate-fixed" class="size-5"></iconify-icon></button>
+              <button class="grid size-10 place-items-center rounded-full bg-elevated border-default shadow-md text-toned"><iconify-icon icon="lucide:layers" class="size-5"></iconify-icon></button>
+            </div>
+
+            <!-- 底部上滑面板：附近站列表 -->
+            <div class="absolute inset-x-0 bottom-0 max-h-[78%] rounded-t-2xl bg-elevated border-t divider shadow-2xl flex flex-col">
+              <div class="px-4 pt-2.5 pb-2">
+                <div class="mx-auto h-1 w-10 rounded-full bg-border-accented"></div>
+                <div class="mt-3 flex items-center justify-between">
+                  <h2 class="font-bold text-highlighted">附近充电站</h2>
+                  <div class="flex items-center gap-1 text-xs text-muted">
+                    <span class="size-2 rounded-full bg-success"></span>空闲
+                    <span class="ml-2 size-2 rounded-full bg-warning"></span>充电中
+                    <span class="ml-2 size-2 rounded-full bg-neutral-400"></span>满
+                  </div>
+                </div>
+                <!-- 筛选 chips -->
+                <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+                  <button v-for="f in filters" :key="f" @click="activeFilter=f"
+                    class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors"
+                    :class="activeFilter===f ? 'bg-primary text-white border-primary' : 'bg-default text-toned border-default hover:bg-accented'">
+                    {{ f }}
+                  </button>
+                </div>
+              </div>
+              <div class="flex-1 space-y-3 overflow-y-auto px-4 pb-4">
+                <article v-for="s in visibleStations" :key="s.id" @click="selectStation(s)"
+                  class="card p-3.5 cursor-pointer transition-shadow active:shadow-md">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2">
+                        <h3 class="truncate font-bold text-default">{{ s.name }}</h3>
+                        <span class="badge" :class="s.plus ? 'bg-primary/10 text-primary' : 'bg-muted text-muted'">{{ s.plus?'PLUS站':'普通站' }}</span>
+                      </div>
+                      <p class="mt-0.5 truncate text-xs text-muted">{{ s.addr }}</p>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <p class="text-sm font-bold text-primary">¥{{ s.price }}<span class="text-xs font-normal text-muted">/度</span></p>
+                      <p class="text-xs text-warning">{{ s.distance }}km</p>
+                    </div>
+                  </div>
+                  <div class="mt-2.5 flex items-center gap-3 text-xs">
+                    <span class="flex items-center gap-1 text-success"><iconify-icon icon="lucide:battery-charging" class="size-4"></iconify-icon>快充空闲 <b class="text-default">{{ s.free }}</b></span>
+                    <span class="flex items-center gap-1 text-muted"><iconify-icon icon="lucide:plug-zap" class="size-4"></iconify-icon>总枪 <b class="text-default">{{ s.total }}</b></span>
+                    <span class="ml-auto flex items-center gap-0.5 text-warning"><iconify-icon icon="lucide:star" class="size-3.5"></iconify-icon>{{ s.rating }}</span>
+                  </div>
+                </article>
+                <p v-if="!visibleStations.length" class="py-10 text-center text-sm text-muted">附近暂无符合条件的充电站，试试扩大范围。</p>
+              </div>
+            </div>
+
+            <!-- 站点详情浮层 -->
+            <transition name="sheet">
+              <div v-if="selected" class="absolute inset-0 z-20 bg-black/40 flex items-end" @click.self="selected=null">
+                <div class="w-full rounded-t-2xl bg-elevated border-t divider p-4">
+                  <div class="mx-auto h-1 w-10 rounded-full bg-border-accented mb-3"></div>
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <h3 class="text-lg font-bold text-highlighted">{{ selected.name }}</h3>
+                      <p class="mt-0.5 text-xs text-muted">{{ selected.addr }} · {{ selected.distance }}km</p>
+                    </div>
+                    <button @click="selected=null" class="grid size-8 place-items-center rounded-lg text-muted hover:bg-accented"><iconify-icon icon="lucide:x" class="size-5"></iconify-icon></button>
+                  </div>
+                  <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div class="card-muted p-2.5"><p class="text-xl font-bold text-success">{{ selected.free }}</p><p class="text-[11px] text-muted">快充空闲</p></div>
+                    <div class="card-muted p-2.5"><p class="text-xl font-bold text-warning">{{ selected.charging }}</p><p class="text-[11px] text-muted">充电中</p></div>
+                    <div class="card-muted p-2.5"><p class="text-xl font-bold text-default">¥{{ selected.price }}</p><p class="text-[11px] text-muted">元/度</p></div>
+                  </div>
+                  <div class="mt-3 flex gap-2">
+                    <u-btn label="导航前往" color="neutral" variant="soft" block icon="lucide:navigation" />
+                    <u-btn label="扫码充电" color="primary" variant="solid" block icon="lucide:qr-code" @click="startScan(selected)" />
+                  </div>
+                </div>
+              </div>
+            </transition>
+          </section>
+
+          <!-- ---- 省钱 / 活动 ---- -->
+          <section v-show="view==='deals'" class="h-[calc(100vh-8.5rem)] overflow-y-auto px-4 py-4 space-y-4">
+            <div class="rounded-2xl bg-gradient-to-r from-primary to-info p-5 text-white shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm leading-relaxed text-white/80">PLUS 会员 · 跨站充电更省</p>
+                  <p class="mt-1 text-2xl font-extrabold">充电低至 6 折起</p>
+                </div>
+                <iconify-icon icon="lucide:crown" class="size-12 text-white/90"></iconify-icon>
+              </div>
+              <u-btn label="立即开通" color="neutral" variant="solid" class="mt-4 bg-white text-primary hover:bg-white/90" size="sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="card p-4" v-for="m in memberTiers" :key="m.name">
+                <span class="badge" :class="m.cls"><iconify-icon :icon="m.icon" class="size-3.5"></iconify-icon>{{ m.name }}</span>
+                <p class="mt-2 text-lg font-bold text-highlighted">{{ m.price }}</p>
+                <p class="text-xs text-muted mt-1">{{ m.save }}</p>
+              </div>
+            </div>
+            <h3 class="font-bold text-highlighted pt-1">限时优惠</h3>
+            <div class="card p-4 flex items-center gap-3" v-for="c in coupons" :key="c.title">
+              <div class="grid size-12 place-items-center rounded-xl bg-error/10 text-error"><iconify-icon :icon="c.icon" class="size-6"></iconify-icon></div>
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-default truncate">{{ c.title }}</p>
+                <p class="text-xs text-muted">{{ c.sub }}</p>
+              </div>
+              <u-btn :label="c.btn" color="error" variant="soft" size="sm" />
+            </div>
+            <h3 class="font-bold text-highlighted pt-1">能量包预购</h3>
+            <div class="grid grid-cols-3 gap-2">
+              <button v-for="e in energyPacks" :key="e.kwh" class="card p-3 text-center active:scale-95 transition-transform">
+                <p class="text-lg font-bold text-primary">{{ e.kwh }}<span class="text-xs">度</span></p>
+                <p class="text-xs text-muted mt-0.5">¥{{ e.price }}</p>
+              </button>
+            </div>
+            <div class="card-muted p-4 flex items-center gap-3">
+              <iconify-icon icon="lucide:leaf" class="size-7 text-success"></iconify-icon>
+              <div class="flex-1"><p class="font-bold text-default">碳积分 · V2G</p><p class="text-xs text-muted">每次充电自动记录碳减排，可兑换充电券或公益树苗。</p></div>
+              <u-btn label="去查看" color="success" variant="soft" size="sm" />
+            </div>
+          </section>
+
+          <!-- ---- 扫码充电流程 ---- -->
+          <section v-show="view==='scan'" class="h-[calc(100vh-8.5rem)] overflow-y-auto">
+            <!-- Step1：扫码框 -->
+            <div v-if="scanStep==='scan'" class="flex h-full flex-col items-center justify-center px-6 text-center">
+              <p class="text-sm text-muted mb-5">将充电桩上的二维码放入框内</p>
+              <div class="relative size-60 rounded-3xl border-2 border-primary/70 bg-black/5 grid place-items-center">
+                <span class="absolute left-0 top-0 size-8 rounded-tl-3xl border-l-4 border-t-4 border-primary"></span>
+                <span class="absolute right-0 top-0 size-8 rounded-tr-3xl border-r-4 border-t-4 border-primary"></span>
+                <span class="absolute left-0 bottom-0 size-8 rounded-bl-3xl border-l-4 border-b-4 border-primary"></span>
+                <span class="absolute right-0 bottom-0 size-8 rounded-br-3xl border-r-4 border-b-4 border-primary"></span>
+                <iconify-icon icon="lucide:scan-line" class="size-16 text-primary animate-pulse"></iconify-icon>
+              </div>
+              <p class="mt-5 text-xs text-muted">识别中… 自动跳转充电确认</p>
+              <div class="mt-6 flex gap-3">
+                <u-btn label="手动输入桩号" color="neutral" variant="soft" icon="lucide:keyboard" @click="scanStep='confirm'" />
+                <u-btn label="NFC 即插即充" color="primary" variant="soft" icon="lucide:radio" @click="scanStep='charging'" />
+              </div>
+            </div>
+
+            <!-- Step2：确认启动 -->
+            <div v-else-if="scanStep==='confirm'" class="px-4 py-5 space-y-4">
+              <button @click="scanStep='scan'" class="flex items-center gap-1 text-sm text-muted"><iconify-icon icon="lucide:chevron-left" class="size-4"></iconify-icon>返回扫码</button>
+              <div class="card p-4">
+                <p class="text-xs text-muted">当前桩号</p>
+                <p class="text-lg font-bold text-highlighted">HZ-西湖-07 · 枪 #3</p>
+                <p class="mt-1 flex items-center gap-2 text-sm text-success"><iconify-icon icon="lucide:circle-check-big" class="size-4"></iconify-icon>设备在线 · 支持快充 60kW</p>
+              </div>
+              <div>
+                <p class="mb-2 text-sm font-medium text-toned">充电模式</p>
+                <div class="grid grid-cols-3 gap-2">
+                  <button v-for="m in chargeModes" :key="m.label" @click="mode=m.label"
+                    class="card py-3 text-center text-sm transition-colors"
+                    :class="mode===m.label ? 'ring-2 ring-primary text-primary' : ''">
+                    {{ m.label }}<span class="block text-[11px] text-muted">{{ m.hint }}</span>
+                  </button>
+                </div>
+              </div>
+              <div class="card-muted p-4">
+                <label class="text-sm font-medium text-toned">充电金额</label>
+                <div class="mt-2 flex gap-2">
+                  <button v-for="a in [10,20,50]" :key="a" @click="amount=a"
+                    class="flex-1 rounded-lg border py-2 text-sm font-medium transition-colors"
+                    :class="amount===a ? 'border-primary bg-primary/10 text-primary' : 'border-default text-toned'">¥{{ a }}</button>
+                </div>
+              </div>
+              <u-btn label="确认启动充电" color="primary" variant="solid" size="lg" block icon="lucide:zap" @click="startCharging" />
+            </div>
+
+            <!-- Step3：充电中 -->
+            <div v-else-if="scanStep==='charging'" class="px-4 py-6 flex flex-col items-center">
+              <p class="text-sm text-muted">正在充电 · HZ-西湖-07</p>
+              <div class="relative mt-6 grid place-items-center">
+                <svg viewBox="0 0 120 120" class="size-44 -rotate-90">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="10" class="text-neutral-200 dark:text-neutral-800"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--primary)" stroke-width="10" stroke-linecap="round"
+                    :stroke-dasharray="circ" :stroke-dashoffset="circ*(1-progress)"/>
+                </svg>
+                <div class="absolute text-center">
+                  <p class="text-3xl font-extrabold text-highlighted">{{ progressPct }}<span class="text-base">%</span></p>
+                  <p class="text-xs text-muted">{{ chargedKwh }} kWh</p>
+                </div>
+              </div>
+              <div class="mt-7 grid w-full grid-cols-3 gap-3 text-center">
+                <div class="card-muted py-3"><p class="text-lg font-bold text-warning">{{ power }}<span class="text-xs">kW</span></p><p class="text-[11px] text-muted">实时功率</p></div>
+                <div class="card-muted py-3"><p class="text-lg font-bold text-default">{{ elapsed }}</p><p class="text-[11px] text-muted">已用时长</p></div>
+                <div class="card-muted py-3"><p class="text-lg font-bold text-primary">{{ eta }}</p><p class="text-[11px] text-muted">预计完成</p></div>
+              </div>
+              <p class="mt-4 text-sm text-muted">已充电费 <span class="font-bold text-default">¥{{ cost.toFixed(2) }}</span> · 免密自动扣费</p>
+              <u-btn label="停止充电" color="error" variant="soft" size="lg" block class="mt-5" icon="lucide:power" @click="confirmStop=true" />
+            </div>
+          </section>
+
+          <!-- ---- 订单 ---- -->
+          <section v-show="view==='orders'" class="h-[calc(100vh-8.5rem)] overflow-y-auto px-4 py-4 space-y-3">
+            <div class="grid grid-cols-3 gap-3">
+              <div class="card p-3 text-center"><p class="text-xl font-bold text-highlighted">{{ orders.length }}</p><p class="text-xs text-muted">充电中/历史</p></div>
+              <div class="card p-3 text-center"><p class="text-xl font-bold text-highlighted">¥128</p><p class="text-xs text-muted">本月消费</p></div>
+              <div class="card p-3 text-center"><p class="text-xl font-bold text-success">38.6</p><p class="text-xs text-muted">累计 kWh</p></div>
+            </div>
+            <article v-for="o in orders" :key="o.id" class="card p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="grid size-9 place-items-center rounded-lg" :class="o.done ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'">
+                    <iconify-icon :icon="o.done ? 'lucide:check' : 'lucide:loader'" class="size-5"></iconify-icon></span>
+                  <div><p class="font-bold text-default">{{ o.station }}</p><p class="text-xs text-muted">{{ o.date }}</p></div>
+                </div>
+                <span class="badge" :class="o.done ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'">{{ o.done?'已完成':'充电中' }}</span>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-sm">
+                <span class="text-muted">{{ o.kwh }} kWh · {{ o.mins }} 分钟</span>
+                <span class="font-bold text-default">¥{{ o.cost }}</span>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <u-btn label="查看账单" color="neutral" variant="soft" size="sm" block />
+                <u-btn label="开发票" color="primary" variant="soft" size="sm" block icon="lucide:receipt" />
+              </div>
+            </article>
+          </section>
+
+          <!-- ---- 我的 ---- -->
+          <section v-show="view==='me'" class="h-[calc(100vh-8.5rem)] overflow-y-auto">
+            <div class="bg-gradient-to-br from-primary to-info px-4 pb-6 pt-5 text-white">
+              <div class="flex items-center gap-3">
+                <span class="grid size-14 place-items-center rounded-full bg-white/20 text-xl font-bold backdrop-blur">星</span>
+                <div class="flex-1">
+                  <p class="font-bold text-lg">138****6688</p>
+                  <span class="badge bg-white/20 text-white mt-1"><iconify-icon icon="lucide:crown" class="size-3.5"></iconify-icon> PLUS 金卡</span>
+                </div>
+                <button class="grid size-9 place-items-center rounded-lg bg-white/15"><iconify-icon icon="lucide:settings" class="size-5"></iconify-icon></button>
+              </div>
+              <div class="mt-5 grid grid-cols-4 gap-2 text-center">
+                <div class="rounded-xl bg-white/15 py-3 backdrop-blur"><p class="text-lg font-bold">¥86</p><p class="text-[11px] text-white/80">钱包余额</p></div>
+                <div class="rounded-xl bg-white/15 py-3 backdrop-blur"><p class="text-lg font-bold">12</p><p class="text-[11px] text-white/80">卡券</p></div>
+                <div class="rounded-xl bg-white/15 py-3 backdrop-blur"><p class="text-lg font-bold">3</p><p class="text-[11px] text-white/80">能量包</p></div>
+                <div class="rounded-xl bg-white/15 py-3 backdrop-blur"><p class="text-lg font-bold">1.2k</p><p class="text-[11px] text-white/80">碳积分</p></div>
+              </div>
+            </div>
+            <div class="px-4 -mt-3 space-y-4 pb-4">
+              <div class="card p-4">
+                <p class="text-sm font-medium text-toned">我的车辆</p>
+                <div class="mt-2 flex items-center gap-3 rounded-xl bg-muted p-3">
+                  <iconify-icon icon="lucide:car" class="size-7 text-primary"></iconify-icon>
+                  <div class="flex-1"><p class="font-bold text-default">浙A·D8890</p><p class="text-xs text-muted">比亚迪 汉EV · 电池健康 96%</p></div>
+                  <iconify-icon icon="lucide:chevron-right" class="size-5 text-muted"></iconify-icon>
+                </div>
+              </div>
+              <div class="card divide-y divide-[rgb(var(--border-default))]">
+                <button v-for="t in tools" :key="t.label" class="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-accented">
+                  <iconify-icon :icon="t.icon" class="size-5 text-primary"></iconify-icon>
+                  <span class="flex-1 text-sm font-medium text-default">{{ t.label }}</span>
+                  <iconify-icon icon="lucide:chevron-right" class="size-4 text-muted"></iconify-icon>
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <!-- ============ 底部 TabBar（5 Tab + 中间扫码大按钮） ============ -->
+        <nav class="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[27rem] border-t divider bg-default/90 backdrop-blur" style="padding-bottom:env(safe-area-inset-bottom)">
+          <div class="grid h-16 grid-cols-5 items-center">
+            <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)" v-show="t.key!=='scan'"
+              class="flex flex-col items-center gap-0.5 text-[11px] transition-colors"
+              :class="view===t.key ? 'text-primary' : 'text-muted'">
+              <iconify-icon :icon="t.icon" class="size-5"></iconify-icon>{{ t.label }}
+            </button>
+            <!-- 中间扫码主功能键（圆形渐变突出） -->
+            <button @click="switchTab('scan')" class="relative -mt-6 grid size-14 place-items-center rounded-full bg-gradient-to-br from-primary to-success text-white shadow-lg ring-4 ring-default">
+              <iconify-icon icon="lucide:scan" class="size-7"></iconify-icon>
+            </button>
+          </div>
+        </nav>
+
+        <!-- 停止充电二次确认（UModal 等价） -->
+        <transition name="fade">
+          <div v-if="confirmStop" class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6" @click.self="confirmStop=false">
+            <div class="w-full max-w-xs card p-5 text-center">
+              <iconify-icon icon="lucide:alert-triangle" class="mx-auto size-10 text-warning"></iconify-icon>
+              <h3 class="mt-3 font-bold text-highlighted">确认停止充电？</h3>
+              <p class="mt-1 text-sm text-muted">当前已充 {{ chargedKwh }} kWh，停止后将自动结算。</p>
+              <div class="mt-4 flex gap-2">
+                <u-btn label="继续充电" color="neutral" variant="soft" block @click="confirmStop=false" />
+                <u-btn label="确认停止" color="error" variant="solid" block @click="stopCharging" />
+              </div>
+            </div>
+          </div>
+        </transition>
+
+      </div>
+    </u-app>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    const app = createApp({
+      setup() {
+        const view = ref('home');
+        const dark = ref(false);
+        const applyDark = () => document.documentElement.classList.toggle('dark', dark.value);
+        const saved = localStorage.getItem('nuxt-ui-color-mode');
+        dark.value = saved ? saved==='dark' : false; applyDark();
+
+        const stations = [
+          { id:1, name:'西湖文化广场站', addr:'下城区中山北路', x:28, y:34, free:6, charging:4, total:12, price:1.18, rating:4.8, distance:0.6, plus:true },
+          { id:2, name:'湖滨银泰充电站', addr:'上城区延安路', x:52, y:46, free:3, charging:8, total:14, price:1.05, rating:4.6, distance:1.2, plus:true },
+          { id:3, name:'城西银江充电站', addr:'西湖区文三路', x:40, y:62, free:0, charging:10, total:10, price:0.98, rating:4.5, distance:1.8, plus:false },
+          { id:4, name:'滨江星光站', addr:'滨江区江南大道', x:70, y:30, free:9, charging:2, total:16, price:1.32, rating:4.9, distance:2.4, plus:true },
+          { id:5, name:'火车东站P3站', addr:'上城区天城路', x:62, y:70, free:2, charging:6, total:12, price:1.20, rating:4.4, distance:3.1, plus:false },
+        ];
+        const filters = ['全部','快充','慢充','免费停车','PLUS站','高速路站'];
+        const activeFilter = ref('全部');
+        const visibleStations = computed(() => {
+          if (activeFilter.value==='全部') return stations;
+          if (activeFilter.value==='PLUS站') return stations.filter(s=>s.plus);
+          if (activeFilter.value==='快充') return stations.filter(s=>s.free>0);
+          return stations;
+        });
+        const selected = ref(null);
+        const selectStation = (s) => selected.value = s;
+        const refresh = () => { /* 刷新桩态 */ };
+
+        const tabs = [
+          { key:'home', label:'首页', icon:'lucide:map' },
+          { key:'deals', label:'省钱', icon:'lucide:tags' },
+          { key:'scan', label:'扫码', icon:'lucide:scan' },
+          { key:'orders', label:'订单', icon:'lucide:receipt-text' },
+          { key:'me', label:'我的', icon:'lucide:user' },
+        ];
+        const switchTab = (k) => {
+          view.value = k;
+          if (k!=='scan') scanStep.value='scan';
+        };
+
+        // 充电流程
+        const scanStep = ref('scan');
+        const startScan = (s) => { selected.value=null; scanStep.value='confirm'; };
+        const chargeModes = [ {label:'充满为止', hint:'智能停充'}, {label:'按金额', hint:'¥10/20/50'}, {label:'按电量', hint:'自定义度'} ];
+        const mode = ref('充满为止');
+        const amount = ref(20);
+        const progress = ref(0); const power = ref(58); const chargedKwh = ref(0); const cost = ref(0);
+        const elapsedSec = ref(0); let timer=null;
+        const circ = 2*Math.PI*52;
+        const progressPct = computed(()=>Math.round(progress.value*100));
+        const chargedKwhStr = computed(()=>chargedKwh.value.toFixed(1));
+        const elapsed = computed(()=>{ const m=Math.floor(elapsedSec.value/60); const s=elapsedSec.value%60; return `${m}:${String(s).padStart(2,'0')}`; });
+        const eta = computed(()=>{ const remain=Math.ceil((1-progress.value)*22); return `约 ${remain} 分`; });
+        const startCharging = () => {
+          scanStep.value='charging'; progress.value=0; elapsedSec.value=0; chargedKwh.value=0; cost.value=0;
+          timer=setInterval(()=>{
+            elapsedSec.value++;
+            progress.value=Math.min(1, progress.value+0.012);
+            chargedKwh.value=+(chargedKwh.value+0.18).toFixed(1);
+            cost.value=+(chargedKwh.value*1.18).toFixed(2);
+            power.value = 40+Math.round(Math.random()*22);
+            if (progress.value>=1){ clearInterval(timer); }
+          },1000);
+        };
+        const confirmStop = ref(false);
+        const stopCharging = () => { clearInterval(timer); confirmStop.value=false; scanStep.value='scan'; view.value='orders'; };
+        onMounted(()=>{ /* 进入即模拟扫码识别 */ });
+
+        const memberTiers = [
+          { name:'PLUS银', price:'¥2.9/月', save:'月省约¥50', icon:'lucide:medal', cls:'bg-primary/10 text-primary' },
+          { name:'PLUS金', price:'¥19.9/月', save:'月省约¥100', icon:'lucide:award', cls:'bg-warning/10 text-warning' },
+          { name:'V1超级', price:'¥99/年', save:'月省约¥158', icon:'lucide:crown', cls:'bg-info/10 text-info' },
+        ];
+        const coupons = [
+          { title:'新客满20减8券', sub:'首充立享 · 7日内有效', icon:'lucide:ticket', btn:'领取' },
+          { title:'周末充电 8 折券', sub:'周六日 0-24 点可用', icon:'lucide:calendar-clock', btn:'领取' },
+          { title:'免费停车 2 小时', sub:'合作场站通用', icon:'lucide:parking-square', btn:'领取' },
+        ];
+        const energyPacks = [ {kwh:100,price:98}, {kwh:200,price:188}, {kwh:500,price:458} ];
+
+        const orders = [
+          { id:1, station:'西湖文化广场站', date:'今天 09:12', kwh:32.6, mins:48, cost:38.4, done:false },
+          { id:2, station:'滨江星光站', date:'昨天 21:03', kwh:41.2, mins:55, cost:54.4, done:true },
+          { id:3, station:'城西银江充电站', date:'07-08 18:30', kwh:28.9, mins:40, cost:28.3, done:true },
+        ];
+
+        const tools = [
+          { label:'我的订单', icon:'lucide:receipt-text' },
+          { label:'发票管理', icon:'lucide:file-text' },
+          { label:'钱包与充值', icon:'lucide:wallet' },
+          { label:'即插即充', icon:'lucide:radio' },
+          { label:'电池卫士', icon:'lucide:activity' },
+          { label:'收藏电站', icon:'lucide:star' },
+          { label:'客服中心', icon:'lucide:headset' },
+          { label:'意见反馈', icon:'lucide:message-square' },
+        ];
+
+        return { view, stations, filters, activeFilter, visibleStations, selected, selectStation, refresh,
+          tabs, switchTab, scanStep, startScan, chargeModes, mode, amount, progress, progressPct, power,
+          chargedKwh:chargedKwhStr, cost, elapsed, eta, startCharging, confirmStop, stopCharging,
+          memberTiers, coupons, energyPacks, orders, tools, circ };
+      }
+    });
+
+    app.component('u-btn', {
+      props: { color:{default:'primary'}, variant:{default:'solid'}, size:{default:'md'}, block:Boolean, icon:String, trailingIcon:String, label:String, href:String, to:String },
+      computed: {
+        tag(){ return this.href||this.to?'a':'button'; },
+        cls(){
+          const sizes={xs:'h-7 px-2.5 text-xs',sm:'h-8 px-3 text-sm',md:'h-9 px-4 text-sm',lg:'h-10 px-5 text-base'};
+          const base='inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-colors select-none whitespace-nowrap';
+          const map={
+            solid:{ primary:'bg-primary text-white shadow-sm hover:bg-primary-600', neutral:'bg-neutral-900 text-white hover:bg-neutral-800', error:'bg-error text-white hover:bg-error-600', success:'bg-success text-white hover:bg-success-600' },
+            soft:{ primary:'bg-primary/10 text-primary hover:bg-primary/20', neutral:'bg-neutral-100 dark:bg-neutral-800 text-default hover:bg-neutral-200 dark:hover:bg-neutral-700', error:'bg-error/10 text-error hover:bg-error/20', success:'bg-success/10 text-success hover:bg-success/20' },
+            outline:{ primary:'ring-1 ring-inset ring-primary/50 text-primary hover:bg-primary/10', neutral:'ring-1 ring-inset ring-neutral-300 dark:ring-neutral-700 text-default hover:bg-neutral-100 dark:hover:bg-neutral-800' },
+            ghost:{ primary:'text-primary hover:bg-primary/10', neutral:'text-default hover:bg-neutral-100 dark:hover:bg-neutral-800' },
+          };
+          return [base, sizes[this.size]||sizes.md, (map[this.variant]||map.solid)[this.color]||map.solid.primary, this.block?'w-full':''];
+        }
+      },
+      template:`<component :is="tag" :href="href||(to?to:null)" :class="cls">
+        <iconify-icon v-if="icon" :icon="icon" class="size-4"></iconify-icon>
+        <span v-if="label">{{label}}</span>
+        <iconify-icon v-if="trailingIcon" :icon="trailingIcon" class="size-4"></iconify-icon>
+      </component>`
+    });
+
+    app.component('u-app', { template:'<div class="min-h-screen bg-default text-default"><slot/></div>' });
+    app.mount('#app');
+  </script>
+
+  <style>
+    .fade-enter-active,.fade-leave-active{transition:opacity .2s;}
+    .fade-enter-from,.fade-leave-to{opacity:0;}
+    .sheet-enter-active,.sheet-leave-active{transition:transform .25s ease;}
+    .sheet-enter-from,.sheet-leave-to{transform:translateY(100%);}
+  </style>
+</body>
+</html>

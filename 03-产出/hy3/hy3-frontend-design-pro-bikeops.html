@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>骑迹运营 · 共享两轮城市运营管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: { 900: '#0B1220', 800: '#111A2E', 700: '#1B2740', 600: '#27344F' },
+          brand: { 50: '#EEF2FF', 400: '#6366F1', 500: '#4F46E5', 600: '#4338CA' },
+          good: '#22C55E', warn: '#F59E0B', bad: '#EF4444', info: '#0EA5E9',
+        },
+        fontFamily: { sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'], serif: ['"Noto Serif SC"', 'serif'] },
+        boxShadow: { panel: '0 1px 2px rgba(11,18,32,.04), 0 8px 24px -16px rgba(11,18,32,.20)' },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { margin: 0; background: #F1F3F7; -webkit-font-smoothing: antialiased; }
+  .nav-item.active { background: #EEF2FF; color: #4F46E5; border-right: 3px solid #4F46E5; }
+  .scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-thin::-webkit-scrollbar-thumb { background: #CBD2DE; border-radius: 8px; }
+  .seg > button.active { background: #fff; color: #111A2E; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="font-sans text-ink-900">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+const NAV = [
+  ['overview', '运营总览', 'M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z'],
+  ['map', '地图调度中心', 'M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3zM9 3v15M15 6v15'],
+  ['fleet', '车队资产', 'M5 17h14M6 17a2 2 0 104 0M14 17a2 2 0 104 0M4 13l2-6h12l2 6'],
+  ['battery', '电池与能源', 'M4 8h14v8H4zM18 11h2v2h-2'],
+  ['orders', '运维工单', 'M4 6h16M4 12h16M4 18h10'],
+  ['zones', '规则与区域', 'M12 2l9 4v6c0 5-4 8-9 10-5-2-9-5-9-10V6z'],
+  ['compliance', '合规监管', 'M12 2l8 4v6c0 5-4 9-8 10-4-1-8-5-8-10V6zM9 12l2 2 4-4'],
+  ['reports', '数据报表', 'M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-8'],
+  ['org', '组织与权限', 'M12 12a3 3 0 100-6 3 3 0 000 6zM4 20a4 4 0 018 0M14 20a4 4 0 018 0'],
+  ['settings', '系统配置', 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0'],
+];
+
+function Spark({ data, color }) {
+  const max = Math.max(...data), min = Math.min(...data);
+  const pts = data.map((d, i) => `${(i / (data.length - 1) * 100).toFixed(1)},${30 - ((d - min) / (max - min || 1) * 26) - 2}`).join(' ');
+  return (<svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-8"><polyline points={pts} fill="none" stroke={color} strokeWidth="2"/></svg>);
+}
+
+function Kpi({ label, value, unit, delta, up, spark }) {
+  return (
+    <div className="bg-white rounded-xl shadow-panel p-4">
+      <div className="text-[12px] text-ink-900/50">{label}</div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="font-serif font-bold text-2xl">{value}</span>
+        {unit && <span className="text-[12px] text-ink-900/50">{unit}</span>}
+      </div>
+      <div className="mt-1 flex items-center justify-between">
+        <span className={'text-[12px] font-medium ' + (up ? 'text-good' : 'text-bad')}>{up ? '▲' : '▼'} {delta}</span>
+        {spark && <div className="w-20"><Spark data={spark} color={up ? '#22C55E' : '#EF4444'} /></div>}
+      </div>
+    </div>
+  );
+}
+
+function Donut({ segs }) {
+  const total = segs.reduce((a, s) => a + s.v, 0);
+  let acc = 0;
+  const C = 2 * Math.PI * 42;
+  return (
+    <div className="flex items-center gap-5">
+      <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#EEF1F6" strokeWidth="14"/>
+        {segs.map((s, i) => {
+          const len = (s.v / total) * C;
+          const el = <circle key={i} cx="50" cy="50" r="42" fill="none" stroke={s.c} strokeWidth="14" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-acc}/>;
+          acc += len; return el;
+        })}
+      </svg>
+      <div className="space-y-1.5">
+        {segs.map((s) => <div key={s.k} className="flex items-center gap-2 text-[12px]"><span className="w-2.5 h-2.5 rounded-full" style={{ background: s.c }}></span><span className="text-ink-900/60 w-16">{s.k}</span><span className="font-medium">{s.v}</span><span className="text-ink-900/40">{(s.v / total * 100).toFixed(0)}%</span></div>)}
+      </div>
+    </div>
+  );
+}
+
+function Panel({ title, extra, className = '', children }) {
+  return (<div className={'bg-white rounded-xl shadow-panel p-5 ' + className}><div className="flex items-center justify-between mb-4">{title && <h3 className="font-bold text-[15px]">{title}</h3>}{extra}</div>{children}</div>);
+}
+
+function Overview() {
+  const kpis = [
+    ['今日订单', '48,612', '单', '12.4%', true, [40,42,39,45,48,46,49,51,48,52]],
+    ['今日 GMV', '¥31.2', '万', '9.1%', true, [26,28,27,30,29,31,30,32,31,33]],
+    ['活跃用户 DAU', '12.8', '万', '5.6%', true, [10,11,10.5,11.2,12,11.8,12.5,12.3,12.6,12.8]],
+    ['全城可用率', '91.3', '%', '2.1%', true, [88,89,87,90,91,90,92,91,91,91]],
+    ['低电车辆', '1,842', '辆', '8.7%', false, [1500,1600,1550,1700,1800,1750,1820,1800,1840,1842]],
+    ['P0 告警', '7', '条', '3 条', false, [2,3,2,4,3,5,4,6,5,7]],
+  ];
+  const fleet = [
+    { k: '可用', v: 21340, c: '#22C55E' }, { k: '使用中', v: 5680, c: '#0EA5E9' },
+    { k: '低电', v: 1842, c: '#F59E0B' }, { k: '故障', v: 612, c: '#EF4444' },
+    { k: '离线', v: 388, c: '#94A3B8' }, { k: '回收中', v: 138, c: '#6366F1' },
+  ];
+  const soc = [
+    { k: '0–10%', v: 642, c: '#EF4444' }, { k: '10–30%', v: 1200, c: '#F59E0B' },
+    { k: '30–60%', v: 4800, c: '#0EA5E9' }, { k: '60–100%', v: 21208, c: '#22C55E' },
+  ];
+  const hot = [['钱江新城 CBD', '缺车 1,240 辆', 'warn'], ['西湖景区东门', '堆车 860 辆', 'info'], ['滨江星光大道', '缺车 720 辆', 'warn'], ['城西银泰', '缺车 560 辆', 'warn'], ['火车东站', '堆车 410 辆', 'info']];
+  const alerts = [
+    ['禁停区违停', '湖滨步行街', 'P1', '2 分钟前', 'bad'],
+    ['低电预警', '滨江片区 86 辆', 'P1', '5 分钟前', 'warn'],
+    ['越界行驶', '浙A·D8890', 'P2', '11 分钟前', 'info'],
+    ['疑似盗损', '城西网格 G12', 'P0', '18 分钟前', 'bad'],
+    ['车辆倒地', '文一路 32 号', 'P2', '24 分钟前', 'info'],
+  ];
+  const work = [['待派', 128, 'warn'], ['待接', 64, 'info'], ['执行中', 212, 'brand'], ['超时', 19, 'bad']];
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {kpis.map((k) => <Kpi key={k[0]} label={k[0]} value={k[1]} unit={k[2]} delta={k[3]} up={k[4]} spark={k[5]} />)}
+      </div>
+      <div className="grid lg:grid-cols-3 gap-5">
+        <Panel title="车队健康与可用性"><Donut segs={fleet} /></Panel>
+        <Panel title="电池 SOC 分布"><Donut segs={soc} /></Panel>
+        <Panel title="供需缺口 · 热点 Top 5" extra={<span className="text-[12px] text-brand-500 cursor-pointer">定位地图 →</span>}>
+          <ul className="space-y-2.5">
+            {hot.map(([n, d, c]) => (
+              <li key={n} className="flex items-center justify-between text-[13px]">
+                <span className="flex items-center gap-2"><span className={'w-2 h-2 rounded-full ' + (c === 'warn' ? 'bg-warn' : 'bg-info')}></span>{n}</span>
+                <span className={'font-medium ' + (c === 'warn' ? 'text-warn' : 'text-info')}>{d}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
+      <div className="grid lg:grid-cols-3 gap-5">
+        <Panel title="告警与异常中心" extra={<span className="text-[12px] text-ink-900/40">P0 7 · P1 23 · P2 51</span>} className="lg:col-span-2">
+          <table className="w-full text-[13px]">
+            <thead><tr className="text-ink-900/40 text-left"><th className="py-2 font-normal">类型</th><th className="font-normal">区域 / 对象</th><th className="font-normal">等级</th><th className="font-normal">时间</th><th className="font-normal text-right">操作</th></tr></thead>
+            <tbody>
+              {alerts.map(([t, r, lv, tm, c]) => (
+                <tr key={t + r} className="border-t border-gray-100">
+                  <td className="py-2.5 font-medium">{t}</td><td className="text-ink-900/60">{r}</td>
+                  <td><span className={'text-[11px] px-2 py-0.5 rounded ' + (c === 'bad' ? 'bg-bad/10 text-bad' : c === 'warn' ? 'bg-warn/10 text-warn' : 'bg-info/10 text-info')}>{lv}</span></td>
+                  <td className="text-ink-900/45">{tm}</td>
+                  <td className="text-right"><button className="text-brand-500 text-[12px]">派单</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+        <Panel title="工单与人效概览">
+          <div className="grid grid-cols-2 gap-3">
+            {work.map(([k, v, c]) => (
+              <div key={k} className="rounded-lg bg-mist p-3"><div className="font-serif font-bold text-xl" style={{ color: c === 'bad' ? '#EF4444' : c === 'warn' ? '#F59E0B' : c === 'info' ? '#0EA5E9' : '#4F46E5' }}>{v}</div><div className="text-[11px] text-ink-900/50 mt-0.5">{k}</div></div>
+            ))}
+          </div>
+          <div className="mt-4 text-[12px] text-ink-900/50">超时工单 19 · 人均完成 28 单 · 一次修复率 94%</div>
+        </Panel>
+      </div>
+      <Panel title="合规与治理概览">
+        <div className="grid sm:grid-cols-4 gap-4">
+          {[['禁停违规', '386 次', 'warn'], ['越界次数', '142 次', 'info'], ['超投预警', '正常', 'good'], ['数据共享', 'MDS 正常 · 延迟 1.2s', 'good']].map(([k, v, c]) => (
+            <div key={k} className="rounded-lg border border-gray-100 p-3"><div className="text-[12px] text-ink-900/50">{k}</div><div className={'font-semibold mt-1 ' + (c === 'good' ? 'text-good' : c === 'warn' ? 'text-warn' : 'text-info')}>{v}</div></div>
+          ))}
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function MapOps() {
+  const pins = [
+    [20, 30, 'good'], [35, 20, 'info'], [55, 35, 'warn'], [68, 28, 'good'], [72, 55, 'bad'],
+    [40, 60, 'info'], [25, 70, 'warn'], [60, 72, 'good'], [80, 68, 'info'], [48, 48, 'bad'],
+  ];
+  const filters = ['全部车型', '自行车', '电单车', '可换电', '低电优先', '离线'];
+  const alerts = [['禁停区违停', '湖滨步行街', 'bad'], ['低电预警', '滨江 86 辆', 'warn'], ['倒地', '文一路', 'info'], ['越界', '浙A·D8890', 'info']];
+  const tasks = [['早高峰补车', '钱江新城', '待派', 'warn'], ['重点区域换电', '滨江', '执行中', 'brand'], ['夜间回收', '城西', '待派', 'warn'], ['违停处置', '湖滨', '超时', 'bad']];
+  return (
+    <div className="grid lg:grid-cols-4 gap-5">
+      <div className="lg:col-span-1 space-y-4">
+        <Panel title="图层与筛选">
+          <div className="flex flex-wrap gap-2">
+            {filters.map((f, i) => <span key={f} className={'text-[12px] px-2.5 py-1 rounded-full cursor-pointer ' + (i === 0 ? 'bg-brand-50 text-brand-500' : 'bg-gray-100 text-ink-900/60')}>{f}</span>)}
+          </div>
+          <div className="mt-4 space-y-2 text-[12px] text-ink-900/60">
+            <label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> 车辆状态</label>
+            <label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> 电量分层</label>
+            <label className="flex items-center gap-2"><input type="checkbox" /> 热力图</label>
+            <label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> 围栏 / 停车点</label>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button className="flex-1 text-[12px] bg-ink-900 text-white rounded-btn py-2">框选车辆</button>
+            <button className="flex-1 text-[12px] border border-ink-900/15 rounded-btn py-2">批量指令</button>
+          </div>
+        </Panel>
+        <Panel title="快捷创建任务">
+          {['调度任务', '换电任务', '巡检任务', '维修工单'].map((t) => <button key={t} className="w-full text-left text-[13px] py-2 px-3 rounded-btn hover:bg-mist mb-1 flex items-center gap-2"><span className="text-brand-500">＋</span>{t}</button>)}
+        </Panel>
+      </div>
+      <div className="lg:col-span-2">
+        <div className="relative rounded-xl shadow-panel bg-gradient-to-br from-[#E8EEF7] to-[#E6F4EC] h-[560px] overflow-hidden">
+          <svg className="absolute inset-0 w-full h-full opacity-50" preserveAspectRatio="none" viewBox="0 0 100 100"><path d="M0 35 H100 M0 65 H100 M30 0 V100 M62 0 V100" stroke="#CBD6E6" strokeWidth="1"/><path d="M12 0 L42 100 M88 0 L58 100" stroke="#D7E0EC" strokeWidth="1"/></svg>
+          {pins.map(([x, y, c], i) => <span key={i} className={'absolute w-3 h-3 rounded-full -translate-x-1/2 -translate-y-1/2 ring-2 ring-white ' + (c === 'good' ? 'bg-good' : c === 'warn' ? 'bg-warn' : c === 'bad' ? 'bg-bad' : 'bg-info')} style={{ left: x + '%', top: y + '%' }}></span>)}
+          <div className="absolute left-3 top-3 flex gap-2 text-[11px] bg-white/90 rounded-btn px-2 py-1"><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-good"></span>可用</span><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warn"></span>低电</span><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-bad"></span>异常</span></div>
+          <button className="absolute right-3 bottom-3 bg-white rounded-full shadow p-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+        </div>
+      </div>
+      <div className="lg:col-span-1 space-y-4">
+        <Panel title="实时告警流" extra={<span className="text-[12px] text-bad">7 P0</span>}>
+          <ul className="space-y-2.5">
+            {alerts.map(([t, r, c]) => <li key={t + r} className="flex items-center justify-between text-[12px]"><span className="flex items-center gap-2"><span className={'w-2 h-2 rounded-full ' + (c === 'bad' ? 'bg-bad' : c === 'warn' ? 'bg-warn' : 'bg-info')}></span>{t}<span className="text-ink-900/40">{r}</span></span><button className="text-brand-500">派单</button></li>)}
+          </ul>
+        </Panel>
+        <Panel title="任务池">
+          <ul className="space-y-2">
+            {tasks.map(([t, r, s, c]) => (
+              <li key={t + r} className="flex items-center justify-between bg-mist rounded-btn px-3 py-2 text-[12px]">
+                <span><div className="font-medium">{t}</div><div className="text-ink-900/45">{r}</div></span>
+                <span className={'text-[11px] px-2 py-0.5 rounded ' + (c === 'bad' ? 'bg-bad/10 text-bad' : c === 'warn' ? 'bg-warn/10 text-warn' : c === 'brand' ? 'bg-brand-50 text-brand-500' : 'bg-info/10 text-info')}>{s}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
+function WorkOrders() {
+  const cols = [
+    ['待派', 'warn', [['早高峰补车', '钱江新城', '高'], ['违停处置', '湖滨', '中']]],
+    ['待接', 'info', [['低电换电', '滨江', '高'], ['故障维修', '城西', '中']]],
+    ['执行中', 'brand', [['夜间回收', '城西', '中'], ['巡检', '西湖', '低']]],
+    ['待验收', 'warn', [['调度搬运', '火车东站', '中']]],
+    ['已完成', 'good', [['换电', '滨江', '—'], ['维修', '文一', '—']]],
+  ];
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {cols.map(([t, c, cards]) => (
+        <div key={t} className="bg-white/60 rounded-xl p-3">
+          <div className="flex items-center gap-2 mb-3"><span className={'w-2 h-2 rounded-full ' + (c === 'warn' ? 'bg-warn' : c === 'info' ? 'bg-info' : c === 'brand' ? 'bg-brand-500' : 'bg-good')}></span><span className="font-medium text-[13px]">{t}</span><span className="text-[11px] text-ink-900/40 ml-auto">{cards.length}</span></div>
+          <div className="space-y-2.5">
+            {cards.map(([title, area, pri]) => (
+              <div key={title + area} className="bg-white rounded-lg shadow-sm p-3">
+                <div className="text-[13px] font-medium">{title}</div>
+                <div className="text-[11px] text-ink-900/45 mt-0.5">{area}</div>
+                <div className="flex items-center justify-between mt-2"><span className={'text-[11px] px-1.5 py-0.5 rounded ' + (pri === '高' ? 'bg-bad/10 text-bad' : pri === '中' ? 'bg-warn/10 text-warn' : 'bg-gray-100 text-ink-900/50')}>{pri === '—' ? '已完成' : pri + '优先'}</span><button className="text-[11px] text-brand-500">详情</button></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SimpleModule({ title, desc, cards }) {
+  return (
+    <div className="space-y-5">
+      <div className="bg-white rounded-xl shadow-panel p-5"><h3 className="font-bold text-[15px]">{title}</h3><p className="text-[13px] text-ink-900/55 mt-1.5">{desc}</p></div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {cards.map(([k, v, c]) => <div key={k} className="bg-white rounded-xl shadow-panel p-4"><div className="text-[12px] text-ink-900/50">{k}</div><div className={'font-serif font-bold text-2xl mt-1 ' + (c === 'good' ? 'text-good' : c === 'warn' ? 'text-warn' : c === 'bad' ? 'text-bad' : 'text-ink-900')}>{v}</div></div>)}
+      </div>
+    </div>
+  );
+}
+
+function ModuleView(view) {
+  switch (view) {
+    case 'overview': return <Overview />;
+    case 'map': return <MapOps />;
+    case 'orders': return <WorkOrders />;
+    case 'fleet': return <SimpleModule title="车队资产" desc="车辆列表 / 状态机 / 轨迹回放 / 批量指令。当前在管车辆 29,800 辆。" cards={[['在管车辆', '29,800', ''], ['今日骑行', '48,612 次', 'good'], ['平均车龄', '1.8 年', ''], ['报废预警', '36 辆', 'warn']]} />;
+    case 'battery': return <SimpleModule title="电池与能源" desc="电池台账 / SOC·SOH / 低电清单 / 换电任务。在车电池 27,400 块。" cards={[['在车电池', '27,400', ''], ['低电待换', '1,842', 'warn'], ['今日换电', '1,206 次', 'good'], ['异常电池', '12', 'bad']]} />;
+    case 'zones': return <SimpleModule title="规则与区域" desc="服务区 / 禁停区 / 推荐停车点 / 限速区 / 运营时段配置（版本可回滚）。" cards={[['服务区', '18 个', ''], ['禁停区', '42 个', 'warn'], ['推荐停车点', '236', ''], ['规则版本', 'v3.2 已发布', 'good']]} />;
+    case 'compliance': return <SimpleModule title="合规监管" desc="事件处置台 / 违规统计 / 多主体对比 / 数据共享接口（MDS·GBFS）健康度。" cards={[['禁停违规', '386 次', 'warn'], ['越界次数', '142 次', 'info'], ['超投预警', '正常', 'good'], ['上报延迟', '1.2s', 'good']]} />;
+    case 'reports': return <SimpleModule title="数据报表" desc="运营 / 运维 / 财务 / 合规报表模板，支持导出与监管报送。" cards={[['今日 GMV', '¥31.2万', 'good'], ['运维成本', '¥4.8万', ''], ['资产损耗', '0.3%', ''], ['合规覆盖率', '100%', 'good']]} />;
+    case 'org': return <SimpleModule title="组织与权限" desc="集团 → 城市 → 区域 → 子车队层级，RBAC + 数据权限 + 操作审计。" cards={[['城市公司', '3', ''], ['运维班组', '26', ''], ['系统账号', '418', ''], ['今日审计', '1,024 条', '']} />;
+    case 'settings': return <SimpleModule title="系统配置与对接" desc="价格 / 活动、支付对接、地图服务、IoT 平台、开放 API / Webhook。" cards={[['IoT 平台', '在线', 'good'], ['支付通道', '微信/支付宝', ''], ['地图服务', '高德', ''], ['开放 API', '12 已启用', 'good']]} />;
+    default: return <Overview />;
+  }
+}
+
+function App() {
+  const [view, setView] = useState('overview');
+  const [range, setRange] = useState('今日');
+  const [collapsed, setCollapsed] = useState(false);
+  const titles = { overview: '运营总览', map: '地图调度中心', fleet: '车队资产', battery: '电池与能源', orders: '运维工单', zones: '规则与区域', compliance: '合规监管', reports: '数据报表', org: '组织与权限', settings: '系统配置' };
+  return (
+    <div className="flex min-h-screen">
+      <aside className={'bg-ink-900 text-white shrink-0 ' + (collapsed ? 'w-[68px]' : 'w-[220px]') + ' transition-all hidden md:block'}>
+        <div className="h-16 flex items-center gap-2.5 px-4 border-b border-white/10">
+          <span className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 font-serif font-bold">骑</span>
+          {!collapsed && <span className="font-serif font-bold">骑迹运营</span>}
+        </div>
+        <nav className="py-3">
+          {NAV.map(([k, label, path]) => (
+            <button key={k} onClick={() => setView(k)} className={'nav-item w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-white/70 hover:text-white ' + (view === k ? 'active' : '')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d={path}/></svg>
+              {!collapsed && <span>{label}</span>}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 bg-white border-b border-gray-100 flex items-center gap-4 px-5 sticky top-0 z-30">
+          <button className="md:hidden" onClick={() => setCollapsed(!collapsed)}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111A2E" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+          <h1 className="font-serif font-bold text-lg">{titles[view]}</h1>
+          <div className="ml-auto flex items-center gap-3 flex-wrap">
+            <div className="seg hidden sm:flex bg-gray-100 rounded-btn p-0.5 text-[12px]">
+              {['今日', '昨日', '本周', '本月'].map((r) => <button key={r} onClick={() => setRange(r)} className={'px-3 py-1.5 rounded-btn ' + (range === r ? 'active' : 'text-ink-900/55')}>{r}</button>)}
+            </div>
+            <select className="text-[12px] border border-gray-200 rounded-btn px-2.5 py-1.5 bg-white"><option>杭州市</option><option>宁波市</option><option>温州市</option></select>
+            <select className="text-[12px] border border-gray-200 rounded-btn px-2.5 py-1.5 bg-white"><option>混合车队</option><option>自行车</option><option>电单车</option></select>
+            <div className="flex items-center gap-2 bg-gray-100 rounded-btn px-2.5 py-1.5 text-[12px] text-ink-900/55"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>搜索车辆 / 订单</div>
+            <span className="w-9 h-9 rounded-full bg-brand-50 grid place-items-center text-brand-500 text-sm">运</span>
+          </div>
+        </header>
+        <main className="flex-1 p-5 scroll-thin overflow-y-auto">
+          <ModuleView view={view} />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

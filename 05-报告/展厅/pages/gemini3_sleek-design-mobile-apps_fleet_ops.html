@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetOps - 智能车队管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --primary: #1677FF;
+            --success: #52C41A;
+            --warning: #FA8C16;
+            --danger: #FF4D4F;
+            --background: #F8FAFC;
+            --card: #FFFFFF;
+            --text-main: #0F172A;
+            --text-secondary: #64748B;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            padding-bottom: 90px;
+        }
+        .header-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding-bottom: 80px;
+        }
+        .stat-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        .vehicle-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #F1F5F9;
+            transition: all 0.2s ease;
+        }
+        .vehicle-card:active {
+            transform: scale(0.98);
+            background: #F8FAFC;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-active { background: #F0FDF4; color: #16A34A; }
+        .status-idle { background: #F1F5F9; color: #64748B; }
+        .status-alert { background: #FEF2F2; color: #DC2626; }
+        
+        .progress-bar {
+            height: 6px;
+            background: #F1F5F9;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-inner {
+            height: 100%;
+            border-radius: 3px;
+        }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 84px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 20px;
+            border-top: 1px solid #F1F5F9;
+            z-index: 100;
+        }
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #94A3B8;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .tab-item.active {
+            color: var(--primary);
+        }
+        .floating-action {
+            width: 56px;
+            height: 56px;
+            background: var(--primary);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 20px rgba(22, 119, 255, 0.3);
+            margin-top: -40px;
+            border: 4px solid white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Header -->
+    <div class="header-gradient px-6 pt-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <p class="text-slate-400 text-xs font-medium mb-1">早安, 运营主管</p>
+                <h1 class="text-white text-xl font-extrabold">车队概览</h1>
+            </div>
+            <div class="flex gap-3">
+                <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-slate-300 relative">
+                    <i class="ph ph-bell text-xl"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-800"></span>
+                </div>
+                <img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100" class="w-10 h-10 rounded-xl object-cover border-2 border-slate-700" alt="Avatar">
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="bg-slate-800/50 backdrop-blur-md h-12 rounded-xl flex items-center px-4 gap-3 border border-white/5">
+            <i class="ph ph-magnifying-glass text-slate-500"></i>
+            <input type="text" placeholder="搜索车辆、驾驶员或地点..." class="text-sm bg-transparent border-none focus:ring-0 w-full text-slate-300">
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="px-6 -mt-12">
+        <div class="grid grid-cols-2 gap-4">
+            <div class="stat-card">
+                <div class="w-10 h-10 bg-blue-50 text-primary rounded-xl flex items-center justify-center mb-3">
+                    <i class="ph-fill ph-car text-xl"></i>
+                </div>
+                <p class="text-text-secondary text-xs font-semibold">总车辆</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-2xl font-extrabold">128</h2>
+                    <span class="text-[10px] text-success font-bold">+4%</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="w-10 h-10 bg-green-50 text-success rounded-xl flex items-center justify-center mb-3">
+                    <i class="ph-fill ph-broadcast text-xl"></i>
+                </div>
+                <p class="text-text-secondary text-xs font-semibold">在线中</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-2xl font-extrabold">112</h2>
+                    <span class="text-[10px] text-success font-bold">87%</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="w-10 h-10 bg-orange-50 text-warning rounded-xl flex items-center justify-center mb-3">
+                    <i class="ph-fill ph-wrench text-xl"></i>
+                </div>
+                <p class="text-text-secondary text-xs font-semibold">待维保</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-2xl font-extrabold">6</h2>
+                    <span class="text-[10px] text-warning font-bold">需要关注</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="w-10 h-10 bg-red-50 text-danger rounded-xl flex items-center justify-center mb-3">
+                    <i class="ph-fill ph-warning-circle text-xl"></i>
+                </div>
+                <p class="text-text-secondary text-xs font-semibold">异常警告</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-2xl font-extrabold">2</h2>
+                    <span class="text-[10px] text-danger font-bold">高风险</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Missions -->
+    <div class="px-6 mt-8">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-extrabold">实时车辆状态</h3>
+            <button class="text-primary text-xs font-bold flex items-center gap-1">
+                查看全部 <i class="ph ph-caret-right"></i>
+            </button>
+        </div>
+
+        <!-- Vehicle 1 -->
+        <div class="vehicle-card">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex gap-3">
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                        <i class="ph-fill ph-truck text-2xl text-slate-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm">浙A·D8239</h4>
+                        <p class="text-[10px] text-text-secondary">驾驶员: 张小明 · 厢式货车</p>
+                    </div>
+                </div>
+                <span class="status-badge status-active">配送中</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-text-secondary">当前电量 / 预估里程</span>
+                    <span class="font-bold">78% · 320km</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-inner bg-primary" style="width: 78%"></div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <i class="ph ph-map-pin text-slate-400"></i>
+                    <p class="text-[10px] text-slate-500 truncate">杭州市滨江区江虹路 1766 号</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle 2 -->
+        <div class="vehicle-card">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex gap-3">
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                        <i class="ph-fill ph-truck text-2xl text-slate-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm">浙A·E5521</h4>
+                        <p class="text-[10px] text-text-secondary">驾驶员: 李华 · 冷链运输</p>
+                    </div>
+                </div>
+                <span class="status-badge status-alert">温度异常</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-text-secondary">当前电量 / 预估里程</span>
+                    <span class="font-bold">42% · 150km</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-inner bg-warning" style="width: 42%"></div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <i class="ph ph-thermometer-hot text-danger"></i>
+                    <p class="text-[10px] text-danger font-bold">货箱温度: 8.5°C (预警阈值 5°C)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle 3 -->
+        <div class="vehicle-card">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex gap-3">
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                        <i class="ph-fill ph-truck text-2xl text-slate-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm">浙A·F9012</h4>
+                        <p class="text-[10px] text-text-secondary">驾驶员: 王强 · 城市配送</p>
+                    </div>
+                </div>
+                <span class="status-badge status-idle">已入库</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-text-secondary">当前电量 / 预估里程</span>
+                    <span class="font-bold">95% · 410km</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-inner bg-success" style="width: 95%"></div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <i class="ph ph-calendar text-slate-400"></i>
+                    <p class="text-[10px] text-slate-500">下次出车任务: 14:30 · 城西配送中心</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+        <div class="tab-item active">
+            <i class="ph-fill ph-squares-four text-2xl"></i>
+            <span>概览</span>
+        </div>
+        <div class="tab-item">
+            <i class="ph ph-map-trifold text-2xl"></i>
+            <span>地图</span>
+        </div>
+        <div class="floating-action">
+            <i class="ph ph-plus text-2xl font-bold"></i>
+        </div>
+        <div class="tab-item">
+            <i class="ph ph-chart-line-up text-2xl"></i>
+            <span>分析</span>
+        </div>
+        <div class="tab-item">
+            <i class="ph ph-user text-2xl"></i>
+            <span>我的</span>
+        </div>
+    </div>
+
+</body>
+</html>

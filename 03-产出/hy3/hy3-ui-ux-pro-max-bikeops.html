@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>城市级共享两轮运营管理后台 · 运营总览</title>
+<meta name="description" content="共享自行车与电单车城市级运营管理后台：实时监控地图、车队健康、电池能源、调度与工单闭环、合规治理与数据报表。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+  /* ===== Design Tokens (semantic) ===== */
+  :root{
+    --primary:#3B5BDB;        /* indigo — operations */
+    --primary-strong:#2F49B0;
+    --primary-soft:#E9EDFB;
+    --teal:#0CA678;
+
+    --available:#0CA678;     /* 可用 */
+    --inuse:#3B5BDB;         /* 使用中 */
+    --low:#F08C00;           /* 低电 */
+    --fault:#E03131;         /* 故障 */
+    --offline:#868E96;       /* 离线 */
+    --recycle:#9C36B5;       /* 回收中 */
+
+    --surface:#FFFFFF;
+    --surface-2:#F4F6FB;
+    --bg:#EBEEF5;
+    --sidebar:#0F1B33;
+    --sidebar-2:#16264A;
+    --on-surface:#1A2233;
+    --on-surface-2:#5A667A;
+    --on-surface-3:#8A95A8;
+    --border:#E3E8F2;
+    --border-strong:#D2DAE8;
+
+    --radius-sm:8px;
+    --radius:12px;
+    --radius-lg:16px;
+
+    --shadow-1:0 1px 2px rgba(16,24,40,.05),0 1px 6px rgba(16,24,40,.06);
+    --shadow-2:0 6px 20px rgba(16,24,40,.10);
+
+    --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-7:32px;
+
+    --font-sans:"Noto Sans SC",system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --ease:cubic-bezier(.2,.7,.3,1);
+    --dur:220ms;
+    --sidebar-w:248px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:var(--font-sans);font-size:14px;line-height:1.5;color:var(--on-surface);background:var(--bg);-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;font-weight:700;}
+  p{margin:0;}
+  a{color:inherit;text-decoration:none;}
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  .visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+  :focus-visible{outline:3px solid #6f8cff;outline-offset:2px;border-radius:4px;}
+
+  .layout{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh;}
+
+  /* ===== Sidebar ===== */
+  .sidebar{background:var(--sidebar);color:#C7D2E8;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+  .brand{display:flex;align-items:center;gap:10px;padding:18px 18px;font-weight:900;color:#fff;font-size:16px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .brand .logo{width:34px;height:34px;flex:0 0 auto;background:linear-gradient(135deg,var(--primary),var(--teal));border-radius:9px;display:grid;place-items:center;}
+  .brand .logo svg{width:20px;height:20px;color:#fff;}
+  .nav-scroll{overflow-y:auto;flex:1;padding:10px 10px 20px;}
+  .nav-group{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7FA3;padding:14px 12px 6px;font-weight:700;}
+  .sidenav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--radius-sm);color:#B6C2DC;font-weight:500;font-size:14px;transition:background var(--dur),color var(--dur);position:relative;}
+  .sidenav a svg{width:20px;height:20px;flex:0 0 auto;}
+  .sidenav a:hover{background:var(--sidebar-2);color:#fff;}
+  .sidenav a[aria-current="page"]{background:linear-gradient(90deg,var(--primary),rgba(59,91,219,.35));color:#fff;font-weight:700;}
+  .sidenav a[aria-current="page"]::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:#fff;}
+  .side-foot{padding:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+  .side-foot .av{width:34px;height:34px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-weight:800;}
+  .side-foot .who b{display:block;color:#fff;font-size:13px;}
+  .side-foot .who span{font-size:12px;color:#7E8DB0;}
+
+  /* ===== Main ===== */
+  .main{display:flex;flex-direction:column;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:12px var(--sp-5);display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;}
+  .topbar h1{font-size:18px;}
+  .topbar .crumb{color:var(--on-surface-3);font-size:13px;margin-top:2px;}
+  .topbar .controls{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .ctl{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;color:var(--on-surface);}
+  .ctl svg{width:16px;height:16px;color:var(--on-surface-2);}
+  .ctl select,.ctl input{border:none;background:transparent;font:inherit;font-weight:600;color:var(--on-surface);}
+  .seg{display:inline-flex;background:var(--surface-2);border-radius:var(--radius-sm);padding:3px;gap:2px;border:1px solid var(--border);}
+  .seg button{border:none;background:transparent;padding:7px 12px;border-radius:6px;font:inherit;font-weight:700;font-size:13px;color:var(--on-surface-2);cursor:pointer;min-height:36px;}
+  .seg button[aria-pressed="true"]{background:var(--surface);color:var(--primary);box-shadow:var(--shadow-1);}
+  .btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:none;border-radius:var(--radius-sm);font:inherit;font-weight:700;font-size:14px;cursor:pointer;background:var(--primary);color:#fff;transition:transform var(--dur),background var(--dur);}
+  .btn:hover{background:var(--primary-strong);}
+  .btn:active{transform:scale(.98);}
+  .btn-ghost{background:var(--surface);color:var(--on-surface);border:1px solid var(--border);}
+  .btn svg{width:18px;height:18px;}
+
+  .content{padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-5);}
+
+  /* ===== KPI cards ===== */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4);}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--sp-4);box-shadow:var(--shadow-1);position:relative;overflow:hidden;transition:transform var(--dur) var(--ease),box-shadow var(--dur);}
+  .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-2);}
+  .kpi .lbl{font-size:13px;color:var(--on-surface-2);display:flex;align-items:center;gap:8px;}
+  .kpi .lbl .ic{width:32px;height:32px;border-radius:9px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;}
+  .kpi .lbl .ic svg{width:18px;height:18px;}
+  .kpi .val{font-size:30px;font-weight:900;margin-top:10px;letter-spacing:-.02em;}
+  .kpi .delta{font-size:12px;font-weight:700;margin-top:4px;display:inline-flex;align-items:center;gap:4px;}
+  .delta.up{color:var(--available);}
+  .delta.down{color:var(--fault);}
+  .kpi .sub{font-size:12px;color:var(--on-surface-3);margin-top:2px;}
+
+  /* ===== Panels grid ===== */
+  .grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:var(--sp-4);}
+  .grid-3{display:grid;grid-template-columns:2fr 1fr;gap:var(--sp-4);}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-1);display:flex;flex-direction:column;}
+  .panel .hd{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-4) 0;}
+  .panel .hd h2{font-size:15px;}
+  .panel .hd .hint{font-size:12px;color:var(--on-surface-3);}
+  .panel .bd{padding:var(--sp-4);}
+  .chip-btn{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius-sm);padding:6px 12px;font:inherit;font-size:12px;font-weight:600;color:var(--on-surface-2);cursor:pointer;}
+  .chip-btn:hover{border-color:var(--primary);color:var(--primary);}
+
+  /* Chart legend (accessible, not color-only — includes text + shape) */
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;color:var(--on-surface-2);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend .sw{width:11px;height:11px;border-radius:3px;}
+
+  /* donut */
+  .donut-row{display:flex;align-items:center;gap:var(--sp-5);}
+  .donut{position:relative;width:160px;height:160px;flex:0 0 auto;}
+  .donut .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut .center b{font-size:26px;font-weight:900;}
+  .donut .center span{font-size:12px;color:var(--on-surface-2);}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;}
+  .donut-legend .row{display:flex;align-items:center;gap:8px;font-size:13px;}
+  .donut-legend .row .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+  .donut-legend .row .nm{flex:1;}
+  .donut-legend .row .ct{font-weight:700;}
+  .donut-legend .row .pc{color:var(--on-surface-3);font-size:12px;width:48px;text-align:right;}
+
+  /* bars */
+  .bars{display:flex;align-items:flex-end;gap:14px;height:200px;padding:0 4px;}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end;position:relative;}
+  .bar{width:100%;max-width:40px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--primary),#6f8cff);transition:opacity var(--dur);}
+  .bar-col:hover .bar{opacity:.82;}
+  .bar-lbl{font-size:12px;color:var(--on-surface-2);}
+  .bar-val{font-size:12px;font-weight:700;position:absolute;top:-20px;}
+  .bars-axis{display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:8px;padding-top:6px;color:var(--on-surface-3);font-size:11px;}
+
+  /* line chart */
+  .line-wrap{width:100%;}
+  .line-wrap svg{width:100%;height:auto;display:block;}
+  .line-dot{transition:r var(--dur);}
+  .line-dot:hover{r:6;}
+
+  /* Map */
+  .map-panel{position:relative;min-height:340px;background:
+      linear-gradient(160deg,#e9eefb,#dfe8f8);border-radius:var(--radius);overflow:hidden;}
+  .map-panel .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(120,140,180,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(120,140,180,.10) 1px,transparent 1px);background-size:32px 32px;}
+  .map-panel .pt{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:var(--shadow-1);cursor:pointer;transition:transform var(--dur);}
+  .map-panel .pt:hover{transform:scale(1.4);}
+  .map-legend{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.92);border-radius:var(--radius-sm);padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:12px;box-shadow:var(--shadow-1);}
+  .map-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .map-legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .map-tools{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px;}
+  .map-tools button{width:38px;height:38px;border-radius:9px;background:#fff;border:1px solid var(--border);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-1);}
+  .map-tools button svg{width:18px;height:18px;color:var(--primary);}
+  .map-side{display:flex;flex-direction:column;gap:12px;}
+
+  /* Alerts */
+  .alert{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;transition:border-color var(--dur);}
+  .alert:hover{border-color:var(--border-strong);}
+  .alert .lv{flex:0 0 auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.04em;}
+  .lv.p0{background:#FCE8E8;color:var(--fault);}
+  .lv.p1{background:#FEF0DD;color:var(--low);}
+  .lv.p2{background:var(--primary-soft);color:var(--primary);}
+  .alert .body{flex:1;min-width:0;}
+  .alert .body b{font-size:13px;}
+  .alert .body p{font-size:12px;color:var(--on-surface-2);margin-top:2px;}
+  .alert .acts{display:flex;gap:6px;margin-top:6px;}
+  .alert .acts button{border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:5px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--primary);}
+  .alert .acts button:hover{background:var(--primary-soft);}
+
+  /* Work-order board */
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .col{background:var(--surface-2);border-radius:var(--radius);padding:10px;}
+  .col .ch{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:10px;padding:0 4px;}
+  .col .ch .n{background:var(--surface);border-radius:999px;padding:1px 9px;font-size:12px;color:var(--on-surface-2);}
+  .ticket{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:8px;padding:10px;margin-bottom:10px;box-shadow:var(--shadow-1);}
+  .ticket.warn{border-left-color:var(--low);}
+  .ticket.danger{border-left-color:var(--fault);}
+  .ticket b{font-size:13px;}
+  .ticket .meta{display:flex;justify-content:space-between;font-size:11px;color:var(--on-surface-3);margin-top:6px;}
+  .ticket .tagline{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;margin-top:6px;padding:2px 7px;border-radius:999px;background:var(--surface-2);color:var(--on-surface-2);}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;color:var(--on-surface-2);font-weight:700;font-size:12px;padding:10px 12px;border-bottom:2px solid var(--border);white-space:nowrap;}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--border);}
+  tbody tr:hover{background:var(--surface-2);}
+  th[aria-sort]{cursor:pointer;}
+  th[aria-sort] .ar{color:var(--primary);font-size:11px;}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .badge.ok{background:var(--primary-soft);color:var(--primary);}
+  .badge.low{background:#FEF0DD;color:var(--low);}
+  .badge.warn{background:#FCE8E8;color:var(--fault);}
+  .badge .d{width:7px;height:7px;border-radius:50%;background:currentColor;}
+
+  .progress{height:7px;border-radius:999px;background:var(--surface-2);overflow:hidden;}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),#3dd6a0);border-radius:999px;}
+
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+  .section-title h2{font-size:16px;}
+
+  /* tooltip */
+  #tip{position:fixed;z-index:200;pointer-events:none;background:#0F1B33;color:#fff;padding:8px 11px;border-radius:8px;font-size:12px;opacity:0;transform:translateY(4px);transition:opacity var(--dur),transform var(--dur);box-shadow:var(--shadow-2);}
+  #tip.show{opacity:1;transform:none;}
+
+  @media (max-width:1100px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .grid-2,.grid-3{grid-template-columns:1fr;}
+    .board{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:820px){
+    :root{--sidebar-w:0px;}
+    .layout{grid-template-columns:1fr;}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:248px;transform:translateX(-100%);transition:transform var(--dur) var(--ease);z-index:100;}
+    .sidebar.open{transform:none;}
+    .menu-toggle{display:grid!important;}
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;opacity:0;pointer-events:none;transition:opacity var(--dur);}
+    .scrim.open{opacity:1;pointer-events:auto;}
+  }
+  .menu-toggle{display:none;width:40px;height:40px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);place-items:center;cursor:pointer;}
+  .menu-toggle svg{width:22px;height:22px;color:var(--on-surface);}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<a class="visually-hidden" href="#main">跳到主要内容</a>
+<div class="scrim" id="scrim"></div>
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar" aria-label="主导航">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l4 8M10 9l2-4 2 4"/></svg></span>
+      骑行运营中枢
+    </div>
+    <nav class="nav-scroll sidenav" aria-label="一级导航">
+      <div class="nav-group">运营</div>
+      <a href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>运营总览</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>地图调度中心</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l4 8"/></svg>车队资产</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 18 0"/><path d="M12 12v5M7 12h10"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>电池与能源</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 3h6v4H9zM9 12h6M9 16h4"/></svg>运维工单</a>
+      <div class="nav-group">治理</div>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 3 8v8l9 5 9-5V8l-9-5Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>规则与区域</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>合规监管</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m6 10V5m6 14v-7"/></svg>数据报表</a>
+      <div class="nav-group">系统</div>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/><path d="M16 11l2 2 4-4"/></svg>组织与权限</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.7-1L16.5 3h-4l-.3 2.5a7 7 0 0 0-1.7 1l-2.4-1-2 3.5L6 11a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5a7 7 0 0 0 .1-1Z"/></svg>系统配置与对接</a>
+    </nav>
+    <div class="side-foot">
+      <div class="av">运</div>
+      <div class="who"><b>杭州运营经理</b><span>城市站 · 全城范围</span></div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="打开菜单" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div>
+        <h1>运营总览</h1>
+        <div class="crumb">城市级共享两轮运营管理后台 · 杭州</div>
+      </div>
+      <div class="controls">
+        <label class="ctl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+          <select aria-label="时间范围"><option>今日</option><option>昨日</option><option>本周</option><option selected>本月</option><option>自定义</option></select>
+        </label>
+        <label class="ctl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <select aria-label="组织范围"><option>全城</option><option>重点区域</option><option>自定义围栏</option></select>
+        </label>
+        <div class="seg" role="group" aria-label="车型过滤">
+          <button type="button" aria-pressed="true">全部</button>
+          <button type="button" aria-pressed="false">自行车</button>
+          <button type="button" aria-pressed="false">电单车</button>
+        </div>
+        <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>创建调度任务</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <!-- KPI -->
+      <section class="kpis" aria-label="核心 KPI 总览">
+        <article class="kpi">
+          <div class="lbl"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>今日订单</div>
+          <div class="val tnum">48,920</div>
+          <div class="delta up"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l7-7 7 7"/></svg> +12.4% 较昨日</div>
+          <div class="sub">GMV ¥386,500 · 退款 ¥4,120</div>
+        </article>
+        <article class="kpi">
+          <div class="lbl"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>全城可用率</div>
+          <div class="val tnum">91.3%</div>
+          <div class="delta up"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l7-7 7 7"/></svg> +1.8% 较昨日</div>
+          <div class="sub">重点区域 88.6% · 目标 ≥90%</div>
+        </article>
+        <article class="kpi">
+          <div class="lbl"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 10-12h-7l1-8Z"/></svg></span>低电车辆</div>
+          <div class="val tnum">2,140</div>
+          <div class="delta down"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l7 7 7-7"/></svg> +6.1% 需关注</div>
+          <div class="sub">阈值 30% · 在途换电 86 单</div>
+        </article>
+        <article class="kpi">
+          <div class="lbl"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z"/></svg></span>P0/P1 告警</div>
+          <div class="val tnum">37</div>
+          <div class="delta down"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l7 7 7-7"/></svg> 超时 5 条</div>
+          <div class="sub">平均响应 8.2 分钟</div>
+        </article>
+      </section>
+
+      <!-- Map + Alerts -->
+      <section class="grid-3" aria-label="地图调度与告警">
+        <div class="panel">
+          <div class="hd">
+            <h2>地图调度中心</h2>
+            <span class="hint">实时车辆点位 · 点击查看详情</span>
+          </div>
+          <div class="bd">
+            <div class="map-panel" id="map" role="img" aria-label="城市车辆实时分布地图，含状态聚合点位">
+              <div class="grid-bg"></div>
+              <span class="pt" style="left:18%;top:30%;background:var(--available);" tabindex="0" role="button" aria-label="片区A：可用车 320"></span>
+              <span class="pt" style="left:30%;top:55%;background:var(--inuse);" tabindex="0" role="button" aria-label="片区B：使用中 210"></span>
+              <span class="pt" style="left:46%;top:38%;background:var(--low);" tabindex="0" role="button" aria-label="片区C：低电 64"></span>
+              <span class="pt" style="left:58%;top:62%;background:var(--available);" tabindex="0" role="button" aria-label="片区D：可用车 280"></span>
+              <span class="pt" style="left:68%;top:28%;background:var(--fault);" tabindex="0" role="button" aria-label="片区E：故障 12"></span>
+              <span class="pt" style="left:42%;top:70%;background:var(--low);" tabindex="0" role="button" aria-label="片区F：低电 80"></span>
+              <span class="pt" style="left:78%;top:52%;background:var(--inuse);" tabindex="0" role="button" aria-label="片区G：使用中 150"></span>
+              <span class="pt" style="left:24%;top:74%;background:var(--offline);" tabindex="0" role="button" aria-label="片区H：离线 22"></span>
+              <div class="map-tools">
+                <button aria-label="框选车辆"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></button>
+                <button aria-label="热力图"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z"/></svg></button>
+                <button aria-label="批量指令"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+              </div>
+              <div class="map-legend">
+                <span><i style="background:var(--available)"></i>可用</span>
+                <span><i style="background:var(--inuse)"></i>使用中</span>
+                <span><i style="background:var(--low)"></i>低电</span>
+                <span><i style="background:var(--fault)"></i>故障</span>
+                <span><i style="background:var(--offline)"></i>离线</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-side">
+          <div class="panel" style="flex:1;">
+            <div class="hd"><h2>告警与异常中心</h2><span class="hint">P0/P1/P2</span></div>
+            <div class="bd">
+              <div class="alert"><span class="lv p0">P0</span><div class="body"><b>西溪银泰禁停区聚集</b><p>12 辆车异常聚集，疑似堆车 · 18 分钟前</p><div class="acts"><button>生成工单</button><button>定位地图</button></div></div></div>
+              <div class="alert"><span class="lv p0">P0</span><div class="body"><b>滨江 B7 越界</b><p>车辆驶出服务区 420m · 已触发锁车建议</p><div class="acts"><button>查看轨迹</button><button>派单</button></div></div></div>
+              <div class="alert"><span class="lv p1">P1</span><div class="body"><b>古翠路低电预警</b><p>80 辆 SOC＜30%，建议优先换电</p><div class="acts"><button>生成换电</button></div></div></div>
+              <div class="alert"><span class="lv p2">P2</span><div class="body"><b>城西片区离线 22 辆</b><p>最后上报＞1h，疑似通信故障</p><div class="acts"><button>排查</button></div></div></div>
+              <button class="chip-btn" style="width:100%;margin-top:4px;">查看全部告警</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fleet health donut + Orders bar -->
+      <section class="grid-2" aria-label="车队健康与运营效率">
+        <div class="panel">
+          <div class="hd"><h2>车队健康与可用性</h2><span class="hint">共 26,480 辆</span></div>
+          <div class="bd">
+            <div class="donut-row">
+              <div class="donut">
+                <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="车辆状态分布环形图">
+                  <circle cx="80" cy="80" r="64" fill="none" stroke="#0CA678" stroke-width="20" stroke-dasharray="402 1005" transform="rotate(-90 80 80)"/>
+                  <circle cx="80" cy="80" r="64" fill="none" stroke="#3B5BDB" stroke-width="20" stroke-dasharray="276 1005" stroke-dashoffset="-402" transform="rotate(-90 80 80)"/>
+                  <circle cx="80" cy="80" r="64" fill="none" stroke="#F08C00" stroke-width="20" stroke-dasharray="128 1005" stroke-dashoffset="-678" transform="rotate(-90 80 80)"/>
+                  <circle cx="80" cy="80" r="64" fill="none" stroke="#E03131" stroke-width="20" stroke-dasharray="38 1005" stroke-dashoffset="-806" transform="rotate(-90 80 80)"/>
+                  <circle cx="80" cy="80" r="64" fill="none" stroke="#868E96" stroke-width="20" stroke-dasharray="32 1005" stroke-dashoffset="-844" transform="rotate(-90 80 80)"/>
+                </svg>
+                <div class="center"><b class="tnum">91.3%</b><span>可用率</span></div>
+              </div>
+              <div class="donut-legend" id="donutLegend">
+                <div class="row"><span class="sw" style="background:var(--available)"></span><span class="nm">可用</span><span class="ct tnum">18,640</span><span class="pc tnum">70.4%</span></div>
+                <div class="row"><span class="sw" style="background:var(--inuse)"></span><span class="nm">使用中</span><span class="ct tnum">5,120</span><span class="pc tnum">19.3%</span></div>
+                <div class="row"><span class="sw" style="background:var(--low)"></span><span class="nm">低电</span><span class="ct tnum">2,140</span><span class="pc tnum">8.1%</span></div>
+                <div class="row"><span class="sw" style="background:var(--fault)"></span><span class="nm">故障</span><span class="ct tnum">630</span><span class="pc tnum">2.4%</span></div>
+                <div class="row"><span class="sw" style="background:var(--offline)"></span><span class="nm">离线</span><span class="ct tnum">520</span><span class="pc tnum">2.0%</span></div>
+              </div>
+            </div>
+            <div class="legend" aria-hidden="true"></div>
+            <table class="visually-hidden"><caption>车辆状态分布数据</caption><thead><tr><th>状态</th><th>数量</th><th>占比</th></tr></thead><tbody>
+              <tr><td>可用</td><td>18640</td><td>70.4%</td></tr><tr><td>使用中</td><td>5120</td><td>19.3%</td></tr>
+              <tr><td>低电</td><td>2140</td><td>8.1%</td></tr><tr><td>故障</td><td>630</td><td>2.4%</td></tr><tr><td>离线</td><td>520</td><td>2.0%</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="hd"><h2>近 7 日订单趋势</h2><span class="hint">单位：单</span></div>
+          <div class="bd">
+            <div class="bars" role="img" aria-label="近7日订单柱状图：周一至周日分别为 42100、39800、44200、46100、48900、53200、48920">
+              <div class="bar-col"><span class="bar-val tnum">42.1k</span><div class="bar" style="height:62%" data-v="42100"></div><span class="bar-lbl">一</span></div>
+              <div class="bar-col"><span class="bar-val tnum">39.8k</span><div class="bar" style="height:58%" data-v="39800"></div><span class="bar-lbl">二</span></div>
+              <div class="bar-col"><span class="bar-val tnum">44.2k</span><div class="bar" style="height:66%" data-v="44200"></div><span class="bar-lbl">三</span></div>
+              <div class="bar-col"><span class="bar-val tnum">46.1k</span><div class="bar" style="height:69%" data-v="46100"></div><span class="bar-lbl">四</span></div>
+              <div class="bar-col"><span class="bar-val tnum">48.9k</span><div class="bar" style="height:73%" data-v="48900"></div><span class="bar-lbl">五</span></div>
+              <div class="bar-col"><span class="bar-val tnum">53.2k</span><div class="bar" style="height:82%" data-v="53200"></div><span class="bar-lbl">六</span></div>
+              <div class="bar-col"><span class="bar-val tnum">48.9k</span><div class="bar" style="height:73%" data-v="48920"></div><span class="bar-lbl">日</span></div>
+            </div>
+            <div class="bars-axis"><span>周一</span><span>周日</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Battery / Supply line + Work order board -->
+      <section class="grid-2" aria-label="电池能源与工单">
+        <div class="panel">
+          <div class="hd"><h2>电池与能源态势（电单车）</h2><span class="hint">SOC 分段 · 换电作业</span></div>
+          <div class="bd">
+            <div class="line-wrap">
+              <svg viewBox="0 0 420 180" role="img" aria-label="本周低电车辆与换电完成趋势折线图">
+                <line x1="40" y1="20" x2="40" y2="150" stroke="#E3E8F2" stroke-width="1"/>
+                <line x1="40" y1="150" x2="410" y2="150" stroke="#E3E8F2" stroke-width="1"/>
+                <polyline points="40,120 100,110 160,90 220,96 280,70 340,64 400,52" fill="none" stroke="#F08C00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="40,140 100,128 160,118 220,104 280,96 340,82 400,70" fill="none" stroke="#0CA678" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <g fill="#F08C00"><circle class="line-dot" cx="40" cy="120" r="4"/><circle class="line-dot" cx="160" cy="90" r="4"/><circle class="line-dot" cx="280" cy="70" r="4"/><circle class="line-dot" cx="400" cy="52" r="4"/></g>
+                <g fill="#0CA678"><circle class="line-dot" cx="40" cy="140" r="4"/><circle class="line-dot" cx="160" cy="118" r="4"/><circle class="line-dot" cx="280" cy="96" r="4"/><circle class="line-dot" cx="400" cy="70" r="4"/></g>
+                <text x="40" y="168" font-size="10" fill="#8A95A8">周一</text>
+                <text x="190" y="168" font-size="10" fill="#8A95A8">周四</text>
+                <text x="372" y="168" font-size="10" fill="#8A95A8">周日</text>
+              </svg>
+              <div class="legend">
+                <span><span class="sw" style="background:var(--low)"></span>低电车辆数</span>
+                <span><span class="sw" style="background:var(--available)"></span>当日换电完成</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
+              <div style="background:var(--surface-2);border-radius:10px;padding:12px;text-align:center;"><b class="tnum" style="font-size:18px;">1,286</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">今日换电完成</span></div>
+              <div style="background:var(--surface-2);border-radius:10px;padding:12px;text-align:center;"><b class="tnum" style="font-size:18px;">86</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">在途任务</span></div>
+              <div style="background:var(--surface-2);border-radius:10px;padding:12px;text-align:center;"><b class="tnum" style="font-size:18px;">11.4<small>分</small></b><span style="font-size:12px;color:var(--on-surface-2);display:block;">平均换电耗时</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="hd"><h2>运维工单看板</h2><span class="hint">今日 324 单</span></div>
+          <div class="bd">
+            <div class="board">
+              <div class="col"><div class="ch">待派 <span class="n tnum">42</span></div>
+                <div class="ticket"><b>西溪堆车调度</b><div class="meta"><span>调度搬运</span><span class="tnum">12min</span></div><span class="tagline"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>P1 · 片区C</span></div>
+                <div class="ticket warn"><b>古翠路低电换电</b><div class="meta"><span>换电</span><span class="tnum">25min</span></div><span class="tagline"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 10-12h-7l1-8Z"/></svg>P1 · 80辆</span></div>
+              </div>
+              <div class="col"><div class="ch">执行中 <span class="n tnum">58</span></div>
+                <div class="ticket"><b>B7 越界处置</b><div class="meta"><span>违停</span><span class="tnum">张工</span></div><span class="tagline"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z"/></svg>P0 · 进行中</span></div>
+                <div class="ticket"><b>滨江锁故障</b><div class="meta"><span>维修</span><span class="tnum">李工</span></div></div>
+              </div>
+              <div class="col"><div class="ch">待验收 <span class="n tnum">23</span></div>
+                <div class="ticket"><b>城西巡检</b><div class="meta"><span>巡检</span><span class="tnum">已拍照</span></div></div>
+                <div class="ticket warn"><b>银泰挪车</b><div class="meta"><span>违停</span><span class="tnum">待复核</span></div></div>
+              </div>
+              <div class="col"><div class="ch">已完成 <span class="n tnum">201</span></div>
+                <div class="ticket"><b>早高峰补车</b><div class="meta"><span>调度</span><span class="tnum">08:12</span></div></div>
+                <div class="ticket"><b>夜间回收</b><div class="meta"><span>回收</span><span class="tnum">23:40</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Compliance + Table -->
+      <section class="grid-2" aria-label="合规治理与车辆明细">
+        <div class="panel">
+          <div class="hd"><h2>合规与治理概览</h2><span class="hint">城市级红线</span></div>
+          <div class="bd">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+              <div style="background:var(--surface-2);border-radius:10px;padding:14px;"><b class="tnum" style="font-size:22px;">186</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">本月禁停次数</span></div>
+              <div style="background:var(--surface-2);border-radius:10px;padding:14px;"><b class="tnum" style="font-size:22px;">94.2%</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">服务区覆盖率</span></div>
+              <div style="background:var(--surface-2);border-radius:10px;padding:14px;"><b class="tnum" style="font-size:22px;">98.6%</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">MDS 上报健康度</span></div>
+              <div style="background:var(--surface-2);border-radius:10px;padding:14px;"><b class="tnum" style="font-size:22px;">9.4<small>分</small></b><span style="font-size:12px;color:var(--on-surface-2);display:block;">违规处置 P90 时长</span></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;">
+              <button class="chip-btn">数据共享接口状态</button>
+              <button class="chip-btn">重大事件证据链</button>
+              <button class="chip-btn">合规报表模板</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="hd"><h2>重点车辆明细</h2><span class="hint">支持排序</span></div>
+          <div class="bd" style="padding-top:8px;">
+            <table>
+              <thead><tr>
+                <th aria-sort="none">车牌 / 设备号</th>
+                <th aria-sort="none">状态</th>
+                <th aria-sort="none">SOC</th>
+                <th aria-sort="descending">最后上报</th>
+              </tr></thead>
+              <tbody>
+                <tr><td class="tnum">浙A·D8890</td><td><span class="badge ok"><span class="d"></span>可用</span></td><td><div class="progress"><i style="width:92%"></i></div></td><td class="tnum">2 分钟前</td></tr>
+                <tr><td class="tnum">浙A·F1023</td><td><span class="badge low"><span class="d"></span>低电</span></td><td><div class="progress" style="--c:var(--low)"><i style="width:24%;background:var(--low)"></i></div></td><td class="tnum">5 分钟前</td></tr>
+                <tr><td class="tnum">浙A·B7566</td><td><span class="badge warn"><span class="d"></span>故障</span></td><td><div class="progress"><i style="width:61%;background:var(--fault)"></i></div></td><td class="tnum">18 分钟前</td></tr>
+                <tr><td class="tnum">浙A·C3341</td><td><span class="badge ok"><span class="d"></span>使用中</span></td><td><div class="progress"><i style="width:78%"></i></div></td><td class="tnum">1 分钟前</td></tr>
+                <tr><td class="tnum">浙A·E9087</td><td><span class="badge warn"><span class="d"></span>离线</span></td><td><div class="progress"><i style="width:40%;background:var(--offline)"></i></div></td><td class="tnum">1.2 小时前</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  // mobile sidebar
+  var sb=document.getElementById('sidebar'), sc=document.getElementById('scrim'), mt=document.getElementById('menuToggle');
+  function toggle(o){sb.classList.toggle('open',o);sc.classList.toggle('open',o);mt.setAttribute('aria-expanded',o);}
+  if(mt){mt.addEventListener('click',function(){toggle(!sb.classList.contains('open'));});sc.addEventListener('click',function(){toggle(false);});}
+
+  // segment controls (top bar + sidebar style)
+  document.querySelectorAll('.seg').forEach(function(seg){
+    seg.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+      seg.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');});
+  });
+
+  // tooltip for charts/map points
+  var tip=document.getElementById('tip');
+  function bindTip(el,text){
+    el.addEventListener('mouseenter',function(e){tip.textContent=text;tip.classList.add('show');
+      tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';});
+    el.addEventListener('mousemove',function(e){tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';});
+    el.addEventListener('mouseleave',function(){tip.classList.remove('show');});
+    el.addEventListener('focus',function(){tip.textContent=text;tip.classList.add('show');});
+    el.addEventListener('blur',function(){tip.classList.remove('show');});
+  }
+  document.querySelectorAll('.bar-col').forEach(function(c){
+    var v=c.querySelector('.bar').dataset.v; bindTip(c,'订单 '+Number(v).toLocaleString()+' 单');
+  });
+  document.querySelectorAll('.map-panel .pt').forEach(function(p){ bindTip(p, p.getAttribute('aria-label')); });
+  document.querySelectorAll('.line-dot').forEach(function(d,i){ bindTip(d,'数据点 '+(i+1)); });
+
+  // alert actions feedback
+  document.querySelectorAll('.alert .acts button').forEach(function(b){
+    b.addEventListener('click',function(){b.textContent='已派发 ✓';b.style.color='var(--available)';});
+  });
+})();
+</script>
+</body>
+</html>

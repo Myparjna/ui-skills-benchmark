@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>骑迹城市运营后台 · RideOps Console</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<script>
+  // ── superdesign: DESIGN SYSTEM = HARD CONSTRAINT ──
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink:{ DEFAULT:'#0F1729', soft:'#1B2540', muted:'#7E8AA3' },
+          brand:{ 50:'#EEF3FF',100:'#DCE6FF',400:'#5B7CFA',500:'#3556E8',600:'#2640C4',700:'#1C30A0' },
+          ok:'#22C55E', warn:'#F59E0B', danger:'#EF4444', idle:'#94A3B8'
+        },
+        fontFamily:{ sans:['Inter','Noto Sans SC','system-ui','sans-serif'] },
+        borderRadius:{ card:'14px', btn:'9px', tag:'5px' }
+      }
+    }
+  }
+</script>
+<style>
+  :root{--radius-card:14px;--radius-btn:9px}
+  body{font-family:'Inter','Noto Sans SC',system-ui,sans-serif;background:#F4F6FB;color:#0F1729;-webkit-font-smoothing:antialiased}
+  .ds-card{background:#fff;border-radius:var(--radius-card);border:1px solid #EAEFF7;box-shadow:0 1px 2px rgba(15,23,41,.03),0 6px 20px rgba(15,23,41,.04)}
+  .ds-card:hover{box-shadow:0 10px 30px rgba(53,86,232,.10)}
+  .ds-btn{display:inline-flex;align-items:center;gap:.4rem;border-radius:var(--radius-btn);font-weight:600;transition:.2s}
+  .ds-btn-primary{background:#3556E8;color:#fff;padding:.55rem 1rem}
+  .ds-btn-primary:hover{background:#2640C4}
+  .ds-btn-ghost{background:#fff;color:#3556E8;border:1px solid #DCE6FF;padding:.55rem 1rem}
+  .nav-item{display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;border-radius:9px;color:#AEB8CF;font-weight:500;font-size:.9rem;transition:.15s}
+  .nav-item:hover{background:#1B2540;color:#fff}
+  .nav-item.on{background:#3556E8;color:#fff}
+  .kpi{font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
+  .chip{display:inline-flex;align-items:center;gap:.3rem;border-radius:5px;padding:.18rem .5rem;font-size:.72rem;font-weight:600;background:#EEF3FF;color:#3556E8}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .map-grid{
+    background:
+      radial-gradient(900px 500px at 70% 20%,rgba(53,86,232,.08),transparent),
+      repeating-linear-gradient(0deg,#EDF1F8 0 39px,#E4EAF4 39px 40px),
+      repeating-linear-gradient(90deg,#EDF1F8 0 39px,#E4EAF4 39px 40px),
+      #F4F7FC}
+  .mini-bar{height:6px;border-radius:99px;background:#EAEFF7;overflow:hidden}
+  .mini-bar > i{display:block;height:100%;border-radius:99px}
+  @media(min-width:1024px){.sidebar{display:flex!important}}
+</style>
+</head>
+<body class="flex">
+
+  <!-- ============ SIDEBAR (layout component) ============ -->
+  <aside class="sidebar w-60 shrink-0 bg-[#0F1729] text-white min-h-screen flex-col hidden lg:flex">
+    <div class="h-16 flex items-center gap-2.5 px-5 border-b border-white/5">
+      <span class="grid place-items-center w-9 h-9 rounded-xl bg-brand-500">🚲</span>
+      <div><p class="font-extrabold leading-none">骑迹运营</p><p class="text-[11px] text-brand-400 mt-0.5">RideOps Console</p></div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
+      <p class="px-3 text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1">运营</p>
+      <a href="#" class="nav-item on">📊 运营总览</a>
+      <a href="#" class="nav-item">🗺️ 地图调度中心</a>
+      <a href="#" class="nav-item">🚲 车队资产</a>
+      <a href="#" class="nav-item">🔋 电池与能源</a>
+      <a href="#" class="nav-item">🛠️ 运维工单</a>
+      <a href="#" class="nav-item">⚙️ 规则与区域</a>
+      <p class="px-3 text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1 mt-4">治理</p>
+      <a href="#" class="nav-item">🛡️ 合规监管</a>
+      <a href="#" class="nav-item">📈 数据报表</a>
+      <a href="#" class="nav-item">🏢 组织与权限</a>
+      <a href="#" class="nav-item">🔌 系统配置</a>
+    </nav>
+    <div class="p-3 border-t border-white/5">
+      <div class="flex items-center gap-2.5 px-2 py-2">
+        <span class="w-8 h-8 rounded-full bg-brand-500 grid place-items-center text-sm">李</span>
+        <div class="text-xs"><p class="font-semibold">李运营</p><p class="text-slate-500">杭州城市站 · 调度主管</p></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="flex-1 min-w-0 flex flex-col">
+
+    <!-- TOPBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
+      <div class="flex items-center gap-3">
+        <h1 class="font-bold text-lg">运营总览</h1>
+        <span class="hidden sm:flex items-center gap-1 chip">📍 杭州 · 全城</span>
+        <span class="hidden md:inline text-xs text-muted">运营日 · 2026-07-12 周日</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center bg-slate-100 rounded-btn px-3 py-1.5 text-sm text-muted">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          搜索车架号 / 订单 / 电池
+        </div>
+        <select class="text-sm border border-slate-200 rounded-btn px-2 py-1.5 bg-white">
+          <option>今日</option><option>昨日</option><option>本周</option><option>本月</option>
+        </select>
+        <button class="ds-btn ds-btn-primary !py-2 !px-3 text-sm">+ 新建任务</button>
+      </div>
+    </header>
+
+    <main class="p-4 sm:p-6 space-y-5">
+
+      <!-- ===== KPI ROW ===== -->
+      <section class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="ds-card p-5">
+          <div class="flex items-center justify-between"><span class="text-sm text-muted">今日订单</span><span class="chip !bg-ok/10 !text-ok">▲ 8.2%</span></div>
+          <p class="kpi mt-2">38,642</p>
+          <p class="text-xs text-muted mt-1">较昨日 · 骑行次数 41,209</p>
+        </div>
+        <div class="ds-card p-5">
+          <div class="flex items-center justify-between"><span class="text-sm text-muted">全城可用率</span><span class="chip !bg-ok/10 !text-ok">达标</span></div>
+          <p class="kpi mt-2">92.4<span class="text-base font-bold">%</span></p>
+          <div class="mini-bar mt-2"><i class="bg-ok" style="width:92%"></i></div>
+        </div>
+        <div class="ds-card p-5">
+          <div class="flex items-center justify-between"><span class="text-sm text-muted">低电车辆</span><span class="chip !bg-warn/10 !text-warn">需关注</span></div>
+          <p class="kpi mt-2 text-warn">1,836</p>
+          <p class="text-xs text-muted mt-1">电单车 · 阈值 30% SOC</p>
+        </div>
+        <div class="ds-card p-5">
+          <div class="flex items-center justify-between"><span class="text-sm text-muted">待处理工单</span><span class="chip !bg-danger/10 !text-danger">超时 42</span></div>
+          <p class="kpi mt-2 text-danger">274</p>
+          <p class="text-xs text-muted mt-1">换电 138 · 维修 96 · 违停 40</p>
+        </div>
+      </section>
+
+      <!-- ===== MAP + ALERTS ===== -->
+      <section class="grid lg:grid-cols-3 gap-5">
+        <!-- MAP -->
+        <div class="ds-card lg:col-span-2 overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+            <h3 class="font-bold">实时车辆分布 · 热力图</h3>
+            <div class="flex gap-2 text-xs">
+              <span class="chip">可用</span><span class="chip !bg-warn/10 !text-warn">低电</span><span class="chip !bg-danger/10 !text-danger">故障</span>
+            </div>
+          </div>
+          <div class="map-grid relative h-[360px]">
+            <!-- cluster pins -->
+            <div class="pin absolute" style="left:24%;top:30%"><span class="ds-card px-2 py-1 text-xs font-bold text-brand-600 shadow">312</span></div>
+            <div class="pin absolute" style="left:62%;top:22%"><span class="ds-card px-2 py-1 text-xs font-bold text-brand-600 shadow">268</span></div>
+            <div class="pin absolute" style="left:48%;top:58%"><span class="ds-card px-2 py-1 text-xs font-bold !text-warn shadow">堆车 410</span></div>
+            <div class="pin absolute" style="left:74%;top:64%"><span class="ds-card px-2 py-1 text-xs font-bold !text-danger shadow">缺车 缺 96</span></div>
+            <!-- scattered dots -->
+            <span class="dot bg-brand-500 absolute" style="left:30%;top:40%"></span>
+            <span class="dot bg-brand-500 absolute" style="left:35%;top:46%"></span>
+            <span class="dot bg-warn absolute" style="left:55%;top:35%"></span>
+            <span class="dot bg-brand-500 absolute" style="left:68%;top:50%"></span>
+            <span class="dot bg-danger absolute" style="left:42%;top:62%"></span>
+            <span class="dot bg-brand-500 absolute" style="left:80%;top:30%"></span>
+            <div class="absolute bottom-3 left-3 ds-card px-3 py-1.5 text-xs font-semibold">栅格供需 · 缺车区域 6 · 堆车区域 4</div>
+          </div>
+          <div class="px-5 py-3 flex gap-2">
+            <button class="ds-btn ds-btn-primary !py-2 !px-3 text-sm">框选派单</button>
+            <button class="ds-btn ds-btn-ghost !py-2 !px-3 text-sm">生成调度建议</button>
+            <button class="ds-btn ds-btn-ghost !py-2 !px-3 text-sm">热力切换</button>
+          </div>
+        </div>
+
+        <!-- ALERTS -->
+        <div class="ds-card overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+            <h3 class="font-bold">告警中心</h3>
+            <span class="chip !bg-danger/10 !text-danger">P0 · 7</span>
+          </div>
+          <ul class="divide-y divide-slate-100 max-h-[420px] overflow-y-auto">
+            <li class="px-5 py-3 flex gap-3">
+              <span class="dot bg-danger mt-1.5"></span>
+              <div class="flex-1"><p class="text-sm font-semibold">越界告警 · 浙A·D8821</p><p class="text-xs text-muted">禁行区 西湖景区 · 2 分钟前</p></div>
+              <button class="text-xs text-brand-500 font-semibold">定位</button>
+            </li>
+            <li class="px-5 py-3 flex gap-3">
+              <span class="dot bg-danger mt-1.5"></span>
+              <div class="flex-1"><p class="text-sm font-semibold">疑似盗损 · 车架 8821****</p><p class="text-xs text-muted">异常轨迹 3.2km/h 持续 · 5 分钟前</p></div>
+              <button class="text-xs text-brand-500 font-semibold">证据</button>
+            </li>
+            <li class="px-5 py-3 flex gap-3">
+              <span class="dot bg-warn mt-1.5"></span>
+              <div class="flex-1"><p class="text-sm font-semibold">低电聚集 · 滨江驿站</p><p class="text-xs text-muted">18 辆 &lt;10% SOC · 建议换电</p></div>
+              <button class="text-xs text-brand-500 font-semibold">派单</button>
+            </li>
+            <li class="px-5 py-3 flex gap-3">
+              <span class="dot bg-warn mt-1.5"></span>
+              <div class="flex-1"><p class="text-sm font-semibold">倒地告警 · 钱江路站</p><p class="text-xs text-muted">3 辆倒地 · 10 分钟前</p></div>
+              <button class="text-xs text-brand-500 font-semibold">处置</button>
+            </li>
+            <li class="px-5 py-3 flex gap-3">
+              <span class="dot bg-idle mt-1.5"></span>
+              <div class="flex-1"><p class="text-sm font-semibold">离线车辆 214 辆</p><p class="text-xs text-muted">最后上报 &gt;1h · 数据质量</p></div>
+              <button class="text-xs text-brand-500 font-semibold">详情</button>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ===== FLEET HEALTH + WORK ORDERS ===== -->
+      <section class="grid lg:grid-cols-3 gap-5">
+        <!-- fleet status -->
+        <div class="ds-card p-5">
+          <h3 class="font-bold mb-4">车队健康分布</h3>
+          <div class="space-y-3 text-sm">
+            <div><div class="flex justify-between"><span>可用</span><b>21,840</b></div><div class="mini-bar mt-1"><i class="bg-brand-500" style="width:62%"></i></div></div>
+            <div><div class="flex justify-between"><span>使用中</span><b>7,210</b></div><div class="mini-bar mt-1"><i class="bg-brand-400" style="width:20%"></i></div></div>
+            <div><div class="flex justify-between"><span>低电</span><b>1,836</b></div><div class="mini-bar mt-1"><i class="bg-warn" style="width:13%"></i></div></div>
+            <div><div class="flex justify-between"><span>故障</span><b>412</b></div><div class="mini-bar mt-1"><i class="bg-danger" style="width:4%"></i></div></div>
+            <div><div class="flex justify-between"><span>离线</span><b>214</b></div><div class="mini-bar mt-1"><i class="bg-idle" style="width:2%"></i></div></div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 text-center">
+            <div><p class="text-xl font-extrabold text-brand-600">94.1%</p><p class="text-xs text-muted">开锁成功率</p></div>
+            <div><p class="text-xl font-extrabold text-brand-600">3.8</p><p class="text-xs text-muted">单车日均骑行</p></div>
+          </div>
+        </div>
+
+        <!-- battery / energy -->
+        <div class="ds-card p-5">
+          <h3 class="font-bold mb-4">电池与能源态势</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-2xl font-extrabold text-brand-600">1,836</p><p class="text-xs text-muted mt-1">低电车辆</p></div>
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-2xl font-extrabold text-ok">526</p><p class="text-xs text-muted mt-1">今日已完成换电</p></div>
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-2xl font-extrabold text-warn">63</p><p class="text-xs text-muted mt-1">在途换电任务</p></div>
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-2xl font-extrabold text-brand-600">7.4′</p><p class="text-xs text-muted mt-1">平均换电耗时</p></div>
+          </div>
+          <p class="text-xs text-muted mt-4 font-semibold">SOC 电量分段</p>
+          <div class="mini-bar mt-1.5 h-3"><i class="bg-danger inline-block" style="width:13%"></i><i class="bg-warn inline-block" style="width:22%"></i><i class="bg-brand-400 inline-block" style="width:28%"></i><i class="bg-brand-500 inline-block" style="width:37%"></i></div>
+          <div class="flex justify-between text-[11px] text-muted mt-1"><span>0-10%</span><span>10-30%</span><span>30-60%</span><span>60-100%</span></div>
+        </div>
+
+        <!-- work orders -->
+        <div class="ds-card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold">运维工单</h3>
+            <a href="#" class="text-xs text-brand-500 font-semibold">全部 →</a>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between text-sm bg-slate-50 rounded-card px-3 py-2.5">
+              <span class="flex items-center gap-2"><span class="dot bg-brand-500"></span>待派单</span><b>96</b>
+            </div>
+            <div class="flex items-center justify-between text-sm bg-slate-50 rounded-card px-3 py-2.5">
+              <span class="flex items-center gap-2"><span class="dot bg-warn"></span>执行中</span><b>118</b>
+            </div>
+            <div class="flex items-center justify-between text-sm bg-slate-50 rounded-card px-3 py-2.5">
+              <span class="flex items-center gap-2"><span class="dot bg-danger"></span>超时</span><b>42</b>
+            </div>
+            <div class="flex items-center justify-between text-sm bg-slate-50 rounded-card px-3 py-2.5">
+              <span class="flex items-center gap-2"><span class="dot bg-ok"></span>已完成 (今日)</span><b>603</b>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-muted flex justify-between">
+            <span>人均完成 <b class="text-ink">14.6</b></span>
+            <span>准时率 <b class="text-ok">96.2%</b></span>
+            <span>一次修复 <b class="text-ink">91%</b></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPLIANCE + QUICK ACTIONS ===== -->
+      <section class="grid lg:grid-cols-3 gap-5">
+        <div class="ds-card p-5 lg:col-span-2">
+          <h3 class="font-bold mb-4">合规与治理概览</h3>
+          <div class="grid sm:grid-cols-4 gap-3">
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-xl font-extrabold text-danger">312</p><p class="text-xs text-muted mt-1">今日禁停次数</p></div>
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-xl font-extrabold text-warn">28</p><p class="text-xs text-muted mt-1">越界处置中</p></div>
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-xl font-extrabold text-brand-600">99.2%</p><p class="text-xs text-muted mt-1">MDS 上报合规率</p></div>
+            <div class="bg-slate-50 rounded-card p-3"><p class="text-xl font-extrabold text-ok">8.4′</p><p class="text-xs text-muted mt-1">违规响应 P90</p></div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="chip">数据共享接口 · 正常</span>
+            <span class="chip !bg-warn/10 !text-warn">投放量 96% / 许可上限</span>
+            <span class="chip">重点区域覆盖 100%</span>
+          </div>
+        </div>
+        <div class="ds-card p-5">
+          <h3 class="font-bold mb-4">快速工作台</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <button class="ds-btn ds-btn-ghost !py-2.5 !text-sm justify-center">+ 调度任务</button>
+            <button class="ds-btn ds-btn-ghost !py-2.5 !text-sm justify-center">+ 换电任务</button>
+            <button class="ds-btn ds-btn-ghost !py-2.5 !text-sm justify-center">+ 巡检</button>
+            <button class="ds-btn ds-btn-ghost !py-2.5 !text-sm justify-center">+ 维修工单</button>
+            <button class="ds-btn ds-btn-ghost !py-2.5 !text-sm justify-center col-span-2">批量指令 · 锁车/鸣笛/降速</button>
+          </div>
+          <p class="text-xs text-muted mt-3">我的待办 · P0/P1 告警 7 · 临近超时 12</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</body>
+</html>

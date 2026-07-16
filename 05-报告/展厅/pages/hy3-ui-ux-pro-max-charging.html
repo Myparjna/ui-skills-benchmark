@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>充电直达 · 电动汽车充电小程序</title>
+<meta name="description" content="聚合型电动汽车充电小程序：地图找桩、扫码即充、实时桩态、无感支付与 PLUS 会员权益。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+  /* ===== Design Tokens — mapped from PRD 6.1 (semantic, no raw hex in components) ===== */
+  :root{
+    --primary:#1677FF;        /* 科技蓝 */
+    --primary-strong:#0E5BD8;
+    --primary-soft:#E8F1FF;
+    --success:#52C41A;        /* 空闲 */
+    --success-soft:#EAFBE1;
+    --warning:#FA8C16;        /* 充电中/警示 */
+    --warning-soft:#FEF0DD;
+    --danger:#FF4D4F;         /* 故障 */
+    --danger-soft:#FFECEC;
+    --unknown:#B6BECB;
+
+    --surface:#FFFFFF;
+    --surface-2:#F4F6FB;
+    --bg:#EEF1F7;
+    --on-surface:#1A2433;
+    --on-surface-2:#5A6B82;
+    --on-surface-3:#8A97AB;
+    --border:#E6EAF2;
+
+    --radius-sm:8px;   /* 按钮 */
+    --radius:12px;     /* 卡片 */
+    --radius-tag:4px;  /* 标签 */
+    --radius-sheet:16px; /* 地图浮层顶部圆角 */
+
+    --shadow-1:0 1px 2px rgba(20,30,50,.05),0 2px 8px rgba(20,30,50,.06);
+    --shadow-2:0 6px 20px rgba(20,30,50,.12);
+    --shadow-3:0 12px 34px rgba(20,30,50,.18);
+
+    --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-7:32px;
+
+    --font-sans:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    --ease:cubic-bezier(.2,.7,.3,1);
+    --dur:220ms;
+    --appw:440px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-sans);font-size:16px;line-height:1.5;color:var(--on-surface);
+    background:#0f1320;/* letterbox for desktop app frame */
+    -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;font-weight:700;}
+  p{margin:0;}
+  a{color:inherit;text-decoration:none;}
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  .visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+  :focus-visible{outline:3px solid #4d97ff;outline-offset:2px;border-radius:4px;}
+
+  /* App shell: centered phone on desktop, full-bleed on mobile */
+  .app{position:relative; width:100%; max-width:var(--appw); min-height:100vh;
+    margin:0 auto; background:var(--bg); display:flex; flex-direction:column;
+    overflow:hidden; box-shadow:0 0 60px rgba(0,0,0,.5);}
+  @media(min-width:480px){ .app{min-height:880px; height:calc(100vh - 40px); margin:20px auto; border-radius:34px;} }
+
+  .app-header{flex:0 0 auto; padding:calc(env(safe-area-inset-top,0) + 14px) var(--sp-4) 12px;
+    background:linear-gradient(135deg,var(--primary),#3aa0ff); color:#fff;}
+  .app-header .loc{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:500;}
+  .app-header .loc svg{width:18px;height:18px;}
+  .app-header h1{font-size:20px; margin-top:6px; display:flex; align-items:center; justify-content:space-between;}
+  .app-header .bell{width:40px;height:40px;display:grid;place-items:center;background:rgba(255,255,255,.18);border-radius:50%;}
+  .app-header .bell svg{width:22px;height:22px;}
+
+  .view{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:calc(84px + env(safe-area-inset-bottom,0));}
+  .view::-webkit-scrollbar{width:0;}
+
+  /* ===== Map area ===== */
+  .map{position:relative; height:300px; background:
+      radial-gradient(circle at 30% 30%, #dbe7ff 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 60%, #dbe7ff 0 2px, transparent 3px),
+      linear-gradient(160deg,#e9f0fb,#dfe9f8); overflow:hidden;}
+  .map .road{position:absolute; background:#fff; opacity:.9;}
+  .map .r1{left:-5%;top:38%;width:110%;height:14px;transform:rotate(-6deg);}
+  .map .r2{left:20%;top:-10%;width:14px;height:120%;transform:rotate(8deg);}
+  .map .r3{left:55%;top:10%;width:12px;height:100%;}
+  .map .pin{position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform var(--dur) var(--ease);}
+  .map .pin:hover{transform:translate(-50%,-100%) scale(1.08);}
+  .map .pin svg{width:34px;height:34px; filter:drop-shadow(0 3px 4px rgba(0,0,0,.2));}
+  .map .pin .cnt{position:absolute; top:2px; left:50%; transform:translateX(-50%); font-size:11px; font-weight:900; color:var(--primary-strong);}
+  .map .locate{position:absolute; right:14px; bottom:14px; width:44px;height:44px; border-radius:50%; background:#fff; box-shadow:var(--shadow-2); display:grid;place-items:center; border:none; cursor:pointer;}
+  .map .locate svg{width:24px;height:24px;color:var(--primary);}
+  .map .layer{position:absolute; left:14px; top:14px; display:flex; gap:6px;}
+  .map .chip{background:rgba(255,255,255,.92); border:none; font:inherit; font-size:13px; font-weight:600; color:var(--on-surface); padding:8px 12px; border-radius:var(--radius-pill,999px); box-shadow:var(--shadow-1); cursor:pointer;}
+
+  /* ===== Bottom sheet (nearby list) ===== */
+  .sheet{position:relative; margin-top:-22px; background:var(--surface); border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow:0 -6px 24px rgba(20,30,50,.1); padding:var(--sp-4);}
+  .sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--border);margin:0 auto 12px;}
+  .sheet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .sheet-head h2{font-size:17px;}
+  .seg{display:inline-flex; background:var(--surface-2); border-radius:var(--radius-pill); padding:3px; gap:2px;}
+  .seg button{border:none; background:transparent; padding:8px 14px; border-radius:var(--radius-pill); font:inherit; font-weight:700; font-size:13px; color:var(--on-surface-2); cursor:pointer; min-height:40px;}
+  .seg button[aria-pressed="true"]{background:var(--surface); color:var(--primary); box-shadow:var(--shadow-1);}
+
+  .filters{display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; scrollbar-width:none;}
+  .filters::-webkit-scrollbar{display:none;}
+  .tag{flex:0 0 auto; border:1px solid var(--border); background:var(--surface); border-radius:var(--radius-tag); padding:8px 12px; font-size:13px; font-weight:600; color:var(--on-surface-2); white-space:nowrap; cursor:pointer; transition:all var(--dur);}
+  .tag[aria-pressed="true"]{background:var(--primary); color:#fff; border-color:var(--primary);}
+  .tag:active{transform:scale(.96);}
+
+  .station{display:flex; gap:12px; align-items:center; padding:14px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; background:var(--surface); transition:transform var(--dur) var(--ease), box-shadow var(--dur); cursor:pointer;}
+  .station:hover{transform:translateY(-2px); box-shadow:var(--shadow-1);}
+  .station .free{flex:0 0 auto; width:54px;height:54px;border-radius:12px; background:var(--success-soft); color:var(--success); display:grid; place-items:center; text-align:center;}
+  .station .free b{font-size:18px; line-height:1;}
+  .station .free span{font-size:11px;}
+  .station .info{flex:1 1 auto; min-width:0;}
+  .station .info h3{font-size:16px; display:flex; align-items:center; gap:6px;}
+  .station .info .op{font-size:12px; color:var(--on-surface-3);}
+  .station .meta{display:flex; gap:10px; margin-top:6px; font-size:12px; color:var(--on-surface-2); flex-wrap:wrap;}
+  .station .meta .dot{display:inline-flex;align-items:center;gap:4px;}
+  .station .meta .dot::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--success);}
+  .station .meta .dot.busy::before{background:var(--warning);}
+  .station .price{text-align:right; flex:0 0 auto;}
+  .station .price b{color:var(--primary-strong); font-size:16px;}
+  .station .price span{display:block; font-size:11px; color:var(--on-surface-3);}
+  .station .go{width:40px;height:40px;flex:0 0 auto;display:grid;place-items:center;color:var(--primary);}
+
+  /* status pill */
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:var(--radius-tag);}
+  .pill.ok{background:var(--success-soft); color:var(--success);}
+  .pill.busy{background:var(--warning-soft); color:var(--warning);}
+  .pill.err{background:var(--danger-soft); color:var(--danger);}
+  .pill .d{width:7px;height:7px;border-radius:50%;background:currentColor;}
+
+  /* ===== Buttons ===== */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:none;border-radius:var(--radius-sm);font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation;transition:transform var(--dur) var(--ease),background var(--dur);}
+  .btn-primary{background:var(--primary);color:#fff;width:100%;}
+  .btn-primary:active{transform:scale(.98);background:var(--primary-strong);}
+  .btn-ghost{background:var(--surface-2);color:var(--on-surface);}
+  .btn svg{width:20px;height:20px;}
+
+  /* ===== Generic panels for other tabs ===== */
+  .pad{padding:var(--sp-4);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--sp-4);box-shadow:var(--shadow-1);margin-bottom:var(--sp-4);}
+  .card h3{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .card h3 svg{width:20px;height:20px;color:var(--primary);}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .row:last-child{border-bottom:none;}
+  .row .ico{width:42px;height:42px;border-radius:12px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;flex:0 0 auto;}
+  .row .ico svg{width:22px;height:22px;}
+  .row .t{flex:1 1 auto;}
+  .row .t b{font-size:15px;}
+  .row .t span{font-size:13px;color:var(--on-surface-2);display:block;}
+  .row .arrow{color:var(--on-surface-3);}
+
+  .hero-promo{background:linear-gradient(135deg,#1677FF,#36c2ff);color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:var(--sp-4);}
+  .hero-promo h3{font-size:18px;}
+  .hero-promo p{font-size:13px;opacity:.92;margin-top:4px;}
+
+  /* charging-in-progress (scan tab / orders) */
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;padding:var(--sp-5) 0;}
+  .ring{position:relative;width:200px;height:200px;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring .center b{font-size:40px;line-height:1;}
+  .ring .center span{font-size:13px;color:var(--on-surface-2);}
+  .charge-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;}
+  .charge-stats .s{background:var(--surface-2);border-radius:var(--radius);padding:12px;text-align:center;}
+  .charge-stats .s b{font-size:18px;display:block;}
+  .charge-stats .s span{font-size:12px;color:var(--on-surface-2);}
+
+  /* ===== Bottom Tab Bar (5 tabs, center scan prominent) ===== */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;z-index:50; display:flex; align-items:flex-end; justify-content:space-around;
+    height:calc(72px + env(safe-area-inset-bottom,0)); padding-bottom:env(safe-area-inset-bottom,0);
+    background:rgba(255,255,255,.94); backdrop-filter:saturate(180%) blur(12px); border-top:1px solid var(--border);}
+  .tab{flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    background:none; border:none; font:inherit; font-size:11px; font-weight:600; color:var(--on-surface-3); cursor:pointer; min-height:48px; padding-top:6px; transition:color var(--dur);}
+  .tab svg{width:24px;height:24px;}
+  .tab[aria-current="page"]{color:var(--primary);font-weight:700;}
+  .tab.scan{position:relative; justify-content:flex-end; padding-bottom:8px;}
+  .scan-btn{position:absolute; top:-22px; left:50%; transform:translateX(-50%); width:60px;height:60px;border-radius:50%;
+    background:linear-gradient(135deg,var(--primary),var(--success)); border:4px solid #fff; box-shadow:var(--shadow-2);
+    display:grid;place-items:center;color:#fff;cursor:pointer; transition:transform var(--dur) var(--ease);}
+  .scan-btn:active{transform:translateX(-50%) scale(.94);}
+  .scan-btn svg{width:30px;height:30px;}
+
+  /* toast */
+  .toast{position:absolute; left:50%; bottom:96px; transform:translateX(-50%) translateY(10px); background:rgba(26,36,51,.94); color:#fff;
+    padding:12px 18px; border-radius:var(--radius-sm); font-size:14px; opacity:0; pointer-events:none; transition:opacity var(--dur),transform var(--dur); z-index:80; max-width:90%;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;}}
+
+  /* Hide all but active view */
+  .view{display:none;}
+  .view.active{display:block;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <div class="loc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      杭州 · 西湖区文三路
+    </div>
+    <h1>充电直达
+      <button class="bell" aria-label="消息通知">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+      </button>
+    </h1>
+  </header>
+
+  <!-- ===== VIEW: HOME (map + list) ===== -->
+  <section class="view active" id="view-home" aria-label="首页 地图找桩">
+    <div class="map" role="img" aria-label="附近充电站地图">
+      <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+      <div class="layer">
+        <button class="chip" aria-pressed="true">地图</button>
+        <button class="chip" aria-pressed="false">列表</button>
+      </div>
+      <div class="pin" style="left:32%;top:40%" tabindex="0" role="button" aria-label="滨江星光充电站，空闲12个">
+        <svg viewBox="0 0 24 24" fill="#1677FF"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7Z"/></svg>
+        <span class="cnt tnum">12</span>
+      </div>
+      <div class="pin" style="left:62%;top:58%" tabindex="0" role="button" aria-label="西溪龙湖充电站，空闲5个">
+        <svg viewBox="0 0 24 24" fill="#52C41A"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7Z"/></svg>
+        <span class="cnt tnum">5</span>
+      </div>
+      <div class="pin" style="left:48%;top:72%" tabindex="0" role="button" aria-label="城西银泰充电站，充电中">
+        <svg viewBox="0 0 24 24" fill="#FA8C16"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7Z"/></svg>
+        <span class="cnt tnum">0</span>
+      </div>
+      <button class="locate" aria-label="回到我的位置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+      </button>
+    </div>
+
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="sheet-head">
+        <h2>附近充电站</h2>
+        <div class="seg" role="group" aria-label="排序">
+          <button type="button" aria-pressed="true">综合</button>
+          <button type="button" aria-pressed="false">距离</button>
+          <button type="button" aria-pressed="false">价格</button>
+        </div>
+      </div>
+      <div class="filters" role="group" aria-label="筛选条件">
+        <button class="tag" aria-pressed="true">全部</button>
+        <button class="tag" aria-pressed="false">快充</button>
+        <button class="tag" aria-pressed="false">超充</button>
+        <button class="tag" aria-pressed="false">慢充</button>
+        <button class="tag" aria-pressed="false">免费停车</button>
+        <button class="tag" aria-pressed="false">PLUS 站</button>
+        <button class="tag" aria-pressed="false">高速路站</button>
+      </div>
+
+      <div class="station" tabindex="0" role="button" aria-label="滨江星光充电站，空闲12枪，距离0.8公里，最低0.98元每度">
+        <div class="free"><b class="tnum">12</b><span>空闲</span></div>
+        <div class="info">
+          <h3>滨江星光充电站 <span class="pill ok"><span class="d"></span>空闲</span></h3>
+          <div class="op">特来电 · 距您 0.8km</div>
+          <div class="meta"><span class="dot">快充 12/20</span><span class="dot busy">慢充 2/8</span><span>停车免费</span></div>
+        </div>
+        <div class="price"><b class="tnum">¥0.98</b><span>元/度起</span></div>
+        <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="station" tabindex="0" role="button" aria-label="西溪龙湖充电站，空闲5枪，距离1.5公里，最低1.05元每度">
+        <div class="free"><b class="tnum">5</b><span>空闲</span></div>
+        <div class="info">
+          <h3>西溪龙湖充电站 <span class="pill ok"><span class="d"></span>空闲</span></h3>
+          <div class="op">星星充电 · 距您 1.5km</div>
+          <div class="meta"><span class="dot">超充 5/10</span><span class="dot">快充 8/12</span><span>PLUS 站</span></div>
+        </div>
+        <div class="price"><b class="tnum">¥1.05</b><span>元/度起</span></div>
+        <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="station" tabindex="0" role="button" aria-label="城西银泰充电站，充电中，距离2.1公里，最低1.12元每度">
+        <div class="free" style="background:var(--warning-soft);color:var(--warning);"><b class="tnum">0</b><span>满位</span></div>
+        <div class="info">
+          <h3>城西银泰充电站 <span class="pill busy"><span class="d"></span>充电中</span></h3>
+          <div class="op">云快充 · 距您 2.1km</div>
+          <div class="meta"><span class="dot busy">快充 0/16</span><span>停车 ¥5/h</span></div>
+        </div>
+        <div class="price"><b class="tnum">¥1.12</b><span>元/度起</span></div>
+        <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="station" tabindex="0" role="button" aria-label="古翠路换电站，空闲8枪，距离2.8公里，最低0.92元每度">
+        <div class="free"><b class="tnum">8</b><span>空闲</span></div>
+        <div class="info">
+          <h3>古翠路换电站 <span class="pill ok"><span class="d"></span>空闲</span></h3>
+          <div class="op">即插即充 · 距您 2.8km</div>
+          <div class="meta"><span class="dot">快充 8/10</span><span class="dot">慢充 3/4</span><span>停车免费</span></div>
+        </div>
+        <div class="price"><b class="tnum">¥0.92</b><span>元/度起</span></div>
+        <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VIEW: SAVINGS (省钱/活动) ===== -->
+  <section class="view" id="view-save" aria-label="省钱 活动">
+    <div class="pad">
+      <div class="hero-promo">
+        <h3>PLUS 会员限时领</h3>
+        <p>开通即享 6 折充电 + 每月满减券包，月省最高 ¥158</p>
+        <button class="btn btn-primary" style="margin-top:12px;background:#fff;color:var(--primary);">立即开通 PLUS</button>
+      </div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"/><path d="M2 12h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4Z"/><path d="M12 12v8"/></svg>限时优惠</h3>
+        <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3Z"/></svg></div><div class="t"><b>新人首单立减 ¥20</b><span>仅限首次充电使用</span></div><span class="pill ok"><span class="d"></span>可领</span></div>
+        <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg></div><div class="t"><b>满 50 减 8 元券</b><span>本周末有效</span></div><span class="pill ok"><span class="d"></span>可领</span></div>
+      </div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>能量包预购</h3>
+        <p style="color:var(--on-surface-2);font-size:14px;">锁定当前低价，预购 100 度 / 200 度套餐，后续充电自动抵扣，对冲电价波动。</p>
+        <button class="btn btn-ghost" style="margin-top:12px;width:100%;">查看能量包</button>
+      </div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 21v-2a4 4 0 0 1 4-4h2M14 21v-1a4 4 0 0 1 4-4h1"/></svg>邀请有礼</h3>
+        <p style="color:var(--on-surface-2);font-size:14px;">邀请好友注册并完成首充，双方各得 ¥15 充电金。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VIEW: SCAN (扫码充电) ===== -->
+  <section class="view" id="view-scan" aria-label="扫码充电">
+    <div class="pad">
+      <div class="card" style="text-align:center;">
+        <div style="width:220px;height:220px;margin:8px auto;border:2px dashed var(--primary);border-radius:16px;display:grid;place-items:center;background:var(--primary-soft);">
+          <div style="text-align:center;color:var(--primary-strong);">
+            <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg>
+            <p style="margin-top:10px;font-weight:700;">将二维码放入框内</p>
+            <p style="font-size:13px;color:var(--on-surface-2);">扫码启动充电</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn-ghost" style="flex:1;" id="manualBtn">手动输桩号</button>
+          <button class="btn btn-ghost" style="flex:1;" id="nfcBtn">NFC 感应</button>
+        </div>
+      </div>
+
+      <!-- charging-in-progress sample -->
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 10-12h-7l1-8Z"/></svg>充电中</h3>
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg width="200" height="200" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="86" fill="none" stroke="#E6EAF2" stroke-width="16"/>
+              <circle cx="100" cy="100" r="86" fill="none" stroke="var(--warning)" stroke-width="16" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="194"/>
+            </svg>
+            <div class="center"><b class="tnum">64%</b><span>已充电量 28.6 kWh</span></div>
+          </div>
+        </div>
+        <div class="charge-stats">
+          <div class="s"><b class="tnum">61.2</b><span>kW 当前功率</span></div>
+          <div class="s"><b class="tnum">42</b><span>分钟已用</span></div>
+          <div class="s"><b class="tnum">¥19.4</b><span>实时费用</span></div>
+        </div>
+        <p style="text-align:center;color:var(--on-surface-2);font-size:13px;margin-top:10px;">预计 18 分钟后充满 · 完成将自动扣费</p>
+        <button class="btn btn-ghost" id="stopBtn" style="width:100%;margin-top:8px;color:var(--danger);border-color:var(--danger-soft);">停止充电</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VIEW: ORDERS (订单) ===== -->
+  <section class="view" id="view-order" aria-label="订单">
+    <div class="pad">
+      <div class="seg" role="group" aria-label="订单筛选" style="display:flex;margin-bottom:16px;">
+        <button type="button" aria-pressed="true" style="flex:1;">充电中</button>
+        <button type="button" aria-pressed="false" style="flex:1;">历史订单</button>
+        <button type="button" aria-pressed="false" style="flex:1;">账单/发票</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="margin:0;">滨江星光充电站</h3>
+          <span class="pill busy"><span class="d"></span>充电中</span>
+        </div>
+        <p style="color:var(--on-surface-2);font-size:14px;margin-top:6px;">桩号 A-07 · 今日 14:23 启动</p>
+        <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+        <div class="charge-stats">
+          <div class="s"><b class="tnum">28.6</b><span>kWh 已充</span></div>
+          <div class="s"><b class="tnum">61.2</b><span>kW 功率</span></div>
+          <div class="s"><b class="tnum">¥19.4</b><span>费用</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>历史订单</h3>
+        <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3Z"/></svg></div><div class="t"><b>西溪龙湖充电站</b><span class="tnum">07-11 19:40 · 35.2 kWh · ¥36.8</span></div><span class="arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></div>
+        <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3Z"/></svg></div><div class="t"><b>古翠路换电站</b><span class="tnum">07-09 09:12 · 41.0 kWh · ¥39.2</span></div><span class="arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></div>
+      </div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>电子发票</h3>
+        <p style="color:var(--on-surface-2);font-size:14px;">支持按月汇总开具，个人/单位抬头，PDF 推送至邮箱。</p>
+        <button class="btn btn-ghost" style="width:100%;margin-top:12px;">申请开票</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VIEW: ME (我的) ===== -->
+  <section class="view" id="view-me" aria-label="我的 个人中心">
+    <div class="pad">
+      <div class="card" style="background:linear-gradient(135deg,var(--primary),#36c2ff);color:#fff;border:none;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-weight:900;font-size:22px;">星</div>
+          <div style="flex:1;">
+            <b style="font-size:18px;">138****6688</b>
+            <div style="font-size:13px;opacity:.9;display:flex;align-items:center;gap:6px;margin-top:4px;">
+              <span style="background:rgba(255,255,255,.22);padding:2px 10px;border-radius:999px;font-weight:700;">PLUS 金卡</span>
+              <span>碳积分 1,280</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>钱包</h3>
+        <div style="display:flex;gap:10px;text-align:center;">
+          <div style="flex:1;background:var(--surface-2);border-radius:12px;padding:12px;"><b class="tnum" style="font-size:20px;">¥86.5</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">余额</span></div>
+          <div style="flex:1;background:var(--surface-2);border-radius:12px;padding:12px;"><b class="tnum" style="font-size:20px;">3</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">卡券</span></div>
+          <div style="flex:1;background:var(--surface-2);border-radius:12px;padding:12px;"><b class="tnum" style="font-size:20px;">200</b><span style="font-size:12px;color:var(--on-surface-2);display:block;">能量包度</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2"/><circle cx="7.5" cy="14.5" r="1.5"/><circle cx="16.5" cy="14.5" r="1.5"/></svg>车辆管理</h3>
+        <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2"/></svg></div><div class="t"><b>浙A·D8890</b><span>国标接口 · 主车 · 电池健康 96%</span></div><span class="arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></div>
+      </div>
+
+      <div class="card">
+        <h3>常用工具</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3Z"/></svg></div><span style="font-size:12px;">我的订单</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/></svg></div><span style="font-size:12px;">发票</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></div><span style="font-size:12px;">充值</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 10-12h-7l1-8Z"/></svg></div><span style="font-size:12px;">即插即充</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></div><span style="font-size:12px;">客服</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 14h7l-1 8 10-12h-7l1-8Z"/></svg></div><span style="font-size:12px;">收藏电站</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></div><span style="font-size:12px;">无法拔枪</span></div>
+          <div style="cursor:pointer;"><div class="ico" style="margin:0 auto 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></div><span style="font-size:12px;">意见反馈</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TAB BAR ===== -->
+  <nav class="tabbar" aria-label="主导航">
+    <button class="tab" data-view="home" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/></svg>
+      首页
+    </button>
+    <button class="tab" data-view="save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"/><path d="M2 12h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4Z"/><path d="M12 12v8"/></svg>
+      省钱
+    </button>
+    <button class="scan" aria-hidden="false">
+      <span class="scan-btn" id="scanBtn" role="button" tabindex="0" aria-label="扫码启动充电">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg>
+      </span>
+    </button>
+    <button class="tab" data-view="order">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+      订单
+    </button>
+    <button class="tab" data-view="me">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+      我的
+    </button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tabbar .tab');
+  var views={home:'view-home',save:'view-save',scan:'view-scan',order:'view-order',me:'view-me'};
+  function show(v){
+    Object.keys(views).forEach(function(k){document.getElementById(views[k]).classList.toggle('active',k===v);});
+    tabs.forEach(function(t){t.setAttribute('aria-current', t.dataset.view===v?'page':'false');});
+    document.querySelector('.view.active').scrollTop=0;
+  }
+  tabs.forEach(function(t){t.addEventListener('click',function(){show(t.dataset.view);});});
+
+  // center scan button → scan view
+  function goScan(){show('scan');}
+  document.getElementById('scanBtn').addEventListener('click',goScan);
+  document.getElementById('scanBtn').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();goScan();}});
+
+  // toast helper (auto-dismiss 3-5s, aria-live)
+  var toast=document.getElementById('toast'),tt;
+  function showToast(msg){toast.textContent=msg; toast.classList.add('show'); clearTimeout(tt); tt=setTimeout(function(){toast.classList.remove('show');},3600);}
+
+  // segment controls (sorting, order filter, map/list)
+  document.querySelectorAll('.seg').forEach(function(seg){
+    seg.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+      seg.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');});
+  });
+  // filter tags (multi-toggle)
+  document.querySelectorAll('.filters .tag').forEach(function(t){
+    t.addEventListener('click',function(){t.setAttribute('aria-pressed', t.getAttribute('aria-pressed')==='true'?'false':'true');});
+  });
+  // map/list chips
+  document.querySelectorAll('.map .chip').forEach(function(c){
+    c.addEventListener('click',function(){document.querySelectorAll('.map .chip').forEach(function(x){x.setAttribute('aria-pressed','false');});c.setAttribute('aria-pressed','true');});
+  });
+
+  // station click
+  document.querySelectorAll('.station').forEach(function(s){s.addEventListener('click',function(){showToast('正在打开站点详情…');});});
+  // stop charging (二次确认)
+  document.getElementById('stopBtn').addEventListener('click',function(){
+    if(confirm('确定要停止充电吗？未充满将按已用电量结算。')){showToast('已发送停止指令');}
+  });
+  document.getElementById('manualBtn').addEventListener('click',function(){showToast('请输入充电桩编号');});
+  document.getElementById('nfcBtn').addEventListener('click',function(){showToast('请将手机靠近充电桩 NFC 区域');});
+})();
+</script>
+</body>
+</html>

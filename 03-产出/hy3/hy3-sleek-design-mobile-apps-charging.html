@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>闪充 EV · 电动汽车充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  :root{
+    --blue:#1677ff; --blue-2:#3b8bff; --blue-d:#0c56c9;
+    --green:#52c41a; --orange:#fa8c16; --red:#ff4d4f; --gray:#bfbfbf;
+    --ink:#0f1729; --muted:#8a93a8; --line:#eef1f7; --bg:#f3f5fb;
+    --r:20px; --r-sm:14px; --r-lg:26px;
+    --sh:0 10px 30px rgba(20,40,90,.10); --sh-lg:0 20px 50px rgba(20,40,90,.16);
+    --font:'Plus Jakarta Sans','Noto Sans SC',system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:radial-gradient(150% 120% at 50% 0%,#dfe7fb,#eef1f8 60%);color:var(--ink);-webkit-font-smoothing:antialiased;display:flex;justify-content:center;padding:34px 16px;min-height:100vh}
+  iconify-icon{line-height:1}
+
+  /* phone */
+  .phone{width:412px;max-width:100%;height:880px;background:#fff;border-radius:46px;box-shadow:0 40px 90px rgba(20,40,90,.28),0 0 0 11px #11141f,0 0 0 13px #2a2f40;overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .statusbar{height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:700;color:var(--ink);flex:none}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#11141f;border-radius:0 0 16px 16px;z-index:30}
+  .screen{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--bg);scrollbar-width:none}
+  .screen::-webkit-scrollbar{display:none}
+
+  /* ---------- HOME ---------- */
+  .map{position:relative;height:340px;background:
+      radial-gradient(120% 90% at 70% 10%,#cfe0ff,transparent 60%),
+      linear-gradient(160deg,#e8f0ff,#dbe6fb 55%,#c9d8f7);overflow:hidden}
+  .map .roads{position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.7) 2px,transparent 2px),linear-gradient(0deg,rgba(255,255,255,.55) 2px,transparent 2px);background-size:54px 54px,82px 82px;opacity:.6}
+  .map .river{position:absolute;left:-20px;top:170px;width:130%;height:60px;background:linear-gradient(90deg,#a9d3ff,#cfe6ff);transform:rotate(-8deg);opacity:.7;filter:blur(1px)}
+  .pin{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:.2s}
+  .pin:hover{transform:scale(1.12)}
+  .pin .bub{background:#fff;border-radius:12px;padding:5px 9px;font-size:11px;font-weight:800;box-shadow:var(--sh);white-space:nowrap;display:flex;align-items:center;gap:4px}
+  .pin .bub .d{width:7px;height:7px;border-radius:50%}
+  .pin .stem{width:2px;height:9px;background:#fff}
+  .pin .head{width:14px;height:14px;border-radius:50% 50% 50% 0;transform:rotate(45deg);background:var(--blue);box-shadow:0 4px 10px rgba(22,119,255,.5)}
+  .locate{position:absolute;right:16px;bottom:16px;width:46px;height:46px;border-radius:14px;background:#fff;box-shadow:var(--sh);display:grid;place-items:center;color:var(--blue);cursor:pointer}
+  .locate iconify-icon{font-size:22px}
+  .me-dot{position:absolute;left:50%;top:54%;width:18px;height:18px;border-radius:50%;background:var(--blue);border:4px solid #fff;box-shadow:0 0 0 6px rgba(22,119,255,.25)}
+
+  .sheet{margin-top:-26px;background:#fff;border-radius:26px 26px 0 0;padding:18px 16px 24px;position:relative;box-shadow:0 -8px 24px rgba(20,40,90,.06)}
+  .grab{width:42px;height:5px;border-radius:9px;background:#e2e6ef;margin:0 auto 14px}
+  .search-row{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:13px 15px;margin-bottom:14px;cursor:pointer}
+  .search-row iconify-icon{font-size:19px;color:var(--blue)}
+  .search-row input{border:none;background:transparent;outline:none;font-family:var(--font);font-size:14.5px;font-weight:600;width:100%;color:var(--ink)}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:999px;background:var(--bg);color:var(--muted);cursor:pointer;transition:.2s}
+  .chip.on{background:var(--blue);color:#fff}
+  .chip iconify-icon{font-size:14px}
+
+  .station{display:flex;align-items:center;gap:13px;padding:14px;border-radius:18px;background:#fff;border:1px solid var(--line);margin-bottom:11px;cursor:pointer;transition:.2s}
+  .station:hover{border-color:#cfe0ff;box-shadow:var(--sh)}
+  .st-ic{width:50px;height:50px;border-radius:15px;background:linear-gradient(145deg,#eaf2ff,#dbe9ff);display:grid;place-items:center;color:var(--blue);flex:none}
+  .st-ic iconify-icon{font-size:26px}
+  .st-mid{flex:1;min-width:0}
+  .st-mid h4{font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .st-mid .star{color:var(--orange);font-size:12px;font-weight:800;display:flex;align-items:center;gap:2px}
+  .st-mid p{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .st-right{text-align:right;flex:none}
+  .st-right .free{font-size:13px;font-weight:800;color:var(--green);display:flex;align-items:center;gap:4px;justify-content:flex-end}
+  .st-right .free dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+  .st-right .price{font-size:12px;color:var(--muted);margin-top:3px}
+  .st-right .dist{font-size:11.5px;color:var(--blue);font-weight:700;margin-top:2px}
+
+  /* ---------- SAVINGS ---------- */
+  .pad{padding:18px 16px 24px}
+  .hero-card{background:linear-gradient(135deg,#1677ff,#3b8bff 70%,#36c5f0);color:#fff;border-radius:var(--r-lg);padding:22px;box-shadow:0 18px 40px rgba(22,119,255,.35);position:relative;overflow:hidden}
+  .hero-card .deco{position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.25),transparent 60%)}
+  .hero-card h3{font-size:20px;font-weight:800;position:relative}
+  .hero-card p{font-size:13px;color:#dcebff;margin:6px 0 14px;position:relative}
+  .hero-card .row{display:flex;gap:10px;position:relative}
+  .hero-card .row .b{flex:1;background:rgba(255,255,255,.16);border-radius:14px;padding:11px;text-align:center}
+  .hero-card .row .b b{font-size:18px;font-family:var(--font);display:block}
+  .hero-card .row .b span{font-size:11px;color:#dcebff}
+  .sec-t{font-size:16px;font-weight:800;margin:22px 4px 12px;display:flex;align-items:center;justify-content:space-between}
+  .sec-t a{font-size:12.5px;color:var(--blue);font-weight:700}
+  .coupon{display:flex;align-items:stretch;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);background:#fff}
+  .coupon .amt{width:96px;background:linear-gradient(135deg,#1677ff,#36c5f0);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none}
+  .coupon .amt b{font-size:26px;font-family:var(--font)} .coupon .amt span{font-size:11px;opacity:.9}
+  .coupon .info{flex:1;padding:13px 15px;display:flex;align-items:center;justify-content:space-between}
+  .coupon .info h4{font-size:14.5px;font-weight:800} .coupon .info p{font-size:12px;color:var(--muted);margin-top:2px}
+  .coupon .get{background:var(--blue);color:#fff;padding:0 18px;display:grid;place-items:center;font-weight:800;font-size:13px;cursor:pointer}
+  .pack{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;align-items:center;gap:13px;margin-bottom:11px;cursor:pointer;transition:.2s}
+  .pack:hover{box-shadow:var(--sh)}
+  .pack .pic{width:46px;height:46px;border-radius:13px;background:linear-gradient(145deg,#eafaf0,#d6f5e3);color:var(--green);display:grid;place-items:center;flex:none}
+  .pack .pic iconify-icon{font-size:24px}
+  .pack .pm{flex:1} .pack .pm h4{font-size:14.5px;font-weight:800} .pack .pm span{font-size:12px;color:var(--muted)}
+  .pack .pr{text-align:right} .pack .pr b{font-size:16px;color:var(--blue)} .pack .pr span{font-size:11px;color:var(--muted);display:block}
+
+  /* ---------- SCAN / CHARGING ---------- */
+  .scan-wrap{height:100%;display:flex;flex-direction:column}
+  .scan-view{flex:1;background:radial-gradient(120% 80% at 50% 0%,#1a1f3a,#0d1024);position:relative;display:grid;place-items:center;overflow:hidden}
+  .scan-frame{width:230px;height:230px;border:3px solid rgba(255,255,255,.85);border-radius:22px;position:relative}
+  .scan-frame::before,.scan-frame::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--blue-2);box-shadow:0 0 14px var(--blue-2)}
+  .scan-frame::before{top:0;animation:scan 2.4s ease-in-out infinite}
+  .scan-frame::after{bottom:0;animation:scan 2.4s ease-in-out infinite reverse}
+  @keyframes scan{0%,100%{transform:translateY(0)}50%{transform:translateY(224px)}}
+  .scan-frame .corner{position:absolute;width:28px;height:28px;border:4px solid var(--blue-2);border-radius:6px}
+  .c1{top:-4px;left:-4px;border-right:none;border-bottom:none} .c2{top:-4px;right:-4px;border-left:none;border-bottom:none}
+  .c3{bottom:-4px;left:-4px;border-right:none;border-top:none} .c4{bottom:-4px;right:-4px;border-left:none;border-top:none}
+  .scan-tip{position:absolute;bottom:30px;left:0;right:0;text-align:center;color:#cdd5f5;font-size:13.5px}
+  .scan-tip b{color:#fff;display:block;font-size:16px;margin-bottom:6px}
+
+  /* charging live */
+  .charging{background:var(--bg);padding:20px 16px}
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 18px}
+  .ring{position:relative;width:180px;height:180px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .ctr .kwh{font-size:30px;font-weight:800;font-family:var(--font)}
+  .ring .ctr .pct{font-size:13px;color:var(--muted)}
+  .ring .ctr .lab{font-size:11px;color:var(--orange);font-weight:700;margin-top:2px;display:flex;align-items:center;gap:4px}
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px}
+  .metric{background:#fff;border-radius:15px;padding:13px;text-align:center;box-shadow:var(--sh)}
+  .metric .v{font-size:18px;font-weight:800;font-family:var(--font)}
+  .metric .v.og{color:var(--orange)} .metric .v.bl{color:var(--blue)}
+  .metric .k{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .mode-row{display:flex;gap:9px;margin-bottom:16px}
+  .mode{flex:1;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+  .mode.on{border-color:var(--blue);background:#eef4ff;color:var(--blue)}
+  .stop-btn{width:100%;padding:15px;border:none;border-radius:16px;background:linear-gradient(135deg,#ff7a59,#fa8c16);color:#fff;font-weight:800;font-size:15.5px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 14px 30px rgba(250,140,22,.4)}
+
+  /* ---------- ORDERS ---------- */
+  .order-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:var(--sh)}
+  .order-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .order-card .top h4{font-size:15px;font-weight:800}
+  .badge{font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px}
+  .badge.done{background:#eafaf0;color:var(--green)} .badge.ing{background:#fff3e6;color:var(--orange)} .badge.pay{background:#eef4ff;color:var(--blue)}
+  .order-card .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;border-top:1px solid var(--line);padding-top:11px}
+  .order-card .grid div span{font-size:11px;color:var(--muted);display:block} .order-card .grid div b{font-size:15px;font-weight:800;font-family:var(--font)}
+
+  /* ---------- PROFILE ---------- */
+  .prof-head{background:linear-gradient(135deg,#1677ff,#3b8bff);color:#fff;padding:24px 18px 56px;position:relative;overflow:hidden}
+  .prof-head .deco{position:absolute;right:-40px;bottom:-50px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 60%)}
+  .prof-top{display:flex;align-items:center;gap:13px;position:relative}
+  .avatar{width:58px;height:58px;border-radius:18px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:30px}
+  .prof-top h3{font-size:19px;font-weight:800} .prof-top p{font-size:12.5px;color:#dcebff}
+  .vip{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#ffd27a,#ff9d5c);color:#5a3a00;font-size:11.5px;font-weight:800;padding:4px 11px;border-radius:999px;margin-top:6px}
+  .wallet{position:relative;margin:-34px 16px 0;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--sh-lg);display:flex;align-items:center;gap:14px}
+  .wallet .bal{flex:1} .wallet .bal span{font-size:12px;color:var(--muted)} .wallet .bal b{font-size:24px;font-family:var(--font);display:block}
+  .wallet .acts{display:flex;gap:8px}
+  .wallet .acts button{border:none;background:var(--bg);border-radius:12px;padding:9px 13px;font-size:12.5px;font-weight:700;color:var(--ink);font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px}
+  .wallet .acts button iconify-icon{font-size:16px;color:var(--blue)}
+  .menu{background:#fff;border-radius:20px;margin:14px 16px;padding:6px 14px;box-shadow:var(--sh)}
+  .menu .mi{display:flex;align-items:center;gap:13px;padding:14px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .menu .mi:last-child{border-bottom:none}
+  .menu .mi .ic{width:40px;height:40px;border-radius:12px;background:var(--bg);display:grid;place-items:center;color:var(--blue);flex:none}
+  .menu .mi .ic iconify-icon{font-size:21px}
+  .menu .mi .tx{flex:1} .menu .mi .tx h4{font-size:14.5px;font-weight:700} .menu .mi .tx span{font-size:12px;color:var(--muted)}
+  .menu .mi .ar{color:#c5ccda;font-size:18px}
+
+  /* ---------- TAB BAR ---------- */
+  .tabbar{height:84px;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-top:1px solid var(--line);display:flex;align-items:flex-start;padding:8px 8px 0;position:relative;flex:none}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10.5px;font-weight:700;cursor:pointer;padding-top:6px;transition:.2s}
+  .tab iconify-icon{font-size:23px}
+  .tab.on{color:var(--blue)}
+  .scan-tab{flex:1;display:flex;justify-content:center;position:relative}
+  .scan-fab{position:absolute;top:-26px;width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#1677ff,#36c5f0);display:grid;place-items:center;color:#fff;box-shadow:0 12px 28px rgba(22,119,255,.5);cursor:pointer;transition:.2s;border:4px solid #fff}
+  .scan-fab:hover{transform:translateY(-2px)}
+  .scan-fab iconify-icon{font-size:30px}
+  .scan-tab span{font-size:10.5px;font-weight:700;color:var(--blue);margin-top:40px}
+
+  .hidden{display:none!important}
+
+  @media(max-width:480px){
+    body{padding:0}
+    .phone{width:100%;height:100vh;border-radius:0;box-shadow:none}
+    .phone{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="right"><iconify-icon icon="solar:signal-bold" style="font-size:15px"></iconify-icon><iconify-icon icon="solar:wifi-bold" style="font-size:15px"></iconify-icon><iconify-icon icon="solar:battery-bold" style="font-size:15px"></iconify-icon></span>
+  </div>
+
+  <div class="screen">
+    <!-- HOME -->
+    <div class="tab-panel" id="p-home">
+      <div class="map">
+        <div class="roads"></div><div class="river"></div>
+        <div class="pin" style="left:22%;top:30%"><div class="bub"><span class="d" style="background:var(--green)"></span>12空闲</div><div class="stem"></div><div class="head" style="background:var(--green)"></div></div>
+        <div class="pin" style="left:62%;top:22%"><div class="bub"><span class="d" style="background:var(--orange)"></span>3充电</div><div class="stem"></div><div class="head" style="background:var(--orange)"></div></div>
+        <div class="pin" style="left:74%;top:58%"><div class="bub"><span class="d" style="background:var(--red)"></span>故障</div><div class="stem"></div><div class="head" style="background:var(--red)"></div></div>
+        <div class="pin" style="left:38%;top:66%"><div class="bub"><span class="d" style="background:var(--green)"></span>8空闲</div><div class="stem"></div><div class="head" style="background:var(--green)"></div></div>
+        <div class="me-dot"></div>
+        <div class="locate"><iconify-icon icon="solar:target-bold"></iconify-icon></div>
+      </div>
+
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="search-row"><iconify-icon icon="solar:map-point-search-bold"></iconify-icon><input placeholder="搜索充电站 / 地点" /></div>
+        <div class="chips">
+          <div class="chip on"><iconify-icon icon="solar:bolt-bold"></iconify-icon> 快充</div>
+          <div class="chip"><iconify-icon icon="solar:battery-charge-bold"></iconify-icon> 超充</div>
+          <div class="chip"><iconify-icon icon="solar:parking-bold"></iconify-icon> 免费停车</div>
+          <div class="chip"><iconify-icon icon="solar:highway-bold"></iconify-icon> 高速路站</div>
+          <div class="chip"><iconify-icon icon="solar:crown-bold"></iconify-icon> PLUS站</div>
+        </div>
+
+        <div class="station">
+          <div class="st-ic"><iconify-icon icon="solar:ev-station-bold"></iconify-icon></div>
+          <div class="st-mid"><h4>万象城超级充电站 <span class="star"><iconify-icon icon="solar:star-bold"></iconify-icon>4.9</span></h4><p>文一西路 88 号 · 含超充 / 即插即充</p></div>
+          <div class="st-right"><div class="free"><dot></dot> 12 空闲</div><div class="price">¥1.05/度起</div><div class="dist">0.8km</div></div>
+        </div>
+        <div class="station">
+          <div class="st-ic"><iconify-icon icon="solar:ev-station-bold"></iconify-icon></div>
+          <div class="st-mid"><h4>西溪印象城充电点 <span class="star"><iconify-icon icon="solar:star-bold"></iconify-icon>4.7</span></h4><p>免费停车 2h · 慢充+快充</p></div>
+          <div class="st-right"><div class="free"><dot></dot> 8 空闲</div><div class="price">¥0.92/度起</div><div class="dist">1.4km</div></div>
+        </div>
+        <div class="station">
+          <div class="st-ic"><iconify-icon icon="solar:ev-station-bold"></iconify-icon></div>
+          <div class="st-mid"><h4>滨江星光快充站 <span class="star"><iconify-icon icon="solar:star-bold"></iconify-icon>4.8</span></h4><p>PLUS 会员站 · 停车减免</p></div>
+          <div class="st-right"><div class="free" style="color:var(--orange)"><dot style="background:var(--orange)"></dot> 3 充电中</div><div class="price">¥1.18/度起</div><div class="dist">2.1km</div></div>
+        </div>
+        <div class="station">
+          <div class="st-ic"><iconify-icon icon="solar:ev-station-bold"></iconify-icon></div>
+          <div class="st-mid"><h4>运河邻里换电柜 <span class="star"><iconify-icon icon="solar:star-bold"></iconify-icon>4.6</span></h4><p>可换电车型 · 24h 营业</p></div>
+          <div class="st-right"><div class="free"><dot></dot> 20 空闲</div><div class="price">¥0.85/度起</div><div class="dist">2.9km</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVINGS -->
+    <div class="tab-panel hidden" id="p-save">
+      <div class="pad">
+        <div class="hero-card">
+          <div class="deco"></div>
+          <h3>PLUS 会员 · 月省最多 ¥158</h3>
+          <p>开通即享充电折扣 + 每月满减券包 + 停车减免</p>
+          <div class="row">
+            <div class="b"><b>6折</b><span>充电起步</span></div>
+            <div class="b"><b>5张</b><span>满减券/月</span></div>
+            <div class="b"><b>免</b><span>停车费</span></div>
+          </div>
+        </div>
+
+        <div class="sec-t">限时优惠券 <a>全部 ></a></div>
+        <div class="coupon"><div class="amt"><b>¥15</b><span>满50可用</span></div><div class="info"><h4>快充满减券</h4><p>特来电 / 星星充电通用</p></div><div class="get">领取</div></div>
+        <div class="coupon"><div class="amt"><b>8折</b><span>折扣券</span></div><div class="info"><h4>PLUS 专享折扣</h4><p>仅限金卡及以上会员</p></div><div class="get">领取</div></div>
+        <div class="coupon"><div class="amt"><b>免费</b><span>停车券</span></div><div class="info"><h4>2 小时停车券</h4><p>合作场站通用</p></div><div class="get">领取</div></div>
+
+        <div class="sec-t">能量包预购 <a>更多 ></a></div>
+        <div class="pack"><div class="pic"><iconify-icon icon="solar:bolt-bold"></iconify-icon></div><div class="pm"><h4>100 度能量包</h4><span>锁定当前低价，自动抵扣</span></div><div class="pr"><b>¥89</b><span>原价 ¥105</span></div></div>
+        <div class="pack"><div class="pic"><iconify-icon icon="solar:bolt-bold"></iconify-icon></div><div class="pm"><h4>200 度能量包</h4><span>高频用户更划算</span></div><div class="pr"><b>¥168</b><span>原价 ¥210</span></div></div>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div class="tab-panel hidden" id="p-scan">
+      <div class="scan-wrap">
+        <div class="scan-view">
+          <div class="scan-frame"><span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span></div>
+          <div class="scan-tip"><b>将二维码放入框内</b>扫码启动充电 · 或手动输入桩编号</div>
+        </div>
+        <div class="charging">
+          <div class="ring-wrap">
+            <div class="ring">
+              <svg width="180" height="180"><circle cx="90" cy="90" r="78" stroke="#eef1f7" stroke-width="14" fill="none"/><circle cx="90" cy="90" r="78" stroke="url(#g)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="147"/></svg>
+              <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fa8c16"/><stop offset="1" stop-color="#ffb454"/></linearGradient></defs>
+              <div class="ctr"><div class="kwh">23.4</div><div class="pct">已充 70%</div><div class="lab"><iconify-icon icon="solar:bolt-bold"></iconify-icon> 充电中</div></div>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="metric"><div class="v og">62.5</div><div class="k">当前功率 kW</div></div>
+            <div class="metric"><div class="v bl">¥14.8</div><div class="k">已用费用</div></div>
+            <div class="metric"><div class="v">18</div><div class="k">预计分钟</div></div>
+          </div>
+          <div class="mode-row">
+            <div class="mode">按金额</div><div class="mode">按电量</div><div class="mode on">充满为止</div>
+          </div>
+          <button class="stop-btn"><iconify-icon icon="solar:stop-bold"></iconify-icon> 停止充电</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="tab-panel hidden" id="p-order">
+      <div class="pad">
+        <div class="sec-t" style="margin-top:0">充电记录 <a>账单明细 ></a></div>
+        <div class="order-card">
+          <div class="top"><h4>万象城超级充电站</h4><span class="badge ing">充电中</span></div>
+          <div class="grid"><div><span>已充</span><b>23.4 kWh</b></div><div><span>时长</span><b>32 min</b></div><div><span>费用</span><b style="color:var(--orange)">¥14.8</b></div></div>
+        </div>
+        <div class="order-card">
+          <div class="top"><h4>西溪印象城充电点</h4><span class="badge done">已完成</span></div>
+          <div class="grid"><div><span>电量</span><b>41.2 kWh</b></div><div><span>时长</span><b>58 min</b></div><div><span>费用</span><b>¥37.9</b></div></div>
+        </div>
+        <div class="order-card">
+          <div class="top"><h4>滨江星光快充站</h4><span class="badge done">已完成</span></div>
+          <div class="grid"><div><span>电量</span><b>28.0 kWh</b></div><div><span>时长</span><b>40 min</b></div><div><span>费用</span><b>¥32.1</b></div></div>
+        </div>
+        <div class="order-card">
+          <div class="top"><h4>运河邻里换电柜</h4><span class="badge pay">待支付</span></div>
+          <div class="grid"><div><span>电量</span><b>15.6 kWh</b></div><div><span>时长</span><b>22 min</b></div><div><span>费用</span><b>¥13.3</b></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="tab-panel hidden" id="p-me">
+      <div class="prof-head">
+        <div class="deco"></div>
+        <div class="prof-top">
+          <div class="avatar"><iconify-icon icon="solar:user-bold"></iconify-icon></div>
+          <div><h3>陈先生</h3><p>138****6677</p><span class="vip"><iconify-icon icon="solar:crown-bold"></iconify-icon> PLUS 金卡会员</span></div>
+        </div>
+      </div>
+      <div class="wallet">
+        <div class="bal"><span>账户余额</span><b>¥128.50</b></div>
+        <div class="acts"><button><iconify-icon icon="solar:wallet-money-bold"></iconify-icon> 充值</button><button><iconify-icon icon="solar:receipt-bold"></iconify-icon> 发票</button></div>
+      </div>
+      <div class="menu">
+        <div class="mi"><div class="ic"><iconify-icon icon="solar:car-bold"></iconify-icon></div><div class="tx"><h4>车辆管理</h4><span>绑定车牌 · 电池卫士检测</span></div><div class="ar"><iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon></div></div>
+        <div class="mi"><div class="ic"><iconify-icon icon="solar:ticket-bold"></iconify-icon></div><div class="tx"><h4>我的卡券</h4><span>满减券 5 · 折扣券 2 · 停车券 1</span></div><div class="ar"><iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon></div></div>
+        <div class="mi"><div class="ic"><iconify-icon icon="solar:leaf-bold"></iconify-icon></div><div class="tx"><h4>碳积分</h4><span>累计减排 246 kg · 可兑充电券</span></div><div class="ar"><iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon></div></div>
+        <div class="mi"><div class="ic"><iconify-icon icon="solar:plug-circle-bold"></iconify-icon></div><div class="tx"><h4>即插即充</h4><span>已开启 NFC 感应启动</span></div><div class="ar"><iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon></div></div>
+        <div class="mi"><div class="ic"><iconify-icon icon="solar:headphones-bold"></iconify-icon></div><div class="tx"><h4>客服中心</h4><span>无法拔枪 / 退款申请</span></div><div class="ar"><iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon></div></div>
+        <div class="mi"><div class="ic"><iconify-icon icon="solar:settings-bold"></iconify-icon></div><div class="tx"><h4>设置</h4><span>通知 / 隐私 / 账号安全</span></div><div class="ar"><iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tabbar">
+    <div class="tab on" data-tab="home"><iconify-icon icon="solar:map-point-bold"></iconify-icon>首页</div>
+    <div class="tab" data-tab="save"><iconify-icon icon="solar:ticket-bold"></iconify-icon>省钱</div>
+    <div class="scan-tab" data-tab="scan"><div class="scan-fab"><iconify-icon icon="solar:qr-code-bold"></iconify-icon></div><span>扫码</span></div>
+    <div class="tab" data-tab="order"><iconify-icon icon="solar:clipboard-list-bold"></iconify-icon>订单</div>
+    <div class="tab" data-tab="me"><iconify-icon icon="solar:user-bold"></iconify-icon>我的</div>
+  </div>
+</div>
+
+<script>
+  const tabs=document.querySelectorAll('.tabbar [data-tab]');
+  const panels={home:'p-home',save:'p-save',scan:'p-scan',order:'p-order',me:'p-me'};
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    const k=t.dataset.tab;
+    tabs.forEach(x=>x.classList.remove('on'));
+    if(t.classList.contains('scan-tab')){tabs.forEach(x=>x.classList.remove('on'));}
+    else t.classList.add('on');
+    Object.values(panels).forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById(panels[k]).classList.remove('hidden');
+    document.querySelector('.screen').scrollTop=0;
+  }));
+  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');
+  }));
+  document.querySelectorAll('.mode').forEach(m=>m.addEventListener('click',()=>{
+    document.querySelectorAll('.mode').forEach(x=>x.classList.remove('on'));m.classList.add('on');
+  }));
+</script>
+</body>
+</html>

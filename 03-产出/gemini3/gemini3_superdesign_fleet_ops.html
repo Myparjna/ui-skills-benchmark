@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市级运营管理后台 | Fleet Ops Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ops-primary': '#0F172A',
+                        'ops-accent': '#3B82F6',
+                        'ops-success': '#10B981',
+                        'ops-warning': '#F59E0B',
+                        'ops-danger': '#EF4444',
+                        'ops-sidebar': '#1E293B',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .map-container {
+            background-image: url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/120.15,30.28,12,0/800x600?access_token=pk.eyJ1IjoiZGVzaWduZXIiLCJhIjoiY2p4eHh4eHh4eHh4eCJ9.xxxxxxxx');
+            background-size: cover;
+            background-position: center;
+        }
+        .sidebar-item-active {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3B82F6;
+            color: #3B82F6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-ops-primary h-screen overflow-hidden flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-ops-sidebar text-gray-300 flex flex-col shrink-0">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-8 h-8 bg-ops-accent rounded-lg flex items-center justify-center">
+                <svg viewBox="0 0 24 24" class="w-5 h-5 text-white fill-current"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg>
+            </div>
+            <span class="font-bold text-white tracking-tight">Fleet Ops</span>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+            <div class="sidebar-item-active p-3 rounded-r-lg flex items-center gap-3 cursor-pointer">
+                <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M13,3V9H21V3H13M13,21H21V15H13V21M3,21H11V11H3V21M3,9H11V3H3V9Z" /></svg>
+                <span class="text-sm font-medium">运营总览</span>
+            </div>
+            <div class="hover:bg-white/5 p-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors">
+                <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg>
+                <span class="text-sm font-medium">地图调度中心</span>
+            </div>
+            <div class="hover:bg-white/5 p-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors">
+                <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M19,20H5V18H19V20M19,16H5V14H19V16M19,12H5V10H19V12M19,8H5V6H19V8Z" /></svg>
+                <span class="text-sm font-medium">车队资产</span>
+            </div>
+            <div class="hover:bg-white/5 p-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors">
+                <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M16,20H8V6H16M16.67,4H15V2H9V4H7.33A1.33,1.33 0 0,0 6,5.33V18.67C6,19.4 6.6,20 7.33,20H16.67C17.4,20 18,19.4 18,18.67V5.33A1.33,1.33 0 0,0 16.67,4Z" /></svg>
+                <span class="text-sm font-medium">电池与能源</span>
+            </div>
+            <div class="hover:bg-white/5 p-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors">
+                <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg>
+                <span class="text-sm font-medium">运维工单</span>
+            </div>
+            <div class="pt-4 pb-2">
+                <span class="px-3 text-[10px] uppercase tracking-widest text-gray-500 font-bold">系统管理</span>
+            </div>
+            <div class="hover:bg-white/5 p-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors">
+                <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.97 21.68,8.76L19.68,5.3C19.58,5.09 19.33,5.01 19.13,5.09L16.65,6.09C16.14,5.7 15.58,5.38 14.97,5.13L14.59,2.47C14.56,2.24 14.36,2.07 14.13,2.07H10.13C9.9,2.07 9.7,2.24 9.67,2.47L9.29,5.13C8.68,5.38 8.12,5.7 7.61,6.09L5.13,5.09C4.93,5.01 4.68,5.09 4.58,5.3L2.58,8.76C2.48,8.97 2.53,9.22 2.72,9.37L4.83,11.03C4.79,11.34 4.76,11.67 4.76,12C4.76,12.33 4.79,12.65 4.83,12.97L2.72,14.63C2.53,14.78 2.48,15.03 2.58,15.24L4.58,18.7C4.68,18.91 4.93,18.99 5.13,18.91L7.61,17.91C8.12,18.3 8.68,18.62 9.29,18.87L9.67,21.53C9.7,21.76 9.9,21.93 10.13,21.93H14.13C14.36,21.93 14.56,21.76 14.59,21.53L14.97,18.87C15.58,18.62 16.14,18.3 16.65,17.91L19.13,18.91C19.33,18.99 19.58,18.91 19.68,18.7L21.68,15.24C21.78,15.03 21.73,14.78 21.54,14.63L19.43,12.97Z" /></svg>
+                <span class="text-sm font-medium">组织与权限</span>
+            </div>
+        </nav>
+
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-ops-accent flex items-center justify-center text-xs font-bold text-white">AD</div>
+                <div>
+                    <p class="text-xs font-bold text-white">Admin</p>
+                    <p class="text-[10px] text-gray-500">城市运营经理</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-4">
+                <h1 class="text-lg font-bold">运营总览</h1>
+                <div class="h-4 w-px bg-gray-200"></div>
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg>
+                    <span>杭州市 / 萧山区</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <div class="relative">
+                    <svg viewBox="0 0 24 24" class="w-6 h-6 text-gray-400"><path d="M12,22A2,2 0 0,0 14,20H10A2,2 0 0,0 12,22M18,16V11C18,7.93 16.36,5.36 13.5,4.68V4A1.5,1.5 0 0,0 12,2.5A1.5,1.5 0 0,0 10.5,4V4.68C7.64,5.36 6,7.92 6,11V16L4,18V19H20V18L18,16Z" /></svg>
+                    <div class="absolute -top-1 -right-1 w-2 h-2 bg-ops-danger rounded-full border-2 border-white"></div>
+                </div>
+                <div class="flex items-center gap-2 text-sm font-medium border-l border-gray-200 pl-6">
+                    <span>2026-06-17 14:30</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 custom-shadow">
+                    <p class="text-sm text-gray-500 mb-1">今日订单量</p>
+                    <div class="flex items-end gap-2">
+                        <span class="text-2xl font-bold">12,840</span>
+                        <span class="text-xs text-ops-success mb-1">↑ 12.5%</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 custom-shadow">
+                    <p class="text-sm text-gray-500 mb-1">当前活跃车辆</p>
+                    <div class="flex items-end gap-2">
+                        <span class="text-2xl font-bold">8,245</span>
+                        <span class="text-xs text-ops-accent mb-1">可用率 94%</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 custom-shadow">
+                    <p class="text-sm text-gray-500 mb-1">待换电车辆</p>
+                    <div class="flex items-end gap-2">
+                        <span class="text-2xl font-bold text-ops-warning">452</span>
+                        <span class="text-xs text-gray-400 mb-1">工单处理中 82</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 custom-shadow">
+                    <p class="text-sm text-gray-500 mb-1">紧急告警</p>
+                    <div class="flex items-end gap-2">
+                        <span class="text-2xl font-bold text-ops-danger">12</span>
+                        <span class="text-xs text-gray-400 mb-1">P0级别 3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Map Card -->
+                <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 custom-shadow overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="font-bold text-sm">实时调度地图</h3>
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1 bg-gray-100 text-[10px] font-bold rounded">热力图</button>
+                            <button class="px-3 py-1 bg-ops-accent text-white text-[10px] font-bold rounded">车辆点位</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 map-container relative">
+                        <!-- Simulated Markers -->
+                        <div class="absolute top-1/4 left-1/3 w-3 h-3 bg-ops-success rounded-full border-2 border-white"></div>
+                        <div class="absolute top-1/2 left-1/2 w-3 h-3 bg-ops-accent rounded-full border-2 border-white animate-pulse"></div>
+                        <div class="absolute bottom-1/3 right-1/4 w-3 h-3 bg-ops-warning rounded-full border-2 border-white"></div>
+                        
+                        <!-- Floating Panel -->
+                        <div class="absolute top-4 right-4 w-48 bg-white/90 backdrop-blur p-3 rounded-lg border border-gray-200 shadow-lg">
+                            <h4 class="text-[10px] font-bold uppercase text-gray-500 mb-2">地图筛选</h4>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-xs">
+                                    <input type="checkbox" checked class="rounded text-ops-accent"> 正常可用
+                                </label>
+                                <label class="flex items-center gap-2 text-xs">
+                                    <input type="checkbox" checked class="rounded text-ops-accent"> 骑行中
+                                </label>
+                                <label class="flex items-center gap-2 text-xs">
+                                    <input type="checkbox" class="rounded text-ops-accent"> 低电量
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts & Work Orders -->
+                <div class="bg-white rounded-xl border border-gray-200 custom-shadow flex flex-col h-[500px]">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-bold text-sm">告警与异常中心</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">
+                        <div class="divide-y divide-gray-100">
+                            <div class="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 bg-red-100 text-ops-danger text-[10px] font-bold rounded">P0 越界</span>
+                                    <span class="text-[10px] text-gray-400">2分钟前</span>
+                                </div>
+                                <p class="text-xs font-medium">车辆 82943 离开服务区 (滨江区)</p>
+                                <div class="mt-2 flex gap-2">
+                                    <button class="text-[10px] text-ops-accent font-bold">定位</button>
+                                    <button class="text-[10px] text-ops-accent font-bold">锁车</button>
+                                </div>
+                            </div>
+                            <div class="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 bg-orange-100 text-ops-warning text-[10px] font-bold rounded">P1 低电</span>
+                                    <span class="text-[10px] text-gray-400">10分钟前</span>
+                                </div>
+                                <p class="text-xs font-medium">车辆 22104 电量低于 10%</p>
+                                <div class="mt-2 flex gap-2">
+                                    <button class="text-[10px] text-ops-accent font-bold">派发工单</button>
+                                </div>
+                            </div>
+                            <div class="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 bg-blue-100 text-ops-accent text-[10px] font-bold rounded">P2 聚集</span>
+                                    <span class="text-[10px] text-gray-400">25分钟前</span>
+                                </div>
+                                <p class="text-xs font-medium">西湖文化广场站车辆积压 > 50辆</p>
+                                <div class="mt-2 flex gap-2">
+                                    <button class="text-[10px] text-ops-accent font-bold">生成调度</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t border-gray-200">
+                        <button class="w-full py-2 bg-white border border-gray-200 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors">查看全部告警</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Table Section -->
+            <div class="bg-white rounded-xl border border-gray-200 custom-shadow overflow-hidden">
+                <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="font-bold text-sm">今日运维人效榜</h3>
+                    <div class="flex gap-2">
+                        <select class="bg-gray-50 border border-gray-200 text-[10px] p-1 rounded">
+                            <option>换电工单</option>
+                            <option>调度工单</option>
+                            <option>维修工单</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-bold">
+                        <tr>
+                            <th class="px-6 py-3">运维人员</th>
+                            <th class="px-6 py-3">所属网格</th>
+                            <th class="px-6 py-3">今日完成</th>
+                            <th class="px-6 py-3">准时率</th>
+                            <th class="px-6 py-3">当前状态</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="px-6 py-4 flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-200"></div>
+                                <span>张三</span>
+                            </td>
+                            <td class="px-6 py-4">萧山-01</td>
+                            <td class="px-6 py-4">42</td>
+                            <td class="px-6 py-4 text-ops-success font-bold">98%</td>
+                            <td class="px-6 py-4">
+                                <span class="flex items-center gap-1">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-ops-success"></div>
+                                    在岗中
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-200"></div>
+                                <span>李四</span>
+                            </td>
+                            <td class="px-6 py-4">萧山-03</td>
+                            <td class="px-6 py-4">38</td>
+                            <td class="px-6 py-4 text-ops-success font-bold">95%</td>
+                            <td class="px-6 py-4">
+                                <span class="flex items-center gap-1 text-gray-400">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                                    已下班
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

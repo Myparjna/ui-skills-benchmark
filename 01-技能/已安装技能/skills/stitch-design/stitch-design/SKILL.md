@@ -1,6 +1,6 @@
 ---
-name: stitch-design
-description: Unified entry point for Stitch design work. Handles prompt enhancement (UI/UX keywords, atmosphere), design system synthesis (.stitch/DESIGN.md), and high-fidelity screen generation/editing via Stitch MCP.
+name: Stitch 提示词增强
+description: 基于 Google Stitch design skill 的前端设计提示词增强层。原技能依赖 Stitch MCP 云端生成（本评测环境未接通该 MCP），实际由模型按本技能的提示词框架（结构化模板 + 专业 UI/UX 词表 + 设计系统思维）自行生成 HTML。作用是将模糊需求改写为结构化、专业化的设计提示词，相比无技能基线仍有可观测的设计约束效果。
 allowed-tools:
   - "StitchMCP"
   - "Read"

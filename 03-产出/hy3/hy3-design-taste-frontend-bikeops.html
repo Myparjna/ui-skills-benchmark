@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>潮汐出行 · 城市两轮运营后台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Outfit','Noto Sans SC','sans-serif'],
+          sans: ['Outfit','Noto Sans SC','sans-serif'],
+          mono: ['JetBrains Mono','ui-monospace','monospace'],
+        },
+        colors: {
+          ink: '#0E1116', side: '#141821', panel: '#181D27', line: '#262C39',
+          accent: '#0D9488', idle: '#2FA84F', low: '#E8831E', fault: '#D6433B', off: '#6B7280',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root { --accent:#0D9488; }
+  html,body{margin:0;background:#0E1116;}
+  body{font-family:'Outfit','Noto Sans SC',sans-serif;color:#E5E9F0;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s cubic-bezier(0.16,1,0.3,1),transform .6s cubic-bezier(0.16,1,0.3,1);transition-delay:calc(var(--i,0)*70ms);}
+  .reveal.in{opacity:1;transform:none;}
+  .tactile:active{transform:translateY(1px) scale(.99);}
+  .navitem{transition:background .2s,color .2s;border-left:2px solid transparent;}
+  .navitem:hover{background:#1C2230;}
+  .navitem.active{background:#1C2230;color:#fff;border-left-color:var(--accent);}
+  .bar-seg{transition:width .8s cubic-bezier(0.16,1,0.3,1);}
+  .pulse{animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .shimmer{background:linear-gradient(100deg,#1C2230 30%,#283041 50%,#1C2230 70%);background-size:200% 100%;animation:sh 1.3s infinite;border-radius:.5rem;}
+  @keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+  .blip{animation:bob 4s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#2A3140;border-radius:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+<div class="flex min-h-[100dvh]">
+
+  <!-- SIDEBAR -->
+  <aside class="hidden lg:flex w-[240px] shrink-0 bg-side border-r border-line flex-col">
+    <div class="h-16 flex items-center gap-2.5 px-5 border-b border-line">
+      <span class="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="1.8"><circle cx="6" cy="17" r="3.2"/><circle cx="18" cy="17" r="3.2"/><path d="M6 17l4-9h5l3 9M10 8l1.5 4"/></svg></span>
+      <div><p class="font-display font-700 text-[15px] leading-none">潮汐出行</p><p class="text-[10px] text-stone-500 mt-1">City Ops Console</p></div>
+    </div>
+    <nav class="flex-1 py-4 px-3 space-y-1 text-[13.5px] text-stone-400 overflow-y-auto">
+      <a class="navitem active flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 13h7V4H4zM13 20h7V4h-7zM4 20h7v-5H4z"/></svg>运营总览</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>地图调度中心</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-9h5l3 9"/></svg>车队资产</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="7" width="14" height="10" rx="2"/><path d="M18 10h2v4h-2M8 11v2M12 11v2"/></svg>电池与能源</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3 3-3M12 4v12M5 21h14"/></svg>运维工单</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 3 8v13h18V8zM9 21v-6h6v6"/></svg>规则与区域</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg>合规监管</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>数据报表</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M16 11l5 5m0-5-5 5"/></svg>组织与权限</a>
+      <a class="navitem flex items-center gap-3 px-3 py-2.5 rounded-lg" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>系统配置</a>
+    </nav>
+    <div class="p-3 border-t border-line">
+      <div class="flex items-center gap-2.5 px-2 py-2">
+        <div class="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center text-accent font-600 text-[13px]">霍</div>
+        <div class="text-[12px] leading-tight"><p class="text-stone-200">霍明哲</p><p class="text-stone-500">城市运营经理</p></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 min-w-0 flex flex-col">
+    <!-- TOP BAR -->
+    <header class="h-16 shrink-0 border-b border-line px-5 flex items-center gap-4">
+      <div>
+        <h1 class="font-display font-700 text-[18px] leading-none">运营总览</h1>
+        <p class="text-[11px] text-stone-500 mt-1">杭州主城 · 自然日 2026-07-12</p>
+      </div>
+      <!-- scope controls -->
+      <div class="hidden md:flex items-center gap-2 ml-2">
+        <div class="flex bg-panel rounded-lg p-0.5 text-[12px]">
+          <button class="px-3 py-1.5 rounded-md bg-accent text-white tactile">今日</button>
+          <button class="px-3 py-1.5 rounded-md text-stone-400 hover:text-stone-200 tactile">昨日</button>
+          <button class="px-3 py-1.5 rounded-md text-stone-400 hover:text-stone-200 tactile">本周</button>
+          <button class="px-3 py-1.5 rounded-md text-stone-400 hover:text-stone-200 tactile">本月</button>
+        </div>
+        <select class="bg-panel border border-line rounded-lg text-[12.5px] text-stone-300 px-3 py-2 outline-none"><option>全城</option><option>拱墅区</option><option>西湖区</option><option>重点区域</option></select>
+        <select class="bg-panel border border-line rounded-lg text-[12.5px] text-stone-300 px-3 py-2 outline-none"><option>混合车队</option><option>自行车</option><option>电单车（可换电）</option></select>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 bg-panel border border-line rounded-lg px-3 py-2 text-[12.5px] text-stone-400">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          <input class="bg-transparent outline-none w-32 placeholder:text-stone-600" placeholder="车架号 / 工单 / 订单" />
+        </div>
+        <button id="refreshBtn" onclick="simulateLoad()" class="tactile flex items-center gap-1.5 bg-accent/15 text-accent text-[12.5px] font-500 px-3 py-2 rounded-lg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>刷新
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+      <!-- KPI BENTO (asymmetric) -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="reveal lg:col-span-2 bg-panel border border-line rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-[12px] text-stone-400">全城可用率</p>
+            <p class="mono font-700 text-[40px] text-idle leading-none mt-2">91.4<span class="text-[20px]">%</span></p>
+            <p class="text-[12px] text-idle mt-2">▲ 2.3% vs 昨日 · 重点区域 88.7%</p>
+          </div>
+          <div class="w-28 h-28 relative">
+            <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90"><circle cx="50" cy="50" r="42" fill="none" stroke="#262C39" stroke-width="9"/><circle cx="50" cy="50" r="42" fill="none" stroke="#2FA84F" stroke-width="9" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="22.8"/></svg>
+            <span class="absolute inset-0 flex items-center justify-center text-[12px] text-stone-400">达标</span>
+          </div>
+        </div>
+        <div class="reveal bg-panel border border-line rounded-2xl p-5" style="--i:1">
+          <p class="text-[12px] text-stone-400">今日订单</p>
+          <p class="mono font-700 text-[30px] leading-none mt-2">184,392</p>
+          <p class="text-[12px] text-stone-400 mt-2 mono">骑行 142k · 新客 9,271</p>
+        </div>
+        <div class="reveal bg-panel border border-line rounded-2xl p-5" style="--i:2">
+          <p class="text-[12px] text-stone-400">今日 GMV</p>
+          <p class="mono font-700 text-[30px] leading-none mt-2">¥847.6k</p>
+          <p class="text-[12px] text-stone-400 mt-2 mono">退券补贴 ¥31.2k</p>
+        </div>
+      </section>
+
+      <!-- FLEET + BATTERY -->
+      <section class="grid lg:grid-cols-[1.15fr_0.85fr] gap-4">
+        <!-- fleet health -->
+        <div class="reveal bg-panel border border-line rounded-2xl p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="font-display font-600 text-[15px]">车队健康与可用性</h2>
+            <span class="text-[11px] text-stone-500">共 24,800 辆</span>
+          </div>
+          <div class="mt-4 space-y-3" id="fleetBars">
+            <div><div class="flex justify-between text-[12.5px] mb-1"><span class="text-stone-300">可用</span><span class="mono text-idle">19,140 · 77.2%</span></div><div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="bar-seg h-full rounded-full bg-idle" style="width:77.2%"></div></div></div>
+            <div><div class="flex justify-between text-[12.5px] mb-1"><span class="text-stone-300">使用中</span><span class="mono text-stone-200">3,710 · 14.9%</span></div><div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="bar-seg h-full rounded-full bg-accent" style="width:14.9%"></div></div></div>
+            <div><div class="flex justify-between text-[12.5px] mb-1"><span class="text-stone-300">低电（电单车）</span><span class="mono text-low">1,032 · 4.2%</span></div><div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="bar-seg h-full rounded-full bg-low" style="width:4.2%"></div></div></div>
+            <div><div class="flex justify-between text-[12.5px] mb-1"><span class="text-stone-300">故障</span><span class="mono text-fault">612 · 2.5%</span></div><div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="bar-seg h-full rounded-full bg-fault" style="width:2.5%"></div></div></div>
+            <div><div class="flex justify-between text-[12.5px] mb-1"><span class="text-stone-300">离线</span><span class="mono text-off">226 · 0.9%</span></div><div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="bar-seg h-full rounded-full bg-off" style="width:0.9%"></div></div></div>
+            <div><div class="flex justify-between text-[12.5px] mb-1"><span class="text-stone-300">回收中</span><span class="mono text-stone-400">80 · 0.3%</span></div><div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="bar-seg h-full rounded-full bg-stone-500" style="width:0.3%"></div></div></div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3 text-center">
+            <div><p class="mono font-600 text-[18px] text-low">312</p><p class="text-[11px] text-stone-500">高风险故障</p></div>
+            <div><p class="mono font-600 text-[18px] text-stone-200">1.4%</p><p class="text-[11px] text-stone-500">离线率</p></div>
+            <div><p class="mono font-600 text-[18px] text-stone-200">4.7%</p><p class="text-[11px] text-stone-500">低电占比</p></div>
+          </div>
+        </div>
+
+        <!-- battery SOC -->
+        <div class="reveal bg-panel border border-line rounded-2xl p-5" style="--i:1">
+          <h2 class="font-display font-600 text-[15px]">电池电量分布 (SOC)</h2>
+          <p class="text-[11px] text-stone-500 mt-1">电单车 14,200 辆 · 换电柜 38 座</p>
+          <div class="mt-5 flex h-9 rounded-lg overflow-hidden text-[10px] font-500 text-ink">
+            <div class="bg-fault/80 flex items-center justify-center bar-seg" style="width:6%">0-10%</div>
+            <div class="bg-low/85 flex items-center justify-center bar-seg" style="width:18%;background:#E8831E">10-30%</div>
+            <div class="bg-accent/80 flex items-center justify-center bar-seg" style="width:41%">30-60%</div>
+            <div class="bg-idle/85 flex items-center justify-center bar-seg" style="width:35%;background:#2FA84F">60-100%</div>
+          </div>
+          <div class="mt-4 space-y-3">
+            <div class="flex justify-between items-center text-[12.5px]"><span class="text-stone-300">低电风险车辆（&lt;30%）</span><span class="mono text-low font-600">2,410 辆</span></div>
+            <div class="flex justify-between items-center text-[12.5px]"><span class="text-stone-300">今日已完成换电</span><span class="mono text-stone-200 font-600">3,884 次</span></div>
+            <div class="flex justify-between items-center text-[12.5px]"><span class="text-stone-300">在途换电任务</span><span class="mono text-stone-200 font-600">126 单</span></div>
+            <div class="flex justify-between items-center text-[12.5px]"><span class="text-stone-300">平均单次换电耗时</span><span class="mono text-stone-200 font-600">7m 42s</span></div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-line">
+            <p class="text-[12px] text-stone-400">异常电池（温度/健康度）</p>
+            <p class="mono font-600 text-[18px] text-fault mt-1">14 块 <span class="text-[12px] text-stone-500 font-400">已自动锁定隔离</span></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAP + ALERTS -->
+      <section class="grid lg:grid-cols-[1.6fr_1fr] gap-4">
+        <!-- map ops center -->
+        <div class="reveal bg-panel border border-line rounded-2xl overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+            <h2 class="font-display font-600 text-[15px]">地图调度中心</h2>
+            <div class="flex gap-2 text-[11px]">
+              <span class="px-2 py-1 rounded bg-line text-stone-300">车辆</span>
+              <span class="px-2 py-1 rounded bg-accent/15 text-accent">电量层</span>
+              <span class="px-2 py-1 rounded bg-line text-stone-300">围栏</span>
+              <span class="px-2 py-1 rounded bg-line text-stone-300">热力</span>
+            </div>
+          </div>
+          <div class="relative h-[320px] bg-[#10141C]">
+            <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" viewBox="0 0 600 320">
+              <path d="M0 90 H600 M0 200 H600 M160 0 V320 M380 0 V320" stroke="#1B2230" stroke-width="14"/>
+              <path d="M0 150 H600" stroke="#172033" stroke-width="30"/>
+              <path d="M300 0 V320" stroke="#13251C" stroke-width="20" opacity=".6"/>
+              <rect x="60" y="40" width="80" height="40" rx="6" fill="#2A3140" opacity=".5"/>
+              <rect x="420" y="120" width="90" height="46" rx="6" fill="#2A3140" opacity=".5"/>
+            </svg>
+            <!-- vehicle blips -->
+            <span class="blip absolute top-[20%] left-[18%] w-2.5 h-2.5 rounded-full bg-idle"></span>
+            <span class="blip absolute top-[30%] left-[30%] w-2.5 h-2.5 rounded-full bg-accent" style="animation-delay:.6s"></span>
+            <span class="blip absolute top-[55%] left-[42%] w-2.5 h-2.5 rounded-full bg-low" style="animation-delay:1.1s"></span>
+            <span class="blip absolute top-[40%] left-[62%] w-2.5 h-2.5 rounded-full bg-idle" style="animation-delay:.3s"></span>
+            <span class="blip absolute top-[68%] left-[72%] w-2.5 h-2.5 rounded-full bg-fault" style="animation-delay:.9s"></span>
+            <span class="blip absolute top-[25%] left-[78%] w-2.5 h-2.5 rounded-full bg-idle" style="animation-delay:1.4s"></span>
+            <!-- alert ring -->
+            <span class="absolute top-[54%] left-[41%] w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-fault/60 pulse"></span>
+            <div class="absolute bottom-3 left-3 flex gap-3 text-[11px] text-stone-400 bg-ink/70 backdrop-blur px-3 py-1.5 rounded-lg">
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-idle"></span>可用</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-low"></span>低电</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-fault"></span>告警</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- alerts -->
+        <div class="reveal bg-panel border border-line rounded-2xl p-5" style="--i:1">
+          <div class="flex items-center justify-between">
+            <h2 class="font-display font-600 text-[15px]">告警与异常中心</h2>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-fault/15 text-fault font-500">P0 3 · P1 11</span>
+          </div>
+          <div class="mt-4 space-y-2.5" id="alertList">
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-line/40 border-l-2 border-fault">
+              <span class="mt-1 w-2 h-2 rounded-full bg-fault pulse shrink-0"></span>
+              <div class="flex-1 min-w-0"><p class="text-[13px] text-stone-200">越界 · 文晖路禁行区</p><p class="text-[11px] text-stone-500 mono">浙A·D4471 · 2m 前 · 已超 P90</p></div>
+              <button class="text-[11px] text-accent shrink-0 tactile">派单</button>
+            </div>
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-line/40 border-l-2 border-low">
+              <span class="mt-1 w-2 h-2 rounded-full bg-low pulse shrink-0"></span>
+              <div class="flex-1 min-w-0"><p class="text-[13px] text-stone-200">低电聚集 · 西湖文化广场</p><p class="text-[11px] text-stone-500 mono">47 辆 &lt;15% · 建议调度换电</p></div>
+              <button class="text-[11px] text-accent shrink-0 tactile">生成</button>
+            </div>
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-line/40 border-l-2 border-fault">
+              <span class="mt-1 w-2 h-2 rounded-full bg-fault pulse shrink-0"></span>
+              <div class="flex-1 min-w-0"><p class="text-[13px] text-stone-200">疑似盗损 · 轨迹异常</p><p class="text-[11px] text-stone-500 mono">车架 8F2A·19C · 夜间离城</p></div>
+              <button class="text-[11px] text-accent shrink-0 tactile">核查</button>
+            </div>
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-line/40 border-l-2 border-stone-500">
+              <span class="mt-1 w-2 h-2 rounded-full bg-off shrink-0"></span>
+              <div class="flex-1 min-w-0"><p class="text-[13px] text-stone-300">倒地 · 申花路 12 号</p><p class="text-[11px] text-stone-500 mono">用户上报 · 待巡检</p></div>
+              <button class="text-[11px] text-accent shrink-0 tactile">派单</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WORK ORDERS + SUPPLY + COMPLIANCE -->
+      <section class="grid lg:grid-cols-3 gap-4">
+        <!-- work orders board -->
+        <div class="reveal bg-panel border border-line rounded-2xl p-5">
+          <h2 class="font-display font-600 text-[15px]">运维工单</h2>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
+            <div class="rounded-lg bg-line/40 py-2"><p class="mono font-600 text-[16px] text-stone-200">38</p><p class="text-stone-500">待派</p></div>
+            <div class="rounded-lg bg-line/40 py-2"><p class="mono font-600 text-[16px] text-stone-200">74</p><p class="text-stone-500">执行中</p></div>
+            <div class="rounded-lg bg-line/40 py-2"><p class="mono font-600 text-[16px] text-low">9</p><p class="text-stone-500">临超</p></div>
+          </div>
+          <div class="mt-4 space-y-2">
+            <div class="flex items-center justify-between text-[12.5px] py-2 border-b border-line"><span class="text-stone-300">换电类</span><span class="mono text-stone-400">1,204 完成 / 日</span></div>
+            <div class="flex items-center justify-between text-[12.5px] py-2 border-b border-line"><span class="text-stone-300">维修类</span><span class="mono text-stone-400">一次修复 92.4%</span></div>
+            <div class="flex items-center justify-between text-[12.5px] py-2 border-b border-line"><span class="text-stone-300">违停处置</span><span class="mono text-stone-400">响应 6.8m</span></div>
+            <div class="flex items-center justify-between text-[12.5px] py-2"><span class="text-stone-300">人均完成</span><span class="mono text-stone-400">47.2 单/人</span></div>
+          </div>
+        </div>
+
+        <!-- supply-demand -->
+        <div class="reveal bg-panel border border-line rounded-2xl p-5" style="--i:1">
+          <h2 class="font-display font-600 text-[15px]">供需与调度态势</h2>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="rounded-xl bg-line/40 p-3"><p class="text-[11px] text-stone-500">缺车区域</p><p class="mono font-700 text-[24px] text-low">7 <span class="text-[12px] text-stone-400">个</span></p></div>
+            <div class="rounded-xl bg-line/40 p-3"><p class="text-[11px] text-stone-500">堆车区域</p><p class="mono font-700 text-[24px] text-accent">4 <span class="text-[12px] text-stone-400">个</span></p></div>
+          </div>
+          <p class="text-[12px] text-stone-400 mt-4">高峰预警 07:00–09:00 · 建议调度</p>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="mono font-600 text-stone-200">+1,240 辆</span>
+            <span class="text-[11px] text-stone-500">→ 武林 / 钱江新城</span>
+          </div>
+          <div class="mt-3 pt-3 border-t border-line">
+            <p class="text-[12px] text-stone-400">热点 Top 起点</p>
+            <p class="text-[12.5px] text-stone-200 mt-1">地铁 2 号线 · 庆春广场 → 滨江星光</p>
+          </div>
+        </div>
+
+        <!-- compliance -->
+        <div class="reveal bg-panel border border-line rounded-2xl p-5" style="--i:2">
+          <h2 class="font-display font-600 text-[15px]">合规与治理概览</h2>
+          <div class="mt-4 space-y-3">
+            <div class="flex items-center justify-between text-[12.5px]"><span class="text-stone-300">禁停/越界处置时效</span><span class="mono text-idle font-600">P90 7.2m</span></div>
+            <div class="flex items-center justify-between text-[12.5px]"><span class="text-stone-300">投放量 / 许可上限</span><span class="mono text-stone-200 font-600">96.3%</span></div>
+            <div class="flex items-center justify-between text-[12.5px]"><span class="text-stone-300">服务区覆盖率</span><span class="mono text-stone-200 font-600">88.1%</span></div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-line">
+            <div class="flex items-center justify-between text-[12.5px] mb-2"><span class="text-stone-300">数据共享接口（MDS / GBFS）</span><span class="text-[11px] text-idle flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-idle pulse"></span>健康</span></div>
+            <p class="text-[11px] text-stone-500 mono">最近上报 11s 前 · 失败 0 · P95 延迟 240ms</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SKELETON / EMPTY DEMO ROW -->
+      <section class="grid lg:grid-cols-2 gap-4">
+        <div id="skeletonCard" class="bg-panel border border-line rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4"><div class="shimmer h-4 w-32"></div><div class="shimmer h-4 w-16"></div></div>
+          <div class="space-y-3"><div class="shimmer h-3 w-full"></div><div class="shimmer h-3 w-4/5"></div><div class="shimmer h-3 w-3/5"></div><div class="shimmer h-24 w-full mt-3"></div></div>
+        </div>
+        <div class="bg-panel border border-line rounded-2xl p-5 flex flex-col items-center justify-center text-center">
+          <span class="w-12 h-12 rounded-2xl bg-line/50 flex items-center justify-center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="1.6"><path d="M3 12h7l2-4 4 8 2-4h3"/></svg></span>
+          <p class="text-[14px] text-stone-300 mt-3">高速路站模式暂无数据</p>
+          <p class="text-[12px] text-stone-500 mt-1 max-w-[36ch]">当前筛选范围内未启用长途服务区补能，开启高速模式后将展示实时排队预测。</p>
+          <button class="tactile mt-4 text-[12.5px] text-accent border border-accent/40 px-4 py-2 rounded-lg">开启高速路模式</button>
+        </div>
+      </section>
+
+      <p class="text-center text-[11px] text-stone-600 pt-2 pb-4">潮汐出行 City Ops Console · 数据为演示用合成样本</p>
+    </div>
+  </main>
+</div>
+
+<script>
+  // staggered reveal
+  const io = new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // simulate refresh -> skeleton -> data
+  function simulateLoad(){
+    const sk=document.getElementById('skeletonCard');
+    sk.innerHTML='<div class="flex items-center justify-between mb-4"><div class="shimmer h-4 w-32"></div><div class="shimmer h-4 w-16"></div></div><div class="space-y-3"><div class="shimmer h-3 w-full"></div><div class="shimmer h-3 w-4/5"></div><div class="shimmer h-3 w-3/5"></div><div class="shimmer h-24 w-full mt-3"></div></div>';
+    setTimeout(()=>{
+      sk.className='reveal in bg-panel border border-line rounded-2xl p-5';
+      sk.innerHTML='<h2 class="font-display font-600 text-[15px]">实时调度执行</h2>'+
+        '<div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">'+
+        '<div class="rounded-lg bg-line/40 py-2"><p class="mono font-600 text-[16px] text-stone-200">142</p><p class="text-stone-500">今日调度任务</p></div>'+
+        '<div class="rounded-lg bg-line/40 py-2"><p class="mono font-600 text-[16px] text-idle">93.6%</p><p class="text-stone-500">完成率</p></div>'+
+        '<div class="rounded-lg bg-line/40 py-2"><p class="mono font-600 text-[16px] text-low">8</p><p class="text-stone-500">超时</p></div></div>'+
+        '<p class="text-[12px] text-stone-400 mt-4">早高峰补车已覆盖 6 个重点栅格，武林区域缺口收窄至 120 辆。</p>';
+    },1100);
+  }
+</script>
+</body>
+</html>

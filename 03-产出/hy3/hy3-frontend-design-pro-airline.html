@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>星空航空 Skystar Airlines · 飞向更远的地方</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@500;600;700;900&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: { 900: '#0A1730', 800: '#0E2244', 700: '#14305C', 600: '#1E3E73' },
+          gold: { 400: '#D8B65F', 500: '#C8A24B', 600: '#A8852F' },
+          mist: '#F4F6FB',
+        },
+        fontFamily: {
+          sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          serif: ['"Noto Serif SC"', 'Georgia', 'serif'],
+        },
+        boxShadow: {
+          card: '0 1px 2px rgba(10,23,48,.04), 0 12px 32px -12px rgba(10,23,48,.18)',
+          lift: '0 24px 60px -24px rgba(10,23,48,.32)',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { -webkit-font-smoothing: antialiased; }
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1); }
+  .reveal.in-view { opacity: 1; transform: none; }
+  .hero-glow::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(120% 80% at 78% 12%, rgba(216,182,95,.20), transparent 55%),
+                radial-gradient(90% 70% at 10% 90%, rgba(30,62,115,.45), transparent 60%);
+  }
+  .nav-blur { backdrop-filter: saturate(160%) blur(14px); }
+  .divide-soft > * + * { border-color: rgba(10,23,48,.08); }
+  ::selection { background: rgba(200,162,75,.3); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="font-sans text-ink-900 bg-white">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+function useReveal() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    el.querySelectorAll('.reveal').forEach((n) => io.observe(n));
+  }, []);
+  return ref;
+}
+
+const NAV = ['首页', '航班查询', '目的地', '服务与礼遇', '常旅客计划', '关于我们'];
+
+function Nav() {
+  const [open, setOpen] = useState(false);
+  return (
+    <header className="fixed top-0 inset-x-0 z-50">
+      <div className="bg-ink-900/85 nav-blur text-white">
+        <div className="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between">
+          <a href="#top" className="flex items-center gap-2.5">
+            <span className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-ink-900 font-serif font-bold">星</span>
+            <span className="leading-tight">
+              <span className="block font-serif font-bold text-[15px] tracking-wide">星空航空</span>
+              <span className="block text-[10px] text-white/55 tracking-[0.25em]">SKYSTAR</span>
+            </span>
+          </a>
+          <nav className="hidden lg:flex items-center gap-8 text-[14px] text-white/80">
+            {NAV.map((n) => <a key={n} href={'#' + (n === '首页' ? 'top' : n)} className="hover:text-gold-400 transition-colors">{n}</a>)}
+          </nav>
+          <div className="hidden lg:flex items-center gap-3">
+            <button className="text-[13px] text-white/75 hover:text-white px-3 py-1.5">登录</button>
+            <button className="text-[13px] font-medium bg-gold-500 hover:bg-gold-400 text-ink-900 px-4 py-2 rounded-lg transition-colors">注册会员</button>
+          </div>
+          <button className="lg:hidden text-white p-2" onClick={() => setOpen(!open)} aria-label="菜单">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+        </div>
+        {open && (
+          <div className="lg:hidden border-t border-white/10 px-5 py-3 space-y-1 text-white/85 text-sm">
+            {NAV.map((n) => <a key={n} href={'#' + (n === '首页' ? 'top' : n)} className="block py-2" onClick={() => setOpen(false)}>{n}</a>)}
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function Hero() {
+  return (
+    <section id="top" className="relative min-h-[92vh] flex items-end overflow-hidden bg-ink-900 text-white hero-glow">
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,23,48,.2),rgba(10,23,48,.92))]"></div>
+        <svg className="absolute right-[-6%] top-[6%] w-[60%] opacity-25" viewBox="0 0 600 600" fill="none">
+          <circle cx="300" cy="300" r="299" stroke="#D8B65F" strokeOpacity=".5"/>
+          <circle cx="300" cy="300" r="220" stroke="#D8B65F" strokeOpacity=".35"/>
+          <path d="M120 360 Q300 120 480 360" stroke="#fff" strokeOpacity=".18" strokeWidth="1"/>
+        </svg>
+      </div>
+      <div className="relative max-w-7xl mx-auto px-5 w-full pb-28 pt-40">
+        <p className="text-gold-400 tracking-[0.4em] text-xs font-medium mb-5">SKYSTAR AIRLINES · 飞向更远的地方</p>
+        <h1 className="font-serif font-bold text-5xl sm:text-6xl lg:text-7xl leading-[1.08] max-w-3xl">
+          每一次起飞，<br/>都是一次<span className="text-gold-400">全新的抵达</span>
+        </h1>
+        <p className="mt-6 text-lg text-white/70 max-w-xl leading-relaxed">连接世界，触达梦想。自 2008 年启航，以安全、舒适、准时，带您飞向 129 个目的地。</p>
+
+        {/* 航班搜索 */}
+        <div className="mt-10 bg-white/95 backdrop-blur rounded-2xl shadow-lift p-5 max-w-3xl text-ink-900">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <Field label="出发城市" value="杭州 HGH" />
+            <Field label="到达城市" value="三亚 SYX" />
+            <Field label="出发日期" value="2026-07-15" />
+            <Field label="返程日期" value="2026-07-20" />
+            <Field label="舱位 / 乘客" value="经济舱 · 1人" />
+          </div>
+          <button className="mt-4 w-full sm:w-auto px-8 py-3.5 rounded-xl bg-ink-900 hover:bg-ink-800 text-white font-medium tracking-wide transition-colors inline-flex items-center justify-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            搜索航班
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Field({ label, value }) {
+  return (
+    <div className="rounded-xl border border-ink-900/10 bg-white px-4 py-3">
+      <div className="text-[11px] text-ink-900/45 mb-0.5">{label}</div>
+      <div className="text-sm font-medium">{value}</div>
+    </div>
+  );
+}
+
+function TrustBar() {
+  const items = [
+    ['16', '年连续零事故安全纪录'],
+    ['82', '座国内通航城市'],
+    ['600+', '每日执飞航班'],
+    ['1200万', '累计安全飞行小时'],
+    ['186', '架年轻机队（平均机龄5.2年）'],
+  ];
+  return (
+    <section className="bg-ink-800 text-white">
+      <div className="max-w-7xl mx-auto px-5 py-9 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4">
+        {items.map(([n, t]) => (
+          <div key={t} className="text-center">
+            <div className="font-serif font-bold text-3xl text-gold-400">{n}</div>
+            <div className="text-[12px] text-white/60 mt-1 leading-snug">{t}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Features() {
+  const data = [
+    ['🛫', '安全第一，永不妥协', '平均飞行经验超 9,800 小时的机长团队，全机队 787 梦想客机与 A320neo，连续 16 年零重大事故。'],
+    ['🌏', '广泛航线，覆盖全球', '国内 82 城 + 47 个国际目的地，与 28 家航司代码共享，构建覆盖 190 城的出行网络。'],
+    ['💺', '精心设计的客舱体验', '商务舱 1-2-1 平躺座椅、17″ 4K 娱乐屏；经济舱领先间距、USB-C 快充与免费 Wi-Fi。'],
+    ['🍽️', '云端餐饮，匠心呈现', '联名主厨机上菜单，融合东方饮食哲学；节假日限定节令料理，让旅途成为美食体验。'],
+    ['📱', '数字化服务，便捷出行', '一键购票、选座、值机、登机，行李实时追踪；智能客服「星星」7×24 小时多语服务。'],
+  ];
+  return (
+    <section id="服务与礼遇" className="py-24 bg-mist">
+      <div className="max-w-7xl mx-auto px-5">
+        <div className="reveal max-w-2xl">
+          <p className="text-gold-600 tracking-[0.3em] text-xs font-semibold">WHY CHOOSE SKYSTAR</p>
+          <h2 className="font-serif font-bold text-4xl mt-3">为什么选择星空航空</h2>
+          <p className="text-ink-900/55 mt-4 leading-relaxed">从安全到体验，每一处细节都经过反复打磨，只为让您的每一段旅程都有温度。</p>
+        </div>
+        <div className="reveal mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {data.map(([icon, t, d]) => (
+            <article key={t} className="group bg-white rounded-2xl p-7 shadow-card hover:shadow-lift transition-all duration-300 hover:-translate-y-1">
+              <div className="text-3xl mb-4">{icon}</div>
+              <h3 className="font-serif font-bold text-xl mb-2">{t}</h3>
+              <p className="text-ink-900/60 text-sm leading-relaxed">{d}</p>
+            </article>
+          ))}
+          <article className="group bg-ink-900 text-white rounded-2xl p-7 shadow-card hover:shadow-lift transition-all duration-300 hover:-translate-y-1">
+            <div className="text-3xl mb-4">✈️</div>
+            <h3 className="font-serif font-bold text-xl mb-2">超 1,200 万小时</h3>
+            <p className="text-white/65 text-sm leading-relaxed">累计安全飞行时长，是「准时、可靠」最坚实的底气。平均流程时间仅需 18 分钟，从出发大厅直达登机口。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Promo() {
+  const routes = [['杭州 → 三亚', '¥399', '起'], ['杭州 → 大阪', '¥1,299', '起'], ['杭州 → 伦敦', '¥3,899', '起']];
+  return (
+    <section className="py-16">
+      <div className="max-w-7xl mx-auto px-5">
+        <div className="reveal relative overflow-hidden rounded-3xl bg-gradient-to-br from-ink-800 to-ink-600 text-white p-8 sm:p-12">
+          <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-gold-500/20 blur-2xl"></div>
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            <div>
+              <p className="text-gold-400 text-sm tracking-wide">📣 夏季出行季 · 特惠机票开抢</p>
+              <h3 className="font-serif font-bold text-3xl mt-2">遇见夏天，从一张特惠机票开始</h3>
+              <p className="text-white/60 text-sm mt-3">优惠有效期至 2026 年 6 月 30 日，数量有限，先订先得。</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {routes.map(([r, p, s]) => (
+                <div key={r} className="bg-white/10 backdrop-blur border border-white/15 rounded-xl px-5 py-4 min-w-[140px]">
+                  <div className="text-sm text-white/70">{r}</div>
+                  <div className="font-serif font-bold text-2xl text-gold-400">{p}<span className="text-xs text-white/60 ml-1">{s}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button className="relative mt-8 text-sm font-medium inline-flex items-center gap-1 text-gold-400 hover:text-gold-400/80">
+            立即查看全部特惠 →
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Destinations() {
+  const list = [
+    ['三亚', '阳光与海浪的完美邂逅', '最快 1h45m 直达 · 每日 4 班', 'from-sky-400 to-cyan-300'],
+    ['成都', '慢下来，才能遇见真正的巴蜀', '每日 8 班 · 支持中转西藏', 'from-amber-300 to-orange-300'],
+    ['东京', '赏樱季专属航班，限量发售', '每日 2 班 · 双机场直飞', 'from-pink-300 to-rose-300'],
+    ['迪拜', '沙漠奢旅的起点', '每日 1 班 · 商务舱全程平躺', 'from-yellow-200 to-amber-400'],
+    ['巴黎', '艺术与浪漫在等你', '每周 5 班 · CDG 直航', 'from-indigo-300 to-purple-300'],
+  ];
+  return (
+    <section className="py-24 bg-mist">
+      <div className="max-w-7xl mx-auto px-5">
+        <div className="reveal flex items-end justify-between flex-wrap gap-4">
+          <div>
+            <p className="text-gold-600 tracking-[0.3em] text-xs font-semibold">FEATURED DESTINATIONS</p>
+            <h2 className="font-serif font-bold text-4xl mt-3">精选目的地</h2>
+          </div>
+          <a href="#目的地" className="text-sm text-ink-900/60 hover:text-ink-900">查看全部航线 →</a>
+        </div>
+        <div className="reveal mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {list.map(([name, tag, meta, grad]) => (
+            <article key={name} className="group relative overflow-hidden rounded-2xl shadow-card bg-white">
+              <div className={'h-40 bg-gradient-to-br ' + grad}></div>
+              <div className="p-6">
+                <h3 className="font-serif font-bold text-2xl">{name}</h3>
+                <p className="text-ink-900/70 text-sm mt-1">{tag}</p>
+                <p className="text-ink-900/45 text-xs mt-3">{meta}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Membership() {
+  const tiers = [
+    ['银卡', '年飞 25,000 里程', '优先值机 · 额外行李额'],
+    ['金卡', '年飞 50,000 里程', '贵宾休息室 · 优先登机'],
+    ['白金卡', '年飞 100,000 里程', '专属顾问 · 头等舱升级券'],
+    ['钻石卡', '邀请制', '全部权益 + 私人定制服务'],
+  ];
+  return (
+    <section id="常旅客计划" className="py-24">
+      <div className="max-w-7xl mx-auto px-5">
+        <div className="reveal max-w-2xl">
+          <p className="text-gold-600 tracking-[0.3em] text-xs font-semibold">SKYSTAR FREQUENT FLYER</p>
+          <h2 className="font-serif font-bold text-4xl mt-3">星辰会员计划</h2>
+          <p className="text-ink-900/55 mt-4 leading-relaxed">加入星辰会员，每一次飞行都在积累。里程可兑换免费机票、升舱、酒店住宿及 300+ 合作品牌礼遇。立即注册即送 2,000 里程开户礼。</p>
+        </div>
+        <div className="reveal mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {tiers.map(([name, std, perks], i) => (
+            <article key={name} className={'rounded-2xl p-7 border ' + (i === 3 ? 'bg-ink-900 text-white border-ink-900' : 'bg-white text-ink-900 border-ink-900/10 shadow-card')}>
+              <div className={'text-xs tracking-widest ' + (i === 3 ? 'text-gold-400' : 'text-gold-600')}>{i === 3 ? 'INVITATION' : 'TIER ' + (i + 1)}</div>
+              <h3 className="font-serif font-bold text-2xl mt-2">{name}</h3>
+              <p className={'text-xs mt-2 ' + (i === 3 ? 'text-white/60' : 'text-ink-900/50')}>{std}</p>
+              <div className={'mt-5 pt-5 border-t ' + (i === 3 ? 'border-white/15' : 'border-ink-900/10')}>
+                <p className={'text-sm ' + (i === 3 ? 'text-white/80' : 'text-ink-900/70')}>{perks}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Services() {
+  const cards = [
+    ['特殊旅客关怀', '为婴幼儿、轮椅、无障碍座位及孕妇旅客提供全程无缝协助，杭州、北京、上海设有独立「星空关爱」服务柜台。'],
+    ['宠物随行计划', '符合条件的小型宠物可进入客舱同乘，大型犬猫提供恒温专属货舱，全程由专业动物运输团队监护。'],
+    ['企业商务服务', 'Skystar Business Solutions：统一账期结算、差旅数据报告、专属客户经理，已服务 12,000+ 企业客户。'],
+  ];
+  return (
+    <section className="py-24 bg-mist">
+      <div className="max-w-7xl mx-auto px-5">
+        <div className="reveal max-w-2xl">
+          <p className="text-gold-600 tracking-[0.3em] text-xs font-semibold">SERVICES & CARE</p>
+          <h2 className="font-serif font-bold text-4xl mt-3">服务与礼遇</h2>
+        </div>
+        <div className="reveal mt-12 grid md:grid-cols-3 gap-5">
+          {cards.map(([t, d]) => (
+            <article key={t} className="bg-white rounded-2xl p-8 shadow-card">
+              <h3 className="font-serif font-bold text-xl mb-3">{t}</h3>
+              <p className="text-ink-900/60 text-sm leading-relaxed">{d}</p>
+            </article>
+          ))}
+        </div>
+
+        {/* 可持续 */}
+        <div className="reveal mt-8 rounded-3xl border border-ink-900/10 bg-white p-8 sm:p-12 grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <p className="text-gold-600 tracking-[0.3em] text-xs font-semibold">SUSTAINABILITY</p>
+            <h3 className="font-serif font-bold text-3xl mt-3">有温度的旅程，<br/>也对地球温柔</h3>
+            <p className="text-ink-900/60 text-sm mt-4 leading-relaxed">2026 年起全面加入 CORSIA 国际碳抵消机制，承诺 2035 年单位客公里碳排放较 2019 年下降 40%。新机型全部选用新一代节能发动机，三大基地机场推行地面车辆全面电动化。</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-mist p-5"><div className="font-serif font-bold text-3xl text-ink-900">40%</div><div className="text-xs text-ink-900/55 mt-1">2035 碳强度下降目标</div></div>
+            <div className="rounded-2xl bg-mist p-5"><div className="font-serif font-bold text-3xl text-ink-900">CORSIA</div><div className="text-xs text-ink-900/55 mt-1">2026 全面加入碳抵消</div></div>
+            <div className="rounded-2xl bg-mist p-5"><div className="font-serif font-bold text-3xl text-ink-900">3</div><div className="text-xs text-ink-900/55 mt-1">大基地地面车辆电动化</div></div>
+            <div className="rounded-2xl bg-mist p-5"><div className="font-serif font-bold text-3xl text-ink-900">5.2年</div><div className="text-xs text-ink-900/55 mt-1">平均机队机龄</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  const cols = [
+    ['快速链接', ['航班状态查询', '行李规定', '退改签政策', '旅行保险', '常见问题']],
+    ['服务', ['常旅客计划', '企业商务', '特殊旅客关怀', '宠物随行', '空中餐食']],
+    ['关于', ['公司简介', '可持续发展', '招贤纳士', '新闻中心', '联系我们']],
+  ];
+  return (
+    <footer className="bg-ink-900 text-white/70">
+      <div className="max-w-7xl mx-auto px-5 py-16 grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+        <div className="lg:col-span-2">
+          <div className="flex items-center gap-2.5">
+            <span className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-ink-900 font-serif font-bold">星</span>
+            <span className="font-serif font-bold text-white">星空航空 · Skystar Airlines</span>
+          </div>
+          <p className="text-sm mt-4 text-white/55 leading-relaxed max-w-xs">杭州萧山国际机场运营基地<br/>客服热线：400-800-9988（7×24 小时）</p>
+          <p className="text-xs mt-4 text-white/40">CATA 中国航空运输协会会员 · IATA 国际航空运输协会认证</p>
+        </div>
+        {cols.map(([t, links]) => (
+          <div key={t}>
+            <h4 className="text-white font-medium text-sm mb-4">{t}</h4>
+            <ul className="space-y-2.5 text-sm">
+              {links.map((l) => <li key={l}><a href="#" className="hover:text-gold-400 transition-colors">{l}</a></li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-5 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
+          <span>© 2026 Skystar Airlines Co., Ltd. 浙ICP备XXXXXXXX号 保留所有权利</span>
+          <span className="flex gap-4">
+            <span>微信公众号「星空航空」</span>
+            <span>微博 @星空航空官方</span>
+            <span>抖音 @skystarairlines</span>
+          </span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function App() {
+  const ref = useReveal();
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
+    <div ref={ref}>
+      <Nav />
+      <Hero />
+      <TrustBar />
+      <Features />
+      <Promo />
+      <Destinations />
+      <Membership />
+      <Services />
+      <Footer />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

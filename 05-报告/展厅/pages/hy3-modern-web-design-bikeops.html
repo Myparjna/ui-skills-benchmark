@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>骑迹城市运营后台 · 共享两轮运营管理平台</title>
+<meta name="description" content="共享自行车与电单车城市级运营管理后台 — 实时监控、调度、电池换电、工单与合规一体化。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ===== Tokens (Dark · Glassmorphism · OKLCH) ===== */
+  :root{
+    --bg: oklch(21% 0.025 258);
+    --bg-2: oklch(25% 0.03 258);
+    --panel: oklch(28% 0.03 258 / .72);
+    --panel-solid: oklch(27% 0.03 258);
+    --stroke: oklch(100% 0 0 / .08);
+    --ink: oklch(96% 0 0);
+    --ink-soft: oklch(78% 0.01 258);
+    --muted: oklch(62% 0.01 258);
+    --blue: oklch(62% 0.17 252);
+    --cyan: oklch(72% 0.14 200);
+    --green: oklch(74% 0.16 150);
+    --orange: oklch(74% 0.16 58);
+    --red: oklch(66% 0.2 25);
+    --purple: oklch(64% 0.18 300);
+    --grad: linear-gradient(120deg, oklch(62% 0.17 252), oklch(66% 0.16 300));
+    --radius: 16px;
+    --radius-sm: 10px;
+    --elev: 0 10px 30px oklch(0% 0 0 / .35);
+    --ease: cubic-bezier(.22,1,.36,1);
+    --spring: cubic-bezier(.34,1.56,.64,1);
+    --fs-base: clamp(.85rem,.8rem + .2vw, .95rem);
+    --font: "Noto Sans SC", system-ui, "PingFang SC", sans-serif;
+    --display: "Space Grotesk", "Noto Sans SC", sans-serif;
+  }
+  *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:var(--font); color:var(--ink); font-size:var(--fs-base); line-height:1.5;
+    background:
+      radial-gradient(900px 500px at 85% -5%, oklch(62% 0.17 252 / .18), transparent 60%),
+      radial-gradient(800px 500px at 0% 100%, oklch(66% 0.16 300 / .14), transparent 55%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+  :focus-visible{ outline:3px solid var(--orange); outline-offset:2px; border-radius:6px; }
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb{ background:oklch(100% 0 0 / .14); border-radius:9px; }
+
+  /* Cursor */
+  .cursor-dot,.cursor-ring{ position:fixed; top:0; left:0; pointer-events:none; z-index:9999; border-radius:50%; transform:translate(-50%,-50%); mix-blend-mode:difference; }
+  .cursor-dot{ width:7px; height:7px; background:#fff; }
+  .cursor-ring{ width:36px; height:36px; border:1.5px solid #fff; transition:width .25s,height .25s,background .25s; }
+  .cursor-ring.is-active{ width:58px; height:58px; background:rgba(255,255,255,.12); }
+  @media (hover:none),(pointer:coarse){ .cursor-dot,.cursor-ring{ display:none; } }
+
+  .progress-bar{ position:fixed; top:0; left:0; height:3px; width:100%; transform:scaleX(0); transform-origin:left; background:var(--grad); z-index:1000; }
+
+  /* ===== Layout ===== */
+  .app{ display:grid; grid-template-columns:264px 1fr; min-height:100vh; }
+  .sidebar{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:.4rem; padding:1.4rem 1rem; background:oklch(24% 0.03 258 / .8); backdrop-filter:blur(18px); border-right:1px solid var(--stroke); }
+  .brand{ display:flex; align-items:center; gap:.7rem; padding:.4rem .6rem 1.2rem; }
+  .brand .logo{ width:38px; height:38px; border-radius:11px; background:var(--grad); display:grid; place-items:center; font-size:20px; box-shadow:var(--elev); }
+  .brand b{ font-weight:900; font-size:1.05rem; letter-spacing:-.01em; }
+  .brand small{ display:block; font-size:.6rem; color:var(--muted); letter-spacing:.18em; }
+  .nav-group{ font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); padding:.6rem .8rem .3rem; }
+  .snav{ display:flex; align-items:center; gap:.7rem; padding:.66rem .8rem; border-radius:var(--radius-sm); color:var(--ink-soft); font-size:.9rem; font-weight:500; transition:background .2s, color .2s, transform .15s; position:relative; }
+  .snav .i{ font-size:1.05rem; width:22px; text-align:center; }
+  .snav:hover{ background:oklch(100% 0 0 / .06); color:var(--ink); }
+  .snav.on{ background:oklch(62% 0.17 252 / .18); color:#fff; }
+  .snav.on::before{ content:""; position:absolute; left:0; top:18%; bottom:18%; width:3px; border-radius:3px; background:var(--blue); }
+  .snav .badge{ margin-left:auto; font-size:.66rem; font-weight:700; background:var(--red); color:#fff; padding:1px 7px; border-radius:99px; }
+  .side-foot{ margin-top:auto; padding:.8rem; border-top:1px solid var(--stroke); display:flex; align-items:center; gap:.6rem; font-size:.82rem; color:var(--ink-soft); }
+  .side-foot .av{ width:34px; height:34px; border-radius:50%; background:var(--grad); display:grid; place-items:center; }
+
+  .main{ padding:1.4rem clamp(1rem,2.5vw,2.2rem) 3rem; min-width:0; }
+
+  /* Topbar */
+  .topbar{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+  .topbar h1{ font-size:clamp(1.3rem,1rem + 1vw,1.8rem); font-weight:900; letter-spacing:-.02em; }
+  .topbar .crumb{ font-size:.78rem; color:var(--muted); }
+  .topbar .spacer{ margin-left:auto; }
+  .ctrl{ display:flex; align-items:center; gap:.5rem; background:var(--panel); border:1px solid var(--stroke); border-radius:99px; padding:.3rem .4rem; backdrop-filter:blur(10px); }
+  .ctrl button{ font-size:.8rem; padding:.4rem .8rem; border-radius:99px; color:var(--ink-soft); font-weight:600; transition:all .2s; }
+  .ctrl button.on,.ctrl button:hover{ background:oklch(62% 0.17 252 / .25); color:#fff; }
+  .search{ display:flex; align-items:center; gap:.5rem; background:var(--panel); border:1px solid var(--stroke); border-radius:99px; padding:.5rem .9rem; backdrop-filter:blur(10px); color:var(--muted); min-width:180px; }
+  .search input{ background:none; border:none; outline:none; color:var(--ink); font-size:.85rem; width:100%; }
+  .icon-btn{ width:40px; height:40px; border-radius:12px; background:var(--panel); border:1px solid var(--stroke); display:grid; place-items:center; font-size:1.1rem; transition:transform .2s var(--spring); backdrop-filter:blur(10px); }
+  .icon-btn:active{ transform:scale(.9); }
+
+  /* KPI */
+  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:1rem; margin-bottom:1.2rem; }
+  .kpi{ position:relative; overflow:hidden; background:var(--panel); border:1px solid var(--stroke); border-radius:var(--radius); padding:1.1rem 1.2rem; backdrop-filter:blur(14px); box-shadow:var(--elev); transition:transform .3s var(--ease), border-color .3s; }
+  .kpi:hover{ transform:translateY(-4px); border-color:oklch(62% 0.17 252 / .5); }
+  .kpi .lab{ font-size:.74rem; color:var(--muted); display:flex; align-items:center; gap:.4rem; }
+  .kpi .num{ font-family:var(--display); font-weight:700; font-size:clamp(1.5rem,1rem + 1.4vw,2.1rem); line-height:1.1; margin-top:.4rem; }
+  .kpi .delta{ font-size:.72rem; font-weight:700; margin-top:.3rem; }
+  .delta.up{ color:var(--green); } .delta.down{ color:var(--red); }
+  .kpi .spark{ position:absolute; right:-4px; bottom:-4px; opacity:.5; }
+  .kpi.accent{ background:linear-gradient(135deg, oklch(62% 0.17 252 / .3), oklch(66% 0.16 300 / .22)); }
+
+  /* Grid */
+  .grid{ display:grid; gap:1.1rem; grid-template-columns:repeat(12,1fr); }
+  .card{ background:var(--panel); border:1px solid var(--stroke); border-radius:var(--radius); padding:1.2rem 1.3rem; backdrop-filter:blur(14px); box-shadow:var(--elev); min-width:0; }
+  .card h3{ font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:.5rem; }
+  .card .sub{ font-size:.74rem; color:var(--muted); }
+  .card-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+  .col-8{ grid-column:span 8; } .col-7{ grid-column:span 7; } .col-6{ grid-column:span 6; } .col-5{ grid-column:span 5; } .col-4{ grid-column:span 4; } .col-12{ grid-column:span 12; }
+  @media (max-width:1200px){ .kpis{ grid-template-columns:repeat(3,1fr); } .col-8,.col-7,.col-6,.col-5,.col-4{ grid-column:span 12; } }
+  @media (max-width:900px){ .app{ grid-template-columns:1fr; } .sidebar{ position:static; height:auto; flex-direction:row; flex-wrap:wrap; overflow-x:auto; } .nav-group,.side-foot{ display:none; } }
+
+  /* Map */
+  .map{ position:relative; height:380px; border-radius:var(--radius-sm); overflow:hidden; background:
+      radial-gradient(circle at 30% 30%, oklch(66% 0.16 300 / .25), transparent 40%),
+      radial-gradient(circle at 75% 70%, oklch(62% 0.17 252 / .3), transparent 45%),
+      oklch(23% 0.03 258); }
+  .map svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .dot{ transition:r .2s; }
+  .map-legend{ position:absolute; left:12px; bottom:12px; display:flex; gap:12px; background:oklch(20% 0.03 258 / .7); backdrop-filter:blur(8px); padding:8px 12px; border-radius:99px; font-size:.72rem; border:1px solid var(--stroke); }
+  .map-legend i{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .map-tools{ position:absolute; right:12px; top:12px; display:flex; gap:8px; }
+  .map-tools button{ width:34px; height:34px; border-radius:9px; background:oklch(20% 0.03 258 / .75); border:1px solid var(--stroke); backdrop-filter:blur(8px); font-size:.95rem; }
+
+  /* Bars */
+  .bar-row{ display:flex; align-items:center; gap:.8rem; margin:.7rem 0; font-size:.82rem; }
+  .bar-row .name{ width:64px; color:var(--ink-soft); flex:0 0 auto; }
+  .bar-row .track{ flex:1; height:8px; border-radius:99px; background:oklch(100% 0 0 / .08); overflow:hidden; }
+  .bar-row .fill{ height:100%; border-radius:99px; }
+  .bar-row .val{ width:54px; text-align:right; font-family:var(--display); font-weight:600; flex:0 0 auto; }
+
+  /* Donut */
+  .donut-wrap{ display:flex; align-items:center; gap:1.2rem; }
+  .donut{ position:relative; width:140px; height:140px; flex:0 0 auto; }
+  .donut .center{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
+  .donut .center b{ font-family:var(--display); font-size:1.5rem; display:block; }
+  .donut .center span{ font-size:.68rem; color:var(--muted); }
+  .legend{ display:flex; flex-direction:column; gap:.55rem; font-size:.8rem; }
+  .legend div{ display:flex; align-items:center; gap:.5rem; color:var(--ink-soft); }
+  .legend i{ width:10px; height:10px; border-radius:3px; }
+
+  /* Alert list */
+  .alert{ display:flex; align-items:center; gap:.7rem; padding:.7rem 0; border-bottom:1px solid var(--stroke); font-size:.82rem; }
+  .alert:last-child{ border-bottom:none; }
+  .sev{ font-size:.66rem; font-weight:800; padding:2px 8px; border-radius:6px; flex:0 0 auto; }
+  .sev.p0{ background:oklch(66% 0.2 25 / .25); color:var(--red); }
+  .sev.p1{ background:oklch(74% 0.16 58 / .22); color:var(--orange); }
+  .sev.p2{ background:oklch(62% 0.17 252 / .22); color:var(--blue); }
+  .alert .txt{ flex:1; min-width:0; }
+  .alert .txt b{ font-weight:700; }
+  .alert .txt small{ display:block; color:var(--muted); font-size:.72rem; }
+  .alert .act{ font-size:.72rem; color:var(--blue); font-weight:700; white-space:nowrap; }
+
+  /* Kanban */
+  .kanban{ display:grid; grid-template-columns:repeat(3,1fr); gap:.8rem; }
+  .kan{ background:oklch(100% 0 0 / .04); border:1px solid var(--stroke); border-radius:var(--radius-sm); padding:.7rem; }
+  .kan h4{ font-size:.78rem; color:var(--muted); margin-bottom:.6rem; display:flex; justify-content:space-between; }
+  .kan h4 b{ color:var(--ink); }
+  .ticket{ background:var(--panel-solid); border:1px solid var(--stroke); border-radius:9px; padding:.6rem .7rem; margin-bottom:.5rem; font-size:.78rem; transition:transform .2s, border-color .2s; }
+  .ticket:hover{ transform:translateY(-2px); border-color:oklch(62% 0.17 252 / .5); }
+  .ticket .t{ font-weight:600; }
+  .ticket .m{ color:var(--muted); font-size:.72rem; margin-top:.2rem; display:flex; justify-content:space-between; }
+
+  /* quick actions */
+  .qa{ display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; }
+  .qbtn{ background:oklch(100% 0 0 / .05); border:1px solid var(--stroke); border-radius:var(--radius-sm); padding:.9rem .6rem; text-align:center; font-size:.78rem; font-weight:600; transition:transform .2s var(--spring), background .2s; }
+  .qbtn:hover{ transform:translateY(-3px); background:oklch(62% 0.17 252 / .18); }
+  .qbtn .e{ display:block; font-size:1.4rem; margin-bottom:.3rem; }
+
+  .reveal{ opacity:0; transform:translateY(26px); transition:opacity .6s var(--ease), transform .6s var(--ease); }
+  .reveal.in{ opacity:1; transform:none; }
+  .reveal[data-delay="1"]{ transition-delay:.07s; }
+  .reveal[data-delay="2"]{ transition-delay:.14s; }
+  .reveal[data-delay="3"]{ transition-delay:.21s; }
+
+  .toast{ position:fixed; left:50%; bottom:1.6rem; transform:translate(-50%,140%); background:oklch(30% 0.03 258); color:#fff; border:1px solid var(--stroke); padding:.8rem 1.3rem; border-radius:99px; font-size:.85rem; z-index:2000; transition:transform .5s var(--spring); }
+  .toast.show{ transform:translate(-50%,0); }
+
+  @media (prefers-reduced-motion:reduce){ *,*::before,*::after{ animation:none !important; transition:none !important; } .reveal{ opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+<div class="cursor-dot" id="cdot"></div>
+<div class="cursor-ring" id="cring"></div>
+
+<div class="app">
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">🚲</span><span><b>骑迹运营</b><small>CITY OPS CONSOLE</small></span></div>
+    <div class="nav-group">运营</div>
+    <a class="snav on" href="#"><span class="i">📊</span>运营总览</a>
+    <a class="snav" href="#"><span class="i">🗺️</span>地图调度中心</a>
+    <a class="snav" href="#"><span class="i">🚲</span>车队资产</a>
+    <a class="snav" href="#"><span class="i">🔋</span>电池与能源</a>
+    <div class="nav-group">执行</div>
+    <a class="snav" href="#"><span class="i">🛠️</span>运维工单<span class="badge">12</span></a>
+    <a class="snav" href="#"><span class="i">⚠️</span>规则与区域</a>
+    <a class="snav" href="#"><span class="i">🛡️</span>合规监管<span class="badge">3</span></a>
+    <div class="nav-group">分析</div>
+    <a class="snav" href="#"><span class="i">📈</span>数据报表</a>
+    <a class="snav" href="#"><span class="i">👥</span>组织与权限</a>
+    <a class="snav" href="#"><span class="i">⚙️</span>配置与对接</a>
+    <div class="side-foot"><span class="av">🧑‍💼</span><div><div style="font-weight:700">王调度</div><div style="font-size:.7rem;color:var(--muted)">杭州 · 调度主管</div></div></div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumb">运营总览 / 杭州城市站</div>
+        <h1>城市运营总览</h1>
+      </div>
+      <div class="spacer"></div>
+      <div class="ctrl" role="group" aria-label="时间范围">
+        <button class="on">今日</button><button>昨日</button><button>本周</button><button>本月</button><button>自定义</button>
+      </div>
+      <div class="ctrl" role="group" aria-label="范围">
+        <button class="on">全城</button><button>重点区域</button><button>自定义围栏</button>
+      </div>
+      <label class="search"><span>🔍</span><input placeholder="车架号 / 订单号 / 电池 ID" aria-label="检索" /></label>
+      <button class="icon-btn" aria-label="通知" onclick="toast('3 条待处理告警')">🔔</button>
+    </div>
+
+    <!-- KPIs -->
+    <section class="kpis">
+      <div class="kpi reveal"><div class="lab">📋 今日订单</div><div class="num" data-count="48620">0</div><div class="delta up">▲ 8.2% 较昨日</div></div>
+      <div class="kpi accent reveal" data-delay="1"><div class="lab">💰 GMV（元）</div><div class="num" data-count="291700">0</div><div class="delta up">▲ 6.5%</div></div>
+      <div class="kpi reveal" data-delay="2"><div class="lab">🚲 全城可用率</div><div class="num" data-count="91" data-suffix="%">0</div><div class="delta up">▲ 1.4%</div></div>
+      <div class="kpi reveal" data-delay="3"><div class="lab">🔋 低电车辆</div><div class="num" data-count="1846">0</div><div class="delta down">▼ 已换电 320</div></div>
+      <div class="kpi reveal" data-delay="4"><div class="lab">⚠️ P0/P1 告警</div><div class="num" data-count="37">0</div><div class="delta down">处理中 22</div></div>
+    </section>
+
+    <!-- Row: Map + Alerts -->
+    <section class="grid">
+      <div class="card col-8 reveal">
+        <div class="card-head">
+          <div><h3>🗺️ 实时车辆分布</h3><div class="sub">地图调度中心 · 车辆 28,640 / 在线 26,910</div></div>
+          <button class="icon-btn" style="width:34px;height:34px" onclick="toast('已刷新车辆点位')">⟳</button>
+        </div>
+        <div class="map" id="map" aria-label="实时车辆地图">
+          <svg id="mapdots" viewBox="0 0 800 380" preserveAspectRatio="xMidYMid slice"></svg>
+          <div class="map-tools"><button title="框选" onclick="toast('框选模式：拖拽圈选车辆')">▭</button><button title="批量指令" onclick="toast('批量指令：锁车/鸣笛/降速')">⚡</button><button title="创建任务" onclick="toast('创建调度/换电任务')">＋</button></div>
+          <div class="map-legend"><span><i style="background:var(--green)"></i>可用</span><span><i style="background:var(--blue)"></i>使用中</span><span><i style="background:var(--orange)"></i>低电</span><span><i style="background:var(--red)"></i>故障/离线</span></div>
+        </div>
+      </div>
+
+      <div class="card col-4 reveal" data-delay="1">
+        <div class="card-head"><div><h3>⚠️ 告警与异常中心</h3><div class="sub">按优先级驱动的处置队列</div></div></div>
+        <div class="alert"><span class="sev p0">P0</span><div class="txt"><b>禁停区聚集 · 湖滨步行街</b><small>12 辆车 · 触发 14 分钟</small></div><a class="act" onclick="toast('已生成违停处置工单')">派单</a></div>
+        <div class="alert"><span class="sev p0">P0</span><div class="txt"><b>疑似盗损 · 车架 XA2039</b><small>轨迹异常 · 夜间跨区域</small></div><a class="act" onclick="toast('已定位至地图')">定位</a></div>
+        <div class="alert"><span class="sev p1">P1</span><div class="txt"><b>越界 · 滨江片区</b><small>8 辆车超出服务区</small></div><a class="act" onclick="toast('已生成调度任务')">派单</a></div>
+        <div class="alert"><span class="sev p1">P1</span><div class="txt"><b>低电预警 · 热点 3 区</b><small>预计 2h 内跌破阈值 210 辆</small></div><a class="act" onclick="toast('已生成换电任务')">换电</a></div>
+        <div class="alert"><span class="sev p2">P2</span><div class="txt"><b>离线超时 · 城西网格</b><small>最后上报 38 分钟前</small></div><a class="act" onclick="toast('查看证据链')">查证</a></div>
+      </div>
+    </section>
+
+    <!-- Row: Fleet + Battery + Supply -->
+    <section class="grid" style="margin-top:1.1rem">
+      <div class="card col-4 reveal">
+        <div class="card-head"><div><h3>🚲 车队健康</h3><div class="sub">状态分布 · 电单车占比 64%</div></div></div>
+        <div class="bar-row"><span class="name">可用</span><span class="track"><span class="fill" style="width:58%;background:var(--green)"></span></span><span class="val">58%</span></div>
+        <div class="bar-row"><span class="name">使用中</span><span class="track"><span class="fill" style="width:27%;background:var(--blue)"></span></span><span class="val">27%</span></div>
+        <div class="bar-row"><span class="name">低电</span><span class="track"><span class="fill" style="width:9%;background:var(--orange)"></span></span><span class="val">9%</span></div>
+        <div class="bar-row"><span class="name">故障</span><span class="track"><span class="fill" style="width:3%;background:var(--red)"></span></span><span class="val">3%</span></div>
+        <div class="bar-row"><span class="name">离线</span><span class="track"><span class="fill" style="width:2%;background:var(--muted)"></span></span><span class="val">2%</span></div>
+        <div class="bar-row"><span class="name">回收中</span><span class="track"><span class="fill" style="width:1%;background:var(--purple)"></span></span><span class="val">1%</span></div>
+      </div>
+
+      <div class="card col-4 reveal" data-delay="1">
+        <div class="card-head"><div><h3>🔋 电池与能源</h3><div class="sub">SOC 分段 · 换电作业今日</div></div></div>
+        <div class="donut-wrap">
+          <div class="donut">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="56" fill="none" stroke="oklch(100% 0 0 / .08)" stroke-width="16"/>
+              <circle class="seg" cx="70" cy="70" r="56" fill="none" stroke="var(--green)" stroke-width="16" stroke-dasharray="61 351" stroke-dashoffset="0" transform="rotate(-90 70 70)"/>
+              <circle class="seg" cx="70" cy="70" r="56" fill="none" stroke="var(--orange)" stroke-width="16" stroke-dasharray="40 351" stroke-dashoffset="-61" transform="rotate(-90 70 70)"/>
+              <circle class="seg" cx="70" cy="70" r="56" fill="none" stroke="var(--blue)" stroke-width="16" stroke-dasharray="180 351" stroke-dashoffset="-101" transform="rotate(-90 70 70)"/>
+              <circle class="seg" cx="70" cy="70" r="56" fill="none" stroke="var(--muted)" stroke-width="16" stroke-dasharray="70 351" stroke-dashoffset="-281" transform="rotate(-90 70 70)"/>
+            </svg>
+            <div class="center"><b id="soc-avg">71%</b><span>平均 SOC</span></div>
+          </div>
+          <div class="legend">
+            <div><i style="background:var(--green)"></i>60–100% · 17.4k</div>
+            <div><i style="background:var(--blue)"></i>30–60% · 7.8k</div>
+            <div><i style="background:var(--orange)"></i>10–30% · 2.1k</div>
+            <div><i style="background:var(--muted)"></i>0–10% · 0.9k</div>
+          </div>
+        </div>
+        <div class="bar-row" style="margin-top:1rem"><span class="name">换电完成</span><span class="track"><span class="fill" style="width:84%;background:var(--cyan)"></span></span><span class="val">1,092</span></div>
+        <div class="bar-row"><span class="name">在途任务</span><span class="track"><span class="fill" style="width:22%;background:var(--orange)"></span></span><span class="val">286</span></div>
+      </div>
+
+      <div class="card col-4 reveal" data-delay="2">
+        <div class="card-head"><div><h3>📍 供需与调度</h3><div class="sub">潮汐缺口 · 高峰预警 17–19 时</div></div></div>
+        <div class="bar-row"><span class="name">缺车区域</span><span class="track"><span class="fill" style="width:38%;background:var(--red)"></span></span><span class="val">14 区</span></div>
+        <div class="bar-row"><span class="name">堆车区域</span><span class="track"><span class="fill" style="width:52%;background:var(--orange)"></span></span><span class="val">9 区</span></div>
+        <div class="bar-row"><span class="name">调度完成率</span><span class="track"><span class="fill" style="width:88%;background:var(--green)"></span></span><span class="val">88%</span></div>
+        <div style="margin-top:.8rem;font-size:.78rem;color:var(--ink-soft)">🔥 热点 Top3：<b style="color:var(--ink)">地铁 2 号线凤起路</b> · 西湖文化广场 · 滨江天街</div>
+        <button class="qbtn" style="margin-top:.8rem;width:100%" onclick="toast('已生成调度建议清单')"><span class="e">📋</span>一键生成调度建议</button>
+      </div>
+    </section>
+
+    <!-- Row: Work orders + Quick actions -->
+    <section class="grid" style="margin-top:1.1rem">
+      <div class="card col-7 reveal">
+        <div class="card-head"><div><h3>🛠️ 运维工单看板</h3><div class="sub">闭环执行 · 人均准时率 94%</div></div><a class="act" style="color:var(--blue);font-weight:700;font-size:.8rem" onclick="toast('查看全部工单')">全部 →</a></div>
+        <div class="kanban">
+          <div class="kan"><h4>待派 <b>18</b></h4>
+            <div class="ticket"><div class="t">低电换电 · 热点 3 区</div><div class="m"><span>210 辆</span><span>P1</span></div></div>
+            <div class="ticket"><div class="t">违停处置 · 湖滨</div><div class="m"><span>12 辆</span><span>P0</span></div></div>
+          </div>
+          <div class="kan"><h4>执行中 <b>24</b></h4>
+            <div class="ticket"><div class="t">故障维修 · XA2039</div><div class="m"><span>张工</span><span>锁</span></div></div>
+            <div class="ticket"><div class="t">巡检 · 城西网格</div><div class="m"><span>李班</span><span>巡检</span></div></div>
+          </div>
+          <div class="kan"><h4>待验收 <b>9</b></h4>
+            <div class="ticket"><div class="t">换电完成 · 滨江</div><div class="m"><span>56 辆</span><span>待核</span></div></div>
+            <div class="ticket"><div class="t">回收 · 文晖路</div><div class="m"><span>8 辆</span><span>待核</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card col-5 reveal" data-delay="1">
+        <div class="card-head"><div><h3>⚡ 快速工作台</h3><div class="sub">少点击 · 可批量 · 可追踪</div></div></div>
+        <div class="qa">
+          <button class="qbtn" onclick="toast('创建调度任务')"><span class="e">🚚</span>调度任务</button>
+          <button class="qbtn" onclick="toast('创建换电任务')"><span class="e">🔋</span>换电任务</button>
+          <button class="qbtn" onclick="toast('创建巡检任务')"><span class="e">🔎</span>巡检任务</button>
+          <button class="qbtn" onclick="toast('创建维修工单')"><span class="e">🛠️</span>维修工单</button>
+          <button class="qbtn" onclick="toast('车辆检索')"><span class="e">🔍</span>车辆检索</button>
+          <button class="qbtn" onclick="toast('批量指令')"><span class="e">⚡</span>批量指令</button>
+          <button class="qbtn" onclick="toast('围栏配置')"><span class="e">⬡</span>围栏配置</button>
+          <button class="qbtn" onclick="toast('发布通知')"><span class="e">📣</span>运营通知</button>
+        </div>
+        <div style="margin-top:1rem;padding:.9rem 1rem;border-radius:var(--radius-sm);background:oklch(62% 0.17 252 / .14);font-size:.8rem">
+          📌 <b>我的待办：</b>3 条 P0/P1 告警、2 条临近超时工单、1 份报表导出待审批。
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+  /* progress + sidebar active */
+  var bar = document.getElementById('progress');
+  window.addEventListener('scroll', function(){ var h=document.documentElement.scrollHeight-window.innerHeight; bar.style.transform='scaleX('+(h>0?window.scrollY/h:0)+')'; }, {passive:true});
+  document.querySelectorAll('.snav').forEach(function(a){ a.addEventListener('click', function(e){ e.preventDefault(); document.querySelectorAll('.snav').forEach(function(x){ x.classList.remove('on'); }); a.classList.add('on'); if(a.textContent.indexOf('运营总览')<0) toast('演示页：仅「运营总览」已构建'); }); });
+  document.querySelectorAll('.ctrl').forEach(function(g){ g.addEventListener('click', function(e){ if(e.target.tagName==='BUTTON'){ g.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); }); e.target.classList.add('on'); } }); });
+
+  /* toast */
+  var toastEl=document.getElementById('toast'), tt;
+  window.toast=function(m){ toastEl.textContent=m; toastEl.classList.add('show'); clearTimeout(tt); tt=setTimeout(function(){ toastEl.classList.remove('show'); },2400); };
+
+  /* reveal */
+  if('IntersectionObserver' in window && !reduced){
+    var io=new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } }); },{threshold:0.1});
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  } else { document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); }); }
+
+  /* count-up */
+  function count(el){ var end=parseFloat(el.getAttribute('data-count')), suf=el.getAttribute('data-suffix')||'', d=1500, s=null;
+    function step(t){ if(!s)s=t; var p=Math.min((t-s)/d,1), e=1-Math.pow(1-p,3);
+      el.textContent=(end>=1000?Math.floor(e*end).toLocaleString():Math.floor(e*end))+suf;
+      if(p<1) requestAnimationFrame(step); else el.textContent=(end>=1000?end.toLocaleString():end)+suf; }
+    requestAnimationFrame(step); }
+  if('IntersectionObserver' in window && !reduced){
+    var co=new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ count(en.target); co.unobserve(en.target); } }); },{threshold:0.5});
+    document.querySelectorAll('[data-count]').forEach(function(el){ co.observe(el); });
+  } else { document.querySelectorAll('[data-count]').forEach(function(el){ el.textContent=(parseFloat(el.getAttribute('data-count'))>=1000?parseFloat(el.getAttribute('data-count')).toLocaleString():el.getAttribute('data-count'))+(el.getAttribute('data-suffix')||''); }); }
+
+  /* map dots */
+  var svg=document.getElementById('mapdots');
+  if(svg){
+    var colors={ green:'var(--green)', blue:'var(--blue)', orange:'var(--orange)', red:'var(--red)' };
+    var weights={ green:58, blue:27, orange:9, red:6 };
+    var total=420;
+    for(var i=0;i<total;i++){
+      var r=Math.random();
+      var c = r<0.58?'green':r<0.85?'blue':r<0.94?'orange':'red';
+      var x=Math.random()*800, y=Math.random()*380;
+      var dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx',x.toFixed(1)); dot.setAttribute('cy',y.toFixed(1));
+      dot.setAttribute('r', c==='red'?'3.2':c==='orange'?'2.8':'2.2');
+      dot.setAttribute('fill', colors[c]); dot.setAttribute('opacity', c==='red'?'0.95':'0.7');
+      dot.setAttribute('class','dot');
+      svg.appendChild(dot);
+    }
+    if(!reduced){ var t=0; setInterval(function(){ t+=0.4; svg.style.opacity=0.85+Math.sin(t)*0.12; }, 1200); }
+  }
+
+  /* cursor */
+  if(fine && !reduced){
+    var dot=document.getElementById('cdot'), ring=document.getElementById('cring'), mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', function(e){ mx=e.clientX; my=e.clientY; dot.style.transform='translate('+mx+'px,'+my+'px) translate(-50%,-50%)'; });
+    (function loop(){ rx+=(mx-rx)*0.18; ry+=(my-ry)*0.18; ring.style.transform='translate('+rx+'px,'+ry+'px) translate(-50%,-50%)'; requestAnimationFrame(loop); })();
+    document.querySelectorAll('a,button,.ticket,.qbtn,.kpi').forEach(function(el){ el.addEventListener('mouseenter',function(){ ring.classList.add('is-active'); }); el.addEventListener('mouseleave',function(){ ring.classList.remove('is-active'); }); });
+  } else { document.getElementById('cdot').style.display='none'; document.getElementById('cring').style.display='none'; }
+})();
+</script>
+</body>
+</html>

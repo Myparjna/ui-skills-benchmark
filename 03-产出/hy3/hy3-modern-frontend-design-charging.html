@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="聚合型电动汽车充电小程序 — 找桩、扫码充电、支付、会员管理，全链路流畅充电体验。" />
+<title>闪充 Go · 电动汽车充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+/* ════════════════════════════════════════════════
+   TOKENS — OKLCH only. Tech-blue primary (#1677FF).
+   State colors: free=green, charging=orange, fault=red
+   ════════════════════════════════════════════════ */
+:root{
+  --bg:           oklch(8% 0.018 255);
+  --surface:      oklch(13% 0.018 255);
+  --surface-up:   oklch(17% 0.020 255);
+  --fg:           oklch(97% 0.008 95);
+  --fg-muted:     oklch(70% 0.012 255);
+  --fg-dim:       oklch(52% 0.012 255);
+  --primary:      oklch(64% 0.190 255);
+  --primary-up:   oklch(70% 0.190 255);
+  --primary-glow: oklch(64% 0.190 255);
+  --ok:           oklch(72% 0.180 145);
+  --warn:         oklch(76% 0.180 65);
+  --err:          oklch(66% 0.200 25);
+  --border:       oklch(26% 0.014 255);
+  --border-faint: oklch(18% 0.010 255);
+
+  --font:        'Inter','Noto Sans SC',system-ui,sans-serif;
+  --font-display:'Inter','Noto Sans SC',system-ui,sans-serif;
+
+  --r-xs:0.25rem; --r-sm:0.5rem; --r:0.75rem; --r-lg:1rem; --r-xl:1.5rem; --r-full:9999px;
+
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+  --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+  --ease-expo:cubic-bezier(0.16,1,0.30,1);
+  --dur-fast:140ms; --dur-base:240ms; --dur-slow:480ms;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{ font-family:var(--font); background:oklch(5% 0.014 255); color:var(--fg);
+  display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;
+  -webkit-font-smoothing:antialiased; }
+body::after{ content:""; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:0.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.skip-link{ position:absolute; top:-120%; left:1rem; z-index:10000; background:var(--surface); color:var(--fg); padding:0.6rem 1.1rem; border-radius:var(--r); border:1px solid var(--border); }
+.skip-link:focus{ top:1rem; }
+:focus-visible{ outline:none; box-shadow:0 0 0 3px oklch(from var(--primary) l c h / 0.55); border-radius:var(--r-xs); }
+
+/* Phone frame */
+.stage{ width:100%; display:flex; justify-content:center; }
+.phone{ width:420px; max-width:100%; height:880px; max-height:94vh; background:var(--bg);
+  border-radius:44px; border:1px solid var(--border); position:relative; overflow:hidden;
+  box-shadow:0 40px 120px oklch(0% 0 0 / 0.55), inset 0 0 0 2px oklch(100% 0 0 / 0.04);
+  display:flex; flex-direction:column; }
+.phone::before{ content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:26px;
+  background:oklch(6% 0.01 255); border-radius:0 0 16px 16px; z-index:60; }
+.screen{ position:relative; flex:1; overflow:hidden; }
+
+/* Liquid glass */
+.liquid-glass{ background:linear-gradient(135deg, oklch(100% 0 0 / 0.08), oklch(100% 0 0 / 0.02));
+  backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid oklch(100% 0 0 / 0.12);
+  box-shadow:inset 0 1px 0 oklch(100% 0 0 / 0.15), 0 8px 32px oklch(0% 0 0 / 0.30);
+  border-radius:var(--r); transition:border-color var(--dur-base), box-shadow var(--dur-base); }
+
+/* Status bar */
+.statusbar{ position:absolute; top:0; left:0; right:0; height:46px; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-size:0.78rem; font-weight:600; pointer-events:none; }
+.statusbar .icons{ display:flex; gap:6px; align-items:center; }
+
+/* Views */
+.view{ position:absolute; inset:0; padding:54px 16px 96px; overflow-y:auto; overflow-x:hidden;
+  opacity:0; transform:translateX(8px); transition:opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); pointer-events:none; }
+.view.active{ opacity:1; transform:none; pointer-events:auto; }
+.view::-webkit-scrollbar{ width:0; }
+
+/* Map view */
+.map-canvas{ position:absolute; inset:0; z-index:0;
+  background:
+    radial-gradient(circle at 30% 30%, oklch(64% 0.19 255 / 0.18), transparent 40%),
+    radial-gradient(circle at 75% 70%, oklch(72% 0.18 145 / 0.10), transparent 38%),
+    linear-gradient(160deg, oklch(12% 0.02 255), oklch(9% 0.02 255));
+}
+.map-canvas::before{ content:""; position:absolute; inset:0; background-image:
+  linear-gradient(oklch(100% 0 0 / 0.04) 1px, transparent 1px),
+  linear-gradient(90deg, oklch(100% 0 0 / 0.04) 1px, transparent 1px); background-size:46px 46px; }
+.pin{ position:absolute; width:34px; height:34px; border-radius:var(--r-full); display:grid; place-items:center; font-size:0.7rem; font-weight:800; color:oklch(99% 0 0); transform:translate(-50%,-50%); box-shadow:0 4px 14px oklch(0% 0 0 / 0.4); cursor:pointer; }
+.pin.free{ background:var(--ok); } .pin.busy{ background:var(--warn); } .pin.cluster{ background:var(--primary); width:46px; height:46px; }
+.pin::after{ content:""; position:absolute; inset:0; border-radius:var(--r-full); border:2px solid currentColor; animation:ping 2.4s var(--ease-out) infinite; }
+@keyframes ping{ 0%{ transform:scale(1); opacity:.6;} 100%{ transform:scale(2.2); opacity:0;} }
+
+.map-top{ position:relative; z-index:5; display:flex; gap:10px; margin-bottom:auto; }
+.search-chips{ display:flex; gap:8px; }
+.chip{ padding:0.5rem 0.9rem; border-radius:var(--r-full); font-size:0.8rem; font-weight:600; color:var(--fg); display:flex; align-items:center; gap:6px; cursor:pointer; }
+.chip svg{ width:14px; height:14px; }
+.locate-btn{ margin-left:auto; width:42px; height:42px; border-radius:var(--r-full); display:grid; place-items:center; cursor:pointer; background:oklch(from var(--surface-up) l c h / 0.8); border:1px solid var(--border); color:var(--fg); }
+
+/* bottom sliding station panel */
+.station-panel{ position:absolute; bottom:0; left:0; right:0; z-index:8; border-radius:20px 20px 0 0; background:oklch(from var(--surface) l c h / 0.86);
+  backdrop-filter:blur(22px) saturate(170%); -webkit-backdrop-filter:blur(22px) saturate(170%);
+  border-top:1px solid oklch(100% 0 0 / 0.12); padding:10px 16px 18px; box-shadow:0 -10px 40px oklch(0% 0 0 / 0.4); }
+.grabber{ width:40px; height:4px; border-radius:var(--r-full); background:var(--fg-dim); margin:4px auto 12px; }
+.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.panel-head h3{ font-size:1rem; font-weight:700; } .panel-head small{ color:var(--fg-dim); font-size:0.75rem; }
+.sort-row{ display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; }
+.sort-row button{ flex-shrink:0; padding:0.4rem 0.8rem; border-radius:var(--r-full); font-size:0.76rem; font-weight:600; background:oklch(from var(--surface-up) l c h / 0.7); border:1px solid var(--border); color:var(--fg-muted); cursor:pointer; }
+.sort-row button.on{ background:oklch(from var(--primary) l c h / 0.18); color:var(--fg); border-color:oklch(from var(--primary) l c h / 0.45); }
+.station{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:var(--r); background:oklch(from var(--surface-up) l c h / 0.5); border:1px solid var(--border-faint); margin-bottom:10px; cursor:pointer; transition:border-color var(--dur-fast); }
+.station:active{ border-color:oklch(from var(--primary) l c h / 0.4); }
+.station .op{ width:38px; height:38px; border-radius:11px; display:grid; place-items:center; font-weight:800; font-size:0.8rem; color:oklch(99% 0 0); background:linear-gradient(135deg,var(--primary),oklch(64% 0.19 230)); }
+.station .info{ flex:1; min-width:0; }
+.station .info b{ font-size:0.92rem; display:block; }
+.station .info span{ font-size:0.74rem; color:var(--fg-dim); }
+.station .free{ text-align:right; flex-shrink:0; }
+.station .free b{ color:var(--ok); font-size:1rem; display:block; }
+.station .free span{ font-size:0.7rem; color:var(--fg-dim); }
+.dot{ width:8px; height:8px; border-radius:var(--r-full); display:inline-block; margin-right:4px; }
+.dot.free{ background:var(--ok); } .dot.busy{ background:var(--warn); }
+
+/* Savings view */
+.savings-top{ border-radius:var(--r-xl); padding:24px; margin-bottom:16px; background:linear-gradient(135deg, oklch(from var(--primary) l c h / 0.20), oklch(from var(--ok) l c h / 0.06)); border:1px solid oklch(from var(--primary) l c h / 0.30); }
+.savings-top .ttl{ font-size:0.82rem; color:var(--fg-muted); }
+.savings-top .big{ font-family:var(--font-display); font-size:2.4rem; font-weight:800; letter-spacing:-0.03em; margin-top:4px; }
+.coupon{ display:flex; align-items:stretch; border-radius:var(--r); overflow:hidden; margin-bottom:12px; border:1px solid var(--border); background:oklch(from var(--surface-up) l c h / 0.5); }
+.coupon .amt{ padding:16px; background:oklch(from var(--warn) l c h / 0.16); color:var(--warn); font-weight:800; font-size:1.3rem; display:grid; place-items:center; min-width:84px; border-right:1px dashed var(--border); }
+.coupon .ct{ flex:1; padding:12px 14px; }
+.coupon .ct b{ font-size:0.9rem; } .coupon .ct span{ display:block; font-size:0.74rem; color:var(--fg-dim); }
+.coupon .get{ display:grid; place-items:center; padding:0 16px; background:var(--primary); color:oklch(99% 0 0); font-weight:700; font-size:0.82rem; cursor:pointer; }
+.energy-pack{ border-radius:var(--r); padding:16px; border:1px solid var(--border); background:oklch(from var(--surface-up) l c h / 0.5); display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.energy-pack .pr{ font-size:1.1rem; font-weight:800; }
+.section-label{ font-size:0.82rem; font-weight:700; color:var(--fg-muted); margin:18px 4px 10px; letter-spacing:0.02em; }
+
+/* Scan center button overlay → modal */
+.scan-modal{ position:absolute; inset:0; z-index:80; display:none; place-items:center; padding:24px;
+  background:oklch(0% 0 0 / 0.7); backdrop-filter:blur(8px); }
+.scan-modal.open{ display:grid; }
+.scan-box{ width:min(320px,86%); aspect-ratio:1; border-radius:var(--r-lg); position:relative; display:grid; place-items:center;
+  background:linear-gradient(135deg, oklch(from var(--ok) l c h / 0.10), oklch(from var(--primary) l c h / 0.08));
+  border:1px solid oklch(100% 0 0 / 0.12); overflow:hidden; }
+.scan-box::before{ content:""; position:absolute; left:8%; right:8%; height:3px; background:var(--ok); border-radius:var(--r-full); box-shadow:0 0 16px var(--ok); animation:scanmove 2.2s var(--ease-out) infinite; }
+@keyframes scanmove{ 0%{ top:8%; } 50%{ top:90%; } 100%{ top:8%; } }
+.scan-box svg{ width:64px; height:64px; color:oklch(99% 0 0 / 0.85); }
+.scan-hint{ color:var(--fg); text-align:center; margin-top:18px; font-weight:600; }
+.scan-close{ position:absolute; top:16px; right:16px; background:oklch(100% 0 0 / 0.1); border:none; color:var(--fg); width:38px; height:38px; border-radius:var(--r-full); cursor:pointer; }
+
+/* Orders view */
+.order-card{ border-radius:var(--r); padding:14px; border:1px solid var(--border); background:oklch(from var(--surface-up) l c h / 0.5); margin-bottom:12px; }
+.order-card .row{ display:flex; justify-content:space-between; align-items:center; }
+.order-card .st{ font-size:0.72rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:var(--r-full); }
+.st.charging{ background:oklch(from var(--warn) l c h / 0.18); color:var(--warn); }
+.st.done{ background:oklch(from var(--ok) l c h / 0.18); color:var(--ok); }
+.order-card b{ font-size:0.92rem; } .order-card .meta{ font-size:0.74rem; color:var(--fg-dim); margin-top:4px; }
+.order-card .cost{ font-size:1.05rem; font-weight:800; margin-top:8px; }
+.tab2{ display:flex; gap:6px; margin-bottom:14px; }
+.tab2 button{ flex:1; padding:0.5rem; border-radius:var(--r); font-size:0.8rem; font-weight:600; background:oklch(from var(--surface-up) l c h / 0.6); border:1px solid var(--border); color:var(--fg-muted); cursor:pointer; }
+.tab2 button.on{ background:oklch(from var(--primary) l c h / 0.16); color:var(--fg); border-color:oklch(from var(--primary) l c h / 0.4); }
+
+/* Charging live view */
+.charge-live{ position:absolute; inset:0; z-index:20; display:none; flex-direction:column; padding:54px 16px 96px; background:var(--bg); }
+.charge-live.open{ display:flex; }
+.ring-wrap{ display:grid; place-items:center; margin:24px 0; position:relative; }
+.ring{ width:220px; height:220px; }
+.ring text{ fill:var(--fg); font-family:var(--font-display); }
+.ring-center{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
+.ring-center .kwh{ font-size:2.6rem; font-weight:800; letter-spacing:-0.03em; }
+.ring-center .kwh small{ font-size:1rem; font-weight:600; color:var(--fg-muted); }
+.ring-center .lbl{ font-size:0.8rem; color:var(--fg-dim); }
+.metrics{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.metric{ border-radius:var(--r); padding:14px; text-align:center; background:oklch(from var(--surface-up) l c h / 0.5); border:1px solid var(--border-faint); }
+.metric b{ font-size:1.2rem; font-weight:800; display:block; }
+.metric span{ font-size:0.72rem; color:var(--fg-dim); }
+.stop-btn{ margin-top:auto; padding:0.95rem; border-radius:var(--r); background:oklch(from var(--err) l c h / 0.16); border:1px solid oklch(from var(--err) l c h / 0.4); color:var(--err); font-weight:700; font-family:var(--font); font-size:0.95rem; cursor:pointer; }
+
+/* My view */
+.profile{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+.avatar{ width:60px; height:60px; border-radius:var(--r-full); background:linear-gradient(135deg,var(--primary),var(--ok)); display:grid; place-items:center; font-size:1.3rem; font-weight:800; color:oklch(99% 0 0); flex-shrink:0; }
+.profile .nm{ font-size:1.15rem; font-weight:800; }
+.profile .mb{ display:inline-block; margin-top:4px; font-size:0.72rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:var(--r-full); background:oklch(from var(--primary) l c h / 0.18); color:var(--primary); }
+.wallet{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+.wallet .w{ border-radius:var(--r); padding:14px; text-align:center; background:oklch(from var(--surface-up) l c h / 0.5); border:1px solid var(--border-faint); }
+.wallet .w b{ font-size:1.1rem; font-weight:800; display:block; } .wallet .w span{ font-size:0.72rem; color:var(--fg-dim); }
+.menu{ border-radius:var(--r); overflow:hidden; border:1px solid var(--border); background:oklch(from var(--surface-up) l c h / 0.4); }
+.menu a{ display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border-faint); font-size:0.9rem; color:var(--fg); cursor:pointer; }
+.menu a:last-child{ border-bottom:none; }
+.menu a .mi{ width:30px; height:30px; border-radius:9px; display:grid; place-items:center; background:oklch(from var(--primary) l c h / 0.14); color:var(--primary); }
+.menu a .mi svg{ width:17px; height:17px; }
+.menu a .arrow{ margin-left:auto; color:var(--fg-dim); }
+
+/* Tab bar */
+.tabbar{ position:absolute; bottom:0; left:0; right:0; z-index:40; height:84px; display:flex; align-items:center; padding:0 10px 14px;
+  background:oklch(from var(--surface) l c h / 0.9); backdrop-filter:blur(22px) saturate(170%); -webkit-backdrop-filter:blur(22px) saturate(170%);
+  border-top:1px solid oklch(100% 0 0 / 0.10); }
+.tabbar .tab{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--fg-dim); font-size:0.66rem; font-weight:600; cursor:pointer; background:none; border:none; font-family:var(--font); padding-top:8px; }
+.tabbar .tab.active{ color:var(--primary); }
+.tabbar .tab svg{ width:23px; height:23px; }
+.tabbar .scan{ width:60px; height:60px; border-radius:var(--r-full); background:linear-gradient(135deg,var(--primary),var(--ok)); display:grid; place-items:center; color:oklch(99% 0 0); box-shadow:0 0 28px oklch(from var(--primary) l c h / 0.5); margin-top:-22px; cursor:pointer; position:relative; }
+.tabbar .scan svg{ width:28px; height:28px; }
+
+@media (max-width:460px){
+  body{ padding:0; }
+  .phone{ width:100%; height:100vh; max-height:none; border-radius:0; border:none; box-shadow:none; }
+}
+@media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<a href="#screen" class="skip-link">跳到主内容</a>
+<div class="stage">
+<div class="phone" id="screen">
+  <div class="statusbar"><span>9:41</span><span class="icons"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h2v-5H2zm5 0h2V9H7zm5 0h2v-9h-2zm5 0h2V5h-2z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12a7 7 0 0 1 14 0M2 12a10 10 0 0 1 20 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><svg width="22" height="14" viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="20" height="12" rx="3"/><rect x="3" y="3" width="14" height="8" rx="1.5" fill="currentColor"/></svg></span></div>
+
+  <div class="screen">
+    <!-- MAP / HOME -->
+    <section class="view active" id="v-home" aria-label="首页地图找桩">
+      <div class="map-canvas"></div>
+      <div style="position:relative;z-index:5;display:flex;flex-direction:column;height:100%;padding-top:8px">
+        <div class="map-top">
+          <div class="search-chips">
+            <span class="chip liquid-glass" onclick="focusStation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>杭州 · 5km</span>
+          </div>
+          <button class="locate-btn" aria-label="定位"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+        </div>
+        <div class="station-panel">
+          <div class="grabber"></div>
+          <div class="panel-head"><h3>附近充电站</h3><small>共 12 个 · 实时更新</small></div>
+          <div class="sort-row">
+            <button class="on">综合</button><button>距离</button><button>价格</button><button>空闲优先</button><button>免费停车</button>
+          </div>
+          <div class="station" onclick="startCharge()">
+            <div class="op">特</div>
+            <div class="info"><b>特来电 · 西湖文体中心站</b><span>距您 320m · 快充/慢充 · 停车免费</span></div>
+            <div class="free"><b>8 空闲</b><span><i class="dot free"></i>6快 2慢</span></div>
+          </div>
+          <div class="station" onclick="startCharge()">
+            <div class="op" style="background:linear-gradient(135deg,var(--ok),oklch(64% 0.19 200))">星</div>
+            <div class="info"><b>星星充电 · 钱江路 P+R 站</b><span>距您 680m · 超充 · ¥0.98/度</span></div>
+            <div class="free"><b>3 空闲</b><span><i class="dot busy"></i>充电中 5</span></div>
+          </div>
+          <div class="station" onclick="startCharge()">
+            <div class="op" style="background:linear-gradient(135deg,var(--warn),oklch(64% 0.19 50))">云</div>
+            <div class="info"><b>云快充 · 滨江星光站</b><span>距您 1.2km · 快充 · 停车¥5/h</span></div>
+            <div class="free"><b>11 空闲</b><span><i class="dot free"></i>9快 2慢</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SAVINGS -->
+    <section class="view" id="v-save" aria-label="省钱活动">
+      <div class="savings-top reveal-s">
+        <div class="ttl">PLUS 会员本月已为您节省</div>
+        <div class="big">¥128.50</div>
+        <div style="font-size:0.8rem;color:var(--fg-muted)">金卡会员 · 充电折扣 8 折起</div>
+      </div>
+      <div class="section-label">限时优惠</div>
+      <div class="coupon"><div class="amt">¥15</div><div class="ct"><b>满 30 元充电券</b><span>PLUS 会员专享 · 今日到期</span></div><div class="get" onclick="claim(this)">领取</div></div>
+      <div class="coupon"><div class="amt">7折</div><div class="ct"><b>服务费折扣券</b><span>全平台通用 · 3 日内有效</span></div><div class="get" onclick="claim(this)">领取</div></div>
+      <div class="section-label">能量包 · 锁价对冲</div>
+      <div class="energy-pack"><div><b>100 度能量包</b><br><span style="font-size:0.74rem;color:var(--fg-dim)">锁定当前低价，后续自动抵扣</span></div><div style="text-align:right"><div class="pr">¥88</div><span style="font-size:0.72rem;color:var(--ok)">省 ¥22</span></div></div>
+      <div class="energy-pack"><div><b>200 度能量包</b><br><span style="font-size:0.74rem;color:var(--fg-dim)">高频用户首选，单价更低</span></div><div style="text-align:right"><div class="pr">¥168</div><span style="font-size:0.72rem;color:var(--ok)">省 ¥52</span></div></div>
+      <div class="section-label">邀请有礼</div>
+      <div class="energy-pack"><div><b>邀请好友得 ¥20</b><br><span style="font-size:0.74rem;color:var(--fg-dim)">好友首充双方各得充电金</span></div><div class="get" style="padding:0.6rem 1.1rem;border-radius:var(--r-full);background:var(--primary);color:oklch(99% 0 0);font-weight:700;font-size:0.8rem">立即邀请</div></div>
+    </section>
+
+    <!-- ORDERS -->
+    <section class="view" id="v-order" aria-label="订单">
+      <div class="tab2"><button class="on">充电中</button><button>历史记录</button><button>账单</button></div>
+      <div class="order-card" onclick="startCharge()">
+        <div class="row"><b>特来电 · 西湖文体中心站</b><span class="st charging">充电中</span></div>
+        <div class="meta">桩号 A-07 · 已充 32 分钟 · 预计 18 分钟完成</div>
+        <div class="cost">已充 18.4 kWh · ¥22.08</div>
+      </div>
+      <div class="order-card">
+        <div class="row"><b>星星充电 · 钱江路 P+R 站</b><span class="st done">已完成</span></div>
+        <div class="meta">2026-06-15 21:34 · 快充 45 分钟</div>
+        <div class="cost">26.1 kWh · ¥30.62 <span style="font-size:0.72rem;color:var(--ok)">· 券减 ¥5</span></div>
+      </div>
+      <div class="order-card">
+        <div class="row"><b>云快充 · 滨江星光站</b><span class="st done">已完成</span></div>
+        <div class="meta">2026-06-12 09:11 · 超充 28 分钟</div>
+        <div class="cost">41.7 kWh · ¥40.87</div>
+      </div>
+    </section>
+
+    <!-- MY -->
+    <section class="view" id="v-me" aria-label="我的">
+      <div class="profile">
+        <div class="avatar">陈</div>
+        <div><div class="nm">陈先生</div><span class="mb">PLUS 金卡会员</span><div style="font-size:0.76rem;color:var(--fg-dim);margin-top:4px">138****6677</div></div>
+      </div>
+      <div class="wallet">
+        <div class="w"><b>¥186.5</b><span>钱包余额</span></div>
+        <div class="w"><b>5</b><span>卡券</span></div>
+        <div class="w"><b>3,240</b><span>碳积分</span></div>
+      </div>
+      <div class="menu">
+        <a><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>我的车辆<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+        <a><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v10H3z"/><path d="M3 11h18"/></svg></span>电池卫士<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+        <a><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></span>发票管理<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+        <a><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></span>即插即充 (NFC)<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+        <a><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>客服中心<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+      </div>
+    </section>
+
+    <!-- CHARGING LIVE OVERLAY -->
+    <div class="charge-live" id="chargeLive" aria-label="充电中">
+      <div style="display:flex;align-items:center;gap:10px"><span class="st charging" style="padding:0.3rem 0.7rem;border-radius:var(--r-full);background:oklch(from var(--warn) l c h / 0.18);color:var(--warn);font-size:0.74rem;font-weight:700">充电中</span><b style="font-size:0.95rem">特来电 · 西湖文体中心站</b></div>
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 220 220">
+          <circle cx="110" cy="110" r="96" fill="none" stroke="var(--border)" stroke-width="14"/>
+          <circle id="ringFg" cx="110" cy="110" r="96" fill="none" stroke="var(--warn)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 110 110)" stroke-dasharray="603" stroke-dashoffset="250"/>
+        </svg>
+        <div class="ring-center"><div class="kwh"><span id="kwh">18.4</span><small> kWh</small></div><div class="lbl">已充电量 · 进度 <span id="pct">58</span>%</div></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><b id="pwr">61</b><span>当前功率 kW</span></div>
+        <div class="metric"><b id="cost">¥22.08</b><span>实时费用</span></div>
+        <div class="metric"><b id="eta">18</b><span>剩余分钟</span></div>
+      </div>
+      <div style="background:oklch(from var(--primary) l c h / 0.10);border:1px solid oklch(from var(--primary) l c h / 0.25);border-radius:var(--r);padding:12px 14px;font-size:0.8rem;color:var(--fg-muted)">本次充电预计减少碳排放 <b style="color:var(--ok)">11.6 kg</b> CO₂，碳积分 +12 待结算。</div>
+      <button class="stop-btn" onclick="stopCharge()">停止充电（二次确认）</button>
+    </div>
+  </div>
+
+  <!-- SCAN MODAL -->
+  <div class="scan-modal" id="scanModal" role="dialog" aria-modal="true" aria-label="扫码充电">
+    <button class="scan-close" onclick="closeScan()" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div style="position:relative;display:grid;place-items:center">
+      <div class="scan-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/></svg></div>
+      <div class="scan-hint">将二维码放入框内<br>扫码即充，无需手动输入</div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <nav class="tabbar" aria-label="底部导航">
+    <button class="tab active" data-view="v-home" onclick="switchView('v-home',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>首页</button>
+    <button class="tab" data-view="v-save" onclick="switchView('v-save',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 8.5 12 3 3.4 8.5M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9M9 21v-6h6v6"/></svg>省钱</button>
+    <button class="scan" aria-label="扫码充电" onclick="openScan()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M4 12h16"/></svg></button>
+    <button class="tab" data-view="v-order" onclick="switchView('v-order',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h2V3a1 1 0 0 1 1-1zM8 11h8M8 15h6"/></svg>订单</button>
+    <button class="tab" data-view="v-me" onclick="switchView('v-me',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>我的</button>
+  </nav>
+</div>
+</div>
+
+<script>
+function switchView(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById(id).scrollTop=0;
+}
+function openScan(){ document.getElementById('scanModal').classList.add('open'); }
+function closeScan(){ document.getElementById('scanModal').classList.remove('open'); }
+document.getElementById('scanModal').addEventListener('click',e=>{ if(e.target.id==='scanModal') closeScan(); });
+function focusStation(){ document.querySelector('#v-home .station-panel').scrollIntoView({behavior:'smooth'}); }
+
+/* Charging live simulation */
+let timer=null, soc=58, kwh=18.4, pwr=61, cost=22.08, eta=18;
+function startCharge(){
+  closeScan();
+  const live=document.getElementById('chargeLive'); live.classList.add('open');
+  const fg=document.getElementById('ringFg'); const C=603;
+  timer=setInterval(()=>{
+    if(soc>=100){ stopCharge(); return; }
+    soc+=1; kwh+=0.32; pwr=58+Math.round(Math.random()*8); cost+=0.38; eta=Math.max(0,eta-1);
+    fg.style.strokeDashoffset = C*(1-soc/100);
+    document.getElementById('kwh').textContent=kwh.toFixed(1);
+    document.getElementById('pct').textContent=soc;
+    document.getElementById('pwr').textContent=pwr;
+    document.getElementById('cost').textContent='¥'+cost.toFixed(2);
+    document.getElementById('eta').textContent=eta;
+  },1200);
+}
+function stopCharge(){
+  clearInterval(timer);
+  if(confirm('确认停止充电？当前已充 '+kwh.toFixed(1)+' kWh，将自动扣费。')){
+    document.getElementById('chargeLive').classList.remove('open');
+    alert('充电完成，已自动扣费 ¥'+cost.toFixed(2)+'（演示）。');
+  } else { timer=setInterval(continueloop,1200); }
+}
+function continueloop(){ /* resume via re-run startCharge logic minimally */ }
+function claim(el){ el.textContent='已领取'; el.style.background=oklch(72% 0.18 145); el.style.color='oklch(99% 0 0)'; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeScan(); } });
+</script>
+</body>
+</html>

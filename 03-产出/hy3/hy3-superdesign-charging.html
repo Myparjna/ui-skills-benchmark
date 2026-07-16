@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>闪电充 EV Charging — 附近充电一站看全</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<script>
+  // ── superdesign: DESIGN SYSTEM = HARD CONSTRAINT ──
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          tech: { 50:'#EAF2FF', 100:'#D6E4FF', 400:'#4096FF', 500:'#1677FF', 600:'#0E5FD8', 700:'#0B4DB0' },
+          idle: '#52C41A', warn:'#FA8C16', danger:'#F5222D', ink:'#1A2233', muted:'#8A94A6'
+        },
+        fontFamily: { sans:['Inter','Noto Sans SC','system-ui','sans-serif'] },
+        borderRadius: { card:'12px', btn:'8px', tag:'4px' }
+      }
+    }
+  }
+</script>
+<style>
+  :root{
+    --radius-card:12px; --radius-btn:8px; --radius-sheet:16px;
+  }
+  body{font-family:'Inter','Noto Sans SC',system-ui,sans-serif;color:#1A2233;background:#F2F4F8;-webkit-font-smoothing:antialiased}
+  /* phone frame for desktop preview */
+  .phone{position:relative}
+  @media(min-width:640px){
+    .phone{max-width:430px;margin:24px auto;background:#fff;border-radius:40px;box-shadow:0 20px 60px rgba(15,30,70,.18);overflow:hidden;border:10px solid #0E1422}
+  }
+  .ds-card{background:#fff;border-radius:var(--radius-card);box-shadow:0 1px 3px rgba(15,30,70,.06),0 6px 18px rgba(15,30,70,.05)}
+  .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border-radius:var(--radius-btn);font-weight:600;transition:.2s}
+  .ds-btn-primary{background:#1677FF;color:#fff;padding:.8rem 1rem;width:100%}
+  .ds-btn-primary:active{background:#0E5FD8}
+  .chip{display:inline-flex;align-items:center;gap:.25rem;border-radius:4px;padding:.2rem .55rem;font-size:.72rem;font-weight:600;background:#F2F4F8;color:#5A6478}
+  .chip-on{background:#EAF2FF;color:#1677FF}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .sheet{background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(15,30,70,.10)}
+  .tabbar{display:flex;height:60px;background:#fff;border-top:1px solid #EDF0F5;padding-bottom:env(safe-area-inset-bottom)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#8A94A6;font-size:10px;font-weight:500}
+  .tab-on{color:#1677FF}
+  .scan-btn{position:relative;flex:0 0 auto;width:60px;display:flex;align-items:center;justify-content:center}
+  .scan-circle{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1677FF,#52C41A);display:grid;place-items:center;color:#fff;box-shadow:0 8px 18px rgba(22,119,255,.4);margin-top:-22px}
+  .seg{display:flex;background:#F2F4F8;border-radius:8px;padding:3px}
+  .seg button{flex:1;border:none;background:transparent;border-radius:6px;padding:.4rem;font-size:.82rem;font-weight:600;color:#5A6478}
+  .seg button.on{background:#fff;color:#1677FF;box-shadow:0 1px 3px rgba(15,30,70,.1)}
+  .map-bg{background:
+    linear-gradient(0deg,rgba(22,119,255,.04),rgba(22,119,255,.04)),
+    repeating-linear-gradient(0deg,#E9EEF6 0 39px,#DfE6F0 39px 40px),
+    repeating-linear-gradient(90deg,#E9EEF6 0 39px,#DfE6F0 39px 40px),
+    #EEF3FA}
+  .pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center}
+  .pin .bubble{background:#fff;border-radius:8px;padding:.25rem .5rem;font-size:.7rem;font-weight:700;box-shadow:0 3px 8px rgba(15,30,70,.18);white-space:nowrap}
+  .pin .needle{width:2px;height:8px;background:#fff}
+</style>
+</head>
+<body>
+<div class="phone min-h-screen bg-white">
+
+  <!-- ============ STATUS BAR + TOP ============ -->
+  <div class="bg-tech-500 text-white px-4 pt-3 pb-3">
+    <div class="flex items-center justify-between text-sm font-semibold">
+      <span class="flex items-center gap-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        杭州 · 西湖区
+      </span>
+      <span class="flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="text-xs bg-white/20 rounded px-1.5 py-0.5">12,860 kWh</span>
+      </span>
+    </div>
+    <div class="flex items-center gap-2 mt-3">
+      <div class="seg flex-1 bg-white/15">
+        <button class="on !text-white !bg-white/20">地图</button>
+        <button class="!text-white/80">列表</button>
+      </div>
+      <button class="w-9 h-9 grid place-items-center bg-white/15 rounded-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ MAP ============ -->
+  <div class="map-bg relative h-[300px]">
+    <!-- pins -->
+    <div class="pin" style="left:30%;top:35%"><div class="bubble text-idle">⚡ 6 空闲</div><div class="needle"></div><div class="dot bg-idle" style="width:14px;height:14px;box-shadow:0 0 0 4px rgba(82,196,26,.25)"></div></div>
+    <div class="pin" style="left:58%;top:30%"><div class="bubble text-warn">🔌 充电中</div><div class="needle"></div><div class="dot bg-warn" style="width:14px;height:14px;box-shadow:0 0 0 4px rgba(250,140,22,.25)"></div></div>
+    <div class="pin" style="left:70%;top:58%"><div class="bubble text-tech-600">⚡ 12 空闲</div><div class="needle"></div><div class="dot bg-tech-500" style="width:14px;height:14px;box-shadow:0 0 0 4px rgba(22,119,255,.25)"></div></div>
+    <div class="pin" style="left:42%;top:68%"><div class="bubble text-idle">⚡ 3 空闲</div><div class="needle"></div><div class="dot bg-idle" style="width:14px;height:14px;box-shadow:0 0 0 4px rgba(82,196,26,.25)"></div></div>
+    <!-- locate -->
+    <button class="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full grid place-items-center shadow-md">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+    </button>
+    <!-- distance chip -->
+    <div class="absolute top-3 left-3 ds-card px-3 py-1.5 text-xs font-semibold text-ink flex items-center gap-1">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      5km 内 18 个充电站
+    </div>
+  </div>
+
+  <!-- ============ BOTTOM SHEET (station list) ============ -->
+  <div class="sheet -mt-5 relative px-4 pt-3 pb-24">
+    <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-3"></div>
+    <!-- filter chips -->
+    <div class="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1">
+      <span class="chip chip-on">全部</span>
+      <span class="chip">⚡ 快充</span>
+      <span class="chip">🔋 超充</span>
+      <span class="chip">🅿️ 免费停车</span>
+      <span class="chip">高速路站</span>
+      <span class="chip">PLUS 会员站</span>
+    </div>
+
+    <!-- station card 1 -->
+    <div class="ds-card p-4 mb-3 border-l-4 border-idle">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="font-bold text-ink">西湖文化广场充电站</h3>
+          <p class="text-xs text-muted mt-0.5">体育场路 218 号 · 距您 480m</p>
+        </div>
+        <span class="text-tech-600 font-bold text-sm">¥0.98<span class="text-xs font-normal text-muted">/度</span></span>
+      </div>
+      <div class="flex items-center gap-3 mt-3 text-xs">
+        <span class="flex items-center gap-1"><span class="dot bg-idle"></span><b class="text-idle">6</b> 空闲</span>
+        <span class="flex items-center gap-1"><span class="dot bg-warn"></span>4 充电中</span>
+        <span class="chip">⚡ 120kW 快充</span>
+        <span class="chip">🅿️ 停车免费</span>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button class="ds-btn ds-btn-primary flex-1 !py-2 !text-sm">导航前往</button>
+        <button class="ds-btn !py-2 !px-3 !text-sm !bg-tech-50 !text-tech-600">详情</button>
+      </div>
+    </div>
+
+    <!-- station card 2 -->
+    <div class="ds-card p-4 mb-3 border-l-4 border-tech-500">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="font-bold text-ink">武林银泰超充站</h3>
+          <p class="text-xs text-muted mt-0.5">延安路 530 号 · 距您 1.2km</p>
+        </div>
+        <span class="text-tech-600 font-bold text-sm">¥1.15<span class="text-xs font-normal text-muted">/度</span></span>
+      </div>
+      <div class="flex items-center gap-3 mt-3 text-xs">
+        <span class="flex items-center gap-1"><span class="dot bg-tech-500"></span><b>12</b> 空闲</span>
+        <span class="flex items-center gap-1"><span class="dot bg-warn"></span>2 充电中</span>
+        <span class="chip">⚡ 250kW 超充</span>
+        <span class="chip">PLUS 折扣</span>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button class="ds-btn ds-btn-primary flex-1 !py-2 !text-sm">导航前往</button>
+        <button class="ds-btn !py-2 !px-3 !text-sm !bg-tech-50 !text-tech-600">详情</button>
+      </div>
+    </div>
+
+    <!-- station card 3 -->
+    <div class="ds-card p-4 border-l-4 border-idle">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="font-bold text-ink">城西星荷慢充点</h3>
+          <p class="text-xs text-muted mt-0.5">文一西路 88 号 · 距您 2.0km</p>
+        </div>
+        <span class="text-tech-600 font-bold text-sm">¥0.75<span class="text-xs font-normal text-muted">/度</span></span>
+      </div>
+      <div class="flex items-center gap-3 mt-3 text-xs">
+        <span class="flex items-center gap-1"><span class="dot bg-idle"></span><b class="text-idle">3</b> 空闲</span>
+        <span class="flex items-center gap-1"><span class="dot bg-warn"></span>1 充电中</span>
+        <span class="chip">🔋 7kW 慢充</span>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button class="ds-btn ds-btn-primary flex-1 !py-2 !text-sm">导航前往</button>
+        <button class="ds-btn !py-2 !px-3 !text-sm !bg-tech-50 !text-tech-600">详情</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB BAR (5 tabs, center scan) ============ -->
+  <div class="tabbar fixed bottom-0 inset-x-0 z-40" style="max-width:inherit">
+    <a href="#" class="tab tab-on">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      首页
+    </a>
+    <a href="#" class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S10 2 7 3s1 4 5 4zM12 7s2-5 5-4-1 4-5 4z"/></svg>
+      省钱
+    </a>
+    <div class="scan-btn">
+      <button class="scan-circle" onclick="document.getElementById('scanSheet').classList.remove('hidden')">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      </button>
+    </div>
+    <a href="#" class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+      订单
+    </a>
+    <a href="#" class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      我的
+    </a>
+  </div>
+
+  <!-- ============ SCAN SHEET ============ -->
+  <div id="scanSheet" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end" style="max-width:inherit">
+    <div class="bg-white w-full rounded-t-2xl p-5" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+      <h3 class="font-bold text-lg text-center">扫码启动充电</h3>
+      <div class="my-5 mx-auto w-44 h-44 rounded-xl bg-slate-900 grid place-items-center relative overflow-hidden">
+        <div class="absolute inset-x-6 h-0.5 bg-tech-400 animate-pulse"></div>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+      </div>
+      <button class="ds-btn ds-btn-primary !py-3" onclick="document.getElementById('scanSheet').classList.add('hidden')">对准充电桩二维码</button>
+      <button class="ds-btn !py-2.5 !mt-2 !w-full !text-sm !text-muted !bg-transparent" onclick="document.getElementById('scanSheet').classList.add('hidden')">手动输入桩编号</button>
+    </div>
+  </div>
+
+</div>
+<script>
+  // seg toggle
+  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+    b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  }));
+  // filter chips
+  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('chip-on')));
+  // close scan sheet on backdrop
+  document.getElementById('scanSheet').addEventListener('click',function(){this.classList.add('hidden')});
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>闪电充电 - 随时随地，电力十足</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css">
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 84% 4.9%;
+      --primary: 142.1 76.2% 36.3%; /* Green for charging */
+      --primary-foreground: 355.7 100% 97.3%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      --muted: 210 40% 96.1%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 96.1%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 142.1 76.2% 36.3%;
+      --radius: 1rem; /* More rounded for mobile apps */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: hsl(var(--foreground));
+      background: #f8fafc; /* Light gray background for mobile feel */
+      line-height: 1.5;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* Mobile Wrapper */
+    .mobile-container {
+      width: 100%;
+      max-width: 414px;
+      background: hsl(var(--background));
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 50px rgba(0,0,0,0.05);
+    }
+
+    /* Header */
+    .app-header {
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: hsl(var(--background));
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: hsl(var(--muted));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+    }
+
+    /* Search Bar */
+    .search-container {
+      padding: 0 1.5rem 1rem;
+    }
+    .search-input {
+      width: 100%;
+      background: hsl(var(--muted));
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: calc(var(--radius) / 2);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.875rem;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+    }
+    .stat-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+    }
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    /* Station List */
+    .section-header {
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-title {
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+    .station-list {
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .station-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      padding: 1rem;
+      border-radius: var(--radius);
+      display: flex;
+      gap: 1rem;
+      transition: background 0.2s;
+    }
+    .station-card:active {
+      background: hsl(var(--muted));
+    }
+    .station-img {
+      width: 4rem;
+      height: 4rem;
+      border-radius: calc(var(--radius) / 2);
+      background: hsl(var(--muted));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: hsl(var(--primary));
+    }
+    .station-info {
+      flex: 1;
+    }
+    .station-name {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .station-meta {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      gap: 0.5rem;
+    }
+    .station-status {
+      margin-top: 0.5rem;
+      display: inline-flex;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: hsl(var(--primary) / 0.1);
+      color: hsl(var(--primary));
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      margin-top: auto;
+      height: 5rem;
+      background: hsl(var(--background));
+      border-top: 1px solid hsl(var(--border));
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .tab-item.active {
+      color: hsl(var(--primary));
+    }
+    .tab-item i {
+      font-size: 1.5rem;
+    }
+
+    /* Floating Button */
+    .scan-btn {
+      position: absolute;
+      bottom: 6rem;
+      right: 1.5rem;
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      background: hsl(var(--primary));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-container">
+    <header class="app-header">
+      <div class="user-profile">
+        <div class="avatar">袁</div>
+        <div>
+          <p style="font-size: 0.75rem; color: hsl(var(--muted-foreground));">下午好</p>
+          <p style="font-weight: 600;">袁老板</p>
+        </div>
+      </div>
+      <button style="background: none; border: none; font-size: 1.25rem;">
+        <i class="ri-notification-3-line"></i>
+      </button>
+    </header>
+
+    <div class="search-container">
+      <div class="search-input">
+        <i class="ri-search-line"></i>
+        <span>搜索附近的充电站...</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">今日已充</span>
+        <span class="stat-value">42.5 kWh</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">钱包余额</span>
+        <span class="stat-value">¥128.50</span>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h3 class="section-title">推荐充电站</h3>
+      <a href="#" style="font-size: 0.75rem; color: hsl(var(--primary)); font-weight: 600; text-decoration: none;">查看全部</a>
+    </div>
+
+    <div class="station-list">
+      <div class="station-card">
+        <div class="station-img">
+          <i class="ri-charging-pile-2-fill"></i>
+        </div>
+        <div class="station-info">
+          <p class="station-name">万象城超级充电站</p>
+          <div class="station-meta">
+            <span><i class="ri-map-pin-line"></i> 1.2km</span>
+            <span><i class="ri-time-line"></i> 24小时营业</span>
+          </div>
+          <span class="station-status">空闲 8/12</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+          <p style="font-weight: 700; color: hsl(var(--primary));">¥1.2/度</p>
+          <p style="font-size: 0.7rem; color: hsl(var(--muted-foreground));">快充</p>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-img" style="color: #64748b;">
+          <i class="ri-charging-pile-fill"></i>
+        </div>
+        <div class="station-info">
+          <p class="station-name">软件园二期充电站</p>
+          <div class="station-meta">
+            <span><i class="ri-map-pin-line"></i> 2.5km</span>
+            <span><i class="ri-time-line"></i> 08:00-22:00</span>
+          </div>
+          <span class="station-status" style="background: #f1f5f9; color: #64748b;">全满</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+          <p style="font-weight: 700; color: hsl(var(--primary));">¥0.9/度</p>
+          <p style="font-size: 0.7rem; color: hsl(var(--muted-foreground));">慢充</p>
+        </div>
+      </div>
+
+      <div class="station-card">
+        <div class="station-img">
+          <i class="ri-charging-pile-2-fill"></i>
+        </div>
+        <div class="station-info">
+          <p class="station-name">机场T3航站楼充电中心</p>
+          <div class="station-meta">
+            <span><i class="ri-map-pin-line"></i> 15.8km</span>
+            <span><i class="ri-time-line"></i> 24小时营业</span>
+          </div>
+          <span class="station-status">空闲 15/20</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+          <p style="font-weight: 700; color: hsl(var(--primary));">¥1.5/度</p>
+          <p style="font-size: 0.7rem; color: hsl(var(--muted-foreground));">极速快充</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="scan-btn">
+      <i class="ri-qr-scan-2-line"></i>
+    </div>
+
+    <nav class="tab-bar">
+      <a href="#" class="tab-item active">
+        <i class="ri-home-5-fill"></i>
+        <span>首页</span>
+      </a>
+      <a href="#" class="tab-item">
+        <i class="ri-map-2-line"></i>
+        <span>地图</span>
+      </a>
+      <a href="#" class="tab-item">
+        <i class="ri-history-line"></i>
+        <span>订单</span>
+      </a>
+      <a href="#" class="tab-item">
+        <i class="ri-user-3-line"></i>
+        <span>我的</span>
+      </a>
+    </nav>
+  </div>
+</body>
+</html>

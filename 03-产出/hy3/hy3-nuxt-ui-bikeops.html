@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>潮汐出行 · 共享两轮城市运营管理后台</title>
+  <meta name="description" content="共享自行车/电单车城市级综合运营后台：实时车辆地图、车队健康、电池能源、运维工单、调度与合规监管。" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Public Sans','Noto Sans SC','system-ui','sans-serif'] },
+          colors: {
+            // 主色：indigo（科技运营感）；neutral = slate
+            primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81',950:'#1e1b4b' },
+            neutral: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a',950:'#020617' },
+            success: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d1',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b',950:'#022c22' },
+            warning: { 50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309',800:'#92400e',900:'#78350f',950:'#451a03' },
+            error:   { 50:'#fff1f2',100:'#ffe4e6',200:'#fecdd3',300:'#fda4af',400:'#fb7185',500:'#f43f5e',600:'#e11d48',700:'#be123c',800:'#9f1239',900:'#881337',950:'#4c0519' },
+            info:    { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#0ea5e9',600:'#0284c7',700:'#0369a1',800:'#075985',900:'#0c4a6e',950:'#082f49' },
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    :root {
+      --text-default:15 23 42; --text-muted:100 116 139; --text-toned:71 85 105;
+      --text-dimmed:148 163 184; --text-highlighted:2 6 23;
+      --bg-default:255 255 255; --bg-muted:248 250 252; --bg-elevated:255 255 255;
+      --bg-accented:241 245 249; --bg-inverted:15 23 42;
+      --border-default:226 232 240; --border-muted:241 245 249; --border-accented:203 213 225;
+      --primary:#6366f1;
+      --ui-radius:.75rem; --ui-sidebar:16rem;
+    }
+    .dark {
+      --text-default:248 250 252; --text-muted:148 163 184; --text-toned:203 213 225;
+      --text-dimmed:100 116 139; --text-highlighted:255 255 255;
+      --bg-default:9 9 11; --bg-muted:24 24 27; --bg-elevated:24 24 27;
+      --bg-accented:39 39 42; --bg-inverted:250 250 250;
+      --border-default:39 39 42; --border-muted:24 24 27; --border-accented:63 63 70;
+      --primary:#818cf8;
+    }
+    .text-default{color:rgb(var(--text-default))}.text-muted{color:rgb(var(--text-muted))}
+    .text-toned{color:rgb(var(--text-toned))}.text-dimmed{color:rgb(var(--text-dimmed))}
+    .text-highlighted{color:rgb(var(--text-highlighted))}.text-inverted{color:rgb(var(--bg-inverted))}
+    .bg-default{background-color:rgb(var(--bg-default))}.bg-muted{background-color:rgb(var(--bg-muted))}
+    .bg-elevated{background-color:rgb(var(--bg-elevated))}.bg-accented{background-color:rgb(var(--bg-accented))}
+    .bg-inverted{background-color:rgb(var(--bg-inverted))}
+    .border-default{border-color:rgb(var(--border-default))}.border-muted{border-color:rgb(var(--border-muted))}
+    .border-accented{border-color:rgb(var(--border-accented))}
+    .page-bg{background-color:rgb(var(--bg-default));color:rgb(var(--text-default));}
+    .card{background-color:rgb(var(--bg-elevated));border:1px solid rgb(var(--border-default));border-radius:var(--ui-radius);}
+    .card-muted{background-color:rgb(var(--bg-muted));border:1px solid rgb(var(--border-muted));border-radius:.75rem;}
+    .field{background-color:rgb(var(--bg-default));border:1px solid rgb(var(--border-accented));border-radius:.5rem;color:rgb(var(--text-default));transition:border-color .15s,box-shadow .15s;}
+    .field:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 25%,transparent);}
+    .badge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;border-radius:.375rem;font-size:.75rem;font-weight:500;line-height:1.25rem;}
+    [v-cloak]{display:none;}
+    body{font-family:'Public Sans','Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+    .map-grid{background-color:#eef2f7;background-image:linear-gradient(rgba(99,102,241,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.06) 1px,transparent 1px),radial-gradient(circle at 30% 40%,rgba(16,185,129,.10),transparent 45%),radial-gradient(circle at 70% 70%,rgba(245,158,11,.10),transparent 40%);background-size:32px 32px,32px 32px,100% 100%,100% 100%;}
+    .dark .map-grid{background-color:#0b1020;background-image:linear-gradient(rgba(129,140,248,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(129,140,248,.08) 1px,transparent 1px),radial-gradient(circle at 30% 40%,rgba(16,185,129,.14),transparent 45%),radial-gradient(circle at 70% 70%,rgba(245,158,11,.14),transparent 40%);}
+    ::-webkit-scrollbar{width:10px;height:10px;}
+    ::-webkit-scrollbar-thumb{background:rgb(var(--border-accented));border-radius:9999px;border:2px solid rgb(var(--bg-default));}
+  </style>
+</head>
+
+<body class="page-bg">
+  <div id="app" class="isolate" v-cloak>
+    <u-app>
+      <div class="flex min-h-screen bg-default text-default">
+
+        <!-- ============ Dashboard Sidebar（可收缩） ============ -->
+        <aside class="fixed inset-y-0 left-0 z-40 flex flex-col border-r divider bg-elevated transition-[width,transform] duration-200"
+               :class="[collapsed ? 'w-[4.5rem]' : 'w-64', sidebarOpen ? 'translate-x-0' : (isMobile ? '-translate-x-full' : 'translate-x-0')]">
+          <!-- header：logo + 搜索 -->
+          <div class="flex h-16 items-center gap-2 border-b divider px-3">
+            <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-white shadow-sm"><iconify-icon icon="lucide:bike" class="size-5"></iconify-icon></span>
+            <span v-if="!collapsed" class="flex flex-col leading-none">
+              <span class="text-sm font-extrabold text-highlighted">潮汐出行</span>
+              <span class="text-[10px] text-muted">运营管理中台</span>
+            </span>
+            <button v-if="!collapsed" class="ml-auto grid size-8 place-items-center rounded-lg text-muted hover:bg-accented"><iconify-icon icon="lucide:search" class="size-4"></iconify-icon></button>
+          </div>
+          <!-- 导航 -->
+          <nav class="flex-1 space-y-0.5 overflow-y-auto p-2">
+            <template v-for="(group,gi) in navGroups" :key="gi">
+              <p v-if="!collapsed" class="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-dimmed">{{ group.title }}</p>
+              <a v-for="item in group.items" :key="item.label" :href="item.to"
+                 class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                 :class="item.active ? 'bg-primary/10 text-primary' : 'text-toned hover:bg-accented hover:text-default'">
+                <iconify-icon :icon="item.icon" class="size-5 shrink-0"></iconify-icon>
+                <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
+                <span v-if="!collapsed && item.badge" class="ml-auto badge bg-error/10 text-error">{{ item.badge }}</span>
+              </a>
+            </template>
+          </nav>
+          <!-- footer：用户 -->
+          <div class="border-t divider p-2">
+            <button class="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-accented">
+              <span class="grid size-8 shrink-0 place-items-center rounded-full bg-primary/15 text-primary"><iconify-icon icon="lucide:user-round" class="size-4"></iconify-icon></span>
+              <span v-if="!collapsed" class="flex flex-1 flex-col items-start leading-tight">
+                <span class="text-sm font-medium text-default">李调度</span>
+                <span class="text-[11px] text-muted">杭州城市站</span>
+              </span>
+              <iconify-icon v-if="!collapsed" icon="lucide:log-out" class="size-4 text-muted"></iconify-icon>
+            </button>
+          </div>
+        </aside>
+
+        <!-- 移动端遮罩 -->
+        <div v-if="sidebarOpen && isMobile" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/40 lg:hidden"></div>
+
+        <!-- ============ 主区域 ============ -->
+        <div class="flex min-w-0 flex-1 flex-col" :class="collapsed ? 'lg:pl-[4.5rem]' : 'lg:pl-64'">
+
+          <!-- Top Navbar -->
+          <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b divider bg-default/85 px-4 backdrop-blur">
+            <button @click="isMobile ? sidebarOpen=true : collapsed=!collapsed" class="grid size-9 place-items-center rounded-lg text-toned hover:bg-accented">
+              <iconify-icon icon="lucide:panel-left" class="size-5"></iconify-icon>
+            </button>
+            <h1 class="text-lg font-bold text-highlighted">运营总览</h1>
+            <!-- 时间范围 -->
+            <div class="ml-2 hidden items-center gap-1 rounded-lg bg-muted p-0.5 md:flex">
+              <button v-for="r in ranges" :key="r" @click="range=r"
+                class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+                :class="range===r ? 'bg-elevated text-primary shadow-sm' : 'text-muted hover:text-default'">{{ r }}</button>
+            </div>
+            <!-- 组织范围 -->
+            <button class="hidden items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-toned hover:bg-accented lg:flex">
+              <iconify-icon icon="lucide:building-2" class="size-4 text-muted"></iconify-icon>杭州 · 全城
+              <iconify-icon icon="lucide:chevron-down" class="size-4 text-muted"></iconify-icon>
+            </button>
+
+            <div class="ml-auto flex items-center gap-2">
+              <div class="relative hidden sm:block">
+                <iconify-icon icon="lucide:search" class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dimmed"></iconify-icon>
+                <input class="field h-9 w-44 pl-9 text-sm" placeholder="搜索车架号 / 订单 / 工单" />
+              </div>
+              <button class="relative grid size-9 place-items-center rounded-lg text-toned hover:bg-accented">
+                <iconify-icon icon="lucide:bell" class="size-5"></iconify-icon>
+                <span class="absolute right-2 top-2 size-2 rounded-full bg-error"></span>
+              </button>
+              <button @click="toggleDark()" class="grid size-9 place-items-center rounded-lg text-toned hover:bg-accented">
+                <iconify-icon :icon="dark ? 'lucide:sun' : 'lucide:moon'" class="size-5"></iconify-icon>
+              </button>
+              <button class="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-primary-600 md:flex">
+                <iconify-icon icon="lucide:plus" class="size-4"></iconify-icon>新建任务
+              </button>
+            </div>
+          </header>
+
+          <!-- Body -->
+          <main class="flex-1 space-y-5 p-4 sm:p-6">
+
+            <!-- 全局范围提示条 -->
+            <div class="flex flex-wrap items-center gap-2 rounded-xl card-muted px-4 py-2.5 text-sm">
+              <iconify-icon icon="lucide:info" class="size-4 text-info"></iconify-icon>
+              <span class="text-toned">统计口径：运营日（06:00–次日 06:00）· 时区 UTC+8 · 车型：混合车队（含可换电电单车）</span>
+              <span class="ml-auto badge bg-success/10 text-success"><iconify-icon icon="lucide:circle-check" class="size-3.5"></iconify-icon>数据实时 · 刷新 12s 前</span>
+            </div>
+
+            <!-- KPI 总览 -->
+            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+              <div v-for="k in kpis" :key="k.label" class="card p-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-muted">{{ k.label }}</span>
+                  <span class="grid size-8 place-items-center rounded-lg" :class="k.bg"><iconify-icon :icon="k.icon" class="size-4" :class="k.fg"></iconify-icon></span>
+                </div>
+                <p class="mt-2 text-2xl font-extrabold text-highlighted">{{ k.value }}</p>
+                <p class="mt-1 flex items-center gap-1 text-xs" :class="k.up ? 'text-success' : 'text-error'">
+                  <iconify-icon :icon="k.up ? 'lucide:trending-up' : 'lucide:trending-down'" class="size-3.5"></iconify-icon>
+                  {{ k.delta }} <span class="text-dimmed">较昨日</span>
+                </p>
+              </div>
+            </section>
+
+            <!-- 地图 + 告警 -->
+            <section class="grid gap-5 xl:grid-cols-3">
+              <!-- 实时监控地图 -->
+              <div class="card overflow-hidden xl:col-span-2">
+                <div class="flex items-center justify-between border-b divider px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <h2 class="font-bold text-highlighted">车辆实时监控地图</h2>
+                    <span class="badge bg-primary/10 text-primary">栅格热力</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[11px] text-muted">
+                    <span class="size-2 rounded-full bg-success"></span>可用
+                    <span class="ml-1 size-2 rounded-full bg-info"></span>使用中
+                    <span class="ml-1 size-2 rounded-full bg-warning"></span>低电
+                    <span class="ml-1 size-2 rounded-full bg-error"></span>故障
+                  </div>
+                </div>
+                <div class="map-grid relative h-80">
+                  <!-- 热力圈 -->
+                  <div class="absolute left-[28%] top-[32%] size-40 rounded-full bg-success/20 blur-2xl"></div>
+                  <div class="absolute right-[24%] bottom-[22%] size-44 rounded-full bg-warning/20 blur-2xl"></div>
+                  <!-- 车辆点 -->
+                  <button v-for="v in vehicles" :key="v.id" @click="selectedVehicle=v"
+                    class="absolute -translate-x-1/2 -translate-y-1/2 size-3 rounded-full ring-2 ring-white/70 dark:ring-black/40 transition-transform hover:scale-150"
+                    :class="{'bg-success':v.s==='free','bg-info':v.s==='use','bg-warning':v.s==='low','bg-error':v.s==='fault'}"
+                    :style="{left:v.x+'%',top:v.y+'%'}" :title="v.id"></button>
+                  <!-- 围栏示意 -->
+                  <div class="absolute left-[8%] top-[12%] h-28 w-36 rounded-xl border-2 border-dashed border-primary/50"></div>
+                  <span class="absolute left-[10%] top-[14%] rounded bg-primary/80 px-1.5 py-0.5 text-[10px] text-white">禁停区</span>
+                </div>
+                <div v-if="selectedVehicle" class="flex items-center justify-between border-t divider px-4 py-2.5 text-sm">
+                  <span class="font-mono text-toned">{{ selectedVehicle.id }}</span>
+                  <span class="flex items-center gap-3 text-muted">
+                    <span>SOC <b class="text-default">{{ selectedVehicle.soc }}%</b></span>
+                    <span :class="{'text-success':selectedVehicle.s==='free'}">{{ statusText[selectedVehicle.s] }}</span>
+                    <u-btn label="生成调度" color="primary" variant="soft" size="xs" icon="lucide:route" />
+                  </span>
+                </div>
+              </div>
+
+              <!-- 实时告警中心 -->
+              <div class="card flex flex-col">
+                <div class="flex items-center justify-between border-b divider px-4 py-3">
+                  <h2 class="font-bold text-highlighted">实时告警中心</h2>
+                  <span class="badge bg-error/10 text-error">{{ alerts.length }} 待处理</span>
+                </div>
+                <div class="flex-1 space-y-2 overflow-y-auto p-3">
+                  <div v-for="a in alerts" :key="a.id" class="flex gap-3 rounded-xl border p-3 transition-colors hover:bg-accented"
+                       :class="a.level==='P0' ? 'border-error/40 bg-error/5' : (a.level==='P1' ? 'border-warning/40 bg-warning/5' : 'border-muted')">
+                    <span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg" :class="a.level==='P0'?'bg-error/10 text-error':(a.level==='P1'?'bg-warning/10 text-warning':'bg-info/10 text-info')">
+                      <iconify-icon :icon="a.icon" class="size-4"></iconify-icon>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="badge" :class="a.level==='P0'?'bg-error text-white':(a.level==='P1'?'bg-warning text-white':'bg-info text-white')">{{ a.level }}</span>
+                        <span class="truncate text-sm font-medium text-default">{{ a.title }}</span>
+                      </div>
+                      <p class="mt-0.5 text-xs text-muted">{{ a.loc }} · {{ a.time }}</p>
+                      <div class="mt-1.5 flex gap-1.5">
+                        <u-btn label="派单" color="primary" variant="soft" size="xs" />
+                        <u-btn label="定位" color="neutral" variant="ghost" size="xs" icon="lucide:map-pin" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 车队健康 + 电池能源 -->
+            <section class="grid gap-5 xl:grid-cols-3">
+              <!-- 车辆状态分布 -->
+              <div class="card p-5">
+                <h2 class="font-bold text-highlighted">车辆状态分布</h2>
+                <p class="text-xs text-muted">全城 {{ totalVehicles.toLocaleString() }} 辆 · 实时</p>
+                <!-- 堆叠条 -->
+                <div class="mt-4 flex h-3 w-full overflow-hidden rounded-full">
+                  <span v-for="s in fleet" :key="s.label" class="h-full" :class="s.bar" :style="{width:s.pct+'%'}" :title="s.label"></span>
+                </div>
+                <ul class="mt-4 space-y-2 text-sm">
+                  <li v-for="s in fleet" :key="s.label" class="flex items-center gap-2">
+                    <span class="size-2.5 rounded-full" :class="s.dot"></span>
+                    <span class="text-toned">{{ s.label }}</span>
+                    <span class="ml-auto font-medium text-default">{{ s.count.toLocaleString() }}</span>
+                    <span class="w-12 text-right text-xs text-muted">{{ s.pct }}%</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- 电量(SOC)分布 -->
+              <div class="card p-5">
+                <h2 class="font-bold text-highlighted">电池电量（SOC）分布</h2>
+                <p class="text-xs text-muted">电单车 · 低电阈值 30%</p>
+                <div class="mt-4 space-y-3">
+                  <div v-for="b in soc" :key="b.label">
+                    <div class="flex items-center justify-between text-xs"><span class="text-toned">{{ b.label }}</span><span class="font-medium text-default">{{ b.pct }}%</span></div>
+                    <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div class="h-full rounded-full" :class="b.bar" :style="{width:b.pct+'%'}"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="rounded-xl bg-warning/10 p-3 text-center"><p class="text-xl font-bold text-warning">{{ lowBattery.toLocaleString() }}</p><p class="text-[11px] text-muted">低电车辆</p></div>
+                  <div class="rounded-xl bg-primary/10 p-3 text-center"><p class="text-xl font-bold text-primary">{{ swapDone }}</p><p class="text-[11px] text-muted">今日换电</p></div>
+                </div>
+              </div>
+
+              <!-- 供需调度 -->
+              <div class="card p-5">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-bold text-highlighted">供需调度态势</h2>
+                  <span class="badge bg-warning/10 text-warning"><iconify-icon icon="lucide:clock" class="size-3.5"></iconify-icon>高峰预警 17–19</span>
+                </div>
+                <p class="mt-1 text-xs text-muted">缺车区域 <b class="text-error">{{ gap.short }}</b> 个 · 堆车区域 <b class="text-info">{{ gap.pile }}</b> 个</p>
+                <ul class="mt-4 space-y-2.5">
+                  <li v-for="h in hotspots" :key="h.name" class="flex items-center gap-2 text-sm">
+                    <span class="grid size-7 place-items-center rounded-lg bg-error/10 text-error"><iconify-icon icon="lucide:arrow-down-to-line" class="size-4"></iconify-icon></span>
+                    <span class="flex-1 text-toned">{{ h.name }}</span>
+                    <span class="font-medium text-default">缺 {{ h.gap }} 辆</span>
+                    <u-btn label="调度" color="primary" variant="soft" size="xs" icon="lucide:route" />
+                  </li>
+                </ul>
+              </div>
+            </section>
+
+            <!-- 近7日趋势 + 工单看板 -->
+            <section class="grid gap-5 xl:grid-cols-3">
+              <div class="card p-5 xl:col-span-2">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-bold text-highlighted">订单趋势（近 7 日）</h2>
+                  <div class="flex items-center gap-3 text-xs text-muted">
+                    <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-primary"></span>骑行订单</span>
+                    <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-info"></span>换电工单</span>
+                  </div>
+                </div>
+                <div class="mt-5 flex h-40 items-end justify-between gap-3">
+                  <div v-for="d in trend" :key="d.day" class="flex flex-1 flex-col items-center gap-2">
+                    <div class="flex w-full flex-1 items-end justify-center gap-1">
+                      <div class="w-3 rounded-t bg-primary" :style="{height:d.orders+'%'}"></div>
+                      <div class="w-3 rounded-t bg-info" :style="{height:d.swap+'%'}"></div>
+                    </div>
+                    <span class="text-[11px] text-muted">{{ d.day }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 工单看板 -->
+              <div class="card p-5">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-bold text-highlighted">运维工单</h2>
+                  <span class="badge bg-error/10 text-error">{{ wo.overdue }} 超时</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2 text-center">
+                  <div class="rounded-xl bg-muted p-2.5"><p class="text-lg font-bold text-default">{{ wo.todo }}</p><p class="text-[11px] text-muted">待派</p></div>
+                  <div class="rounded-xl bg-muted p-2.5"><p class="text-lg font-bold text-primary">{{ wo.doing }}</p><p class="text-[11px] text-muted">执行中</p></div>
+                  <div class="rounded-xl bg-muted p-2.5"><p class="text-lg font-bold text-warning">{{ wo.review }}</p><p class="text-[11px] text-muted">待验收</p></div>
+                  <div class="rounded-xl bg-muted p-2.5"><p class="text-lg font-bold text-success">{{ wo.done }}</p><p class="text-[11px] text-muted">已完成</p></div>
+                </div>
+                <ul class="mt-4 space-y-2 text-sm">
+                  <li v-for="t in woList" :key="t.id" class="flex items-center gap-2 rounded-lg border p-2.5">
+                    <span class="badge" :class="t.c==='error'?'bg-error/10 text-error':(t.c==='warning'?'bg-warning/10 text-warning':'bg-info/10 text-info')">{{ t.type }}</span>
+                    <span class="flex-1 truncate text-toned">{{ t.desc }}</span>
+                    <span class="text-xs text-muted">{{ t.assignee }}</span>
+                  </li>
+                </ul>
+              </div>
+            </section>
+
+            <!-- 合规治理 + 快速工作台 -->
+            <section class="grid gap-5 xl:grid-cols-3">
+              <div class="card p-5">
+                <h2 class="font-bold text-highlighted">合规与治理概览</h2>
+                <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div class="rounded-xl bg-muted p-3"><p class="text-xl font-bold text-error">{{ compliance.violation }}</p><p class="text-[11px] text-muted">禁停/越界</p></div>
+                  <div class="rounded-xl bg-muted p-3"><p class="text-xl font-bold text-warning">{{ compliance.over }}</p><p class="text-[11px] text-muted">超投预警</p></div>
+                  <div class="rounded-xl bg-muted p-3"><p class="text-xl font-bold text-success">{{ compliance.coverage }}%</p><p class="text-[11px] text-muted">服务区覆盖</p></div>
+                </div>
+                <div class="mt-4 rounded-xl border border-muted p-3">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-toned">MDS / GBFS 数据共享</span>
+                    <span class="flex items-center gap-1 text-xs text-success"><iconify-icon icon="lucide:circle-check" class="size-3.5"></iconify-icon>健康</span>
+                  </div>
+                  <p class="mt-1 text-xs text-muted">最近上报 9s 前 · 延迟 P95 1.2s · 失败 0 次</p>
+                </div>
+              </div>
+
+              <!-- 快速工作台 -->
+              <div class="card p-5 xl:col-span-2">
+                <h2 class="font-bold text-highlighted">快速工作台</h2>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <button v-for="q in quick" :key="q.label" class="flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-colors hover:bg-accented hover:border-primary/40">
+                    <span class="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><iconify-icon :icon="q.icon" class="size-5"></iconify-icon></span>
+                    <span class="text-sm font-medium text-default">{{ q.label }}</span>
+                  </button>
+                </div>
+                <div class="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-muted p-3 text-sm">
+                  <iconify-icon icon="lucide:zap" class="size-4 text-primary"></iconify-icon>
+                  <span class="text-toned">批量指令：</span>
+                  <u-btn label="框选车辆" color="neutral" variant="soft" size="xs" icon="lucide:square-dashed" />
+                  <u-btn label="锁车/解锁" color="neutral" variant="soft" size="xs" icon="lucide:lock" />
+                  <u-btn label="降速禁用" color="neutral" variant="soft" size="xs" icon="lucide:gauge" />
+                  <u-btn label="生成调度任务" color="primary" variant="soft" size="xs" icon="lucide:route" />
+                </div>
+              </div>
+            </section>
+
+            <footer class="flex flex-col items-center justify-between gap-2 border-t divider pt-5 text-xs text-dimmed sm:flex-row">
+              <span>潮汐出行 · 城市运营管理后台 · 杭州城市站</span>
+              <span>数据延迟 P95 ≤ 10s · 合规上报 MDS/GBFS · © 2026 潮汐科技</span>
+            </footer>
+          </main>
+        </div>
+      </div>
+    </u-app>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
+
+    const app = createApp({
+      setup() {
+        const dark = ref(false);
+        const toggleDark = () => {
+          dark.value=!dark.value;
+          document.documentElement.classList.toggle('dark',dark.value);
+          localStorage.setItem('nuxt-ui-color-mode', dark.value?'dark':'light');
+        };
+        const saved = localStorage.getItem('nuxt-ui-color-mode');
+        dark.value = saved ? saved==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', dark.value);
+
+        const collapsed = ref(false);
+        const sidebarOpen = ref(false);
+        const isMobile = ref(window.innerWidth < 1024);
+        const onResize = () => { isMobile.value = window.innerWidth < 1024; if(!isMobile.value) sidebarOpen.value=false; };
+        window.addEventListener('resize', onResize);
+        onUnmounted(()=>window.removeEventListener('resize',onResize));
+
+        const range = ref('今日');
+        const ranges = ['今日','昨日','本周','本月','自定义'];
+
+        const navGroups = [
+          { title:'运营', items:[
+            { label:'运营总览', icon:'lucide:layout-dashboard', to:'#', active:true },
+            { label:'地图调度中心', icon:'lucide:map', to:'#' },
+            { label:'车队资产', icon:'lucide:bike', to:'#' },
+            { label:'电池与能源', icon:'lucide:battery-charging', to:'#' },
+          ]},
+          { title:'执行', items:[
+            { label:'运维工单', icon:'lucide:list-checks', to:'#', badge:'12' },
+            { label:'规则与区域', icon:'lucide:hexagon', to:'#' },
+            { label:'合规监管', icon:'lucide:shield-check', to:'#', badge:'3' },
+          ]},
+          { title:'分析', items:[
+            { label:'数据报表', icon:'lucide:bar-chart-3', to:'#' },
+            { label:'组织与权限', icon:'lucide:users', to:'#' },
+            { label:'系统配置', icon:'lucide:settings', to:'#' },
+          ]},
+        ];
+
+        const kpis = [
+          { label:'今日订单', value:'86,420', delta:'+12.4%', up:true, icon:'lucide:shopping-cart', bg:'bg-primary/10', fg:'text-primary' },
+          { label:'收入 GMV', value:'¥512.6k', delta:'+8.1%', up:true, icon:'lucide:banknote', bg:'bg-success/10', fg:'text-success' },
+          { label:'全城可用率', value:'91.3%', delta:'+1.6%', up:true, icon:'lucide:gauge', bg:'bg-info/10', fg:'text-info' },
+          { label:'活跃车辆', value:'24,180', delta:'-2.3%', up:false, icon:'lucide:bike', bg:'bg-primary/10', fg:'text-primary' },
+          { label:'低电车辆', value:'1,842', delta:'+5.0%', up:false, icon:'lucide:battery-warning', bg:'bg-warning/10', fg:'text-warning' },
+          { label:'待处理工单', value:'128', delta:'+9.0%', up:false, icon:'lucide:alert-triangle', bg:'bg-error/10', fg:'text-error' },
+        ];
+
+        // 地图车辆点
+        const st = ['free','use','low','fault'];
+        const vehicles = Array.from({length:46}).map((_,i)=>({
+          id:'HZ-'+(10000+i), x:Math.round(8+Math.random()*84), y:Math.round(10+Math.random()*78),
+          s: st[Math.random()<0.55?0:(Math.random()<0.6?1:(Math.random()<0.6?2:3))], soc:Math.round(Math.random()*100)
+        }));
+        const statusText = { free:'可用', use:'使用中', low:'低电', fault:'故障' };
+        const selectedVehicle = ref(null);
+
+        const alerts = [
+          { id:1, level:'P0', icon:'lucide:alert-octagon', title:'禁停区违规聚集', loc:'西湖区·湖滨步行街', time:'2分钟前' },
+          { id:2, level:'P1', icon:'lucide:battery-warning', title:'低电车辆跌破阈值', loc:'滨江区·星光大道', time:'6分钟前' },
+          { id:3, level:'P1', icon:'lucide:wifi-off', title:'设备离线超 1 小时', loc:'拱墅区·运河广场', time:'11分钟前' },
+          { id:4, level:'P2', icon:'lucide:arrow-up-from-line', title:'堆车区域告警', loc:'上城区·火车站东', time:'18分钟前' },
+          { id:5, level:'P2', icon:'lucide:bike', title:'疑似倒地未骑行', loc:'余杭区·未来科技城', time:'24分钟前' },
+        ];
+
+        const totalVehicles = 26840;
+        const fleetRaw = [ {label:'可用',count:24500,dot:'bg-success',bar:'bg-success'}, {label:'使用中',count:1600,dot:'bg-info',bar:'bg-info'}, {label:'低电',count:1842,dot:'bg-warning',bar:'bg-warning'}, {label:'故障',count:540,dot:'bg-error',bar:'bg-error'}, {label:'离线',count:210,dot:'bg-neutral-400',bar:'bg-neutral-400'}, {label:'回收中',count:148,dot:'bg-neutral-500',bar:'bg-neutral-500'} ];
+        const fleet = fleetRaw.map(s=>({...s, pct:Math.round(s.count/totalVehicles*1000)/10}));
+
+        const soc = [
+          { label:'0–10%', pct:6, bar:'bg-error' },
+          { label:'10–30%', pct:14, bar:'bg-warning' },
+          { label:'30–60%', pct:38, bar:'bg-info' },
+          { label:'60–100%', pct:42, bar:'bg-success' },
+        ];
+        const lowBattery = 1842; const swapDone = 3260;
+
+        const gap = { short:7, pile:4 };
+        const hotspots = [
+          { name:'西湖区·龙翔桥地铁站', gap:120 },
+          { name:'上城区·湖滨银泰', gap:96 },
+          { name:'滨江区·星光大道', gap:74 },
+          { name:'拱墅区·运河上街', gap:58 },
+        ];
+
+        const trend = [
+          { day:'周一', orders:62, swap:40 },{ day:'周二', orders:70, swap:46 },{ day:'周三', orders:58, swap:38 },
+          { day:'周四', orders:76, swap:52 },{ day:'周五', orders:88, swap:60 },{ day:'周六', orders:100, swap:72 },{ day:'周日', orders:86, swap:64 },
+        ].map(d=>({...d, orders:Math.round(d.orders*0.9), swap:Math.round(d.swap*0.9)}));
+
+        const wo = { todo:38, doing:54, review:21, done:312, overdue:6 };
+        const woList = [
+          { id:1, type:'换电', c:'warning', desc:'滨江·低电批量换电', assignee:'王师傅' },
+          { id:2, type:'维修', c:'error', desc:'HZ-10432 锁具故障', assignee:'运维A组' },
+          { id:3, type:'违停', c:'info', desc:'湖滨·禁停区处置', assignee:'李调度' },
+          { id:4, type:'巡检', c:'info', desc:'余杭·车辆健康巡检', assignee:'夜班' },
+        ];
+
+        const compliance = { violation:142, over:2, coverage:93 };
+
+        const quick = [
+          { label:'创建调度任务', icon:'lucide:route' },
+          { label:'新建换电任务', icon:'lucide:battery-charging' },
+          { label:'发起巡检', icon:'lucide:clipboard-check' },
+          { label:'维修工单', icon:'lucide:wrench' },
+          { label:'车辆检索', icon:'lucide:search' },
+          { label:'围栏快速编辑', icon:'lucide:hexagon' },
+          { label:'阈值配置', icon:'lucide:sliders-horizontal' },
+          { label:'发布运营公告', icon:'lucide:megaphone' },
+        ];
+
+        return { dark, toggleDark, collapsed, sidebarOpen, isMobile, range, ranges, navGroups,
+          kpis, vehicles, statusText, selectedVehicle, alerts, totalVehicles, fleet, soc, lowBattery, swapDone,
+          gap, hotspots, trend, wo, woList, compliance, quick };
+      }
+    });
+
+    app.component('u-btn', {
+      props: { color:{default:'primary'}, variant:{default:'solid'}, size:{default:'md'}, block:Boolean, icon:String, trailingIcon:String, label:String, href:String, to:String },
+      computed: {
+        tag(){ return this.href||this.to?'a':'button'; },
+        cls(){
+          const sizes={xs:'h-7 px-2.5 text-xs',sm:'h-8 px-3 text-sm',md:'h-9 px-4 text-sm',lg:'h-10 px-5 text-base'};
+          const base='inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-colors select-none whitespace-nowrap';
+          const map={
+            solid:{ primary:'bg-primary text-white shadow-sm hover:bg-primary-600', neutral:'bg-neutral-900 text-white hover:bg-neutral-800', error:'bg-error text-white hover:bg-error-600', success:'bg-success text-white hover:bg-success-600' },
+            soft:{ primary:'bg-primary/10 text-primary hover:bg-primary/20', neutral:'bg-neutral-100 dark:bg-neutral-800 text-default hover:bg-neutral-200 dark:hover:bg-neutral-700', error:'bg-error/10 text-error hover:bg-error/20', success:'bg-success/10 text-success hover:bg-success/20' },
+            outline:{ primary:'ring-1 ring-inset ring-primary/50 text-primary hover:bg-primary/10', neutral:'ring-1 ring-inset ring-neutral-300 dark:ring-neutral-700 text-default hover:bg-neutral-100 dark:hover:bg-neutral-800' },
+            ghost:{ primary:'text-primary hover:bg-primary/10', neutral:'text-default hover:bg-neutral-100 dark:hover:bg-neutral-800' },
+          };
+          return [base, sizes[this.size]||sizes.md, (map[this.variant]||map.solid)[this.color]||map.solid.primary, this.block?'w-full':''];
+        }
+      },
+      template:`<component :is="tag" :href="href||(to?to:null)" :class="cls">
+        <iconify-icon v-if="icon" :icon="icon" class="size-4"></iconify-icon>
+        <span v-if="label">{{label}}</span>
+        <iconify-icon v-if="trailingIcon" :icon="trailingIcon" class="size-4"></iconify-icon>
+      </component>`
+    });
+    app.component('u-app', { template:'<div class="min-h-screen bg-default text-default"><slot/></div>' });
+    app.mount('#app');
+  </script>
+</body>
+</html>
