@@ -37,6 +37,7 @@ client_level: developer
 | 2026-06-17 | Gemini 3 补测完成 + 移除"不使用skills"基线 | 388 |
 | 2026-06-18 | GLM 5.2 补测集成部署 | 430 |
 | 2026-07 | Hy3 集成 + 缩略图改版（png→webp） | 484（本地）/ 526（pages 实有） |
+| 2026-08-10 | 目录重组（05-报告/ → cloudflarepage展厅/）+ kimi/glm 重命名 + 交接文档同步，已推送 GitHub；Mapbox 假 token 历史重写修复 | — |
 
 ## GLM 版本说明
 

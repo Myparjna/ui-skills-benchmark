@@ -16,8 +16,8 @@ graph LR
     end
     subgraph 生产层
         G --> H1[03-产出/{模型}/源产出]
-        H1 -->|复制| H2[05-报告/展厅/pages/展厅副本]
-        H1 -->|截图脚本 Playwright| H3[05-报告/展厅/assets/thumbnails/缩略图]
+        H1 -->|复制| H2[cloudflarepage展厅/pages/展厅副本]
+        H1 -->|截图脚本 Playwright| H3[cloudflarepage展厅/assets/thumbnails/缩略图]
     end
     subgraph 展厅层
         H2 --> I[index.html 主页面]
@@ -36,10 +36,10 @@ graph LR
 | **技能库** | 提供 14 款 design skill 定义 | `01-技能/已安装技能/skills/` | 外部 GitHub 仓库 | AI 模型生成时参考 | `01-技能/版本锁定.json`（哈希锁定） | 无 |
 | **输入产品文档** | 3 个测评场景的产品需求 | `02-输入/产品说明文档/*.md` | — | AI 模型生成时参考 | 星空航空官网 / 充电桩小程序 / 两轮运营后台 | 无 |
 | **模型产出** | 各模型生成的 HTML（测评核心数据） | `03-产出/{模型}/` | AI 模型 + skill + 产品文档 | 展厅副本、缩略图 | 命名规则因模型而异（见下） | 无 |
-| **展厅页面副本** | 供展厅 iframe 加载的 HTML | `05-报告/展厅/pages/` | 03-产出 复制 | index.html | 文件名加模型前缀 | 无 |
+| **展厅页面副本** | 供展厅 iframe 加载的 HTML | `cloudflarepage展厅/pages/` | 03-产出 复制 | index.html | 文件名加模型前缀 | 无 |
 | **缩略图生成** | 截图脚本 | `TempScr/shot_*.py`、`TempScr/screenshot_*.py` | 03-产出 HTML | `assets/thumbnails/*.webp` | Python 3.12 + Playwright | 无 |
-| **展厅主页面** | 聚合展示与筛选 | `05-报告/展厅/index.html` | pages/ + thumbnails/ | Cloudflare Pages | 13 个模型配置 + getFileMap 映射 | 无 |
-| **单页预览器** | 全尺寸预览单页 | `05-报告/展厅/view.html` | pages/ 任意 HTML | 浏览器 | URL 参数指定页面 | 无 |
+| **展厅主页面** | 聚合展示与筛选 | `cloudflarepage展厅/index.html` | pages/ + thumbnails/ | Cloudflare Pages | 13 个模型配置 + getFileMap 映射 | 无 |
+| **单页预览器** | 全尺寸预览单页 | `cloudflarepage展厅/view.html` | pages/ 任意 HTML | 浏览器 | URL 参数指定页面 | 无 |
 
 ## 关键目录
 
@@ -48,10 +48,10 @@ graph LR
 | `01-技能/已安装技能/skills/` | 14 款 skill 的 SKILL.md | **只读参考**，不随测评修改；版本由 `版本锁定.json` 记录 |
 | `02-输入/产品说明文档/` | 3 个测评场景需求文档 | 修改会改变所有模型产出，需先确认 |
 | `03-产出/{模型}/` | 各模型源产出 | **核心数据**，删除前备份；新增模型在此建新目录 |
-| `05-报告/展厅/pages/` | 展厅 HTML 副本 | 与 03-产出 同步维护 |
-| `05-报告/展厅/assets/thumbnails/` | webp 缩略图 | 由截图脚本生成，可随时重截 |
-| `05-报告/展厅/index.html` | 展厅主页面 | 新增模型需同步 8 处注册点 |
-| `05-报告/展厅/view.html` | 单页预览器 | 少改动 |
+| `cloudflarepage展厅/pages/` | 展厅 HTML 副本 | 与 03-产出 同步维护 |
+| `cloudflarepage展厅/assets/thumbnails/` | webp 缩略图 | 由截图脚本生成，可随时重截 |
+| `cloudflarepage展厅/index.html` | 展厅主页面 | 新增模型需同步 8 处注册点 |
+| `cloudflarepage展厅/view.html` | 单页预览器 | 少改动 |
 | `TempScr/` | 临时截图脚本 | 一次性脚本，可清理 |
 | `ScreenShot/` | 开发验证截图 | 运营残留，可清理 |
 
@@ -61,7 +61,7 @@ graph LR
 |---|---|---|---|
 | Kimi 2.5 | `kimi2.5/` | 45 | `{skill}_{scene}.html` |
 | Kimi K2.6 | `kimi-k2.6/` | 42 | `kimi-k2.6-{skill}-{scene}.html` |
-| Kimi K3 | `kimi-k3/` | 12 | `kimi-k3-{skill}-{scene}.html` |
+| Kimi K3 | `kimi-k3/` | 12 | `kimi-k3-{skill}-{scene}.html`（4 skill × 3 场景） |
 | DeepSeek V4 Flash0731 | `deepseek/` | 42 | `deepseek-{skill}-{scene}.html` |
 | Mimo V2 Omni | `mimoV2omni/` | 37 | `{catId}-{scene}.html`（特殊映射） |
 | Mimo V2.5 | `mimoV2.5/` | 42 | `mimoV25-{skill}-{scene}.html` |
@@ -78,13 +78,13 @@ graph LR
 
 ## 关键调用链
 
-1. **新模型加测**：产品文档（`02-输入/产品说明文档/`）+ design skill（`01-技能/已安装技能/skills/`）→ AI 模型生成 → `03-产出/{模型}/{模型}-{skill}-{scene}.html` → 复制到 `05-报告/展厅/pages/` → `index.html` `getFileMap()`（`05-报告/展厅/index.html:183`）映射 → `buildItems()`（`:301`）→ 展厅卡片
-2. **缩略图生成**：`03-产出/{模型}/*.html` → Playwright 脚本（`TempScr/shot_showcase.py` / `TempScr/screenshot_kimi_k3_batch2.py`，桌面 1280×720 / 移动 390×844@2x）→ `05-报告/展厅/assets/thumbnails/{模型}-*.webp`
+1. **新模型加测**：产品文档（`02-输入/产品说明文档/`）+ design skill（`01-技能/已安装技能/skills/`）→ AI 模型生成 → `03-产出/{模型}/{模型}-{skill}-{scene}.html` → 复制到 `cloudflarepage展厅/pages/` → `index.html` `getFileMap()`（`cloudflarepage展厅/index.html:183`）映射 → `buildItems()`（`:301`）→ 展厅卡片
+2. **缩略图生成**：`03-产出/{模型}/*.html` → Playwright 脚本（`TempScr/shot_showcase.py` / `TempScr/screenshot_kimi_k3_batch2.py`，桌面 1280×720 / 移动 390×844@2x）→ `cloudflarepage展厅/assets/thumbnails/{模型}-*.webp`
 3. **展厅浏览**：`index.html` 模型按钮（`:48-58`）→ `getCurrentCategories()`（`:377-385`）→ `renderGallery()` → iframe 加载 `pages/{file}` 或 `view.html?src=...`
 
 ## 共享状态与数据边界
 
-- **无数据库、无缓存服务**。唯一共享"状态"是文件系统：`03-产出/` 与 `05-报告/展厅/pages/` 是**冗余副本**，需保持同步（复制操作完成后再截图/部署）。
+- **无数据库、无缓存服务**。唯一共享"状态"是文件系统：`03-产出/` 与 `cloudflarepage展厅/pages/` 是**冗余副本**，需保持同步（复制操作完成后再截图/部署）。
 - `index.html` 内部的 `categories` 数组是**唯一事实来源**，决定展厅展示哪些 skill；新增模型必须同步 8 处注册点，否则页面不显示。
 - 截图脚本依赖 Chrome 路径 `C:\Program Files\Google\Chrome\Application\chrome.exe`（环境特定，非可移植）。
 - 并发约束：多个 subagent 并行生成时使用不同输出目录，避免文件冲突（Hy3 曾用 14 个隔离 subagent）。

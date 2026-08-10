@@ -19,12 +19,12 @@ client_level: developer
 
 | 业务流程/模块 | 风险 | 验证方式 | 通过标准 | 证据位置 |
 |---|---|---|---|---|
-| 展厅筛选逻辑（模型/场景/skill 组合） | 高（单文件 SPA，8 处注册点） | 浏览器人工点选 | 13 个模型按钮均可切换，组合筛选无空结果 | `05-报告/展厅/index.html` |
-| 单页预览器（view.html iframe） | 中 | 浏览器打开任意页面 | iframe 正常渲染，无空白 | `05-报告/展厅/view.html` |
-| 缩略图显示 | 中 | 浏览器浏览展厅卡片 | 540 张 webp 全部可加载 | `05-报告/展厅/assets/thumbnails/` |
+| 展厅筛选逻辑（模型/场景/skill 组合） | 高（单文件 SPA，8 处注册点） | 浏览器人工点选 | 13 个模型按钮均可切换，组合筛选无空结果 | `cloudflarepage展厅/index.html` |
+| 单页预览器（view.html iframe） | 中 | 浏览器打开任意页面 | iframe 正常渲染，无空白 | `cloudflarepage展厅/view.html` |
+| 缩略图显示 | 中 | 浏览器浏览展厅卡片 | 540 张 webp 全部可加载 | `cloudflarepage展厅/assets/thumbnails/` |
 | 页面 HTML 渲染（无白屏） | 高 | 截图脚本 + 浏览器检查 | 桌面 1280×720 / 移动 390×844 无白屏 | 截图脚本输出 |
 | 部署 | 中 | wrangler deploy + 线上访问 | 线上页面与本地一致 | Cloudflare Pages |
-| 新模型注册 | 高 | 按 8 处注册点核对 | 模型按钮出现、分类可筛、文件可映射 | `05-报告/展厅/index.html:48-58,183,301,334-385,481-492` |
+| 新模型注册 | 高 | 按 8 处注册点核对 | 模型按钮出现、分类可筛、文件可映射 | `cloudflarepage展厅/index.html:48-58,183,301,334-385,481-492` |
 
 ## 自动化测试
 
@@ -41,7 +41,7 @@ client_level: developer
 
 以下为新增模型/改动展厅时必须执行的浏览器人工验证（本项目唯一有效验证手段）：
 
-1. **启动本地服务器**：`cd 05-报告/展厅 && python -m http.server 8766`，访问 http://localhost:8766
+1. **启动本地服务器**：`cd cloudflarepage展厅 && python -m http.server 8766`，访问 http://localhost:8766
 2. **模型切换**：逐个点击 13 个模型按钮，确认卡片与缩略图正确显示
 3. **组合筛选**：模型 + skill + 场景任意组合筛选，确认无空结果、无重复
 4. **单页预览**：点击卡片预览，确认 iframe 加载对应 HTML，无白屏（尤其 React+Babel 页面，需 importmap 修复）

@@ -33,7 +33,7 @@ client_level: developer
 | Qwen 3.7 Plus | 生成前端页面 HTML | 42 | Task 子代理并行生成 |
 | Hy3（助手自驱） | 生成前端页面 HTML | 42 | 14 个隔离 subagent 并行生成 |
 
-**检测到的模型名引用**：扫描在 `05-报告/展厅/pages/kimi-k3-ui-ux-pro-max-airline.html` 检测到 `o1`/`o3` 字样（页面正文提及 OpenAI 模型名，属页面内容，非运行时 AI 调用）。
+**检测到的模型名引用**：扫描在 `cloudflarepage展厅/pages/kimi-k3-ui-ux-pro-max-airline.html` 检测到 `o1`/`o3` 字样（页面正文提及 OpenAI 模型名，属页面内容，非运行时 AI 调用）。
 
 ## 使用的 SDK
 

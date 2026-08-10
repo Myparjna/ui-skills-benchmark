@@ -10,7 +10,7 @@ client_level: developer
 
 **Cloudflare Pages** — 静态站点托管
 
-通过 Wrangler CLI 直接部署 `05-报告/展厅/` 目录到 Cloudflare Pages。部署目标分支为 **production**（线上生产版本），旧文档中的 `--branch=main` 已废弃。
+通过 Wrangler CLI 直接部署 `cloudflarepage展厅/` 目录到 Cloudflare Pages。部署目标分支为 **production**（线上生产版本），旧文档中的 `--branch=main` 已废弃。
 
 ## 首次完整部署演练
 
@@ -25,7 +25,7 @@ client_level: developer
 
 ```bash
 # 1. 进入展厅目录
-cd "05-报告/展厅"
+cd "cloudflarepage展厅"
 
 # 2. 部署到 Cloudflare Pages 生产分支
 npx wrangler pages deploy . --project-name=frontend-design-skills-showcase --branch=production

@@ -32,19 +32,19 @@ npx wrangler pages deployment rollback --project-name=frontend-design-skills-sho
 git status --short
 
 # 丢弃未提交改动（谨慎，先确认无需要的改动）
-git checkout -- "05-报告/展厅/index.html"
+git checkout -- "cloudflarepage展厅/index.html"
 
 # 从历史版本恢复
 git log --oneline
-git checkout <commit-hash> -- "05-报告/展厅/pages/"
+git checkout <commit-hash> -- "cloudflarepage展厅/pages/"
 ```
 
 ## 常见故障处置
 
 | 症状 | 可能原因 | 处置步骤 |
 |---|---|---|
-| 展厅白屏 | index.html 部署失败或文件损坏 | 1. 检查 `05-报告/展厅/index.html` 是否完整 2. 重新部署 `npx wrangler pages deploy . --project-name=frontend-design-skills-showcase --branch=production` |
-| 统计数字不正确 | index.html 中的数字未更新 | 编辑 `05-报告/展厅/index.html` header 区统计文本，重新部署 |
+| 展厅白屏 | index.html 部署失败或文件损坏 | 1. 检查 `cloudflarepage展厅/index.html` 是否完整 2. 重新部署 `npx wrangler pages deploy . --project-name=frontend-design-skills-showcase --branch=production` |
+| 统计数字不正确 | index.html 中的数字未更新 | 编辑 `cloudflarepage展厅/index.html` header 区统计文本，重新部署 |
 | 缩略图不显示 | webp 文件缺失或路径错误 | 1. 检查 `assets/thumbnails/` 目录 2. 重新运行截图脚本（Python 3.12） |
 | 页面白屏（React+Babel） | importmap 缺失 `react/jsx-runtime` | 注入 importmap shim（`{"imports":{"react/jsx-runtime":"data:text/javascript,export const jsx=React.createElement;..."}}`）并给 `<script type="text/babel">` 加 `data-type="module"`，重截缩略图（历史修复脚本已清理，逻辑见交接文档） |
 | 部署失败（403） | API Token 过期或权限不足 | 1. 在 Cloudflare Dashboard 重新生成 Token 2. 更新环境变量 `CLOUDFLARE_API_TOKEN` |

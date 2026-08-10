@@ -24,7 +24,7 @@ graph LR
 
 **数据流向**：
 1. AI 模型（Kimi/Gemini/DeepSeek/GLM/GPT 等）在 design skill 驱动下生成 HTML 页面 → 存入 `03-产出/` 目录
-2. HTML 文件复制到 `05-报告/展厅/pages/`，运行截图脚本生成缩略图 → 存入 `assets/thumbnails/*.webp`
+2. HTML 文件复制到 `cloudflarepage展厅/pages/`，运行截图脚本生成缩略图 → 存入 `assets/thumbnails/*.webp`
 3. 开发者通过 Wrangler CLI 将展厅目录部署到 Cloudflare Pages
 4. 用户通过 `https://frontend-design-skills-showcase.pages.dev` 访问展厅，按模型/场景/技能筛选浏览
 
@@ -61,7 +61,7 @@ graph LR
 │   ├── 星空航空公司官网说明文档.md
 │   ├── 电动车充电桩小程序产品说明文档.md
 │   └── 共享两轮城市运营管理后台说明文档.md
-├── 03-产出/                          # 各模型的 HTML 产出（核心数据，16 个目录）
+├── 03-产出/                          # 各模型的 HTML 产出（核心数据，13 个目录）
 │   ├── kimi2.5/                      # Kimi 2.5 (45 页，原 kimi/)
 │   ├── mimoV2omni/                   # Mimo V2 Omni (37 页)
 │   ├── glm5.1/                       # GLM 5.1 (40 页，原 glm/)
@@ -70,13 +70,12 @@ graph LR
 │   ├── minimaxM3/                    # MiniMax M3 (42 页)
 │   ├── deepseek/                     # DeepSeek V4 Flash0731 (42 页，已重做)
 │   ├── kimi-k2.6/                    # Kimi K2.6 (42 页)
-│   ├── kimi-k3/                      # Kimi K3 (12 页)
+│   ├── kimi-k3/                      # Kimi K3 (12 页，4 skill × 3 场景)
 │   ├── qwen3.7-plus/                # Qwen 3.7 Plus (42 页)
 │   ├── glm5.2/                       # GLM 5.2 (42 页)
 │   ├── hy3/                          # Hy3 助手自驱 (42 页)
-│   ├── gpt5.6-terra/                 # GPT-5.6 Terra (42 页)
-│   └── gemini3.1pro/                 # Gemini 3.1 Pro (9 页，中文命名，未集成展厅)
-├── 05-报告/展厅/                     # 展厅静态站点（部署单元）
+│   └── gpt5.6-terra/                 # GPT-5.6 Terra (42 页)
+├── cloudflarepage展厅/                     # 展厅静态站点（部署单元）
 │   ├── index.html                    # 主页面，含模型/场景/技能筛选逻辑（已注册 13 个模型）
 │   ├── view.html                     # 单页预览器
 │   ├── pages/                        # HTML 副本（526 文件，含未注册残留）

@@ -8,10 +8,10 @@ client_level: developer
 
 ## 待确认问题
 
-- [需向交接人确认: 展线上页面数/模型数的统计基准——本地 index.html 显示 484 页 / 13 模型，但 05-报告/展厅/pages/ 实际含 526 个文件（含未注册的 gemini3.1pro 与部分残留），线上部署版本以哪个为准？]
+- [需向交接人确认: 展线上页面数/模型数的统计基准——本地 index.html 显示 484 页 / 13 模型，但 cloudflarepage展厅/pages/ 实际含 526 个文件（含未注册的 gemini3.1pro 与部分残留），线上部署版本以哪个为准？]
 - [需向交接人确认: gemini3.1pro 的 9 页（03-产出/gemini3.1pro/，中文命名）是否计划纳入展厅？当前未注册（index.html 无对应分支）。]
-- [需向交接人确认: 未提交的 198 项改动（deepseek 42 页重做、kimi-k3 12 页新增、缩略图 webp 改版、index.html 更新）是否已按计划提交？]
 - [需向交接人确认: Cloudflare 账号与 GitHub 仓库归属（见 INFRASTRUCTURE.md）。]
+- [需向交接人确认: 展厅中 GLM 5.1 与 GLM 5.2 并行展示的定位是否清晰（均为独立模型按钮）]
 
 ## 项目简介
 
@@ -46,7 +46,7 @@ client_level: developer
 
 ```bash
 # 1. 进入展厅目录
-cd "05-报告/展厅"
+cd "cloudflarepage展厅"
 
 # 2. 启动本地 HTTP 服务器
 python -m http.server 8766
@@ -58,7 +58,7 @@ npx serve .
 ```
 
 **可用脚本**:
-无 npm scripts（纯静态项目）；截图脚本见 `05-报告/展厅/screenshot_*.py`
+无 npm scripts（纯静态项目）；截图脚本见 `TempScr/shot_*.py`（如 `shot_showcase.py`、`shot_deepseek_v4flash.py`、`screenshot_kimi_k3_batch2.py`）
 
 ## 速查卡
 
@@ -66,11 +66,11 @@ npx serve .
 |---|---|
 | 在线展厅 | https://frontend-design-skills-showcase.pages.dev |
 | 生产别名 | https://production.frontend-design-skills-showcase.pages.dev |
-| 部署命令 | `cd 05-报告/展厅 && npx wrangler pages deploy . --project-name=frontend-design-skills-showcase` |
-| 本地预览 | `cd 05-报告/展厅 && python -m http.server 8766` → http://localhost:8766 |
+| 部署命令 | `cd cloudflarepage展厅 && npx wrangler pages deploy . --project-name=frontend-design-skills-showcase` |
+| 本地预览 | `cd cloudflarepage展厅 && python -m http.server 8766` → http://localhost:8766 |
 | 本地服务器端口 | 8766（展厅）/ 8080（产出） |
 | 当前模型数 | 13（展厅 index.html 注册） |
-| 当前缩略图 | 540 张 webp（`05-报告/展厅/assets/thumbnails/`） |
+| 当前缩略图 | 540 张 webp（`cloudflarepage展厅/assets/thumbnails/`） |
 | 截图环境 | 系统 Python 3.12 + Playwright（`AppData\Local\Programs\Python\Python312\python.exe`） |
 | GitHub 仓库 | https://github.com/Myparjna/ui-skills-benchmark |
 | 部署 Token | `CLOUDFLARE_API_TOKEN`（Cloudflare Dashboard → My Profile → API Tokens） |
