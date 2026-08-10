@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>星充电 — 找桩充电小程序</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#1677FF;
+  --primary-press:#0F5CD6;
+  --free:#52C41A;
+  --busy:#FA8C16;
+  --fault:#F5222D;
+  --unknown:#8C8C8C;
+  --ink:#1F2733;
+  --ink-2:#48505E;
+  --muted:#7A8494;
+  --bg:#F5F7FA;
+  --card:#FFFFFF;
+  --line:#E8ECF2;
+  --grad-scan:linear-gradient(135deg,#1677FF 0%,#00C9A7 100%);
+  --shadow-card:0 1px 3px rgba(22,52,120,.06),0 6px 20px -6px rgba(22,52,120,.10);
+  --shadow-float:0 8px 28px -6px rgba(22,119,255,.35);
+  --r-card:12px;
+  --r-btn:8px;
+  --r-tag:4px;
+  --f-num:"Manrope","PingFang SC",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  background:#E4E8EE;color:var(--ink);line-height:1.55;
+  display:flex;justify-content:center;min-height:100dvh;
+}
+:focus-visible{outline:2.5px solid var(--primary);outline-offset:2px;border-radius:4px}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+img,svg{display:block}
+
+/* ============ Phone frame ============ */
+.phone{
+  position:relative;width:390px;height:844px;max-height:100dvh;
+  background:var(--bg);overflow:hidden;flex-shrink:0;
+  box-shadow:0 24px 80px -20px rgba(10,25,60,.45);
+}
+@media(min-width:430px) and (min-height:880px){.phone{border-radius:36px;margin:20px 0;border:10px solid #10151F}}
+.status-bar{
+  position:absolute;top:0;left:0;right:0;height:44px;z-index:60;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 22px;font-size:14px;font-weight:600;color:#fff;
+  font-family:var(--f-num);pointer-events:none;
+}
+.status-bar .icons{display:flex;gap:6px;align-items:center}
+
+/* ============ Screen pages ============ */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ============ HOME / Map ============ */
+#home{background:#DCE6F0}
+.map-area{position:relative;height:460px;flex:none;overflow:hidden}
+.map-svg{position:absolute;inset:0;width:100%;height:100%}
+.map-topbar{position:absolute;top:44px;left:0;right:0;z-index:30;padding:12px 16px 0}
+.search-bar{
+  display:flex;align-items:center;gap:10px;background:var(--card);
+  border-radius:10px;padding:0 14px;height:44px;box-shadow:var(--shadow-card);
+  font-size:14px;color:var(--muted);
+}
+.search-bar span{flex:1}
+.loc-badge{position:absolute;top:104px;left:16px;z-index:30;display:flex;gap:8px}
+.loc-badge .chip{
+  display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;
+  background:rgba(255,255,255,.94);border-radius:999px;font-size:12px;font-weight:600;
+  color:var(--ink-2);box-shadow:var(--shadow-card);
+}
+/* 桩位标记 */
+.poi{cursor:pointer;transition:transform .2s}
+.poi:hover{transform:scale(1.12)}
+.poi.active{transform:scale(1.22)}
+.poi .pin{filter:drop-shadow(0 3px 6px rgba(10,30,80,.35))}
+.poi-ring{animation:ring 2s ease-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes ring{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.8);opacity:0}}
+.my-loc{position:absolute;z-index:10}
+.my-loc .dot{width:16px;height:16px;border-radius:50%;background:var(--primary);border:3px solid #fff;box-shadow:0 0 0 6px rgba(22,119,255,.18)}
+.map-fab{
+  position:absolute;right:14px;z-index:30;width:44px;height:44px;border-radius:50%;
+  background:var(--card);box-shadow:var(--shadow-card);display:flex;align-items:center;justify-content:center;
+  color:var(--ink-2);transition:transform .15s,background .2s;
+}
+.map-fab:active{transform:scale(.92);background:#F0F4FA}
+#locateBtn{bottom:296px}
+#refreshBtn{bottom:240px}
+.view-toggle{
+  position:absolute;right:14px;top:104px;z-index:30;height:34px;padding:0 14px;border-radius:999px;
+  background:rgba(31,39,51,.86);color:#fff;font-size:12.5px;font-weight:600;
+  display:flex;align-items:center;gap:6px;backdrop-filter:blur(4px);
+}
+
+/* 底部站点面板 */
+.panel{
+  position:absolute;left:0;right:0;bottom:0;z-index:40;
+  background:var(--card);border-radius:20px 20px 0 0;
+  box-shadow:0 -8px 30px -8px rgba(20,40,90,.18);
+  display:flex;flex-direction:column;max-height:calc(100% - 150px);
+}
+.panel-grip{padding:10px 0 4px;display:flex;justify-content:center;cursor:grab;flex:none}
+.panel-grip::before{content:"";width:40px;height:4.5px;border-radius:3px;background:#D6DCE5}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:2px 16px 10px;flex:none}
+.panel-head h2{font-size:16px;font-weight:700}
+.panel-head .count{color:var(--primary);font-family:var(--f-num)}
+.sort-row{display:flex;gap:8px;padding:0 16px 10px;flex:none;overflow-x:auto}
+.sort-row::-webkit-scrollbar{display:none}
+.chip-btn{
+  flex:none;height:34px;padding:0 14px;border-radius:var(--r-tag);font-size:13px;font-weight:500;
+  background:#F2F5F9;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;
+  transition:background .2s,color .2s;
+}
+.chip-btn.on{background:rgba(22,119,255,.12);color:var(--primary);font-weight:600}
+.chip-btn.filter{border:1px solid var(--line);background:#fff}
+.chip-btn.filter.on{border-color:var(--primary)}
+.station-list{padding:0 16px 12px;overflow-y:auto;flex:1}
+.station-list::-webkit-scrollbar{display:none}
+.station-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:14px;margin-bottom:12px;box-shadow:var(--shadow-card);
+  transition:transform .18s,border-color .2s;cursor:pointer;width:100%;text-align:left;display:block;
+}
+.station-card:active{transform:scale(.985)}
+.station-card.sel{border-color:var(--primary);box-shadow:0 0 0 2px rgba(22,119,255,.18),var(--shadow-card)}
+.st-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.st-name{font-size:15.5px;font-weight:700;line-height:1.35}
+.st-dist{flex:none;font-size:12px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+.st-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.st-tags i{
+  font-style:normal;font-size:11px;padding:2.5px 7px;border-radius:var(--r-tag);
+  background:#F2F5F9;color:var(--ink-2);font-weight:500;
+}
+.st-tags i.fast{background:rgba(22,119,255,.10);color:var(--primary)}
+.st-tags i.park{background:rgba(82,196,26,.12);color:#389E0D}
+.st-tags i.op{background:rgba(250,140,22,.12);color:#D46B08}
+.st-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px}
+.st-price{font-family:var(--f-num);color:#F5222D;font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+.st-price small{font-size:11px;color:var(--muted);font-weight:500;font-family:"PingFang SC",sans-serif}
+.st-piles{display:flex;gap:12px;font-size:12px;color:var(--ink-2);align-items:center}
+.dotmark{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:1px}
+
+/* ============ Detail sheet ============ */
+.sheet-mask{position:absolute;inset:0;background:rgba(15,23,42,.45);z-index:80;opacity:0;pointer-events:none;transition:opacity .28s}
+.sheet-mask.show{opacity:1;pointer-events:auto}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:90;background:var(--card);
+  border-radius:20px 20px 0 0;max-height:82%;display:flex;flex-direction:column;
+  transform:translateY(103%);transition:transform .34s cubic-bezier(.32,.9,.35,1);
+}
+.sheet.show{transform:none}
+.sheet-body{overflow-y:auto;padding:0 16px 16px;flex:1}
+.sheet-body::-webkit-scrollbar{display:none}
+.dt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dt-name{font-size:18px;font-weight:700;line-height:1.4}
+.dt-addr{font-size:12.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.dt-score{flex:none;text-align:right}
+.dt-score b{font-family:var(--f-num);font-size:20px;color:#FAAD14;font-weight:800}
+.dt-score small{display:block;font-size:11px;color:var(--muted)}
+.pile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.pile-box{border:1px solid var(--line);border-radius:10px;padding:12px}
+.pile-box h4{font-size:13px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.pile-box .num{font-family:var(--f-num);font-size:24px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.pile-box .num small{font-size:12px;font-weight:600;color:var(--muted)}
+.pile-box .st{font-size:11.5px;margin-top:2px}
+.price-table{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.price-table .row{display:flex;justify-content:space-between;padding:11px 14px;font-size:13px}
+.price-table .row+.row{border-top:1px solid var(--line)}
+.price-table .row span{color:var(--ink-2)}
+.price-table .row b{font-family:var(--f-num);font-weight:700;font-variant-numeric:tabular-nums}
+.price-table .row b em{font-style:normal;font-size:11px;color:var(--muted);font-weight:400}
+.review{margin-top:14px}
+.review h3{font-size:14.5px;font-weight:700;margin-bottom:10px}
+.review-item{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.review-item .avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.review-item .who{font-size:12.5px;font-weight:600}
+.review-item .who small{color:var(--muted);font-weight:400;margin-left:6px}
+.review-item p{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.sheet-cta{
+  flex:none;display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);background:#fff;
+}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border-radius:var(--r-btn);font-size:15px;font-weight:600;min-height:48px;
+  padding:0 20px;transition:transform .15s,opacity .2s,background .2s;flex:1;
+}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:active{background:var(--primary-press)}
+.btn-line{border:1.5px solid var(--primary);color:var(--primary);background:#fff;flex:none;width:130px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+/* ============ Tab Bar ============ */
+.tabbar{
+  position:absolute;left:0;right:0;bottom:0;z-index:70;height:78px;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  display:flex;align-items:flex-start;padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--muted);font-size:10.5px;font-weight:500;min-height:52px;justify-content:center;
+  transition:color .2s;border-radius:10px;
+}
+.tab.on{color:var(--primary);font-weight:600}
+.tab:active{color:var(--primary-press)}
+.tab.scan-tab{position:relative;flex:none;width:76px}
+.scan-fab{
+  position:absolute;top:-26px;left:50%;transform:translateX(-50%);
+  width:62px;height:62px;border-radius:50%;background:var(--grad-scan);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  box-shadow:var(--shadow-float),0 0 0 6px #F5F7FA;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.scan-fab:active{transform:translateX(-50%) scale(.9)}
+.scan-label{margin-top:38px}
+
+/* ============ Common section ============ */
+.page-head{
+  padding:56px 16px 12px;background:var(--bg);flex:none;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.page-head h1{font-size:22px;font-weight:800}
+.card{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow-card);padding:16px}
+.m-sec{margin:0 12px 12px}
+.sec-title{font-size:14px;font-weight:700;margin:4px 4px 8px;color:var(--ink)}
+
+/* 省钱页 */
+.vip-hero{background:linear-gradient(135deg,#10264F 0%,#1677FF 100%);color:#fff;border-radius:var(--r-card);padding:18px;position:relative;overflow:hidden}
+.vip-hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.08)}
+.vip-hero h3{font-size:17px;font-weight:700}
+.vip-hero p{font-size:12px;opacity:.8;margin-top:4px}
+.vip-hero .go{margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--primary);font-size:12.5px;font-weight:700;border-radius:6px;padding:8px 14px;min-height:36px}
+.plan{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px}
+.plan::-webkit-scrollbar{display:none}
+.plan-card{flex:none;width:150px;border:1.5px solid var(--line);border-radius:10px;padding:12px;background:#fff;transition:border-color .2s}
+.plan-card.hot{border-color:var(--primary);position:relative}
+.plan-card.hot::before{content:"最受欢迎";position:absolute;top:-9px;left:10px;background:var(--primary);color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.plan-card h4{font-size:14px;font-weight:700}
+.plan-card .pr{font-family:var(--f-num);color:#F5222D;font-weight:800;font-size:21px;margin-top:6px;font-variant-numeric:tabular-nums}
+.plan-card .pr small{font-size:11px;color:var(--muted);font-weight:400}
+.plan-card ul{list-style:none;margin-top:8px;font-size:11px;color:var(--ink-2)}
+.plan-card li{padding:2px 0;display:flex;gap:4px}
+.pack-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.pack-row:first-of-type{border-top:none}
+.pack-row .deg{font-size:14px;font-weight:600}
+.pack-row .deg small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.pack-row .buy{font-family:var(--f-num);font-weight:800;color:#F5222D;font-size:17px;font-variant-numeric:tabular-nums}
+.mini-btn{background:var(--primary);color:#fff;font-size:12px;font-weight:600;border-radius:6px;padding:7px 14px;min-height:32px;margin-left:10px}
+.mini-btn:active{background:var(--primary-press)}
+.carbon-box{display:flex;align-items:center;gap:14px}
+.carbon-box .txt b{font-family:var(--f-num);font-size:22px;color:#389E0D;font-variant-numeric:tabular-nums}
+.carbon-box .txt{font-size:12px;color:var(--ink-2)}
+
+/* 订单页 */
+.order-tabs{display:flex;gap:4px;background:#fff;border-radius:10px;padding:4px;margin:0 12px 12px;box-shadow:var(--shadow-card)}
+.order-tabs button{flex:1;height:36px;border-radius:8px;font-size:13.5px;font-weight:500;color:var(--muted)}
+.order-tabs button.on{background:rgba(22,119,255,.1);color:var(--primary);font-weight:700}
+.order-card{background:#fff;border-radius:var(--r-card);padding:14px;margin:0 12px 12px;box-shadow:var(--shadow-card)}
+.order-card .oh{display:flex;justify-content:space-between;font-size:13px}
+.order-card .oh b{font-weight:700;font-size:14.5px}
+.order-card .oh .stt{font-weight:600;font-size:12.5px}
+.order-card .om{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--muted)}
+.order-card .om b{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.order-card .of{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.order-card .of .fee{font-family:var(--f-num);font-weight:800;font-size:18px;font-variant-numeric:tabular-nums}
+.order-card .of .fee small{font-size:11px;color:var(--muted);font-weight:400}
+.ghost-btn{border:1px solid var(--line);border-radius:6px;font-size:12px;padding:6px 12px;color:var(--ink-2);min-height:32px;font-weight:500}
+
+/* 我的页 */
+.me-hero{background:linear-gradient(135deg,#1677FF,#00A3C4);color:#fff;padding:60px 16px 56px;position:relative}
+.me-hero .u{display:flex;align-items:center;gap:14px}
+.me-hero .avatar{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.me-hero h2{font-size:19px;font-weight:700}
+.me-hero .lvl{display:inline-flex;align-items:center;gap:4px;font-size:11px;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:999px;margin-top:5px;font-weight:600}
+.wallet{margin:-38px 12px 12px;position:relative;z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow-card)}
+.wallet>button{background:#fff;padding:14px 6px;text-align:center}
+.wallet b{font-family:var(--f-num);font-size:19px;font-weight:800;display:block;font-variant-numeric:tabular-nums}
+.wallet b small{font-size:11px;font-weight:600}
+.wallet span{font-size:11.5px;color:var(--muted)}
+.menu-list{background:#fff;border-radius:var(--r-card);box-shadow:var(--shadow-card);overflow:hidden;margin:0 12px 12px}
+.menu-item{display:flex;align-items:center;gap:12px;width:100%;padding:0 14px;min-height:52px;font-size:14px;font-weight:500;text-align:left}
+.menu-item+.menu-item{border-top:1px solid var(--line)}
+.menu-item .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.menu-item small{margin-left:auto;color:var(--muted);font-size:12px;font-weight:400}
+.menu-item .arrow{color:#C3CAD4}
+
+/* ============ Scan flow overlay ============ */
+.flow{position:absolute;inset:0;z-index:100;background:var(--bg);display:none;flex-direction:column}
+.flow.show{display:flex}
+.flow-head{flex:none;display:flex;align-items:center;gap:12px;padding:56px 16px 12px;background:#fff;border-bottom:1px solid var(--line)}
+.back-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--ink);flex:none}
+.back-btn:active{background:#F0F4FA}
+.flow-head h2{font-size:17px;font-weight:700;flex:1;text-align:center;margin-right:52px}
+.steps{flex:none;display:flex;justify-content:center;gap:6px;padding:12px 16px;background:#fff}
+.step{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.step i{font-style:normal;width:20px;height:20px;border-radius:50%;background:#E8ECF2;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--f-num)}
+.step.on{color:var(--primary);font-weight:600}
+.step.on i{background:var(--primary);color:#fff}
+.step.done i{background:var(--free);color:#fff}
+.step .bar{width:14px;height:2px;background:#E8ECF2;border-radius:2px}
+.flow-body{flex:1;overflow-y:auto;padding:12px}
+.flow-body::-webkit-scrollbar{display:none}
+.scan-view{background:#10151F;border-radius:var(--r-card);height:330px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.scan-frame{width:210px;height:210px;position:relative}
+.scan-frame::before,.scan-frame::after,.scan-frame .c3,.scan-frame .c4{content:"";position:absolute;width:30px;height:30px;border:3.5px solid var(--grad-scan);border-color:#00E5C0}
+.scan-frame::before{top:0;left:0;border-right:none;border-bottom:none;border-radius:8px 0 0 0}
+.scan-frame::after{top:0;right:0;border-left:none;border-bottom:none;border-radius:0 8px 0 0}
+.scan-frame .c3{bottom:0;left:0;border-right:none;border-top:none;border-radius:0 0 0 8px}
+.scan-frame .c4{bottom:0;right:0;border-left:none;border-top:none;border-radius:0 0 8px 0}
+.scan-line{position:absolute;left:8px;right:8px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#00E5C0,transparent);box-shadow:0 0 12px #00E5C0;animation:scanmove 2.2s ease-in-out infinite}
+@keyframes scanmove{0%,100%{top:10px}50%{top:calc(100% - 13px)}}
+.scan-tip{text-align:center;color:#C6CEDA;font-size:13px;margin-top:16px}
+.scan-manual{margin-top:14px;width:100%;background:#fff;border:1.5px dashed var(--primary);color:var(--primary);border-radius:var(--r-btn);height:48px;font-size:14px;font-weight:600}
+.qr-demo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.16}
+.opt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.opt{border:1.5px solid var(--line);border-radius:10px;padding:14px 8px;text-align:center;background:#fff;transition:all .2s}
+.opt.on{border-color:var(--primary);background:rgba(22,119,255,.06)}
+.opt b{display:block;font-size:15px;font-weight:700;font-family:var(--f-num)}
+.opt span{font-size:11.5px;color:var(--muted)}
+.chg-info{background:#fff;border-radius:var(--r-card);padding:16px;box-shadow:var(--shadow-card)}
+.chg-info .r{display:flex;justify-content:space-between;padding:9px 0;font-size:13.5px}
+.chg-info .r+.r{border-top:1px solid var(--line)}
+.chg-info .r span{color:var(--muted)}
+.chg-info .r b{font-family:var(--f-num);font-weight:700;font-variant-numeric:tabular-nums}
+/* 充电中 */
+.charging-hero{background:linear-gradient(160deg,#0C1B33,#123B66);border-radius:var(--r-card);color:#fff;padding:22px;text-align:center;position:relative;overflow:hidden}
+.charging-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(300px 200px at 50% 0%,rgba(22,119,255,.35),transparent 70%)}
+.soc-ring{position:relative;width:190px;height:190px;margin:8px auto}
+.soc-ring svg{transform:rotate(-90deg)}
+.soc-ring .lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.soc-ring .lbl b{font-family:var(--f-num);font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.soc-ring .lbl span{font-size:12px;opacity:.75;margin-top:4px}
+.bolt{position:absolute;top:14px;left:50%;transform:translateX(-50%);animation:bolt 1.2s ease-in-out infinite}
+@keyframes bolt{0%,100%{opacity:1}50%{opacity:.35}}
+.chg-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.chg-stats .cell{background:rgba(255,255,255,.08);border-radius:10px;padding:12px 6px}
+.chg-stats b{font-family:var(--f-num);font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.chg-stats span{display:block;font-size:11px;opacity:.7;margin-top:2px}
+.stop-btn{width:100%;margin-top:14px;height:50px;border-radius:var(--r-btn);background:rgba(245,34,45,.14);border:1.5px solid #F5222D;color:#F5222D;font-size:15px;font-weight:700}
+/* 完成 */
+.done-hero{text-align:center;padding:28px 0 8px}
+.done-hero .ok{width:72px;height:72px;border-radius:50%;background:rgba(82,196,26,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--free)}
+.done-hero h3{font-size:19px;font-weight:800}
+.done-hero p{font-size:12.5px;color:var(--muted);margin-top:6px}
+.stars{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.stars button{color:#D6DCE5;transition:transform .15s,color .2s;padding:4px}
+.stars button.on{color:#FAAD14}
+.stars button:active{transform:scale(1.25)}
+
+/* Toast */
+.toast{
+  position:absolute;left:50%;bottom:110px;transform:translate(-50%,30px);
+  background:rgba(20,28,40,.92);color:#fff;font-size:13px;padding:11px 18px;border-radius:10px;
+  opacity:0;transition:all .3s;z-index:200;pointer-events:none;max-width:80%;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="phone" role="application" aria-label="星充电小程序">
+  <!-- 状态栏 -->
+  <div class="status-bar" aria-hidden="true">
+    <span>9:41</span>
+    <span class="icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="#fff"><rect x="0" y="7" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="6" rx="0.5"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.5"/><rect x="13.5" y="0" width="3" height="11" rx="0.5"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="#fff"><path d="M8 9.5a1.4 1.4 0 100 2.8 1.4 1.4 0 000-2.8zM8 5.6c-1.8 0-3.4.7-4.6 1.9l1.5 1.5A4.4 4.4 0 018 8c1.2 0 2.3.4 3.1 1.1l1.5-1.5A6.3 6.3 0 008 5.6zM8 1.2C5 1.2 2.2 2.4 0 4.4l1.5 1.5A9.2 9.2 0 018 3.6c2.6 0 4.9 1 6.5 2.7L16 4.8A11.2 11.2 0 008 1.2z" transform="translate(0 -1)"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="#fff" opacity=".5"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.5" fill="#fff"/><path d="M23 4v4c1-.3 1.6-1 1.6-2S24 4.3 23 4z" fill="#fff" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <!-- ==================== 首页（地图） ==================== -->
+  <section class="screen active" id="home" aria-label="首页地图找桩">
+    <div class="map-area">
+      <svg class="map-svg" viewBox="0 0 390 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="390" height="460" fill="#E8EEF6"/>
+        <!-- 街区 -->
+        <g fill="#F4F7FB">
+          <rect x="-20" y="30" width="120" height="100" rx="6"/><rect x="120" y="20" width="150" height="90" rx="6"/>
+          <rect x="290" y="40" width="120" height="110" rx="6"/><rect x="20" y="160" width="90" height="110" rx="6"/>
+          <rect x="150" y="140" width="110" height="90" rx="6"/><rect x="290" y="180" width="110" height="90" rx="6"/>
+          <rect x="-20" y="300" width="140" height="110" rx="6"/><rect x="160" y="260" width="120" height="100" rx="6"/>
+          <rect x="300" y="300" width="110" height="120" rx="6"/><rect x="140" y="390" width="160" height="90" rx="6"/>
+        </g>
+        <!-- 河流 -->
+        <path d="M-10 420 Q100 380 180 410 T400 360 V460 H-10Z" fill="#C9DEF5"/>
+        <path d="M-10 430 Q100 395 185 420 T400 375" stroke="#AFCFF0" stroke-width="3" fill="none"/>
+        <!-- 道路 -->
+        <g stroke="#FFFFFF" stroke-linecap="round" fill="none">
+          <path d="M0 135 H390" stroke-width="12"/><path d="M0 285 H390" stroke-width="10"/>
+          <path d="M135 0 V460" stroke-width="12"/><path d="M275 0 V300 Q275 330 305 330 H390" stroke-width="10"/>
+          <path d="M0 60 H390" stroke-width="6" opacity=".85"/><path d="M60 0 V460" stroke-width="5" opacity=".8"/>
+          <path d="M210 0 V460" stroke-width="5" opacity=".8"/><path d="M0 210 H390" stroke-width="5" opacity=".8"/>
+          <path d="M0 360 H140 Q160 360 160 380 V460" stroke-width="5" opacity=".8"/>
+        </g>
+        <g stroke="#F5D98F" stroke-width="2.5" fill="none" opacity=".9">
+          <path d="M0 135 H390" stroke-dasharray="12 10"/><path d="M135 0 V460" stroke-dasharray="12 10"/>
+        </g>
+        <!-- 绿地 -->
+        <ellipse cx="335" cy="110" rx="42" ry="30" fill="#CBE8C4"/><ellipse cx="70" cy="240" rx="34" ry="24" fill="#CBE8C4"/>
+        <ellipse cx="340" cy="245" rx="30" ry="20" fill="#D8EED3"/>
+      </svg>
+
+      <!-- 充电桩 POI -->
+      <div id="poiLayer" style="position:absolute;inset:0"></div>
+      <!-- 我的位置 -->
+      <div class="my-loc" style="left:182px;top:218px"><div class="dot"></div></div>
+
+      <!-- 顶部搜索 -->
+      <div class="map-topbar">
+        <button class="search-bar" id="searchBar" aria-label="搜索充电站">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7A8494" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>搜索充电站、目的地</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4"/></svg>
+        </button>
+      </div>
+      <div class="loc-badge">
+        <span class="chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1677FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.1-7-11a7 7 0 0114 0c0 5.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>杭州市 · 滨江区</span>
+        <span class="chip" style="color:#389E0D"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#389E0D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>周边 28 座电站</span>
+      </div>
+
+      <button class="view-toggle" id="viewToggle" aria-label="切换列表视图">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+        列表
+      </button>
+      <button class="map-fab" id="refreshBtn" aria-label="刷新桩态">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0114.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0020.5 15"/></svg>
+      </button>
+      <button class="map-fab" id="locateBtn" aria-label="回到我的位置">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+      </button>
+    </div>
+
+    <!-- 底部附近站点面板 -->
+    <div class="panel" id="panel">
+      <div class="panel-grip" id="panelGrip" aria-hidden="true"></div>
+      <div class="panel-head">
+        <h2>附近充电站 <span class="count" id="stCount">5</span></h2>
+        <span style="font-size:11.5px;color:var(--muted)">实时桩态 · 30 秒前更新</span>
+      </div>
+      <div class="sort-row" role="tablist" aria-label="排序与筛选">
+        <button class="chip-btn on" data-sort="dist">距离最近</button>
+        <button class="chip-btn" data-sort="score">综合推荐</button>
+        <button class="chip-btn" data-sort="price">价格最低</button>
+        <button class="chip-btn filter" data-filter="fast">快充</button>
+        <button class="chip-btn filter" data-filter="park">免费停车</button>
+        <button class="chip-btn filter" data-filter="freeonly">仅看空闲</button>
+      </div>
+      <div class="station-list" id="stationList"></div>
+      <div style="height:86px;flex:none"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 省钱 ==================== -->
+  <section class="screen" id="save" aria-label="省钱会员">
+    <div class="scroll">
+      <div class="page-head"><h1>省钱</h1>
+        <span style="font-size:12px;color:var(--muted)">已省 <b style="color:#F5222D;font-family:var(--f-num)">¥326.50</b></span>
+      </div>
+      <div class="m-sec">
+        <div class="vip-hero">
+          <h3>PLUS 会员 · 充电更便宜</h3>
+          <p>服务费 8.8 折起 · 每月领专属优惠券</p>
+          <button class="go" data-action="vip">立即开通
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="sec-title m-sec" style="margin-bottom:0">会员套餐</div>
+      <div class="m-sec"><div class="plan" id="planRow">
+        <div class="plan-card"><h4>PLUS 白银</h4><div class="pr">¥2.9<small> 首月</small></div><ul><li>· 服务费 9.5 折</li><li>· 2 张 3 元券</li></ul></div>
+        <div class="plan-card hot"><h4>PLUS 黄金</h4><div class="pr">¥19.9<small> /月</small></div><ul><li>· 服务费 8.8 折</li><li>· 5 张 5 元券</li><li>· 生日双倍积分</li></ul></div>
+        <div class="plan-card"><h4>V1 年卡</h4><div class="pr">¥99<small> /年</small></div><ul><li>· 全年 8.8 折</li><li>· 免排队特权</li></ul></div>
+        <div class="plan-card"><h4>V1 Pro 年卡</h4><div class="pr">¥198<small> /年</small></div><ul><li>· 全年 8.5 折</li><li>· 每月 20 度能量</li></ul></div>
+      </div></div>
+      <div class="sec-title m-sec" style="margin-bottom:0">能量包预购 <span style="font-weight:400;color:var(--muted);font-size:11.5px">低至 ¥0.95/度</span></div>
+      <div class="m-sec card" style="padding:4px 16px">
+        <div class="pack-row"><div class="deg">100 度能量包<small>有效期 90 天 · 全网通用</small></div><div><span class="buy">¥98</span><button class="mini-btn" data-action="buy">购买</button></div></div>
+        <div class="pack-row"><div class="deg">200 度能量包<small>有效期 180 天 · 加赠 10 度</small></div><div><span class="buy">¥190</span><button class="mini-btn" data-action="buy">购买</button></div></div>
+      </div>
+      <div class="sec-title m-sec" style="margin-bottom:0">绿色能量</div>
+      <div class="m-sec card carbon-box">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#52C41A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        <div class="txt"><b>1,286</b> 碳积分 · 累计减碳 <b>1,024</b> kg<br>每充 1 度电 ≈ 减碳 0.58kg，V2G 反向放电另享收益</div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 订单 ==================== -->
+  <section class="screen" id="orders" aria-label="充电订单">
+    <div class="scroll">
+      <div class="page-head"><h1>订单</h1>
+        <button style="font-size:12.5px;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:4px;min-height:36px" data-action="invoice">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h2"/></svg>开发票
+        </button>
+      </div>
+      <div class="order-tabs" role="tablist" aria-label="订单状态筛选">
+        <button class="on">全部</button><button>充电中</button><button>已完成</button><button>待支付</button>
+      </div>
+      <div id="orderList"></div>
+      <div style="height:96px"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 我的 ==================== -->
+  <section class="screen" id="me" aria-label="个人中心">
+    <div class="scroll" style="background:var(--bg)">
+      <div class="me-hero">
+        <div class="u">
+          <div class="avatar">星</div>
+          <div>
+            <h2>星友_8213</h2>
+            <span class="lvl">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#FFD666"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8L12 2z"/></svg>
+              PLUS 黄金会员 · 有效期至 2026-12-31
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="wallet">
+        <button data-action="wallet"><b>¥86.20</b><span>余额</span></button>
+        <button data-action="wallet"><b>12<small> 张</small></b><span>卡券</span></button>
+        <button data-action="wallet"><b>1,286</b><span>碳积分</span></button>
+      </div>
+      <div class="menu-list">
+        <button class="menu-item" data-action="car"><span class="ic" style="background:rgba(22,119,255,.1);color:#1677FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-4l2-5a2 2 0 011.9-1.3h10.2A2 2 0 0119 8l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/><path d="M9.5 17.5h5"/></svg></span>我的车辆<small>特斯拉 Model 3 · 浙A·D88888</small><svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="menu-item" data-action="battery"><span class="ic" style="background:rgba(82,196,26,.12);color:#52C41A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 10v4M7 10v4M11 10v4"/></svg></span>电池卫士报告<small>健康度 96% · 建议慢充养护</small><svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="menu-item" data-action="invoice"><span class="ic" style="background:rgba(250,173,20,.12);color:#FAAD14"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h2"/></svg></span>电子发票<small>按月汇总开具</small><svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="menu-item" data-action="v2g"><span class="ic" style="background:rgba(114,46,209,.1);color:#722ED1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>V2G 反向放电<small>峰时放电 · 累计收益 ¥152.40</small><svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <div class="menu-list">
+        <button class="menu-item" data-action="cs"><span class="ic" style="background:#F2F5F9;color:#48505E"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></span>帮助与客服<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="menu-item" data-action="setting"><span class="ic" style="background:#F2F5F9;color:#48505E"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>设置<svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <div style="height:100px"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 站点详情 Sheet ==================== -->
+  <div class="sheet-mask" id="sheetMask"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="充电站详情">
+    <div class="panel-grip" id="sheetClose" style="cursor:pointer"></div>
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-cta">
+      <button class="btn btn-line" id="navBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        导航
+      </button>
+      <button class="btn btn-primary" id="scanGoBtn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M3 12h18"/></svg>
+        扫码充电
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 扫码充电流程 ==================== -->
+  <div class="flow" id="flow" role="dialog" aria-modal="true" aria-label="扫码充电流程">
+    <div class="flow-head">
+      <button class="back-btn" id="flowBack" aria-label="返回">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h2 id="flowTitle">扫码充电</h2>
+    </div>
+    <div class="steps" id="flowSteps">
+      <div class="step on"><i>1</i>扫码</div><span class="bar"></span>
+      <div class="step"><i>2</i>确认</div><span class="bar"></span>
+      <div class="step"><i>3</i>充电</div><span class="bar"></span>
+      <div class="step"><i>4</i>结算</div>
+    </div>
+    <div class="flow-body" id="flowBody"></div>
+  </div>
+
+  <!-- ==================== Tab Bar ==================== -->
+  <nav class="tabbar" aria-label="底部导航">
+    <button class="tab on" data-tab="home">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.4-2.7a1 1 0 01-.6-.9V4.6a1 1 0 011.4-.9L9 6m0 14l6-3m-6 3V6m6 11l4.4 2.3a1 1 0 001.6-.9V7.6a1 1 0 00-.6-.9L15 4m0 13V4M9 6l6-2"/></svg>
+      首页
+    </button>
+    <button class="tab" data-tab="save">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.83z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>
+      省钱
+    </button>
+    <button class="tab scan-tab" data-tab="scan" aria-label="扫码充电">
+      <span class="scan-fab">
+        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 12h10"/></svg>
+      </span>
+      <span class="scan-label">扫码</span>
+    </button>
+    <button class="tab" data-tab="orders">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 13h6M9 17h4"/></svg>
+      订单
+    </button>
+    <button class="tab" data-tab="me">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      我的
+    </button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ================= 数据 ================= */
+var STATIONS=[
+ {id:1,name:"滨江宝龙城超级充电站",brand:"特来电",x:62,y:48,dist:0.4,score:4.8,price:1.15,fastFree:6,fastTotal:8,slowFree:2,slowTotal:4,tags:["fast","park","op"],tagText:{park:"免费停车2h",op:"24h营业"},reviews:[{n:"电车老斯基",t:"桩多功率足，地库好找",d:"2天前",c:"#1677FF"},{n:"Amy酱",t:"吃饭顺便充，很稳",d:"1周前",c:"#FA8C16"}]},
+ {id:2,name:"星光大道二期充电站",brand:"星星充电",x:238,y:118,dist:0.8,score:4.6,price:1.05,fastFree:2,fastTotal:6,slowFree:4,slowTotal:6,tags:["fast"],tagText:{},reviews:[{n:"续航焦虑患者",t:"周末要排队，建议错峰",d:"3天前",c:"#52C41A"}]},
+ {id:3,name:"钱塘江大桥服务区站",brand:"云快充",x:318,y:296,dist:1.6,score:4.3,price:0.98,fastFree:4,fastTotal:4,slowFree:0,slowTotal:2,tags:["fast","park"],tagText:{park:"免费停车"},reviews:[{n:"跑长途的阿凯",t:"纯快充站，速度快",d:"5天前",c:"#722ED1"}]},
+ {id:4,name:"龙湖天街地下充电站",brand:"特来电",x:168,y:330,dist:2.1,score:4.5,price:1.22,fastFree:0,fastTotal:8,slowFree:1,slowTotal:4,tags:["park","op"],tagText:{park:"消费免停"},reviews:[{n:"毛豆Y车主",t:"全满！等位 20 分钟",d:"1小时前",c:"#F5222D"}]},
+ {id:5,name:"江南大道高速路旁站",brand:"星星充电",x:96,y:388,dist:3.0,score:4.1,price:0.88,fastFree:3,fastTotal:6,slowFree:2,slowTotal:2,tags:["fast","hwy"],tagText:{},reviews:[{n:"夜班网约车",t:"价格便宜，半夜也有位",d:"昨天",c:"#0E5AC8"}]}
+];
+var OPER_COLOR={"特来电":"#1677FF","星星充电":"#52C41A","云快充":"#FA8C16"};
+var state={tab:"home",sort:"dist",filters:{},selected:null,flowStep:0,soc:23,kwh:0,fee:0,timer:null,stopTimer:null};
+
+/* ================= 工具 ================= */
+function $(s){return document.querySelector(s)}
+function el(html){var d=document.createElement("div");d.innerHTML=html.trim();return d.firstChild}
+var toastEl=$("#toast"),tt;
+function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(tt);tt=setTimeout(function(){toastEl.classList.remove("show")},2600)}
+function statusColor(s){return s.fastFree+s.slowFree>0?"var(--free)":"var(--busy)"}
+
+/* ================= Tab 切换 ================= */
+var tabs=document.querySelectorAll(".tab[data-tab]");
+tabs.forEach(function(t){t.addEventListener("click",function(){
+  var k=t.dataset.tab;
+  if(k==="scan"){openFlow(0);return}
+  state.tab=k;
+  tabs.forEach(function(x){x.classList.toggle("on",x===t)});
+  document.querySelectorAll(".screen").forEach(function(s){s.classList.toggle("active",s.id===k)});
+})});
+
+/* ================= 地图 POI ================= */
+var poiLayer=$("#poiLayer");
+function renderPois(){
+  poiLayer.innerHTML="";
+  STATIONS.forEach(function(s){
+    var free=s.fastFree+s.slowFree;
+    var color=free>0?"#52C41A":"#FA8C16";
+    var g=el('<button class="poi'+(state.selected===s.id?" active":"")+'" style="position:absolute;left:'+(s.x/390*100)+'%;top:'+(s.y/460*100)+'%;transform:translate(-50%,-100%);width:56px;height:56px" aria-label="'+s.name+'，空闲 '+free+' 桩"></button>');
+    g.innerHTML='<svg viewBox="0 0 56 56" style="width:100%;height:100%;overflow:visible">'+
+      (state.selected===s.id?'<circle class="poi-ring" cx="28" cy="24" r="16" fill="none" stroke="'+color+'" stroke-width="2"/>':'')+
+      '<path class="pin" d="M28 4c-9 0-16 7-16 15.5C12 30 28 46 28 46s16-16 16-26.5C44 11 37 4 28 4z" fill="'+color+'"/>'+
+      '<circle cx="28" cy="19.5" r="8.5" fill="#fff"/>'+
+      '<path d="M30.5 14.5l-5 7h3.6l-1.6 5 5-7h-3.6l1.6-5z" fill="'+color+'"/>'+
+      '<text x="28" y="54" text-anchor="middle" font-size="9" font-weight="700" fill="#1F2733" style="paint-order:stroke;stroke:#fff;stroke-width:3">'+free+' 空闲</text></svg>';
+    g.addEventListener("click",function(){selectStation(s.id,true)});
+    poiLayer.appendChild(g);
+  });
+}
+
+/* ================= 站点列表 ================= */
+var listEl=$("#stationList");
+function filtered(){
+  var arr=STATIONS.slice();
+  if(state.filters.fast)arr=arr.filter(function(s){return s.tags.indexOf("fast")>=0});
+  if(state.filters.park)arr=arr.filter(function(s){return s.tags.indexOf("park")>=0});
+  if(state.filters.freeonly)arr=arr.filter(function(s){return s.fastFree+s.slowFree>0});
+  if(state.sort==="dist")arr.sort(function(a,b){return a.dist-b.dist});
+  else if(state.sort==="price")arr.sort(function(a,b){return a.price-b.price});
+  else arr.sort(function(a,b){return b.score-a.score});
+  return arr;
+}
+function renderList(){
+  var arr=filtered();
+  $("#stCount").textContent=arr.length;
+  listEl.innerHTML="";
+  if(!arr.length){
+    listEl.appendChild(el('<div style="text-align:center;padding:36px 0;color:var(--muted);font-size:13px"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#C3CAD4" stroke-width="1.6" style="margin:0 auto 10px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35M8 11h6"/></svg>当前筛选下暂无站点，试试放宽条件</div>'));
+    return;
+  }
+  arr.forEach(function(s){
+    var freeF=s.fastFree,freeS=s.slowFree;
+    var card=el('<button class="station-card'+(state.selected===s.id?" sel":"")+'" aria-label="'+s.name+'"></button>');
+    var tags="";
+    if(s.tags.indexOf("fast")>=0)tags+='<i class="fast">快充</i>';
+    if(s.tagText.park)tags+='<i class="park">'+s.tagText.park+'</i>';
+    if(s.tagText.op)tags+='<i class="op">'+s.tagText.op+'</i>';
+    if(s.tags.indexOf("hwy")>=0)tags+='<i>高速路旁</i>';
+    card.innerHTML=
+      '<div class="st-top"><div class="st-name">'+s.name+'</div><div class="st-dist">'+s.dist.toFixed(1)+'km</div></div>'+
+      '<div class="st-tags"><i style="background:'+(OPER_COLOR[s.brand]||"#1677FF")+'1A;color:'+(OPER_COLOR[s.brand]||"#1677FF")+'">'+s.brand+'</i>'+tags+'</div>'+
+      '<div class="st-bottom">'+
+        '<div class="st-price">¥'+s.price.toFixed(2)+'<small> /度 · 含服务费</small></div>'+
+        '<div class="st-piles">'+
+          '<span><i class="dotmark" style="background:'+(freeF>0?"var(--free)":"var(--busy)")+'"></i>快充 '+freeF+'/'+s.fastTotal+'</span>'+
+          '<span><i class="dotmark" style="background:'+(freeS>0?"var(--free)":"var(--busy)")+'"></i>慢充 '+freeS+'/'+s.slowTotal+'</span>'+
+        '</div></div>';
+    card.addEventListener("click",function(){selectStation(s.id,true)});
+    listEl.appendChild(card);
+  });
+}
+function selectStation(id,openSheetFlag){
+  state.selected=id;renderPois();renderList();
+  if(openSheetFlag)openSheet(STATIONS.find(function(s){return s.id===id}));
+}
+
+/* 排序与筛选 */
+document.querySelectorAll(".chip-btn[data-sort]").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll(".chip-btn[data-sort]").forEach(function(x){x.classList.remove("on")});
+    b.classList.add("on");state.sort=b.dataset.sort;renderList();
+  });
+});
+document.querySelectorAll(".chip-btn[data-filter]").forEach(function(b){
+  b.addEventListener("click",function(){
+    b.classList.toggle("on");
+    state.filters[b.dataset.filter]=b.classList.contains("on");renderList();
+  });
+});
+
+/* ================= 详情 Sheet ================= */
+var sheet=$("#sheet"),mask=$("#sheetMask");
+function openSheet(s){
+  var body=$("#sheetBody");
+  var rv=s.reviews.map(function(r){
+    return '<div class="review-item"><div class="avatar" style="background:'+r.c+'">'+r.n.charAt(0)+'</div><div><div class="who">'+r.n+'<small>'+r.d+'</small></div><p>'+r.t+'</p></div></div>';
+  }).join("");
+  body.innerHTML=
+    '<div class="dt-head"><div><div class="dt-name">'+s.name+'</div>'+
+    '<div class="dt-addr"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A8494" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.1-7-11a7 7 0 0114 0c0 5.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>距您 '+s.dist.toFixed(1)+'km · 驾车约 '+Math.round(s.dist*4)+' 分钟</div></div>'+
+    '<div class="dt-score"><b>'+s.score.toFixed(1)+'</b><small>'+(120+s.id*37)+' 条评价</small></div></div>'+
+    '<div class="pile-grid">'+
+      '<div class="pile-box"><h4><i class="dotmark" style="background:'+(s.fastFree>0?"var(--free)":"var(--busy)")+'"></i>直流快充</h4><div class="num">'+s.fastFree+'<small> /'+s.fastTotal+' 空闲</small></div><div class="st" style="color:'+(s.fastFree>0?"var(--free)":"var(--busy)")+'">'+(s.fastFree>0?"即插即充 · 最高 120kW":"全部占用 · 可排队")+'</div></div>'+
+      '<div class="pile-box"><h4><i class="dotmark" style="background:'+(s.slowFree>0?"var(--free)":"var(--busy)")+'"></i>交流慢充</h4><div class="num">'+s.slowFree+'<small> /'+s.slowTotal+' 空闲</small></div><div class="st" style="color:'+(s.slowFree>0?"var(--free)":"var(--busy)")+'">'+(s.slowFree>0?"7kW · 适合夜间":"暂无空闲")+'</div></div>'+
+    '</div>'+
+    '<div class="price-table">'+
+      '<div class="row"><span>电费（峰 8:00-22:00）</span><b>¥0.85<em>/度</em></b></div>'+
+      '<div class="row"><span>电费（谷 22:00-8:00）</span><b>¥0.52<em>/度</em></b></div>'+
+      '<div class="row"><span>服务费（会员 8.8 折）</span><b>¥'+((s.price-0.85).toFixed(2))+'<em>/度</em></b></div>'+
+      '<div class="row"><span>停车费</span><b>'+(s.tagText.park||"按物业标准 5 元/时")+'</b></div>'+
+    '</div>'+
+    '<div class="review"><h3>车主评价</h3>'+rv+'</div>';
+  sheet.classList.add("show");mask.classList.add("show");
+}
+function closeSheet(){sheet.classList.remove("show");mask.classList.remove("show")}
+mask.addEventListener("click",closeSheet);
+$("#sheetClose").addEventListener("click",closeSheet);
+$("#navBtn").addEventListener("click",function(){toast("已为您规划路线，开始导航")});
+$("#scanGoBtn").addEventListener("click",function(){closeSheet();openFlow(0)});
+
+/* ================= 扫码流程 ================= */
+var flow=$("#flow"),flowBody=$("#flowBody"),flowTitle=$("#flowTitle");
+var stepEls=document.querySelectorAll("#flowSteps .step");
+var TITLES=["扫码充电","确认充电方案","充电中","充电完成"];
+function openFlow(step){
+  state.flowStep=step;flow.classList.add("show");renderFlow();
+  clearInterval(state.timer);clearTimeout(state.stopTimer);
+}
+function closeFlow(){flow.classList.remove("show");clearInterval(state.timer);clearTimeout(state.stopTimer)}
+$("#flowBack").addEventListener("click",function(){
+  if(state.flowStep===0||state.flowStep===3)closeFlow();
+  else if(state.flowStep===2){if(confirm("确定要停止充电并退出吗？"))openFlow(3)}
+  else openFlow(state.flowStep-1);
+});
+function renderFlow(){
+  flowTitle.textContent=TITLES[state.flowStep];
+  stepEls.forEach(function(st,i){
+    st.classList.toggle("on",i===state.flowStep);
+    st.classList.toggle("done",i<state.flowStep);
+    st.querySelector("i").innerHTML=i<state.flowStep?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>':String(i+1);
+  });
+  if(state.flowStep===0)renderScan();
+  else if(state.flowStep===1)renderConfirm();
+  else if(state.flowStep===2)renderCharging();
+  else renderDone();
+}
+function renderScan(){
+  flowBody.innerHTML=
+    '<div class="scan-view"><div class="qr-demo"><svg width="120" height="120" viewBox="0 0 100 100" fill="#8A97A8"><rect width="30" height="30"/><rect x="35" width="12" height="12"/><rect x="52" width="18" height="18"/><rect x="75" width="25" height="25"/><rect y="35" width="14" height="14"/><rect x="20" y="35" width="10" height="10"/><rect y="55" width="25" height="25"/><rect x="35" y="40" width="25" height="25"/><rect x="66" y="42" width="10" height="10"/><rect x="80" y="40" width="20" height="14"/><rect x="70" y="62" width="30" height="12"/><rect x="40" y="72" width="16" height="16"/><rect x="62" y="80" width="14" height="14"/><rect x="84" y="80" width="16" height="16"/><rect y="86" width="30" height="14"/></svg></div>'+
+    '<div class="scan-frame"><div class="c3"></div><div class="c4"></div><div class="scan-line"></div></div></div>'+
+    '<p class="scan-tip">将充电桩二维码放入框内，自动识别</p>'+
+    '<button class="scan-manual" id="manualBtn">手动输入桩编号</button>';
+  $("#manualBtn").addEventListener("click",function(){toast("识别成功：特来电 A07 号桩");setTimeout(function(){openFlow(1)},600)});
+  /* 模拟 3 秒自动识别 */
+  state.stopTimer=setTimeout(function(){toast("识别成功：特来电 A07 号桩");openFlow(1)},3000);
+}
+function renderConfirm(){
+  flowBody.innerHTML=
+    '<div class="chg-info">'+
+      '<div class="r"><span>充电站</span><b style="font-family:inherit">滨江宝龙城超级充电站</b></div>'+
+      '<div class="r"><span>充电桩</span><b style="font-family:inherit">A07 · 直流快充 120kW</b></div>'+
+      '<div class="r"><span>当前电价</span><b>¥1.15 /度</b></div>'+
+      '<div class="r"><span>车辆</span><b style="font-family:inherit">特斯拉 Model 3 · 浙A·D88888</b></div>'+
+      '<div class="r"><span>当前电量</span><b>23%</b></div>'+
+    '</div>'+
+    '<div class="sec-title" style="margin:14px 4px 0">选择充电方式</div>'+
+    '<div class="opt-grid" id="optGrid">'+
+      '<button class="opt on" data-m="full"><b>充满</b><span>自动停止</span></button>'+
+      '<button class="opt" data-m="amt"><b>按金额</b><span>充 ¥50</span></button>'+
+      '<button class="opt" data-m="kwh"><b>按电量</b><span>充 30 度</span></button>'+
+    '</div>'+
+    '<div class="chg-info" style="margin-top:12px"><div class="r" style="border:none;padding:4px 0"><span>预估费用（会员 8.8 折服务费）</span><b style="color:#F5222D;font-size:17px">约 ¥58.60</b></div></div>'+
+    '<button class="btn btn-primary" style="width:100%;margin-top:14px" id="startBtn">'+
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>启动充电</button>'+
+    '<p style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:10px">启动即代表同意《充电服务协议》</p>';
+  document.querySelectorAll("#optGrid .opt").forEach(function(o){
+    o.addEventListener("click",function(){
+      document.querySelectorAll("#optGrid .opt").forEach(function(x){x.classList.remove("on")});
+      o.classList.add("on");
+    });
+  });
+  $("#startBtn").addEventListener("click",function(){
+    var b=this;b.disabled=true;b.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="animation:sp 1s linear infinite"><path d="M21 12a9 9 0 11-6.2-8.56"/></svg> 正在连接充电桩…';
+    setTimeout(function(){openFlow(2)},1300);
+  });
+}
+function renderCharging(){
+  state.soc=23;state.kwh=0;state.fee=0;
+  flowBody.innerHTML=
+    '<div class="charging-hero">'+
+      '<div class="bolt"><svg width="26" height="26" viewBox="0 0 24 24" fill="#FFD666"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>'+
+      '<div class="soc-ring">'+
+        '<svg width="190" height="190" viewBox="0 0 190 190">'+
+          '<circle cx="95" cy="95" r="80" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/>'+
+          '<circle id="socArc" cx="95" cy="95" r="80" fill="none" stroke="#3DD598" stroke-width="11" stroke-linecap="round" stroke-dasharray="502.6" stroke-dashoffset="'+(502.6*(1-0.23))+'" style="transition:stroke-dashoffset .5s"/>'+
+        '</svg>'+
+        '<div class="lbl"><b><span id="socNum">23</span>%</b><span>电池电量</span></div>'+
+      '</div>'+
+      '<div class="chg-stats">'+
+        '<div class="cell"><b id="kwNum">86.4</b><span>实时功率 kW</span></div>'+
+        '<div class="cell"><b id="kwhNum">0.0</b><span>已充度数</span></div>'+
+        '<div class="cell"><b id="feeNum">0.00</b><span>费用 元</span></div>'+
+      '</div>'+
+      '<div style="margin-top:12px;font-size:12px;opacity:.85">预计 <b id="etaNum" style="font-family:var(--f-num)">38</b> 分钟后充满（80% 后自动降功率保护电池）</div>'+
+      '<button class="stop-btn" id="stopBtn">停止充电</button>'+
+    '</div>'+
+    '<div class="chg-info" style="margin-top:12px">'+
+      '<div class="r"><span>充电站</span><b style="font-family:inherit">滨江宝龙城超级充电站 · A07</b></div>'+
+      '<div class="r"><span>免费停车</span><b style="font-family:inherit">充电期间免停 2 小时</b></div>'+
+    '</div>';
+  state.timer=setInterval(function(){
+    state.soc=Math.min(96,state.soc+1);
+    state.kwh+=1.9;state.fee=state.kwh*1.15*0.96;
+    var kw=state.soc>=80?42+Math.random()*6:82+Math.random()*9;
+    $("#socNum").textContent=Math.round(state.soc);
+    $("#socArc").style.strokeDashoffset=502.6*(1-state.soc/100);
+    $("#kwNum").textContent=kw.toFixed(1);
+    $("#kwhNum").textContent=state.kwh.toFixed(1);
+    $("#feeNum").textContent=state.fee.toFixed(2);
+    $("#etaNum").textContent=Math.max(1,Math.round((96-state.soc)*0.55));
+    if(state.soc>=96){clearInterval(state.timer);openFlow(3)}
+  },900);
+  $("#stopBtn").addEventListener("click",function(){
+    if(confirm("确定停止充电并进行结算吗？")){clearInterval(state.timer);openFlow(3)}
+  });
+}
+function renderDone(){
+  var kwh=state.kwh||52.6,fee=state.fee||58.6;
+  flowBody.innerHTML=
+    '<div class="done-hero"><div class="ok"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
+    '<h3>充电完成，感谢使用</h3><p>订单号 XC20260720'+Math.floor(1000+Math.random()*9000)+' · 本次减碳 '+(kwh*0.58).toFixed(1)+' kg，已计入碳积分</p></div>'+
+    '<div class="chg-info">'+
+      '<div class="r"><span>充电时长</span><b>42 分钟</b></div>'+
+      '<div class="r"><span>充电电量</span><b>'+kwh.toFixed(1)+' 度</b></div>'+
+      '<div class="r"><span>电费</span><b>¥'+(kwh*0.85).toFixed(2)+'</b></div>'+
+      '<div class="r"><span>服务费（会员 8.8 折后）</span><b>¥'+(kwh*0.30*0.88).toFixed(2)+'</b></div>'+
+      '<div class="r"><span>优惠券抵扣</span><b style="color:var(--free)">-¥5.00</b></div>'+
+      '<div class="r"><span style="font-weight:700;color:var(--ink)">实付金额</span><b style="color:#F5222D;font-size:19px">¥'+(fee-5).toFixed(2)+'</b></div>'+
+    '</div>'+
+    '<div class="chg-info" style="margin-top:12px;padding-bottom:6px">'+
+      '<div style="font-size:14px;font-weight:700;padding:6px 0">为本次充电打分</div>'+
+      '<div class="stars" id="stars">'+
+        [1,2,3,4,5].map(function(i){return '<button data-s="'+i+'" aria-label="'+i+' 星"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8L12 2z"/></svg></button>'}).join("")+
+      '</div></div>'+
+    '<button class="btn btn-primary" style="width:100%;margin-top:14px" id="payBtn">确认支付并开票</button>'+
+    '<button style="width:100%;margin-top:10px;min-height:44px;color:var(--muted);font-size:13.5px" id="laterBtn">稍后再评，返回首页</button>';
+  document.querySelectorAll("#stars button").forEach(function(b){
+    b.addEventListener("click",function(){
+      var n=+b.dataset.s;
+      document.querySelectorAll("#stars button").forEach(function(x){x.classList.toggle("on",+x.dataset.s<=n)});
+    });
+  });
+  $("#payBtn").addEventListener("click",function(){toast("支付成功，电子发票将于本月末汇总开出");closeFlow()});
+  $("#laterBtn").addEventListener("click",closeFlow);
+}
+
+/* ================= 其他交互 ================= */
+$("#searchBar").addEventListener("click",function(){toast("试试搜索「宝龙城」或「高速」")});
+$("#locateBtn").addEventListener("click",function(){toast("已定位到当前位置：滨江区江南大道")});
+$("#refreshBtn").addEventListener("click",function(){renderPois();renderList();toast("桩态已刷新 · 28 座电站在线")});
+$("#viewToggle").addEventListener("click",function(){
+  var p=$("#panel");
+  p.style.maxHeight=p.style.maxHeight==="calc(100% - 150px)"?"260px":"calc(100% - 150px)";
+  this.querySelector("svg")&&(this.lastChild.textContent=p.style.maxHeight==="260px"?" 展开":" 收起");
+});
+document.querySelectorAll("[data-action]").forEach(function(b){
+  b.addEventListener("click",function(){
+    var m={vip:"已为您跳转 PLUS 会员开通页",buy:"能量包购买成功，已充入账户",wallet:"钱包功能演示",car:"车辆管理：已绑定 2 台车",battery:"电池卫士：健康度 96%，建议每月慢充 1 次",invoice:"电子发票将按月汇总开具",v2g:"V2G 放电需在支持站点启动",cs:"智能客服「小星」为您服务",setting:"设置页演示"};
+    toast(m[b.dataset.action]||"功能演示");
+  });
+});
+
+/* 订单数据 */
+var ORDERS=[
+ {s:"charging",st:"充电中",sc:"var(--busy)",name:"滨江宝龙城超级充电站",time:"今天 14:20 开始",kwh:"12.6 度",fee:"14.28",note:"A07 · 直流快充"},
+ {s:"done",st:"已完成",sc:"var(--free)",name:"星光大道二期充电站",time:"07-18 22:05",kwh:"38.2 度",fee:"40.11",note:"B12 · 直流快充"},
+ {s:"done",st:"已完成",sc:"var(--free)",name:"江南大道高速路旁站",time:"07-15 01:32",kwh:"41.5 度",fee:"36.52",note:"C03 · 谷时电价"},
+ {s:"unpaid",st:"待支付",sc:"#F5222D",name:"钱塘江大桥服务区站",time:"07-12 16:48",kwh:"22.0 度",fee:"21.56",note:"F01 · 直流快充"}
+];
+var ol=$("#orderList");
+ORDERS.forEach(function(o){
+  var c=el('<div class="order-card"></div>');
+  c.innerHTML='<div class="oh"><b>'+o.name+'</b><span class="stt" style="color:'+o.sc+'">'+o.st+'</span></div>'+
+    '<div class="om"><span>'+o.note+'</span><span>'+o.time+'</span></div>'+
+    '<div class="om"><span>充电量 <b>'+o.kwh+'</b></span><span>减碳已计入碳积分</span></div>'+
+    '<div class="of"><span class="fee">¥'+o.fee+'<small> 含电费+服务费</small></span>'+
+    (o.s==="charging"?'<button class="ghost-btn" style="color:var(--primary);border-color:var(--primary)">查看实时进度</button>':
+     o.s==="unpaid"?'<button class="ghost-btn" style="color:#F5222D;border-color:#F5222D">去支付</button>':
+     '<span style="display:flex;gap:8px"><button class="ghost-btn">开发票</button><button class="ghost-btn">再次充电</button></span>')+'</div>';
+  c.querySelectorAll("button").forEach(function(b){b.addEventListener("click",function(){toast(o.s==="charging"?"已为您打开实时充电进度":"订单操作演示")})});
+  ol.appendChild(c);
+});
+
+/* 键盘 Esc 关闭浮层 */
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){closeSheet();if(flow.classList.contains("show")&&(state.flowStep===0||state.flowStep===3))closeFlow()}
+});
+
+renderPois();renderList();
+})();
+</script>
+<style>@keyframes sp{to{transform:rotate(360deg)}}</style>
+</body>
+</html>

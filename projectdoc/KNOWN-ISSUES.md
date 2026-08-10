@@ -15,37 +15,36 @@ client_level: developer
 - **临时绕过**：使用 `production.frontend-design-skills-showcase.pages.dev` 别名访问
 - **相关文件**：Cloudflare Pages 部署配置
 
-### 2. 部分模型截图可能缺失
+### 2. 部分模型截图可能缺失或白屏
 
-- **现象**：Kimi 2.5、Mimo V2 Omni、GLM 的部分页面截图可能存在空白
-- **原因**：`file://` 协议下 CDN 资源加载超时（使用本地服务器截图可避免）
-- **临时绕过**：使用 Playwright 截图脚本重新截取
-- **相关文件**：`05-报告/展厅/assets/screenshots/`
+- **现象**：早期模型（Kimi 2.5、Mimo V2 Omni、GLM）的部分页面截图可能存在空白；React+Babel 页面（design-taste-frontend 等）曾白屏
+- **原因**：`file://` 协议下 CDN 资源加载超时；Babel 自动 JSX runtime 缺少 `react/jsx-runtime` 模块
+- **临时绕过**：使用本地服务器 + Playwright 截图脚本重截；React+Babel 页面通过 importmap 注入修复（见 TempScr/retry-glm52-white.js）
+- **相关文件**：`05-报告/展厅/assets/thumbnails/`
 
 ### 3. 展厅统计数字与实际文件数不一致
 
-- **现象**：index.html 中的统计数字（388 个页面）可能与 pages/ 目录实际文件数有偏差
-- **原因**：手动添加/删除文件后未同步更新 index.html 中的统计数字
-- **临时绕过**：编辑 `05-报告/展厅/index.html` 第 26 行的统计文本
+- **现象**：index.html 中的统计数字（484 个页面）与 pages/ 目录实际文件数（526）有偏差
+- **原因**：手动添加/删除文件后未同步更新 index.html 中的统计数字；pages/ 含未注册的 gemini3.1pro 与历史残留
+- **临时绕过**：编辑 `05-报告/展厅/index.html` 的统计文本（约在 header 区）
+- **状态**：统计基准待确认（见 README.md 待确认问题）
 
 ## 未完成功能
 
-- **Hy3 线上部署（2026-07-12 加测）**：Hy3 的 42 页 + 集成后的 index.html **本地已完成、线上待部署** ⏳
-  - [x] HTML 生成：`03-产出/hy3/*.html`（42 个，14 隔离 subagent 生成）
-  - [x] 文件复制：→ `05-报告/展厅/pages/hy3-*.html`（42 个）
-  - [x] 截图入库：`screenshot_hy3.py`（Playwright，桌面 1280×720 / 移动 390×844@2x），42 张非零字节
-  - [x] 展厅集成：index.html 8 处改动，统计数字更新（430 → 472，10 → 11 模型）
-  - [ ] **部署**：尚未 `wrangler pages deploy`；本机暂无 `CLOUDFLARE_API_TOKEN`，需先配置 token 或 `wrangler login`
-  - ⚠️ **截图环境坑**：playwright 装在系统 Python 3.12（`AppData\Local\Programs\Python\Python312\python.exe`），非 WorkBuddy 托管的 Python 3.13；跑 `screenshot_hy3.py` 须用 Python312 绝对路径。
+- **Gemini 3.1 Pro 未集成展厅**（03-产出/gemini3.1pro/，9 页，中文命名）
+  - [x] HTML 生成：9 页（星空航空官网 / 充电桩小程序 / 两轮后台，含重复变体）
+  - [ ] 文件复制 → pages/（未做）
+  - [ ] 截图入库（未做）
+  - [ ] 展厅注册（index.html 无 gemini3.1pro 分支，未做）
+  - [ ] 部署（未做）
+- **Kimi K3 仅部分集成**（03-产出/kimi-k3/，12 页）
+  - [x] HTML 生成：12 页（4 skill × 3 场景：ui-ux-pro-max / design-taste-frontend / frontend-design / web-design-guidelines）
+  - [x] 文件复制 → pages/（12 页已在 git 未提交状态）
+  - [x] 截图入库（12 张 webp 缩略图已生成）
+  - [x] 展厅注册（index.html 已有 kimiK3 按钮 + getFileMap 分支）
+  - [ ] 部署（未做；本地 index.html 已改，线上未同步）
 - **评审标准**：`04-评审/` 目录为空，评审标准文档待补充
-- **Gemini 3 截图**：部分补测页面（taste-skill / modern-web-design / superdesign）的截图可能未生成
-- **GLM 5.2 集成（2026-06-17 补测）**：**2026-06-18 已完成集成部署** ✅
-  - [x] 展厅集成：`05-报告/展厅/index.html` 新增 GLM 5.2 模型按钮（data-model="glm52"）、`getFileMap()` 的 `glm52` 分支、统计数字更新（388 → 430，9 → 10 模型）
-  - [x] 文件复制：`03-产出/glm5.2/*.html` → `05-报告/展厅/pages/`（42 个文件）
-  - [x] 截图入库：Playwright 截图脚本 `TempScr/screenshot-glm52.js`，airline/bikeops 使用 1920x1080（16:9），charging 使用 390x844（9:16）
-  - [x] 部署：已通过 `npx wrangler pages deploy` 部署到 Cloudflare Pages main 分支
-  - [x] Kimi K2.6 截图重截：42 张全部重新截取修复 CDN 加载失败导致的白屏
-  - 注：GLM 5.2 与 GLM 5.0 是**两个独立版本**，展厅中并存展示，GLM 5.2 排在 GLM 5.0 前面
+- **未提交改动**：当前有 198 项未提交变更（deepseek 42 页重做、kimi-k3 12 页新增、缩略图 webp 改版、index.html 更新），需确认后提交
 
 ## 技术债
 
@@ -53,18 +52,24 @@ client_level: developer
 
 - **位置**：`05-报告/展厅/index.html`（约 500 行）
 - **问题**：所有模型配置、文件映射、渲染逻辑都在一个文件中，新增模型需要修改多处代码
-- **建议**：新增模型时，需要修改多处代码（模型按钮、分类数组、文件映射、Badge颜色、过滤器、统计数字），考虑抽象为 JSON 配置 + 渲染引擎（模型数量继续增长时建议优化）
+- **建议**：新增模型时，需要修改 8 处代码（模型按钮、分类数组、文件映射、Badge颜色、过滤器、统计数字），考虑抽象为 JSON 配置 + 渲染引擎（模型数量继续增长时建议优化）
 
 ### 2. 文件命名不一致
 
 - **位置**：`03-产出/` 各模型目录
-- **问题**：不同模型的文件命名规则不统一（如 Kimi 用 `{skill}-{scenario}.html`，Gemini 用 `gemini3_{skill}_{scenario}.html`）
-- **影响**：展厅 `getFileMap()` 函数需要为每个模型写特殊的映射逻辑
+- **问题**：不同模型的文件命名规则不统一（如 Kimi 用 `{skill}_{scene}.html`，Gemini 用 `gemini3_{skill}_{scene}.html`，Gemini 3.1 Pro 用中文命名）
+- **影响**：展厅 `getFileMap()` 函数需要为每个模型写特殊的映射逻辑；`gemini3.1pro/` 中文命名导致无法纳入现有映射
 
 ### 3. 无自动化测试
 
 - **问题**：展厅的筛选、渲染逻辑没有自动化测试
-- **风险**：修改 index.html 时可能引入回归 bug
+- **风险**：修改 index.html 时可能引入回归 bug（详见 REGRESSION-TEST.md）
+
+### 4. 目录残留
+
+- `03-产出/ScreenShot/`：截图残留目录（无 HTML）
+- `03-产出/gemini35/`：1 页残留（已从展厅移除）
+- `05-报告/展厅/pages/`：含未注册模型的 HTML 副本，与 index.html 统计口径不一致
 
 ## 安全注意项
 

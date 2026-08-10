@@ -14,6 +14,8 @@ client_level: developer
 |---|---|---|---|---|
 | `CLOUDFLARE_API_TOKEN` | Wrangler CLI 部署认证 | Cloudflare Dashboard → My Profile → API Tokens → 创建 Token（权限：Cloudflare Pages: Edit） | 部署时必需 | 本地部署到 Cloudflare Pages |
 
+> 高熵值检测：0 个。本机 `CLOUDFLARE_API_TOKEN` 存在于系统用户环境变量中（经 Wrangler 读取），未写入任何项目文件或 git 历史。轮换周期建议：Token 泄露或疑似泄露时立即更换（见 RUNBOOK.md）。
+
 ## 扫描到的变量（非项目使用）
 
 以下变量由扫描脚本从 `01-技能/已安装技能/skills/` 目录下的 SKILL.md 文档中检测到，**不是本项目实际使用的环境变量**，仅为 skill 文档中的示例/说明文本：
@@ -56,7 +58,14 @@ client_level: developer
 | `VALID_COMMANDS` | skill 文档 | 否 |
 | `VAR` | skill 文档 | 否 |
 
+## 密钥轮换
+
+| 密钥 | 轮换周期 | 触发条件 | 轮换流程 | 影响 |
+|---|---|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | 无固定周期 | Token 泄露、疑似泄露、权限变更、账号安全事件 | 1. Cloudflare Dashboard → My Profile → API Tokens → 创建新 Token（权限：Cloudflare Pages: Edit）2. 删除旧 Token 3. 更新系统用户环境变量 4. 验证 `wrangler pages deploy` | 轮换期间无法部署（分钟级），不影响线上站点运行 |
+
 ## 注意事项
 
 - 本项目 **没有** `.env` 文件、`.env.example` 或应用级环境变量
 - `CLOUDFLARE_API_TOKEN` 仅在部署时需要，本地预览和开发不需要
+- 截图脚本无环境变量依赖，直接用 Python 3.12 绝对路径调用即可

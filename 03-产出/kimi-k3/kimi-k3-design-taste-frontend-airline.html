@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星空航空 Skystar Airlines — 每一次起飞，都是一次全新的抵达</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/phosphor-icons@1.4.2"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        zinc950: '#0c0d10',
+        offblack: '#121317',
+        accent: '#10b981',
+        accentDark: '#059669',
+        slatewarm: '#e8e6e1',
+      },
+      fontFamily: {
+        display: ['"Cabinet Grotesk"', 'sans-serif'],
+        body: ['Outfit', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      transitionTimingFunction: {
+        'spring': 'cubic-bezier(0.16,1,0.3,1)',
+      }
+    }
+  }
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background: #0c0d10; color: #e4e4e7; font-family: Outfit, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  ::selection { background: #10b981; color: #0c0d10; }
+
+  /* 噪点 grain —— fixed overlay */
+  .grain::after {
+    content: ""; position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* 跑马灯 */
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .marquee-track { display: flex; width: max-content; animation: marquee 32s linear infinite; }
+  .marquee-track:hover { animation-play-state: paused; }
+
+  /* reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s cubic-bezier(0.16,1,0.3,1), transform .9s cubic-bezier(0.16,1,0.3,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* 卡片悬停 */
+  .lift { transition: transform .45s cubic-bezier(0.16,1,0.3,1), box-shadow .45s; }
+  .lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -12px rgba(16,185,129,0.15); }
+  .lift:active { transform: translateY(-1px) scale(0.99); }
+
+  /* breathing status dot */
+  @keyframes breathe { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity: .45; transform: scale(0.82);} }
+  .breathe { animation: breathe 2.4s ease-in-out infinite; }
+
+  /* 大数字滚动 */
+  .stat-num { font-variant-numeric: tabular-nums; }
+
+  /* 按钮方向感知 hover fill */
+  .btn-fill { position: relative; overflow: hidden; z-index: 0; }
+  .btn-fill::before {
+    content: ""; position: absolute; inset: 0; background: #10b981; z-index: -1;
+    transform: translateX(-101%); transition: transform .45s cubic-bezier(0.16,1,0.3,1);
+  }
+  .btn-fill:hover::before { transform: translateX(0); }
+  .btn-fill:hover { color: #0c0d10 !important; }
+
+  /* 航线图 */
+  .route-line { stroke-dasharray: 6 6; animation: dash 30s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -600; } }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #0c0d10; }
+  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+  /* 分隔竖线 */
+  .v-divider { width: 1px; background: linear-gradient(to bottom, transparent, rgba(228,228,231,0.15), transparent); }
+
+  /* 星空粒子（canvas 上方文字可点） */
+  #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  /* 目的地卡图 */
+  .dest-img { transition: transform .8s cubic-bezier(0.16,1,0.3,1); }
+  .dest-card:hover .dest-img { transform: scale(1.06); }
+
+  /* 票价 ticker */
+  .price-tick { font-variant-numeric: tabular-nums; }
+
+  /* nav 模糊玻璃 */
+  .glass-nav {
+    background: rgba(12,13,16,0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+</style>
+</head>
+<body class="grain">
+
+<canvas id="stars"></canvas>
+
+<!-- ============ NAV ============ -->
+<nav class="glass-nav fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3 group">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M14 2L17 11L26 14L17 17L14 26L11 17L2 14L11 11L14 2Z" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="14" cy="14" r="3" fill="#10b981"/>
+      </svg>
+      <span class="font-display font-700 text-lg tracking-tight text-zinc-100">星空航空 <span class="text-zinc-500 font-400 text-sm ml-1">SKYSTAR</span></span>
+    </a>
+    <div class="hidden lg:flex items-center gap-8 text-sm text-zinc-400">
+      <a href="#hero" class="hover:text-zinc-100 transition-colors">首页</a>
+      <a href="#routes" class="hover:text-zinc-100 transition-colors">航班查询</a>
+      <a href="#destinations" class="hover:text-zinc-100 transition-colors">目的地</a>
+      <a href="#service" class="hover:text-zinc-100 transition-colors">服务与礼遇</a>
+      <a href="#starmember" class="hover:text-zinc-100 transition-colors">常旅客计划</a>
+      <a href="#about" class="hover:text-zinc-100 transition-colors">关于我们</a>
+    </div>
+    <div class="flex items-center gap-4">
+      <a href="tel:4008009988" class="hidden md:flex items-center gap-2 text-sm text-zinc-400 hover:text-accent transition-colors">
+        <i class="ph ph-phone text-base"></i>
+        <span class="font-mono">400-800-9988</span>
+      </a>
+      <button class="btn-fill border border-accent text-accent text-sm px-5 py-2 rounded-full font-500 transition-colors">立即订票</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO — SPLIT SCREEN ASYMMETRIC ============ -->
+<section id="hero" class="relative min-h-[100dvh] pt-16 flex flex-col">
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 max-w-[1400px] mx-auto w-full px-6 lg:px-12 relative z-10">
+    <!-- 左列 — 文案 -->
+    <div class="lg:col-span-7 flex flex-col justify-center py-20 lg:py-0 lg:pr-16">
+      <div class="reveal flex items-center gap-3 mb-8">
+        <span class="breathe inline-block w-2 h-2 rounded-full bg-accent"></span>
+        <span class="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">EST. 2008 · HANGZHOU</span>
+      </div>
+      <h1 class="reveal font-display font-900 text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tighter text-zinc-100" style="transition-delay:80ms">
+        每一次<br>
+        <span class="text-zinc-500">起飞，</span>都是<br>
+        一次<span class="text-accent">全新的抵达</span>
+      </h1>
+      <p class="reveal mt-8 text-base md:text-lg text-zinc-400 leading-relaxed max-w-[52ch]" style="transition-delay:160ms">
+        连接世界，触达梦想。总部杭州萧山国际机场，覆盖国内 82 城与国际 47 个目的地，
+        日执飞 600 余班，累计安全飞行 1200 万小时。
+      </p>
+      <div class="reveal mt-10 flex flex-wrap gap-4" style="transition-delay:240ms">
+        <button class="btn-fill bg-accent text-offblack px-8 py-4 rounded-full font-600 text-sm tracking-wide border border-accent">
+          查询航班 <i class="ph ph-arrow-right ml-1"></i>
+        </button>
+        <button class="border border-zinc-700 text-zinc-300 px-8 py-4 rounded-full font-500 text-sm hover:border-zinc-400 hover:text-zinc-100 transition-colors">
+          探索目的地
+        </button>
+      </div>
+
+      <!-- 关键数据 — 横向拉开 -->
+      <div class="reveal mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4" style="transition-delay:320ms">
+        <div class="border-l border-zinc-800 pl-4">
+          <div class="font-display font-800 text-3xl md:text-4xl text-zinc-100 stat-num" data-target="82">0</div>
+          <div class="text-xs text-zinc-500 mt-1 tracking-wider">国内航点</div>
+        </div>
+        <div class="border-l border-zinc-800 pl-4">
+          <div class="font-display font-800 text-3xl md:text-4xl text-zinc-100 stat-num" data-target="47">0</div>
+          <div class="text-xs text-zinc-500 mt-1 tracking-wider">国际目的地</div>
+        </div>
+        <div class="border-l border-zinc-800 pl-4">
+          <div class="font-display font-800 text-3xl md:text-4xl text-accent stat-num" data-target="600" data-suffix="+">0</div>
+          <div class="text-xs text-zinc-500 mt-1 tracking-wider">日执飞班次</div>
+        </div>
+        <div class="border-l border-zinc-800 pl-4">
+          <div class="font-display font-800 text-3xl md:text-4xl text-zinc-100 stat-num" data-target="1200" data-suffix="万">0</div>
+          <div class="text-xs text-zinc-500 mt-1 tracking-wider">安全飞行小时</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右列 — 视觉资产（不对称占据） -->
+    <div class="lg:col-span-5 relative hidden lg:flex items-end pb-24">
+      <div class="reveal relative w-full" style="transition-delay:200ms">
+        <!-- 主视觉图 -->
+        <div class="relative overflow-hidden rounded-[2rem] border border-white/5 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
+          <img src="https://picsum.photos/seed/skystar-wing/900/1100" alt="机翼舷窗" class="w-full h-[560px] object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-offblack via-transparent to-transparent"></div>
+          <!-- 浮层航班卡片 -->
+          <div class="absolute bottom-6 left-6 right-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <div class="font-mono text-[10px] text-zinc-500 tracking-widest">FLIGHT</div>
+                <div class="font-mono text-lg text-zinc-100">MU 5187</div>
+              </div>
+              <div class="text-right">
+                <div class="font-mono text-[10px] text-zinc-500 tracking-widest">STATUS</div>
+                <div class="text-accent text-sm font-500 flex items-center gap-1.5 justify-end">
+                  <span class="breathe inline-block w-1.5 h-1.5 rounded-full bg-accent"></span> 准时
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-display font-700 text-2xl">HGH</div>
+                <div class="text-xs text-zinc-500">杭州萧山</div>
+              </div>
+              <div class="flex-1 mx-4 relative h-px bg-zinc-700">
+                <svg class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="text-right">
+                <div class="font-display font-700 text-2xl">SYX</div>
+                <div class="text-xs text-zinc-500">三亚凤凰</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 侧立标签 -->
+        <div class="absolute -left-16 top-1/2 -translate-y-1/2 -rotate-90 origin-center">
+          <span class="font-mono text-xs tracking-[0.5em] text-zinc-600 uppercase whitespace-nowrap">HANGZHOU → THE WORLD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部 marquee -->
+  <div class="relative z-10 border-t border-zinc-800/60 bg-offblack/60 backdrop-blur-sm py-4 overflow-hidden">
+    <div class="marquee-track font-mono text-xs text-zinc-500 tracking-wider">
+      <div class="flex gap-12 pr-12 items-center whitespace-nowrap">
+        <span>MU 5187 · HGH→SYX · 准时</span><span class="text-accent">·</span>
+        <span>CA 1722 · HGH→PEK · 登机中</span><span class="text-accent">·</span>
+        <span>3U 8921 · HGH→CTU · 已起飞</span><span class="text-accent">·</span>
+        <span>HO 1127 · HGH→KIX · 计划 14:35</span><span class="text-accent">·</span>
+        <span>FM 9306 · HGH→LHR · 计划 16:20</span><span class="text-accent">·</span>
+        <span>GJ 8014 · HGH→DXB · 值机开放</span><span class="text-accent">·</span>
+        <span>HU 7263 · HGH→CDG · 计划 22:10</span><span class="text-accent">·</span>
+      </div>
+      <div class="flex gap-12 pr-12 items-center whitespace-nowrap" aria-hidden="true">
+        <span>MU 5187 · HGH→SYX · 准时</span><span class="text-accent">·</span>
+        <span>CA 1722 · HGH→PEK · 登机中</span><span class="text-accent">·</span>
+        <span>3U 8921 · HGH→CTU · 已起飞</span><span class="text-accent">·</span>
+        <span>HO 1127 · HGH→KIX · 计划 14:35</span><span class="text-accent">·</span>
+        <span>FM 9306 · HGH→LHR · 计划 16:20</span><span class="text-accent">·</span>
+        <span>GJ 8014 · HGH→DXB · 值机开放</span><span class="text-accent">·</span>
+        <span>HU 7263 · HGH→CDG · 计划 22:10</span><span class="text-accent">·</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 限时优惠 — ZIG-ZAG 2 列 ============ -->
+<section id="deals" class="relative z-10 py-32">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="reveal mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+      <div>
+        <div class="font-mono text-xs tracking-[0.3em] text-accent uppercase mb-4">— Limited Offers</div>
+        <h2 class="font-display font-800 text-4xl md:text-5xl tracking-tight text-zinc-100">本周限时航线</h2>
+      </div>
+      <p class="text-zinc-500 text-sm max-w-[40ch] md:text-right">每周三 10:00 刷新，公务舱与经济舱同享，售完即止。</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Card 1 — 大图 -->
+      <a href="#" class="reveal lift dest-card group relative overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-900/40">
+        <img src="https://picsum.photos/seed/sanya-deal/900/600" alt="三亚" class="dest-img w-full h-72 object-cover opacity-70">
+        <div class="absolute inset-0 bg-gradient-to-t from-offblack via-offblack/40 to-transparent"></div>
+        <div class="absolute top-6 left-6 font-mono text-[10px] tracking-widest text-zinc-400 bg-offblack/60 backdrop-blur px-3 py-1 rounded-full border border-white/10">ECONOMY</div>
+        <div class="absolute bottom-6 left-6 right-6 flex items-end justify-between">
+          <div>
+            <div class="text-sm text-zinc-400 mb-1">杭州 → 三亚</div>
+            <div class="font-display font-800 text-3xl text-zinc-100">亚龙湾的冬天</div>
+          </div>
+          <div class="text-right">
+            <div class="font-mono text-[10px] text-zinc-500 tracking-widest">FROM</div>
+            <div class="font-display font-800 text-4xl text-accent price-tick">¥399</div>
+          </div>
+        </div>
+      </a>
+
+      <!-- Card 2 — 数据型 -->
+      <a href="#" class="reveal lift group relative overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-8 flex flex-col justify-between" style="transition-delay:80ms">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="font-mono text-[10px] tracking-widest text-zinc-500 mb-2">KANSAI INTL</div>
+            <div class="font-display font-800 text-4xl text-zinc-100">大阪</div>
+            <div class="text-sm text-zinc-500 mt-2">关西红叶 · 道顿堀 · 环球影城</div>
+          </div>
+          <i class="ph ph-arrow-up-right text-2xl text-zinc-600 group-hover:text-accent group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"></i>
+        </div>
+        <div class="flex items-end justify-between mt-12">
+          <div class="font-mono text-xs text-zinc-500">
+            <div>HO 1127 · 每日执飞</div>
+            <div class="mt-1">14:35 HGH — 17:50 KIX</div>
+          </div>
+          <div class="font-display font-800 text-5xl text-accent price-tick">¥1299</div>
+        </div>
+      </a>
+
+      <!-- Card 3 — 数据型 -->
+      <a href="#" class="reveal lift group relative overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-8 flex flex-col justify-between" style="transition-delay:120ms">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="font-mono text-[10px] tracking-widest text-zinc-500 mb-2">HEATHROW LHR</div>
+            <div class="font-display font-800 text-4xl text-zinc-100">伦敦</div>
+            <div class="text-sm text-zinc-500 mt-2">西区剧院 · 大英博物馆 · 泰晤士河</div>
+          </div>
+          <i class="ph ph-arrow-up-right text-2xl text-zinc-600 group-hover:text-accent group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"></i>
+        </div>
+        <div class="flex items-end justify-between mt-12">
+          <div class="font-mono text-xs text-zinc-500">
+            <div>FM 9306 · 每周 4 班</div>
+            <div class="mt-1">16:20 HGH — 20:05 LHR</div>
+          </div>
+          <div class="font-display font-800 text-5xl text-accent price-tick">¥3899</div>
+        </div>
+      </a>
+
+      <!-- Card 4 — 标语型 -->
+      <div class="reveal lift relative overflow-hidden rounded-3xl border border-accent/30 bg-gradient-to-br from-accent/10 to-transparent p-8 flex flex-col justify-between" style="transition-delay:160ms">
+        <div>
+          <i class="ph ph-sparkle text-3xl text-accent mb-4"></i>
+          <div class="font-display font-800 text-3xl text-zinc-100 leading-tight">星辰会员<br>额外再享 9.2 折</div>
+          <p class="text-sm text-zinc-500 mt-3 leading-relaxed">登录后自动应用，可与限时航线叠加。积分同步累计至常旅客计划。</p>
+        </div>
+        <button class="btn-fill mt-8 self-start border border-accent text-accent px-6 py-2.5 rounded-full text-sm font-500">查看会员权益</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 精选目的地 — MASONRY-LIKE 不对称 ============ -->
+<section id="destinations" class="relative z-10 py-32 border-t border-zinc-900">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="reveal mb-20 lg:pl-[12vw]">
+      <div class="font-mono text-xs tracking-[0.3em] text-accent uppercase mb-4">— Destinations</div>
+      <h2 class="font-display font-800 text-4xl md:text-6xl tracking-tight text-zinc-100 max-w-[20ch] leading-tight">
+        五个目的地，五种<span class="text-zinc-500">不同的</span>夏天
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <!-- 大图 1 -->
+      <a href="#" class="reveal dest-card lift group md:col-span-7 relative overflow-hidden rounded-3xl border border-zinc-800/60 h-[420px]">
+        <img src="https://picsum.photos/seed/sanya-city/1000/700" alt="三亚" class="dest-img w-full h-full object-cover opacity-80">
+        <div class="absolute inset-0 bg-gradient-to-t from-offblack via-offblack/20 to-transparent"></div>
+        <div class="absolute bottom-8 left-8">
+          <div class="font-mono text-[10px] tracking-widest text-zinc-400 mb-2">SYX · 18.25°N 109.51°E</div>
+          <div class="font-display font-800 text-4xl text-zinc-100">三亚</div>
+          <div class="text-sm text-zinc-400 mt-1">每周 21 班直飞 · 飞行 2h 50m</div>
+        </div>
+      </a>
+
+      <!-- 图 2 -->
+      <a href="#" class="reveal dest-card lift group md:col-span-5 relative overflow-hidden rounded-3xl border border-zinc-800/60 h-[420px]" style="transition-delay:80ms">
+        <img src="https://picsum.photos/seed/chengdu-city/800/700" alt="成都" class="dest-img w-full h-full object-cover opacity-80">
+        <div class="absolute inset-0 bg-gradient-to-t from-offblack via-offblack/20 to-transparent"></div>
+        <div class="absolute bottom-8 left-8">
+          <div class="font-mono text-[10px] tracking-widest text-zinc-400 mb-2">CTU · 30.57°N 104.07°E</div>
+          <div class="font-display font-800 text-4xl text-zinc-100">成都</div>
+          <div class="text-sm text-zinc-400 mt-1">每周 28 班直飞 · 飞行 2h 40m</div>
+        </div>
+      </a>
+
+      <!-- 图 3 -->
+      <a href="#" class="reveal dest-card lift group md:col-span-4 relative overflow-hidden rounded-3xl border border-zinc-800/60 h-[360px]" style="transition-delay:120ms">
+        <img src="https://picsum.photos/seed/tokyo-city/700/600" alt="东京" class="dest-img w-full h-full object-cover opacity-80">
+        <div class="absolute inset-0 bg-gradient-to-t from-offblack via-offblack/20 to-transparent"></div>
+        <div class="absolute bottom-8 left-8">
+          <div class="font-mono text-[10px] tracking-widest text-zinc-400 mb-2">NRT · 35.77°N 140.39°E</div>
+          <div class="font-display font-800 text-3xl text-zinc-100">东京</div>
+        </div>
+      </a>
+
+      <!-- 图 4 -->
+      <a href="#" class="reveal dest-card lift group md:col-span-4 relative overflow-hidden rounded-3xl border border-zinc-800/60 h-[360px]" style="transition-delay:160ms">
+        <img src="https://picsum.photos/seed/dubai-city/700/600" alt="迪拜" class="dest-img w-full h-full object-cover opacity-80">
+        <div class="absolute inset-0 bg-gradient-to-t from-offblack via-offblack/20 to-transparent"></div>
+        <div class="absolute bottom-8 left-8">
+          <div class="font-mono text-[10px] tracking-widest text-zinc-400 mb-2">DXB · 25.25°N 55.36°E</div>
+          <div class="font-display font-800 text-3xl text-zinc-100">迪拜</div>
+        </div>
+      </a>
+
+      <!-- 图 5 -->
+      <a href="#" class="reveal dest-card lift group md:col-span-4 relative overflow-hidden rounded-3xl border border-zinc-800/60 h-[360px]" style="transition-delay:200ms">
+        <img src="https://picsum.photos/seed/paris-city/700/600" alt="巴黎" class="dest-img w-full h-full object-cover opacity-80">
+        <div class="absolute inset-0 bg-gradient-to-t from-offblack via-offblack/20 to-transparent"></div>
+        <div class="absolute bottom-8 left-8">
+          <div class="font-mono text-[10px] tracking-widest text-zinc-400 mb-2">CDG · 49.01°N 2.55°E</div>
+          <div class="font-display font-800 text-3xl text-zinc-100">巴黎</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 大核心卖点 — BENTO GRID ============ -->
+<section id="service" class="relative z-10 py-32">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="reveal mb-16">
+      <div class="font-mono text-xs tracking-[0.3em] text-accent uppercase mb-4">— Why Skystar</div>
+      <h2 class="font-display font-800 text-4xl md:text-5xl tracking-tight text-zinc-100">把长途飞行，做成值得期待的事</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+      <!-- 安全 — 大 tile -->
+      <div class="reveal lift md:col-span-3 md:row-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-3xl p-10 flex flex-col justify-between min-h-[420px]">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
+            <i class="ph ph-shield-check text-2xl text-accent"></i>
+          </div>
+          <h3 class="font-display font-800 text-3xl text-zinc-100 mb-4">安全第一，不是口号</h3>
+          <p class="text-zinc-400 text-sm leading-relaxed max-w-[42ch]">
+            机长平均飞行 9800 小时，机队由波音 787 与空客 A320neo 组成。
+            通过 IOSA 国际运行安全审计，连续 16 年零重大事故。
+          </p>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mt-10 pt-8 border-t border-zinc-800">
+          <div><div class="font-display font-700 text-2xl text-zinc-100 stat-num">9800<span class="text-sm text-zinc-500">h</span></div><div class="text-xs text-zinc-500 mt-1">机长均时</div></div>
+          <div><div class="font-display font-700 text-2xl text-zinc-100 stat-num">16<span class="text-sm text-zinc-500">年</span></div><div class="text-xs text-zinc-500 mt-1">零重大事故</div></div>
+          <div><div class="font-display font-700 text-2xl text-accent stat-num">IOSA</div><div class="text-xs text-zinc-500 mt-1">国际认证</div></div>
+        </div>
+      </div>
+
+      <!-- 航线 -->
+      <div class="reveal lift md:col-span-3 bg-zinc-900/50 border border-zinc-800/60 rounded-3xl p-8" style="transition-delay:80ms">
+        <div class="flex items-start justify-between mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <i class="ph ph-globe-hemisphere-east text-2xl text-accent"></i>
+          </div>
+          <span class="font-mono text-xs text-zinc-600">02</span>
+        </div>
+        <h3 class="font-display font-700 text-2xl text-zinc-100 mb-3">广泛航线网络</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">190 个目的地，与 28 家航司代码共享。一张机票，抵达世界任何角落。</p>
+      </div>
+
+      <!-- 客舱 -->
+      <div class="reveal lift md:col-span-3 bg-zinc-900/50 border border-zinc-800/60 rounded-3xl p-8" style="transition-delay:120ms">
+        <div class="flex items-start justify-between mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <i class="ph ph-armchair text-2xl text-accent"></i>
+          </div>
+          <span class="font-mono text-xs text-zinc-600">03</span>
+        </div>
+        <h3 class="font-display font-700 text-2xl text-zinc-100 mb-3">1-2-1 平躺商务舱</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">17 英寸 4K 个人屏幕，全程高速 WiFi，把万米高空变成你的私人舱室。</p>
+      </div>
+
+      <!-- 餐饮 -->
+      <div class="reveal lift md:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-3xl p-8" style="transition-delay:160ms">
+        <div class="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
+          <i class="ph ph-cooking-pot text-2xl text-accent"></i>
+        </div>
+        <h3 class="font-display font-700 text-xl text-zinc-100 mb-3">云端餐饮</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">主厨联名菜单，中西双套餐，随季节更换节令料理。</p>
+      </div>
+
+      <!-- 数字化 -->
+      <div class="reveal lift md:col-span-4 bg-zinc-900/50 border border-zinc-800/60 rounded-3xl p-8" style="transition-delay:200ms">
+        <div class="flex items-start justify-between mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <i class="ph ph-device-mobile text-2xl text-accent"></i>
+          </div>
+          <div class="font-mono text-xs text-accent bg-accent/10 border border-accent/20 px-3 py-1 rounded-full">18 分钟全流程</div>
+        </div>
+        <h3 class="font-display font-700 text-xl text-zinc-100 mb-3">数字化服务</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed max-w-[50ch]">App 无纸化登机，智能客服「星星」支持中英日韩四语，从值机到登机口全程平均只需 18 分钟。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 星辰会员 — SPLIT ============ -->
+<section id="starmember" class="relative z-10 py-32 border-t border-zinc-900">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+    <div class="reveal lg:sticky lg:top-32">
+      <div class="font-mono text-xs tracking-[0.3em] text-accent uppercase mb-4">— Starmember</div>
+      <h2 class="font-display font-800 text-4xl md:text-6xl tracking-tight text-zinc-100 leading-tight">
+        星辰会员<br><span class="text-zinc-500">四级计划</span>
+      </h2>
+      <p class="mt-8 text-zinc-400 text-base leading-relaxed max-w-[48ch]">
+        每一次飞行都累计星辰里程。里程永不清零，可兑换机票、升舱、休息室与合作伙伴权益。
+      </p>
+      <div class="mt-10 flex items-center gap-6 text-sm text-zinc-500">
+        <div class="flex items-center gap-2"><i class="ph ph-infinity text-accent"></i> 里程永不过期</div>
+        <div class="flex items-center gap-2"><i class="ph ph-users-three text-accent"></i> 家庭账户共享</div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <!-- 银卡 -->
+      <div class="reveal lift group bg-zinc-900/50 border border-zinc-800/60 rounded-3xl p-8 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-zinc-600 to-zinc-800 flex items-center justify-center font-display font-800 text-xl text-zinc-300">银</div>
+          <div>
+            <div class="font-display font-700 text-xl text-zinc-100">星辰银卡</div>
+            <div class="text-sm text-zinc-500 mt-1">优先值机 · 额外 10kg 行李</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-mono text-xs text-zinc-500">QUALIFY</div>
+          <div class="font-display font-700 text-2xl text-zinc-100 stat-num">25,000<span class="text-sm text-zinc-500"> 里程</span></div>
+        </div>
+      </div>
+
+      <!-- 金卡 -->
+      <div class="reveal lift group bg-zinc-900/50 border border-zinc-700 rounded-3xl p-8 flex items-center justify-between" style="transition-delay:60ms">
+        <div class="flex items-center gap-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-display font-800 text-xl text-offblack">金</div>
+          <div>
+            <div class="font-display font-700 text-xl text-zinc-100">星辰金卡</div>
+            <div class="text-sm text-zinc-500 mt-1">公务舱柜台 · 休息室 4 次/年</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-mono text-xs text-zinc-500">QUALIFY</div>
+          <div class="font-display font-700 text-2xl text-zinc-100 stat-num">50,000<span class="text-sm text-zinc-500"> 里程</span></div>
+        </div>
+      </div>
+
+      <!-- 白金 -->
+      <div class="reveal lift group bg-zinc-900/50 border border-zinc-600 rounded-3xl p-8 flex items-center justify-between" style="transition-delay:120ms">
+        <div class="flex items-center gap-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-zinc-300 to-zinc-500 flex items-center justify-center font-display font-800 text-xl text-offblack">铂</div>
+          <div>
+            <div class="font-display font-700 text-xl text-zinc-100">星辰白金卡</div>
+            <div class="text-sm text-zinc-500 mt-1">无限休息室 · 升舱券 2 张/年</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-mono text-xs text-zinc-500">QUALIFY</div>
+          <div class="font-display font-700 text-2xl text-zinc-100 stat-num">100,000<span class="text-sm text-zinc-500"> 里程</span></div>
+        </div>
+      </div>
+
+      <!-- 钻石 -->
+      <div class="reveal lift group bg-gradient-to-br from-accent/10 to-transparent border border-accent/30 rounded-3xl p-8 flex items-center justify-between" style="transition-delay:180ms">
+        <div class="flex items-center gap-6">
+          <div class="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
+            <i class="ph ph-diamond text-2xl text-offblack"></i>
+          </div>
+          <div>
+            <div class="font-display font-700 text-xl text-zinc-100">星辰钻石卡</div>
+            <div class="text-sm text-zinc-400 mt-1">专属管家 · 全年升舱 · 定制礼遇</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-mono text-xs text-accent">INVITATION</div>
+          <div class="font-display font-700 text-2xl text-zinc-100">邀请制</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 关怀服务 ============ -->
+<section class="relative z-10 py-24 border-t border-zinc-900">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-800/60 rounded-3xl overflow-hidden border border-zinc-800/60">
+      <div class="reveal bg-offblack p-10">
+        <i class="ph ph-wheelchair text-3xl text-accent mb-5"></i>
+        <h3 class="font-display font-700 text-xl text-zinc-100 mb-3">特殊旅客关怀</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">轮椅协助、无陪儿童、孕妇与年长旅客专属通道，提前 48 小时预约即可。</p>
+      </div>
+      <div class="reveal bg-offblack p-10" style="transition-delay:80ms">
+        <i class="ph ph-paw-print text-3xl text-accent mb-5"></i>
+        <h3 class="font-display font-700 text-xl text-zinc-100 mb-3">宠物随行</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">指定航线开放宠物客舱与有氧货舱托运，全程温控监测，让爱宠与你同行。</p>
+      </div>
+      <div class="reveal bg-offblack p-10" style="transition-delay:160ms">
+        <i class="ph ph-briefcase text-3xl text-accent mb-5"></i>
+        <h3 class="font-display font-700 text-xl text-zinc-100 mb-3">企业商务服务</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">企业协议价、差旅月结、专属客户经理，为 200 余家上市公司提供差旅方案。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 关于 — 大留白 + 数字 ============ -->
+<section id="about" class="relative z-10 py-32 border-t border-zinc-900">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div class="reveal lg:col-span-5">
+        <div class="font-mono text-xs tracking-[0.3em] text-accent uppercase mb-4">— About</div>
+        <h2 class="font-display font-800 text-4xl md:text-5xl tracking-tight text-zinc-100 leading-tight">
+          自 2008 年<br>从杭州出发
+        </h2>
+        <p class="mt-8 text-zinc-400 text-base leading-relaxed max-w-[48ch]">
+          星空航空成立于 2008 年，总部设于杭州萧山国际机场。我们相信，航空不只是位移，
+          更是人与世界重新连接的方式。
+        </p>
+        <div class="mt-10 inline-flex items-center gap-3 text-sm text-zinc-500">
+          <i class="ph ph-leaf text-accent text-lg"></i>
+          <span>承诺 CORSIA 框架 · 2035 年减碳 40%</span>
+        </div>
+      </div>
+      <div class="lg:col-span-7 grid grid-cols-2 gap-px bg-zinc-800/60 rounded-3xl overflow-hidden border border-zinc-800/60">
+        <div class="reveal bg-offblack p-10">
+          <div class="font-display font-800 text-5xl text-zinc-100 stat-num">2008</div>
+          <div class="text-sm text-zinc-500 mt-2">成立年份</div>
+        </div>
+        <div class="reveal bg-offblack p-10" style="transition-delay:60ms">
+          <div class="font-display font-800 text-5xl text-zinc-100 stat-num">186</div>
+          <div class="text-sm text-zinc-500 mt-2">在役机队（架）</div>
+        </div>
+        <div class="reveal bg-offblack p-10" style="transition-delay:120ms">
+          <div class="font-display font-800 text-5xl text-accent stat-num">5.2</div>
+          <div class="text-sm text-zinc-500 mt-2">平均机龄（年）</div>
+        </div>
+        <div class="reveal bg-offblack p-10" style="transition-delay:180ms">
+          <div class="font-display font-800 text-5xl text-zinc-100 stat-num">-40<span class="text-2xl">%</span></div>
+          <div class="text-sm text-zinc-500 mt-2">2035 减碳目标</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="relative z-10 border-t border-zinc-900 py-16">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-12">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-3 mb-6">
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+            <path d="M14 2L17 11L26 14L17 17L14 26L11 17L2 14L11 11L14 2Z" stroke="#10b981" stroke-width="1.5"/>
+            <circle cx="14" cy="14" r="3" fill="#10b981"/>
+          </svg>
+          <span class="font-display font-700 text-lg text-zinc-100">星空航空 SKYSTAR</span>
+        </div>
+        <p class="text-sm text-zinc-500 leading-relaxed max-w-[40ch]">每一次起飞，都是一次全新的抵达。</p>
+        <div class="mt-6 font-mono text-accent text-lg">400-800-9988</div>
+      </div>
+      <div>
+        <div class="text-xs font-mono text-zinc-600 tracking-widest mb-4">COMPANY</div>
+        <div class="space-y-3 text-sm text-zinc-400">
+          <a href="#" class="block hover:text-zinc-100 transition-colors">关于我们</a>
+          <a href="#" class="block hover:text-zinc-100 transition-colors">加入我们</a>
+          <a href="#" class="block hover:text-zinc-100 transition-colors">新闻中心</a>
+          <a href="#" class="block hover:text-zinc-100 transition-colors">投资者关系</a>
+        </div>
+      </div>
+      <div>
+        <div class="text-xs font-mono text-zinc-600 tracking-widest mb-4">SUPPORT</div>
+        <div class="space-y-3 text-sm text-zinc-400">
+          <a href="#" class="block hover:text-zinc-100 transition-colors">退改签政策</a>
+          <a href="#" class="block hover:text-zinc-100 transition-colors">行李规定</a>
+          <a href="#" class="block hover:text-zinc-100 transition-colors">特殊旅客服务</a>
+          <a href="#" class="block hover:text-zinc-100 transition-colors">联系客服</a>
+        </div>
+      </div>
+    </div>
+    <div class="pt-8 border-t border-zinc-900 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-600">
+      <div>© 2026 星空航空 Skystar Airlines. 保留所有权利。</div>
+      <div class="flex items-center gap-6 font-mono">
+        <span>CATA 认证会员</span>
+        <span>IATA 成员航司</span>
+        <span>IOSA 审计通过</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ============ 星空粒子背景 ============
+(function () {
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({ length: 90 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2 + 0.2,
+      a: Math.random() * 0.6 + 0.15,
+      speed: Math.random() * 0.02 + 0.005,
+      phase: Math.random() * Math.PI * 2
+    }));
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    t += 0.008;
+    for (const s of stars) {
+      const tw = s.a * (0.7 + 0.3 * Math.sin(t * 2 + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(228,228,231,${tw})`;
+      ctx.fill();
+      s.y -= s.speed;
+      if (s.y < -2) s.y = canvas.height + 2;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ============ Scroll Reveal ============
+(function () {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+// ============ 数字滚动 ============
+(function () {
+  const animate = (el) => {
+    const target = parseFloat(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const dur = 1400;
+    const start = performance.now();
+    const step = (now) => {
+      const p = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 4);
+      const val = Math.round(target * eased);
+      el.textContent = val.toLocaleString('zh-CN') + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animate(e.target);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-num[data-target]').forEach(el => io.observe(el));
+})();
+
+// ============ 磁性按钮微吸附 ============
+(function () {
+  document.querySelectorAll('.btn-fill').forEach(btn => {
+    btn.addEventListener('mousemove', e => {
+      const r = btn.getBoundingClientRect();
+      const x = e.clientX - r.left - r.width / 2;
+      const y = e.clientY - r.top - r.height / 2;
+      btn.style.transform = `translate(${x * 0.08}px, ${y * 0.15}px)`;
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'translate(0,0)';
+    });
+  });
+})();
+</script>
+</body>
+</html>

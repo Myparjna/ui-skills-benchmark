@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1677FF">
+<title>闪电充电 — 聚合充电小程序</title>
+<meta name="description" content="聚合特来电、星星充电、云快充的一站式电动车充电小程序。实时桩态、一键扫码、智能会员。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1677FF;
+    --primary-dark: #0f5fd6;
+    --idle: #52C41A;      /* 空闲 */
+    --charging: #FA8C16;  /* 充电中 */
+    --fault: #F5222D;     /* 故障 */
+    --unknown: #999999;   /* 未知 */
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --focus-ring: rgba(22, 119, 255, 0.35);
+    --radius-card: 12px;
+    --radius-btn: 8px;
+    --font: "Inter", "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  body {
+    margin: 0; font-family: var(--font); background: #e8eaee; color: var(--text);
+    line-height: 1.5; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    min-height: 100vh; display: flex; justify-content: center;
+  }
+  h1, h2, h3 { margin: 0; font-weight: 600; line-height: 1.3; text-wrap: balance; }
+  p { margin: 0; }
+  button { font-family: inherit; touch-action: manipulation; cursor: pointer; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Phone canvas */
+  .phone {
+    width: 100%; max-width: 390px; min-height: 100vh; background: var(--bg);
+    display: flex; flex-direction: column; position: relative; overflow-x: hidden;
+  }
+  @media (min-width: 480px) {
+    body { align-items: center; padding: 32px 0; }
+    .phone { min-height: 844px; max-height: 844px; border-radius: 36px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.22), 0 0 0 10px #1a1a1a; }
+  }
+
+  .skip-link {
+    position: absolute; left: 16px; top: -48px; z-index: 200;
+    background: var(--primary); color: #fff; padding: 8px 14px; border-radius: 6px;
+    font-size: 13px; text-decoration: none; transition: top 0.15s ease;
+  }
+  .skip-link:focus-visible { top: 12px; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* Status bar */
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: calc(8px + env(safe-area-inset-top)) 20px 8px; background: var(--primary);
+    color: #fff; font-size: 12px; flex-shrink: 0;
+  }
+  .statusbar .icons { display: flex; gap: 6px; align-items: center; }
+
+  /* App header on map */
+  .map-area {
+    position: relative; height: 268px; flex-shrink: 0;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(22,119,255,.12), transparent 40%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(22,119,255,.10) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(22,119,255,.10) 40px),
+      #eef3fa;
+    overflow: hidden;
+  }
+  .map-search {
+    position: absolute; top: 12px; left: 16px; right: 16px; z-index: 5;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .map-search .box {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+    background: #fff; border-radius: 10px; padding: 9px 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    font-size: 13px; color: var(--text-tertiary); border: 1px solid transparent;
+    cursor: text; transition: border-color 0.12s ease;
+  }
+  .map-search .box:hover { border-color: var(--primary); }
+  .view-toggle {
+    display: flex; background: #fff; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08); flex-shrink: 0;
+  }
+  .view-toggle button {
+    border: none; background: transparent; padding: 9px 12px; font-size: 13px;
+    color: var(--text-secondary); transition: background-color 0.12s ease, color 0.12s ease;
+  }
+  .view-toggle button:hover { color: var(--text); }
+  .view-toggle button[aria-pressed="true"] { background: var(--primary); color: #fff; }
+
+  .pin { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; }
+  .pin .price {
+    background: #fff; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 600;
+    color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.15); margin-bottom: 3px; white-space: nowrap;
+  }
+  .pin .dot { width: 14px; height: 14px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .pin.idle .dot { background: var(--idle); }
+  .pin.busy .dot { background: var(--charging); }
+  .pin.locate {
+    transform: translate(-50%, -50%);
+  }
+  .pin.locate .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--primary); border: 3px solid #fff; transform: none; box-shadow: 0 0 0 6px rgba(22,119,255,.18); }
+
+  /* Filter chips */
+  .filter-row {
+    display: flex; gap: 8px; padding: 12px 16px 4px; overflow-x: auto; flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; border: 1px solid var(--border); background: #fff; border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; color: var(--text-secondary);
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .chip:hover { border-color: var(--primary); color: var(--primary); }
+  .chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  /* Sort bar */
+  .sort-bar {
+    display: flex; gap: 20px; padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0;
+  }
+  .sort-bar button {
+    border: none; background: none; font-size: 13px; color: var(--text-secondary); padding: 2px 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: color 0.12s ease;
+  }
+  .sort-bar button:hover { color: var(--text); }
+  .sort-bar button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
+
+  /* Station list */
+  .station-list {
+    flex: 1; overflow-y: auto; padding: 12px 16px 96px; display: grid; gap: 12px;
+    content-visibility: auto;
+  }
+  .station-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);
+    padding: 14px; display: grid; gap: 10px;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .station-card:hover { border-color: #cfd6de; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+  .station-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .station-name { font-size: 15px; font-weight: 600; min-width: 0; }
+  .station-name .name-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .station-meta { font-size: 12px; color: var(--text-secondary); margin-top: 3px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .star { color: #FAAD14; font-weight: 600; }
+  .station-dist { font-size: 12px; color: var(--text-tertiary); text-align: right; flex-shrink: 0; }
+  .station-dist .d { font-size: 15px; font-weight: 700; color: var(--text); display: block; }
+  .pile-row { display: flex; gap: 12px; font-size: 12px; flex-wrap: wrap; }
+  .pile-row .group { display: flex; align-items: center; gap: 5px; color: var(--text-secondary); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot.idle { background: var(--idle); }
+  .dot.busy { background: var(--charging); }
+  .dot.fault { background: var(--fault); }
+  .dot.unknown { background: var(--unknown); }
+  .station-bottom { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .price { display: flex; align-items: baseline; gap: 4px; }
+  .price .v { font-size: 18px; font-weight: 700; color: var(--primary); }
+  .price .u { font-size: 11px; color: var(--text-tertiary); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #f0f5ff; color: var(--primary); border: 1px solid #d6e4ff; }
+  .tag.park { background: #f6ffed; color: #389e0d; border-color: #b7eb8f; }
+  .nav-btn {
+    border: 1px solid var(--primary); color: var(--primary); background: #fff;
+    border-radius: var(--radius-btn); padding: 6px 14px; font-size: 13px; font-weight: 500;
+    transition: background-color 0.12s ease, color 0.12s ease;
+  }
+  .nav-btn:hover { background: var(--primary); color: #fff; }
+
+  /* Member banner */
+  .member-banner {
+    margin: 0 16px 12px; background: linear-gradient(120deg, #1f2d3d, #3a4a63); color: #fff;
+    border-radius: var(--radius-card); padding: 14px 16px; display: flex; justify-content: space-between;
+    align-items: center; gap: 12px;
+  }
+  .member-banner h2 { font-size: 14px; margin-bottom: 2px; }
+  .member-banner p { font-size: 12px; color: #c3cede; }
+  .member-banner button {
+    background: linear-gradient(120deg, #f7d794, #e8b45a); color: #5c3d05; border: none;
+    border-radius: var(--radius-btn); padding: 7px 14px; font-size: 12px; font-weight: 600; flex-shrink: 0;
+    transition: filter 0.12s ease;
+  }
+  .member-banner button:hover { filter: brightness(1.05); }
+
+  /* Charging progress card */
+  .charging-card {
+    margin: 0 16px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-card); padding: 14px 16px;
+  }
+  .charging-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .charging-card .head h2 { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .charging-card .head a { font-size: 12px; color: var(--primary); text-decoration: none; }
+  .charging-card .head a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .progress-track { height: 6px; background: #f0f0f0; border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 62%; background: var(--charging); border-radius: 999px; }
+  .charging-stats { display: flex; justify-content: space-between; margin-top: 10px; }
+  .charging-stats .s { text-align: center; }
+  .charging-stats .v { font-size: 15px; font-weight: 700; }
+  .charging-stats .l { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
+  /* Bottom tab bar */
+  .tabbar {
+    position: sticky; bottom: 0; z-index: 50; flex-shrink: 0;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    background: #fff; border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 0 6px; border: none; background: none; font-size: 11px;
+    color: var(--text-secondary); transition: color 0.12s ease;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-current="page"] { color: var(--primary); font-weight: 600; }
+  .tab svg { width: 22px; height: 22px; }
+  .tab.scan { position: relative; }
+  .tab.scan .scan-circle {
+    width: 52px; height: 52px; border-radius: 50%; background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center; margin-top: -26px;
+    box-shadow: 0 4px 12px rgba(22,119,255,.4), 0 0 0 5px #fff;
+    transition: background-color 0.12s ease, transform 0.12s ease;
+  }
+  .tab.scan:hover .scan-circle { background: var(--primary-dark); transform: scale(1.04); }
+  .tab.scan .scan-circle svg { width: 26px; height: 26px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <a class="skip-link" href="#stationList">跳转到站点列表</a>
+
+  <!-- Status bar -->
+  <div class="statusbar" aria-hidden="true">
+    <span class="num">9:41</span>
+    <span class="icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+      <svg width="22" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="currentColor"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <!-- Map -->
+  <div class="map-area" role="img" aria-label="地图视图：附近 3 公里内有 12 个充电站，其中 8 个有空闲充电桩">
+    <div class="map-search">
+      <div class="box" role="search" aria-label="搜索充电站">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        搜索充电站、商场或地标…
+      </div>
+      <div class="view-toggle" role="group" aria-label="视图切换">
+        <button type="button" aria-pressed="true">地图</button>
+        <button type="button" aria-pressed="false" id="listViewBtn">列表</button>
+      </div>
+    </div>
+    <div class="pin idle" style="left:30%;top:52%;"><span class="price num">¥1.15/度</span><span class="dot"></span></div>
+    <div class="pin busy" style="left:66%;top:38%;"><span class="price num">¥0.98/度</span><span class="dot"></span></div>
+    <div class="pin idle" style="left:78%;top:66%;"><span class="price num">¥1.32/度</span><span class="dot"></span></div>
+    <div class="pin locate" style="left:50%;top:60%;"><span class="dot"></span></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row" role="group" aria-label="筛选条件">
+    <button class="chip" type="button" aria-pressed="true">全部</button>
+    <button class="chip" type="button" aria-pressed="false">快充</button>
+    <button class="chip" type="button" aria-pressed="false">慢充</button>
+    <button class="chip" type="button" aria-pressed="false">免费停车</button>
+    <button class="chip" type="button" aria-pressed="false">高速路</button>
+    <button class="chip" type="button" aria-pressed="false">仅看空闲</button>
+  </div>
+
+  <!-- Sort -->
+  <div class="sort-bar" role="group" aria-label="排序方式">
+    <button type="button" aria-pressed="true">距离最近</button>
+    <button type="button" aria-pressed="false">综合推荐</button>
+    <button type="button" aria-pressed="false">价格最低</button>
+  </div>
+
+  <!-- Station list -->
+  <main class="station-list" id="stationList" aria-label="附近充电站列表">
+    <!-- Charging in progress -->
+    <section class="charging-card" aria-labelledby="chargingTitle">
+      <div class="head">
+        <h2 id="chargingTitle"><span class="dot busy" aria-hidden="true"></span>充电中 · 滨江银泰站 3 号桩</h2>
+        <a href="#">查看详情</a>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="当前充电进度 62%">
+        <div class="progress-fill"></div>
+      </div>
+      <div class="charging-stats">
+        <div class="s"><div class="v num">62%</div><div class="l">已充电量</div></div>
+        <div class="s"><div class="v num">58.4 <span style="font-size:11px;font-weight:400;">kW</span></div><div class="l">实时功率</div></div>
+        <div class="s"><div class="v num">¥26.83</div><div class="l">已产生费用</div></div>
+        <div class="s"><div class="v num">35 <span style="font-size:11px;font-weight:400;">分钟</span></div><div class="l">预计充满</div></div>
+      </div>
+    </section>
+
+    <!-- Member banner -->
+    <section class="member-banner" aria-labelledby="memberTitle">
+      <div>
+        <h2 id="memberTitle">PLUS 金卡会员 · 充电 88 折</h2>
+        <p>¥19.9/月，本月已为你省 ¥31.6</p>
+      </div>
+      <button type="button" aria-label="开通 PLUS 金卡会员，每月 19.9 元">立即开通</button>
+    </section>
+
+    <!-- Station cards -->
+    <article class="station-card">
+      <div class="station-top">
+        <div class="station-name">
+          <span class="name-text">特来电·滨江银泰百货充电站</span>
+          <div class="station-meta">
+            <span class="star num" aria-label="评分 4.8 分">★ 4.8</span>
+            <span>地下 B2 层</span>
+            <span>24 小时营业</span>
+          </div>
+        </div>
+        <div class="station-dist"><span class="d num">0.4</span>km</div>
+      </div>
+      <div class="pile-row">
+        <span class="group"><span class="dot idle" aria-hidden="true"></span>快充 空闲 <b class="num">6</b>/12</span>
+        <span class="group"><span class="dot idle" aria-hidden="true"></span>慢充 空闲 <b class="num">3</b>/8</span>
+        <span class="group"><span class="dot fault" aria-hidden="true"></span>故障 <b class="num">1</b></span>
+      </div>
+      <div class="station-bottom">
+        <div class="price"><span class="v num">¥1.15</span><span class="u">/度 · 服务费 ¥0.35</span></div>
+        <div class="tags"><span class="tag park">充电免停 2 小时</span></div>
+        <button class="nav-btn" type="button" aria-label="导航到特来电滨江银泰百货充电站，距离 0.4 公里">导航</button>
+      </div>
+    </article>
+
+    <article class="station-card">
+      <div class="station-top">
+        <div class="station-name">
+          <span class="name-text">星星充电·星光大道二期站</span>
+          <div class="station-meta">
+            <span class="star num" aria-label="评分 4.6 分">★ 4.6</span>
+            <span>地面停车场</span>
+            <span>24 小时营业</span>
+          </div>
+        </div>
+        <div class="station-dist"><span class="d num">0.9</span>km</div>
+      </div>
+      <div class="pile-row">
+        <span class="group"><span class="dot busy" aria-hidden="true"></span>快充 充电中 <b class="num">9</b>/10</span>
+        <span class="group"><span class="dot idle" aria-hidden="true"></span>空闲 <b class="num">1</b></span>
+        <span class="group"><span class="dot unknown" aria-hidden="true"></span>未知 <b class="num">1</b></span>
+      </div>
+      <div class="station-bottom">
+        <div class="price"><span class="v num">¥0.98</span><span class="u">/度 · 谷时 ¥0.62</span></div>
+        <div class="tags"><span class="tag">PLUS 88 折</span></div>
+        <button class="nav-btn" type="button" aria-label="导航到星星充电星光大道二期站，距离 0.9 公里">导航</button>
+      </div>
+    </article>
+
+    <article class="station-card">
+      <div class="station-top">
+        <div class="station-name">
+          <span class="name-text">云快充·物联网产业园北门站</span>
+          <div class="station-meta">
+            <span class="star num" aria-label="评分 4.5 分">★ 4.5</span>
+            <span>园区内部</span>
+            <span>06:00–23:00</span>
+          </div>
+        </div>
+        <div class="station-dist"><span class="d num">1.7</span>km</div>
+      </div>
+      <div class="pile-row">
+        <span class="group"><span class="dot idle" aria-hidden="true"></span>快充 空闲 <b class="num">14</b>/16</span>
+        <span class="group"><span class="dot busy" aria-hidden="true"></span>充电中 <b class="num">2</b></span>
+      </div>
+      <div class="station-bottom">
+        <div class="price"><span class="v num">¥1.32</span><span class="u">/度 · 服务费 ¥0.40</span></div>
+        <div class="tags"><span class="tag park">免费停车</span><span class="tag">可开发票</span></div>
+        <button class="nav-btn" type="button" aria-label="导航到云快充物联网产业园北门站，距离 1.7 公里">导航</button>
+      </div>
+    </article>
+
+    <article class="station-card">
+      <div class="station-top">
+        <div class="station-name">
+          <span class="name-text">特来电·杭州东枢纽 P5 充电站</span>
+          <div class="station-meta">
+            <span class="star num" aria-label="评分 4.7 分">★ 4.7</span>
+            <span>交通枢纽</span>
+            <span>24 小时营业</span>
+          </div>
+        </div>
+        <div class="station-dist"><span class="d num">2.3</span>km</div>
+      </div>
+      <div class="pile-row">
+        <span class="group"><span class="dot idle" aria-hidden="true"></span>快充 空闲 <b class="num">20</b>/24</span>
+        <span class="group"><span class="dot fault" aria-hidden="true"></span>故障 <b class="num">2</b></span>
+      </div>
+      <div class="station-bottom">
+        <div class="price"><span class="v num">¥1.08</span><span class="u">/度 · 服务费 ¥0.30</span></div>
+        <div class="tags"><span class="tag park">充电免停 1 小时</span><span class="tag">近高速口</span></div>
+        <button class="nav-btn" type="button" aria-label="导航到特来电杭州东枢纽 P5 充电站，距离 2.3 公里">导航</button>
+      </div>
+    </article>
+  </main>
+
+  <!-- Tab bar -->
+  <nav class="tabbar" aria-label="底部导航">
+    <button class="tab" type="button" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      首页
+    </button>
+    <button class="tab" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      省钱
+    </button>
+    <button class="tab scan" type="button" aria-label="扫码充电">
+      <span class="scan-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M4 12h16"/></svg>
+      </span>
+      扫码
+    </button>
+    <button class="tab" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+      订单
+    </button>
+    <button class="tab" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+      我的
+    </button>
+  </nav>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+    // Filter chips & sort & view toggle: single-select groups
+    function bindGroup(selector) {
+      var btns = document.querySelectorAll(selector + " button");
+      btns.forEach(function (b) {
+        b.addEventListener("click", function () {
+          btns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+          b.setAttribute("aria-pressed", "true");
+        });
+      });
+    }
+    bindGroup(".filter-row");
+    bindGroup(".sort-bar");
+    bindGroup(".view-toggle");
+    // Tab bar selection
+    var tabs = document.querySelectorAll(".tabbar .tab");
+    tabs.forEach(function (t) {
+      t.addEventListener("click", function () {
+        tabs.forEach(function (x) { x.removeAttribute("aria-current"); });
+        t.setAttribute("aria-current", "page");
+      });
+    });
+  })();
+</script>
+</body>
+</html>
